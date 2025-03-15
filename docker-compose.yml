@@ -1,0 +1,64 @@
+version: "3"
+services:
+    db:
+        image: postgis/postgis:latest
+        container_name: db
+        networks:
+            - rede-aplicacao
+        environment:
+            POSTGRES_DB: panificadora_nova_esperanca
+            POSTGRES_USER: panificadora_nova_esperanca
+            POSTGRES_PASSWORD: panificadora_nova_esperanca_develop
+        ports:
+            - "54321:5432"
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -d panificadora_nova_esperanca -U panificadora_nova_esperanca" ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    nginx:
+        build: 
+            dockerfile: './nginx.dockerfile'
+            context: .
+        container_name: nginx-server
+        volumes:
+            - ./nginx.conf:/etc/nginx/conf.d/default.conf  # Monta a configuração Nginx
+            - ./public:/var/www/html/public:ro
+        ports:
+            - "80:80"  # Mapeia a porta 80
+        networks:
+            - rede-aplicacao
+        depends_on:
+            - app
+
+
+    app:
+        build: 
+            dockerfile: './Dockerfile'
+            context: .
+        image: panificadoranovaesperanca/system
+        container_name: padaria_homolog
+        networks:
+            - rede-aplicacao
+        env_file:
+            - ./.env
+        volumes:
+            - ./app:/var/www/html/app
+            - ./bootstrap:/var/www/html/bootstrap
+            - ./config:/var/www/html/config
+            - ./database:/var/www/html/database
+            - ./lang:/var/www/html/lang
+            - ./resources:/var/www/html/resources
+            - ./routes:/var/www/html/routes
+            - ./storage:/var/www/html/storage
+            - ./stubs:/var/www/html/stubs
+            - ./tests:/var/www/html/tests
+            - ./public:/var/www/html/public # Monta a pasta pública
+        depends_on:
+            db:
+                condition: service_healthy
+
+networks:
+    rede-aplicacao:
+        driver: bridge
