@@ -16,14 +16,19 @@
     <link rel="stylesheet" href="{{ asset('css/adminlte.min.css') }}">
 </head>
 <body class="hold-transition login-page">
-<div class="login-box">
-    <div class="login-logo">
-        <a href="/">Padaria Nova Esperança</a>
+<div class="card rounded w-50">
+    <div class="row">
+        <div class="col-7 py-3 d-flex justify-content-center">
+            <img style="height: 50vh; margin:0 auto;" src="{{ asset('images/logo-nix2.png') }}" alt="">
+
+        </div>
+        <div class="col-5 py-3  d-flex align-items-center">
+            @yield('content')
+
+        </div>
+
     </div>
-    <!-- /.login-logo -->
-    <div class="card">
-        @yield('content')
-    </div>
+
 </div>
 <!-- /.login-box -->
 

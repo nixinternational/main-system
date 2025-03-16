@@ -23,7 +23,7 @@ return new class extends Migration {
             $table->timestamps();
         });
         $primeiroGrupo = Grupo::create([
-            'nome' => 'root', 
+            'nome' => 'root',
             'slug' => Str::slug('root')
         ]);
 
@@ -39,32 +39,11 @@ return new class extends Migration {
             'grupo_id' => $primeiroGrupo->id
         ];
       $user =  User::where('email','administrador@email.com')->update($updateData);
-        $segundo = Grupo::create([
-            'nome' => 'Administrador', 
-            'slug' => Str::slug('Administrador')
-        ]);
-        $motorista = Grupo::create([
-            'nome' => 'Motorista', 
-            'slug' => Str::slug('motorista')
-        ]);
 
-        $motorista = Grupo::create([
-            'nome' => 'Produção', 
-            'slug' => Str::slug('producao')
-        ]);
-        $data =
-        [
-            'name' => 'Marcelo',
-            'email' => 'marcelo@email.com',
-            'email_verified_at' => Carbon::now(),
-            'password' => Hash::make('mudar@123'),
-            'grupo_id' => $segundo->id
-        ];
-        
-    User::create($data);
+
         Schema::create('grupo_usuarios', function (Blueprint $table) {
             $table->id();
-            
+
             $table->unsignedBigInteger('grupo_id')->nullable();
             $table->foreign('grupo_id')->references('id')->on('grupos');
             $table->unsignedBigInteger('user_id')->nullable();

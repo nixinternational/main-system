@@ -82,12 +82,12 @@
     <!-- /.navbar -->
 
     <!-- Main Sidebar Container -->
-    <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color:#3D2C1F">
+    <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color:#000">
       <!-- Brand Logo -->
       <a href="/home" class="brand-link  d-flex align-items-center flex-column">
-        <img src="https://paesnovaesperanca.com.br/wp-content/uploads/2023/08/logo.png"
-          alt="Panificadora Nova Esperança Logo" class="" style="opacity: .8; width:100%">
-        <span class="brand-text d-none text-center font-weight-light">Padaria Nova Esperança</span>
+        <img src="{{ asset('images/logo-preto.png') }}"
+          alt="" class="" style=" width:140%">
+        <span class="brand-text d-none text-center font-weight-light">Nix International</span>
       </a>
 
       @include('layouts.navigation')

@@ -27,39 +27,28 @@ class HomeController extends Controller
         $user = Auth::user();
         if($user->grupoPermissao != null){
             $user_group = $user->grupoPermissao->slug ;
-        
-    
+
+
             if($user_group == 'motorista'){
-                
+
                 return redirect('/motorista-entrega');
-        
+
             }else if($user_group == 'producao'){
                 return redirect('/producaoBaixa');
-        
+
             }
         }
         try {
             $inicio = Carbon::now()->startOfDay();
             $fim = Carbon::now()->endOfDay();
 
-            $pedidosHoje = Pedido::whereBetween('dt_previsao', [$inicio, $fim])->get()->count();
-
+            $pedidosHoje = 0;
             $primeiroDiaDoMes = Carbon::now()->startOfMonth()->toDateString();
             $ultimoDiaDoMes = Carbon::now()->endOfMonth()->toDateString();
 
-            $pedidosEntregues = Pedido::whereBetween('dt_previsao', [$primeiroDiaDoMes, $ultimoDiaDoMes])
-                ->where('status', '=', 'ENTREGUE')
-                ->get()
-                ->count();
-            $pedidosAtrasados = Pedido::where('dt_previsao', '<',Carbon::now())
-                ->where('status', '=', 'AGENDADO')
-                ->get()
-                ->count();
-            $pedidosCancelados = Pedido::whereBetween('dt_previsao', [$primeiroDiaDoMes, $ultimoDiaDoMes])
-                ->where('status', '=', 'CANCELADO')
-                ->get()
-                ->count();
-
+            $pedidosEntregues = 0;
+            $pedidosAtrasados = 0;
+            $pedidosCancelados = 0;
 
             return view('home', compact('pedidosHoje', 'pedidosEntregues','pedidosCancelados','pedidosAtrasados'));
         } catch (\Exception $e) {
