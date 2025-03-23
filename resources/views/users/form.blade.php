@@ -45,18 +45,6 @@
                   @endforeach
                 </select>
               </div>
-              @if(!isset($user))
-              <div class="col-4">
-                <label for="exampleInputEmail1" class="form-label">Motorista</label>
-        
-                <select class="custom-select select2" multiple="multiple"  name="motorista[]">
-                  <option selected disabled>Selecione uma opção</option>
-                  @foreach ($motoristas as $motorista)
-                    <option value="{{ $motorista->id }}">{{ $motorista->nome }}</option>
-                  @endforeach
-                </select>
-              </div>
-              @endif
         </div>
      
 

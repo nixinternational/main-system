@@ -28,9 +28,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        $grupos = Grupo::whereNot('id',1)->get();
-        $motoristas = Motorista::all();
-        return view('users.form', compact('grupos','motoristas'));
+        $grupos = Grupo::get();
+        return view('users.form', compact('grupos'));
 
     }
 
