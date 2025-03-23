@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ClienteRequest;
 use App\Http\Requests\RelatorioCliente;
 use App\Models\Cliente;
+use App\Models\ClienteAduana;
+use App\Models\ClienteEmail;
+use App\Models\ClienteResponsavelProcesso;
 use App\Models\Pedido;
-use App\Models\PedidoProduto;
+use Illuminate\Support\Facades\Validator;
 use App\Repositories\ClienteRepository;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -38,14 +41,49 @@ class ClienteController extends Controller
      * @param  \Illuminate\Http\Req uest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(ClienteRequest $request)
+    public function store(Request $request)
     {
         try {
-            Cliente::create($request->except('_token'));
-            return redirect(route('cliente.index'))->with('messages', ['success' => ['Cliente cadastrado com sucesso!']]);
+
+            $validator = Validator::make($request->all(), [
+                'name' => 'required',
+                'cnpj' => 'required',
+                'nome_responsavel_legal' => 'required',
+                'cpf_responsavel_legal' => 'required',
+            ], [
+                'name.required' => 'O campo Nome da empresa é obrigatório!',
+                'cnpj.required' => 'O campo Cnpj da empresa é obrigatório!',
+                'nome_responsavel_legal.required' => 'O campo Nome - responsável legal é obrigatório!',
+                'cpf_responsavel_legal.required' => 'O campo CPF - responsável legal é obrigatório!',
+            ]);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $message = $errors->unique();
+
+                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+            }
+            $clientData = [
+                'nome' => $request->name,
+                'cnpj' => $request->cnpj,
+                'logradouro' => $request->logradouro,
+                'numero' => $request->numero,
+                'cep' => $request->cep,
+                'complemento' => $request->complemento,
+                'bairro' => $request->bairro,
+                'cidade' => $request->cidade,
+                'estado' => $request->estado,
+                'nome_responsavel_legal' => $request->nome_responsavel_legal,
+                'cpf_responsavel_legal' => $request->cpf_responsavel_legal,
+                'data_vencimento_procuracao' => Carbon::parse($request->data_vencimento_procuracao),
+            ];
+            $newCliente = Cliente::create($clientData);
+            return redirect(route( 'cliente.edit',  $newCliente->id))->with('messages', ['success' => ['Cliente criado com sucesso!']]);
         } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível cadastrar o cliente!']])->withInput($request->all());;
+            return back()->with('messages', ['error' => ['Não foi possível cadastrar o cliente!']])->withInput($request->all());
         }
+
+        
     }
 
     /**
@@ -99,14 +137,49 @@ class ClienteController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(ClienteRequest $request, $id)
+    public function update(Request $request, $id)
     {
+
         try {
-            $cliente = Cliente::findOrFail($id)->update($request->except(['_token', '_method']));
-            return redirect(route('cliente.index'))->with('messages', ['success' => ['Cliente atualizada com sucesso!']]);
+
+            $validator = Validator::make($request->all(), [
+                'name' => 'required',
+                'cnpj' => 'required',
+                'nome_responsavel_legal' => 'required',
+                'cpf_responsavel_legal' => 'required',
+            ], [
+                'name.required' => 'O campo Nome da empresa é obrigatório!',
+                'cnpj.required' => 'O campo Cnpj da empresa é obrigatório!',
+                'nome_responsavel_legal.required' => 'O campo Nome - responsável legal é obrigatório!',
+                'cpf_responsavel_legal.required' => 'O campo CPF - responsável legal é obrigatório!',
+            ]);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $message = $errors->unique();
+
+                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+            }
+            $cliente = Cliente::findOrFail($id);
+            $clientData = [
+                'nome' => $request->name,
+                'cnpj' => $request->cnpj,
+                'logradouro' => $request->logradouro,
+                'numero' => $request->numero,
+                'cep' => $request->cep,
+                'complemento' => $request->complemento,
+                'bairro' => $request->bairro,
+                'cidade' => $request->cidade,
+                'estado' => $request->estado,
+                'nome_responsavel_legal' => $request->nome_responsavel_legal,
+                'cpf_responsavel_legal' => $request->cpf_responsavel_legal,
+                'data_vencimento_procuracao' => $request->data_vencimento_procuracao != null ? Carbon::parse($request->data_vencimento_procuracao) : null,
+            ];
+            $cliente->update($clientData);
+            return redirect(route( 'cliente.edit', $id))->with('messages', ['success' => ['Cliente atualizado com sucesso!']]);
+
         } catch (\Exception $e) {
-            dd($request->all(), $e);
-            return back()->with('messages', ['error' => ['Não foi possícel editar a cliente!']]);
+            return redirect(route( 'cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cliente!!']])->withInput($request->all());
         }
     }
 
@@ -121,7 +194,7 @@ class ClienteController extends Controller
     {
         try {
             Cliente::findOrFail($id)->delete();
-            return redirect(route('cliente.index'))->with('messages', ['success' => ['Cliente desativado com sucesso!']]);
+            return redirect(to: route('cliente.index'))->with('messages', ['success' => ['Cliente desativado com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possícel editar a cliente!']]);
         }
@@ -169,15 +242,15 @@ class ClienteController extends Controller
                     p.nome as nome,
                     pp.preco * pp.quantidade as preco_total,
                     pp.quantidade as quantidade'), 'pro')
-                    ->selectRaw('pro.nome as nome,
+                        ->selectRaw('pro.nome as nome,
                     sum(pro.preco_total	) as preco_total,
                     sum(pro.quantidade) as quantidade_total')
-                    ->groupBy('nome')
-                    ->orderBy('nome')
-                    ->get();
+                        ->groupBy('nome')
+                        ->orderBy('nome')
+                        ->get();
             }
 
-            $pdf =  Pdf::loadView('relatorios.pdf.clientes', [
+            $pdf = Pdf::loadView('relatorios.pdf.clientes', [
                 'dados' => $dados,
                 'inicio' => $inicio,
                 'fim' => $fim
@@ -193,6 +266,160 @@ class ClienteController extends Controller
             return view('relatorios.cliente');
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível abrir os relatórios!' . $e->getMessage()]]);
+        }
+    }
+
+
+    public function updateClientEmail(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'emails' => 'required|min:1',
+        ], [
+            'emails.min' => 'É necessário informar pelo menos 1 email',
+        ]);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors();
+            $message = $errors->unique();
+
+            return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+        }
+        // Buscar todos os emails já cadastrados para o cliente
+        $emailsExistentes = ClienteEmail::where('cliente_id', $id)
+            ->pluck('email')
+            ->toArray();
+
+        // Identificar emails que devem ser adicionados
+        $novosEmails = array_diff($request->emails, $emailsExistentes);
+
+        // Identificar emails que foram removidos e devem ser deletados
+        $emailsRemovidos = array_diff($emailsExistentes, $request->emails);
+        $novosEmails = array_filter($novosEmails);
+        // Adicionar novos emails
+        foreach ($novosEmails as $email) {
+            ClienteEmail::create([
+                'cliente_id' => $id,
+                'email' => $email
+            ]);
+        }
+
+        // Remover emails que não estão mais no input
+        ClienteEmail::where('cliente_id', $id)
+            ->whereIn('email', $emailsRemovidos)
+            ->delete();
+        return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Emails atualizados com sucesso!']]);
+
+    }
+    public function updateClientAduanas(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'aduanas' => 'required|array|min:1',
+        ], [
+            'aduanas.min' => 'É necessário informar pelo menos 1 aduana',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->with('messages', ['error' => [$validator->errors()->first('aduanas')]])
+                ->withInput($request->all());
+        }
+
+        $aduanasExistentes = ClienteAduana::where('cliente_id', $id)
+            ->pluck('nome')
+            ->toArray();
+
+        $novasAduanas = array_diff($request->aduanas, $aduanasExistentes);
+
+        $aduanasRemovidas = array_diff($aduanasExistentes, $request->aduanas);
+        $novasAduanas = array_filter($novasAduanas);
+        foreach ($novasAduanas as $aduana) {
+            ClienteAduana::create([
+                'cliente_id' => $id,
+                'nome' => $aduana
+            ]);
+        }
+
+        ClienteAduana::where('cliente_id', $id)
+            ->whereIn('nome', $aduanasRemovidas)
+            ->delete();
+
+        return redirect(route('cliente.edit', $id))
+            ->with('messages', ['success' => ['Aduanas atualizadas com sucesso!']]);
+    }
+
+
+
+    public function updateClientResponsaveis(Request $request, $id)
+    {
+        // Validação dos dados
+        $validator = Validator::make($request->all(), [
+            'nomes' => 'required|array|min:1',
+            'nomes.*' => 'required|string|max:255',
+            'telefones' => 'required|array|min:1',
+            'telefones.*' => 'required|string|max:20',
+        ], [
+            'nomes.min' => 'É necessário informar pelo menos 1 nome',
+            'telefones.min' => 'É necessário informar pelo menos 1 telefone',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput($request->all());
+        }
+
+        $responsaveisExistentes = ClienteResponsavelProcesso::where('cliente_id', $id)
+            ->get(['id', 'nome', 'telefone'])
+            ->keyBy('nome')
+            ->toArray();
+
+        $responsaveisEnviados = [];
+        foreach ($request->nomes as $index => $nome) {
+            $responsaveisEnviados[$nome] = [
+                'telefone' => $request->telefones[$index] ?? null,
+            ];
+        }
+
+        foreach ($responsaveisEnviados as $nome => $dados) {
+            if (isset($responsaveisExistentes[$nome])) {
+                if ($responsaveisExistentes[$nome]['telefone'] !== $dados['telefone']) {
+                    ClienteResponsavelProcesso::where('id', $responsaveisExistentes[$nome]['id'])
+                        ->update(['telefone' => $dados['telefone']]);
+                }
+            } else {
+                ClienteResponsavelProcesso::create([
+                    'cliente_id' => $id,
+                    'nome' => $nome,
+                    'telefone' => $dados['telefone']
+                ]);
+            }
+        }
+
+        $nomesRemovidos = array_diff(array_keys($responsaveisExistentes), array_keys($responsaveisEnviados));
+
+        ClienteResponsavelProcesso::where('cliente_id', $id)
+            ->whereIn('nome', $nomesRemovidos)
+            ->delete();
+        return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Responsáveis atualizados com sucesso!']]);
+
+    }
+    public function updateClientEspecificidades($id, Request $request)
+    {
+
+        try {
+            $cliente = Cliente::findOrFail($id);
+            $clientData = [
+
+                'despachante_siscomex' => $request->exists('despachante_siscomex'),
+                'marinha_mercante' => $request->exists('marinha_mercante'),
+                'afrmm' => $request->exists('afrmm'),
+                'itau_di' => $request->exists('itau_di'),
+                'modalidade_radar' => $request->exists('modalidade_radar') ? $request->modalidade_radar : null,
+                'beneficio_fiscal' => $request->beneficio_fiscal,
+                'observacoes' => $request->observacoes,
+            ];
+            $cliente->update($clientData);
+
+            return redirect(to: route('cliente.edit', $id))->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
+        } catch (\Exception $e) {
+            return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
         }
     }
 }

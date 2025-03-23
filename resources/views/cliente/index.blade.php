@@ -50,12 +50,12 @@
                 <thead class="bg-primary ">
                     <tr>
                         <th>ID</th>
-                        <th>NOME</th>
+                        <th>Nome</th>
                         <th>CNPJ</th>
-                        <th>LOGRADOURO</th>
-                        <th>BAIRRO</th>
-                        <th>CIDADE</th>
-                        <th>TIPO</th>
+                        <th>Resp. Legal</th>
+                        <th>Data Venc. Procuração</th>
+                        <th>Cidade</th>
+                        <th>Modalidade Radar</th>
                         <th class="d-flex justify-content-center">AÇÕES</th>
                     </tr>
                 </thead>
@@ -63,12 +63,12 @@
                     @foreach ($clientes as $cliente)
                         <tr @if ($cliente->deleted_at != null) style="background-color:#ff8e8e" @endif>
                             <td>{{ $cliente->id }}</td>
-                            <td>{{ $cliente->name }}</td>
+                            <td>{{ $cliente->nome }}</td>
                             <td>{{ $cliente->cnpj }}</td>
-                            <td>{{ $cliente->logradouro }}</td>
-                            <td>{{ $cliente->bairro }}</td>
+                            <td>{{ $cliente->nome_responsavel_legal }}</td>
+                            <td>{{$cliente->data_vencimento_procuracao? \Carbon\Carbon::parse($cliente->data_vencimento_procuracao)->format('d/m/Y'): 'Sem procuração' }}</td>
                             <td>{{ $cliente->cidade }}</td>
-                            <td>{{ $cliente->tipo_cliente }}</td>
+                            <td>{{ $cliente->modalidade_radar ? $cliente->modalidade_radar: 'Não possui'  }}</td>
                             <td class="d-flex  justify-content-around">
                                 @if ($cliente->deleted_at == null)
                                     <a href="{{ route('cliente.edit', $cliente->id) }}" type="button"

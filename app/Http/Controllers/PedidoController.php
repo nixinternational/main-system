@@ -22,6 +22,7 @@ class PedidoController extends Controller
     public function index()
     {
         if (request()->codigo != '') {
+
             $pedidos =  Pedido::with(['motorista', 'cliente'])
                 ->where('id', request()->codigo)
                 ->paginate(request()->paginacao ?? 10);
@@ -267,14 +268,14 @@ class PedidoController extends Controller
     public function baixaPedido()
     {
         $user = Auth::user();
-            
+
         $user_group = $user->grupoPermissao != null ? $user->grupoPermissao->slug : '';
 
         if($user_group == 'motorista'){
-            
+
             return redirect('/motorista-entrega')->with('messages', ['success' => ['Pedidos atualizados com sucesso!']]);
         }
-        
+
         if (request()->codigo != '') {
             $pedidos =  Pedido::with(['motorista', 'cliente'])
                 ->where('id', request()->codigo)
@@ -343,16 +344,16 @@ class PedidoController extends Controller
                 Pedido::findOrFail($pedido_id)->update(['status' => $request->status]);
             }
             $user = Auth::user();
-            
+
             $user_group = $user->grupoPermissao != null ? $user->grupoPermissao->slug : '';
 
             if($user_group == 'motorista'){
-                
+
                 return redirect('/motorista-entrega')->with('messages', ['success' => ['Pedidos atualizados com sucesso!']]);
             }else{
                 return redirect(route('pedido.atualiza'))->with('messages', ['success' => ['Pedidos atualizados com sucesso!']]);
-                
-        
+
+
             }
         } catch (\Exception $e) {
             return redirect(route('pedido.atualiza'))->with('messages', ['success' => ['Não foi possível atualizar os pedidos']]);

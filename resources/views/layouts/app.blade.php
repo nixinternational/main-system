@@ -4,7 +4,7 @@
  <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ config('app.name', 'Padaria Nova Esperança') }}</title>
+  <title>{{ config('app.name', 'Nix International') }}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}" />
   <!-- ✅ load jQuery ✅ -->
   <script src="{{ asset('js/vendor/jquery.min.js') }}"></script>
@@ -116,11 +116,8 @@
           <div class="container-fluid">
             <div class="row">
               <div class="col-lg-12">
-                <div class="card">
-                  <div class="card-body">
-                    @yield('content')
-                  </div>
-                </div>
+                @yield('content')
+
               </div>
             </div>
             <!-- /.row -->
@@ -159,7 +156,6 @@
     const Toast = Swal.mixin({
       toast: true,
       position: 'top-end',
-      iconColor: 'white',
       customClass: {
         popup: 'colored-toast',
       },
@@ -171,11 +167,17 @@
 
     if (document.getElementById('messages') != null) {
       const messages = JSON.parse(document.getElementById('messages').value);
+      const titles = {
+        'error': 'Erro!',
+        'success': 'Sucesso!'
+      }
       for (let item in messages) {
         for (let message of messages[item]) {
+          console.log(message)
           Toast.fire({
             icon: `${item}`,
-            title: `${message}`
+            html: `${message}`,
+            title: titles[item]
           });
         }
       }

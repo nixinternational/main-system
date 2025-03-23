@@ -15,6 +15,7 @@ class CheckPermission
         $grupos = explode('|', $permissao);
         $bool   = false;
         $user = Auth::user();
+        
         if($user->obtemTodosGrupos() == 'administrador' || $user->obtemTodosGrupos() == 'root'){
             return $next($request);
         }
@@ -24,7 +25,7 @@ class CheckPermission
                 $bool = $user->pertenceAoGrupo($grupo);
             }
             abort_unless($bool, Response::HTTP_FORBIDDEN, 'Você não tem permissão para acessar esta página!');
-
+            
             return $next($request);
         }
 

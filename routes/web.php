@@ -6,8 +6,6 @@ use App\Http\Controllers\PermissaoController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\ServicoController;
-use App\Http\Controllers\LoteController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LancamentoController;
@@ -18,11 +16,8 @@ use App\Http\Controllers\ProducaoController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
-use App\Models\Categoria;
-use App\Models\Marca;
-use App\Models\Produto;
+
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 /*
 |--------------------------------------------------------------------------
@@ -103,9 +98,12 @@ Route::middleware('auth')->group(function () {
 
 
     Route::post('atualizar', [PedidoController::class, 'atualizarPedidos'])->name('pedido.atualizar');
-    Route::post('confirmarProducao', [ProducaoBaixaController::class, 'confirmarProducao'])->name('producao.confirmar');
+    Route::post('update-client-emails/{id}', [ClienteController::class, 'updateClientEmail'])->name('cliente.update.email');
+    Route::post('update-client-responsaveis/{id}', action: [ClienteController::class, 'updateClientResponsaveis'])->name('cliente.update.responsavel');
+    Route::post('update-client-aduanas/{id}', action: [ClienteController::class, 'updateClientAduanas'])->name('cliente.update.aduanas');
+    Route::post('update-client-especificidades/{id}', action: [ClienteController::class, 'updateClientEspecificidades'])->name('cliente.update.especificidades');
 
-    
+
 
 
     Route::group(['prefix' => 'ativar'], function () {
