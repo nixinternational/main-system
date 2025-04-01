@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ClienteRequest;
 use App\Http\Requests\RelatorioCliente;
+use App\Models\BancoCliente;
+use App\Models\BancoNix;
 use App\Models\Cliente;
 use App\Models\ClienteAduana;
 use App\Models\ClienteEmail;
@@ -32,7 +34,8 @@ class ClienteController extends Controller
 
     public function create()
     {
-        return view('cliente.form');
+        $bancosNix = BancoNix::all();
+        return view('cliente.form', compact('bancosNix'));
     }
 
     /**
@@ -75,15 +78,18 @@ class ClienteController extends Controller
                 'estado' => $request->estado,
                 'nome_responsavel_legal' => $request->nome_responsavel_legal,
                 'cpf_responsavel_legal' => $request->cpf_responsavel_legal,
-                'data_vencimento_procuracao' => Carbon::parse($request->data_vencimento_procuracao),
+                'email_responsavel_legal' => $request->email_responsavel_legal,
+                'telefone_responsavel_legal' => $request->telefone_responsavel_legal,
+                'data_vencimento_procuracao' => $request->data_vencimento_procuracao != null ? Carbon::parse($request->data_vencimento_procuracao) : null,
+                'data_procuracao' => $request->data_procuracao != null ? Carbon::parse($request->data_procuracao) : null,
             ];
             $newCliente = Cliente::create($clientData);
-            return redirect(route( 'cliente.edit',  $newCliente->id))->with('messages', ['success' => ['Cliente criado com sucesso!']]);
+            return redirect(route('cliente.edit', $newCliente->id))->with('messages', ['success' => ['Cliente criado com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível cadastrar o cliente!']])->withInput($request->all());
         }
 
-        
+
     }
 
     /**
@@ -96,17 +102,14 @@ class ClienteController extends Controller
     {
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function edit($id)
     {
         try {
+            $bancosNix = BancoNix::all();
+            $bancosCliente = BancoCliente::where('cliente_id',$id)->get();
             $cliente = Cliente::findOrFail($id);
-            return view('cliente.form', compact('cliente'));
+            return view('cliente.form', compact('cliente', 'bancosNix','bancosCliente'));
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possícel editar a cliente!']]);
         }
@@ -173,13 +176,16 @@ class ClienteController extends Controller
                 'estado' => $request->estado,
                 'nome_responsavel_legal' => $request->nome_responsavel_legal,
                 'cpf_responsavel_legal' => $request->cpf_responsavel_legal,
+                'email_responsavel_legal' => $request->email_responsavel_legal,
+                'telefone_responsavel_legal' => $request->telefone_responsavel_legal,
                 'data_vencimento_procuracao' => $request->data_vencimento_procuracao != null ? Carbon::parse($request->data_vencimento_procuracao) : null,
+                'data_procuracao' => $request->data_procuracao != null ? Carbon::parse($request->data_procuracao) : null,
             ];
             $cliente->update($clientData);
-            return redirect(route( 'cliente.edit', $id))->with('messages', ['success' => ['Cliente atualizado com sucesso!']]);
+            return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Cliente atualizado com sucesso!']]);
 
         } catch (\Exception $e) {
-            return redirect(route( 'cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cliente!!']])->withInput($request->all());
+            return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cliente!!']])->withInput($request->all());
         }
     }
 
@@ -210,64 +216,7 @@ class ClienteController extends Controller
         }
     }
 
-    public function relatorioCliente(RelatorioCliente $request)
-    {
-        try {
-            $datas = explode(' - ', $request->intervalo);
 
-            $inicio = Carbon::createFromFormat('d/m/Y', $datas[0])->startOfDay();
-
-            $fim = Carbon::createFromFormat('d/m/Y', $datas[1])->endOfDay();
-            $dados = [];
-            foreach ($request->cliente as $cliente) {
-                $dados[$cliente]['cliente'] = Cliente::findOrFail($cliente);
-                $pedidos = Pedido::where('cliente_id', $cliente)
-                    ->whereBetween('dt_previsao', [$inicio, $fim])
-                    ->when($request->status != '-1', function ($query) use ($request) {
-                        $query->where('status', $request->status);
-                    })
-                    ->with(['produtos'])->orderBy('dt_previsao', 'ASC')->get();
-                $dados[$cliente]['pedidos'] = $pedidos;
-
-                $dados[$cliente]['produtos_total'] =
-                    DB::table(DB::table('pedido_produtos', 'pp')
-                        ->leftJoin('produtos as p', 'pp.produto_id', '=', 'p.id')
-                        ->whereIn(
-                            'pp.pedido_id',
-                            DB::table('pedidos as pe')
-                                ->where('cliente_id', '=', $cliente)
-                                ->whereBetween('dt_previsao', [$inicio, $fim])
-                                ->pluck('id')
-                        )->selectRaw('p.id as id,
-                    p.nome as nome,
-                    pp.preco * pp.quantidade as preco_total,
-                    pp.quantidade as quantidade'), 'pro')
-                        ->selectRaw('pro.nome as nome,
-                    sum(pro.preco_total	) as preco_total,
-                    sum(pro.quantidade) as quantidade_total')
-                        ->groupBy('nome')
-                        ->orderBy('nome')
-                        ->get();
-            }
-
-            $pdf = Pdf::loadView('relatorios.pdf.clientes', [
-                'dados' => $dados,
-                'inicio' => $inicio,
-                'fim' => $fim
-            ]);
-            return $pdf->download("Relatório.pdf");
-        } catch (\Exception $e) {
-            return response()->json(['success' => true, 'data' => null, 'message' => 'Erro ao processar requisição. Tente novamente mais tarde.' . $e->getMessage()], 400);
-        }
-    }
-    public function relatorioClienteIndex()
-    {
-        try {
-            return view('relatorios.cliente');
-        } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível abrir os relatórios!' . $e->getMessage()]]);
-        }
-    }
 
 
     public function updateClientEmail(Request $request, $id)
@@ -313,90 +262,139 @@ class ClienteController extends Controller
     public function updateClientAduanas(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'aduanas' => 'required|array|min:1',
+            'modalidades' => 'required|array|min:1',
+            'modalidades.*' => 'required|in:aereo,maritima,rodoviaria,multimodal,courier',
+            'urf_despacho' => 'required|array|min:1',
+            'urf_despacho.*' => 'nullable|string', // Agora pode ser nulo
         ], [
-            'aduanas.min' => 'É necessário informar pelo menos 1 aduana',
+            'modalidades.required' => 'É necessário informar pelo menos uma modalidade.',
+            'modalidades.*.required' => 'A modalidade é obrigatória.',
+            'modalidades.*.in' => 'Modalidade inválida.',
+            'urf_despacho.required' => 'É necessário informar pelo menos um URF Despacho.',
         ]);
 
         if ($validator->fails()) {
-            return back()->with('messages', ['error' => [$validator->errors()->first('aduanas')]])
+            return back()->with('messages', ['error' => $validator->errors()->all()])
                 ->withInput($request->all());
         }
 
         $aduanasExistentes = ClienteAduana::where('cliente_id', $id)
-            ->pluck('nome')
-            ->toArray();
+            ->get()
+            ->keyBy('urf_despacho');
 
-        $novasAduanas = array_diff($request->aduanas, $aduanasExistentes);
+        $novasAduanas = [];
+        $aduanasParaRemover = $aduanasExistentes->keys()->toArray();
 
-        $aduanasRemovidas = array_diff($aduanasExistentes, $request->aduanas);
-        $novasAduanas = array_filter($novasAduanas);
-        foreach ($novasAduanas as $aduana) {
-            ClienteAduana::create([
-                'cliente_id' => $id,
-                'nome' => $aduana
-            ]);
+        // Percorre os arrays sincronizando as chaves
+        foreach ($request->urf_despacho as $index => $urf_despacho) {
+            $modalidade = $request->modalidades[$index] ?? null;
+
+            if (empty($urf_despacho)) {
+                // Remove a aduana caso o URF esteja vazio
+                continue;
+            }
+
+            if (isset($aduanasExistentes[$urf_despacho])) {
+                // Atualiza se a aduana já existir
+                $aduanaExistente = $aduanasExistentes[$urf_despacho];
+                $aduanaExistente->update([
+                    'modalidade' => $modalidade,
+                ]);
+                $aduanasParaRemover = array_diff($aduanasParaRemover, [$urf_despacho]);
+            } else {
+                // Adiciona nova aduana se não existir
+                $novasAduanas[] = [
+                    'cliente_id' => $id,
+                    'urf_despacho' => $urf_despacho,
+                    'modalidade' => $modalidade,
+                ];
+            }
         }
 
+        // Insere novas aduanas
+        if (!empty($novasAduanas)) {
+            ClienteAduana::insert($novasAduanas);
+        }
+
+        // Remove aduanas que não estão mais na requisição ou que tiveram o URF em branco
         ClienteAduana::where('cliente_id', $id)
-            ->whereIn('nome', $aduanasRemovidas)
+            ->whereIn('urf_despacho', $aduanasParaRemover)
             ->delete();
 
         return redirect(route('cliente.edit', $id))
             ->with('messages', ['success' => ['Aduanas atualizadas com sucesso!']]);
+
+
     }
 
 
 
     public function updateClientResponsaveis(Request $request, $id)
     {
-        // Validação dos dados
-        $validator = Validator::make($request->all(), [
-            'nomes' => 'required|array|min:1',
-            'nomes.*' => 'required|string|max:255',
-            'telefones' => 'required|array|min:1',
-            'telefones.*' => 'required|string|max:20',
-        ], [
-            'nomes.min' => 'É necessário informar pelo menos 1 nome',
-            'telefones.min' => 'É necessário informar pelo menos 1 telefone',
-        ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput($request->all());
+        if (count($request->nomes) == 0 && count($request->emails) == 0 && count($request->departamento) == 0 && count($request->telefone) == 0) {
+
+
+            return back()->with('messages', ['error' => ['Não é possível inserir um registro vazio']])->withInput($request->all());
         }
 
+        // Obtendo os responsáveis existentes no banco
         $responsaveisExistentes = ClienteResponsavelProcesso::where('cliente_id', $id)
-            ->get(['id', 'nome', 'telefone'])
+            ->get(['id', 'nome', 'telefone', 'email', 'departamento'])
             ->keyBy('nome')
             ->toArray();
 
         $responsaveisEnviados = [];
         foreach ($request->nomes as $index => $nome) {
-            $responsaveisEnviados[$nome] = [
-                'telefone' => $request->telefones[$index] ?? null,
-            ];
+            if ($nome) {
+                $responsaveisEnviados[$nome] = [
+                    'telefone' => $request->telefones[$index] ?? null,
+                    'email' => $request->emails[$index] ?? null,
+                    'departamento' => $request->departamentos[$index] ?? null,
+                ];
+            }
         }
 
+        // Atualizando ou inserindo responsáveis
         foreach ($responsaveisEnviados as $nome => $dados) {
             if (isset($responsaveisExistentes[$nome])) {
-                if ($responsaveisExistentes[$nome]['telefone'] !== $dados['telefone']) {
-                    ClienteResponsavelProcesso::where('id', $responsaveisExistentes[$nome]['id'])
-                        ->update(['telefone' => $dados['telefone']]);
+                $responsavel = $responsaveisExistentes[$nome];
+
+                // Verifica se houve mudança nos dados
+                if (
+                    $responsavel['telefone'] !== $dados['telefone'] ||
+                    $responsavel['email'] !== $dados['email'] ||
+                    $responsavel['departamento'] !== $dados['departamento']
+                ) {
+                    ClienteResponsavelProcesso::where('id', $responsavel['id'])
+                        ->update([
+                            'telefone' => $dados['telefone'],
+                            'email' => $dados['email'],
+                            'departamento' => $dados['departamento'],
+                        ]);
                 }
             } else {
                 ClienteResponsavelProcesso::create([
                     'cliente_id' => $id,
                     'nome' => $nome,
-                    'telefone' => $dados['telefone']
+                    'telefone' => $dados['telefone'],
+                    'email' => $dados['email'],
+                    'departamento' => $dados['departamento'],
                 ]);
             }
         }
 
+        // Removendo responsáveis que não estão mais na lista enviada
         $nomesRemovidos = array_diff(array_keys($responsaveisExistentes), array_keys($responsaveisEnviados));
 
-        ClienteResponsavelProcesso::where('cliente_id', $id)
+        $registrosParaExcluir = ClienteResponsavelProcesso::where('cliente_id', $id)
             ->whereIn('nome', $nomesRemovidos)
-            ->delete();
+            ->get();
+
+        foreach ($registrosParaExcluir as $registro) {
+            $registro->delete(); // Ou $registro->forceDelete(); se precisar remover permanentemente
+        }
+
         return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Responsáveis atualizados com sucesso!']]);
 
     }
@@ -404,22 +402,76 @@ class ClienteController extends Controller
     {
 
         try {
+            DB::beginTransaction();
             $cliente = Cliente::findOrFail($id);
             $clientData = [
-
-                'despachante_siscomex' => $request->exists('despachante_siscomex'),
-                'marinha_mercante' => $request->exists('marinha_mercante'),
-                'afrmm' => $request->exists('afrmm'),
+                'credenciamento_radar_inicial' => $request->credenciamento_radar_inicial != null ? Carbon::parse($request->credenciamento_radar_inicial) : null,
+                'credenciamento_radar_final' => $request->credenciamento_radar_final != null ? Carbon::parse($request->credenciamento_radar_final) : null,
+                'marinha_mercante_inicial' => $request->marinha_mercante_inicial != null ? Carbon::parse($request->marinha_mercante_inicial) : null,
+                'marinha_mercante_final' => $request->marinha_mercante_final != null ? Carbon::parse($request->marinha_mercante_final) : null,
+                'afrmm_bb_inicial' => $request->afrmm_bb_inicial != null ? Carbon::parse($request->afrmm_bb_inicial) : null,
+                'afrmm_bb_final' => $request->afrmm_bb_final != null ? Carbon::parse($request->afrmm_bb_final) : null,
                 'itau_di' => $request->exists('itau_di'),
                 'modalidade_radar' => $request->exists('modalidade_radar') ? $request->modalidade_radar : null,
                 'beneficio_fiscal' => $request->beneficio_fiscal,
                 'observacoes' => $request->observacoes,
+                'debito_impostos' => $request->debito_impostos_nix
             ];
             $cliente->update($clientData);
 
-            return redirect(to: route('cliente.edit', $id))->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
+            if($request->bancos && count($request->bancos) > 0){
+                foreach ($request->bancos as $row => $banco) {
+                    if ($request->debito_impostos_nix == 'nix') {
+                        $bancoNix = BancoNix::find($banco);
+                        BancoCliente::where('cliente_id',operator: $id)->where('banco_nix',false)->delete();
+                            BancoCliente::updateOrCreate(
+                            [
+                                'numero_banco' => $bancoNix->numero_banco,
+                                'cliente_id' => $id,
+                                'banco_nix' => true,
+                            ],
+                            [
+                                'nome' => $bancoNix->nome,
+                                'agencia' => $bancoNix->agencia,
+                                'conta_corrente' => $bancoNix->conta_corrente,
+                                ]
+                            );
+                    } else {
+                        BancoCliente::where('cliente_id',operator: $id)->where('banco_nix',true)->delete();
+                        BancoCliente::updateOrCreate(
+                            [
+                                'numero_banco' => $request->numero_bancos[$row] ?? null,
+                                'cliente_id' => $id,
+                                'banco_nix' => false
+                            ],
+                            [
+                                'nome' => $banco, 
+                                'agencia' => $request->agencias[$row] ?? null,
+                                'conta_corrente' => $request->conta_correntes[$row] ?? null,
+                            ]
+                        );
+                    }
+                }
+            }
+            DB::commit();
+
+            return redirect( route('cliente.edit', $id))->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
         } catch (\Exception $e) {
-            return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
+            DB::rollBack();
+            return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cadastro siscomex!']]);
         }
     }
+
+    public function destroyBancoCliente($id){
+        $bancoCliente = BancoCliente::find($id);
+        $clienteId = $bancoCliente->cliente_id;
+        try{
+            $bancoCliente->delete();
+            return redirect( route('cliente.edit', $clienteId))->with('messages', ['success' => ['Banco excluido com sucesso!']]);
+        }catch(\Exception $e){
+            dd($e);
+            return redirect(route('cliente.edit', $clienteId))->with('messages', ['error' => ['Não foi possível excluir o banco do cliente!']]);
+        }
+    }
+
 }

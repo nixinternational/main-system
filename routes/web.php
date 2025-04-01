@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BancoNixController;
 use App\Http\Controllers\GrupoController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\PermissaoController;
@@ -36,11 +37,7 @@ Route::get('/', function () {
     if($user == null){
         return redirect('/login');
     }
-
-    
     return redirect('/home');
-    
-
 
 });
 
@@ -55,46 +52,13 @@ Route::middleware('auth')->group(function () {
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
-    Route::get('/clientsByName', [ClienteController::class, 'clientsByName'])->name('cliente.clientes')->middleware('permission:admin|root');
-    Route::get('/motoristaByName', [MotoristaController::class, 'motoristaByName'])->name('motorista.motorista')->middleware('permission:admin|root');
-
-    Route::post('/relatorioMotorista', [MotoristaController::class, 'relatorioMotorista'])->name('motorista.relatorio')->middleware('permission:admin|root');
-    Route::get('/motorista-relatorio', [MotoristaController::class, 'relatorioMotoristaIndex'])->name('motorista.relatorio.index')->middleware('permission:admin|root');
-
-    Route::post('/relatorioCliente', [ClienteController::class, 'relatorioCliente'])->name('cliente.relatorio')->middleware('permission:admin|root');
-    Route::get('/cliente-relatorio', [ClienteController::class, 'relatorioClienteIndex'])->name('cliente.relatorio.index')->middleware('permission:admin|root');
-
-    Route::post('/relatorioProduto', [ProdutoController::class, 'relatorioProduto'])->name('produto.relatorio')->middleware('permission:admin|root');;
-    Route::get('/produto-relatorio', [ProdutoController::class, 'relatorioProdutoIndex'])->name('produto.relatorio.index')->middleware('permission:admin|root');
-
-    Route::get('/relatorioProducao', [ProdutoController::class, 'relatorioProducaoIndex'])->name('producao.relatorio')->middleware('permission:admin|root');
-    Route::post('/processRelatorioProducao', [ProdutoController::class, 'processRelatorioProducao'])->name('producao.relatorio.processar')->middleware('permission:admin|root');
-
-    Route::post('/pedidosDelete', [PedidoController::class, 'pedidosDelete'])->name('pedidos.multipleDelete');
-
-    Route::delete('/removeProdutoPedido/{pedido_produto_id}', [PedidoController::class, 'removeProdutoPedido'])->name('pedidos.removeProdutoPedido');
-
-    Route::get('/pedidoAtualiza', [PedidoController::class, 'baixaPedido'])->name('pedido.atualiza')->middleware('permission:admin|root|motorista');;
-    Route::get('/getPedidoBaixa/{pedido_id}', [PedidoController::class, 'getPedidoBaixa'])->name('pedido.getBaixa')->middleware('permission:admin|root|motorista');
-    Route::post('/atualizaPedido/{pedido_id}', [PedidoController::class, 'atualizaPedido'])->name('pedido.troca')->middleware('permission:admin|root|motorista');
-    Route::get('/getPedidosByYear', [HomeController::class, 'getPedidosByYear']);
-
-    Route::resource('categoria', CategoriaController::class)->middleware('permission:admin|root');
     Route::resource('grupo', GrupoController::class)->middleware('permission:admin|root');;
     Route::resource('permissao', PermissaoController::class)->middleware('permission:admin|root');;
     Route::resource('user', UserController::class)->middleware('permission:admin|root');;
-    Route::resource('produto', ProdutoController::class)->middleware('permission:admin|root');
-    Route::resource('lancamento', LancamentoController::class)->middleware('permission:admin|root');;
-    Route::resource('producao', ProducaoController::class)->middleware('permission:admin|root');;
-    Route::resource('producaoBaixa', ProducaoBaixaController::class)->middleware('permission:admin|root|producao');;
+    Route::resource('banco-nix', BancoNixController::class)->middleware('permission:admin|root|producao');;
 
 
     Route::resource('cliente', ClienteController::class)->middleware('permission:admin|root');;
-    Route::resource('pedido', PedidoController::class)->middleware('permission:admin|root');;
-    Route::resource('motorista', MotoristaController::class)->middleware('permission:admin|root');;
-
-    Route::post('/motorista-entrega', [MotoristaController::class, 'motoristaEntrega'])->name('motorista.entrega')->middleware('permission:admin|root|motorista');
-    Route::get('/motorista-entrega', [MotoristaController::class, 'motoristaEntregaIndex'])->name('motorista.entrega.index')->middleware('permission:admin|root|motorista');
 
 
     Route::post('atualizar', [PedidoController::class, 'atualizarPedidos'])->name('pedido.atualizar');
@@ -102,8 +66,9 @@ Route::middleware('auth')->group(function () {
     Route::post('update-client-responsaveis/{id}', action: [ClienteController::class, 'updateClientResponsaveis'])->name('cliente.update.responsavel');
     Route::post('update-client-aduanas/{id}', action: [ClienteController::class, 'updateClientAduanas'])->name('cliente.update.aduanas');
     Route::post('update-client-especificidades/{id}', action: [ClienteController::class, 'updateClientEspecificidades'])->name('cliente.update.especificidades');
-
-
+    
+    
+    Route::delete('destroy-bank/{id}', action: [ClienteController::class, 'destroyBancoCliente'])->name('banco.cliente.destroy');
 
 
     Route::group(['prefix' => 'ativar'], function () {

@@ -57,6 +57,14 @@
               </p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="{{ route('banco-nix.index') }}" class="nav-link">
+              <i class="nav-icon fa-solid fa-university"></i>
+              <p>
+                Bancos
+              </p>
+            </a>
+          </li>
         </ul>
       </li>
     @endhasGroup

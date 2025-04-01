@@ -14,9 +14,7 @@ class Cliente extends Model
     protected $guarded = [];
 
 
-    public function emails(){
-        return $this->hasMany(ClienteEmail::class);
-    }
+
     public function responsaveisProcesso(){
         return $this->hasMany(ClienteResponsavelProcesso::class);
     }
