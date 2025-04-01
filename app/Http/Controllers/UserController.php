@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Grupo;
-use App\Models\Motorista;
-use App\Models\MotoristaUser;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Hash;
