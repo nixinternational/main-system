@@ -457,6 +457,7 @@ class ClienteController extends Controller
 
             return redirect( route('cliente.edit', $id))->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cadastro siscomex!']]);
         }
