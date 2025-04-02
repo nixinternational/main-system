@@ -455,7 +455,7 @@ class ClienteController extends Controller
             }
             DB::commit();
 
-            return redirect( route('cliente.edit', $id))->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
+            return redirect( route('cliente.edit', $id).'?tab=custom-tabs-two-home-tab')->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
         } catch (\Exception $e) {
             dd($e);
             DB::rollBack();

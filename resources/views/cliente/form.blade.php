@@ -19,11 +19,11 @@
                                 aria-selected="false">Informações Cadastrais</a>
                         </li>
                         @if (isset($cliente))
-                        <li class="nav-item">
-                            <a class="nav-link" id="custom-tabs-two-settings-info" data-toggle="pill"
-                                href="#custom-tabs-two-info" role="tab" aria-controls="custom-tabs-two-info"
-                                aria-selected="false">Cadastro Siscomex</a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="custom-tabs-two-settings-info" data-toggle="pill"
+                                    href="#custom-tabs-two-info" role="tab" aria-controls="custom-tabs-two-info"
+                                    aria-selected="false">Cadastro Siscomex</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link " id="custom-tabs-two-messages-tab" data-toggle="pill"
                                     href="#custom-tabs-two-messages" role="tab" aria-controls="custom-tabs-two-messages"
@@ -34,7 +34,6 @@
                                     href="#custom-tabs-two-settings" role="tab" aria-controls="custom-tabs-two-settings"
                                     aria-selected="false">Aduanas</a>
                             </li>
-                           
                         @endif
                     </ul>
                 </div>
@@ -74,12 +73,11 @@
                                     </div>
                                     <div class="col-2">
                                         <label for="validationTooltip03">Data da procuração</label>
-                                        <input value="{{ isset($cliente) ? $cliente->data_procuracao : '' }}"
-                                            type="date" class="form-control" id="data_procuracao"
-                                            name="data_procuracao">
+                                        <input value="{{ isset($cliente) ? $cliente->data_procuracao : '' }}" type="date"
+                                            class="form-control" id="data_procuracao" name="data_procuracao">
 
                                     </div>
-                                    <div class="col-2">
+                                    <div class="col-4">
                                         <label for="validationTooltip03">Data de vencimento procuração</label>
                                         <input value="{{ isset($cliente) ? $cliente->data_vencimento_procuracao : '' }}"
                                             type="date" class="form-control" id="data_vencimento_procuracao"
@@ -220,7 +218,7 @@
                             </form>
                         </div>
                         @if (isset($cliente))
-                   
+
                             <div class="tab-pane fade " id="custom-tabs-two-messages" role="tabpanel"
                                 aria-labelledby="custom-tabs-two-messages-tab">
                                 <div class="row">
@@ -262,7 +260,7 @@
                                                                         id="departamento-{{ $loop->index }}"
                                                                         name="departamentos[]">
                                                                 </td>
-                                                                
+
 
 
                                                                 <td>
@@ -276,8 +274,7 @@
                                                                     <input type="text" class="telefone form-control "
                                                                         data-id="{{ $loop->index }}"
                                                                         value="{{ $responsavel->email }}"
-                                                                        id="email-{{ $loop->index }}"
-                                                                        name="emails[]">
+                                                                        id="email-{{ $loop->index }}" name="emails[]">
                                                                 </td>
                                                             </tr>
                                                         @endforeach
@@ -320,7 +317,8 @@
                                                         @foreach ($cliente->aduanas as $aduana)
                                                             <tr data-id="{{ $loop->index }}">
                                                                 <td>
-                                                                    <select class="form-control" id="modalidade" name="modalidades[]">
+                                                                    <select class="form-control" id="modalidade"
+                                                                        name="modalidades[]">
                                                                         <option value=""
                                                                             {{ old('modalidade', $aduana->modalidade) == '' ? 'selected' : '' }}>
                                                                             Selecione...</option>
@@ -344,7 +342,8 @@
                                                                 <td><input type="text" class="email form-control "
                                                                         data-id="{{ $loop->index }}"
                                                                         value="{{ $aduana->urf_despacho }}"
-                                                                        id="aduana-{{ $loop->index }}" name="urf_despacho[]">
+                                                                        id="aduana-{{ $loop->index }}"
+                                                                        name="urf_despacho[]">
                                                                 </td>
                                                             </tr>
                                                         @endforeach
@@ -364,33 +363,37 @@
                             </div>
                             <div class="tab-pane fade" id="custom-tabs-two-info" role="tabpanel"
                                 aria-labelledby="custom-tabs-two-settings-info">
-                                <form enctype="multipart/form-data" action="{{route('cliente.update.especificidades',$cliente->id)}}"  method="POST">
+                                <form enctype="multipart/form-data"
+                                    action="{{ route('cliente.update.especificidades', $cliente->id) }}" method="POST">
                                     @csrf
                                     <div class="row">
                                         <div class="col-3">
                                             <div class="form-group">
-                                                <label for="credenciamento_radar">Credenciamento radar inicial</label>
-                                                <input type="date" class="form-control" id="credenciamento_radar" name="credenciamento_radar_inicial"
+                                                <label for="credenciamento_radar">Credenciamento Radar Inicial</label>
+                                                <input type="date" class="form-control" id="credenciamento_radar"
+                                                    name="credenciamento_radar_inicial"
                                                     value="{{ old('credenciamento_radar_inicial', $cliente->credenciamento_radar_inicial) }}">
                                             </div>
                                         </div>
-                                        
+
                                         <div class="col-3">
                                             <div class="form-group">
                                                 <label for="marinha_mercante">Marinha Mercante inicial</label>
-                                                <input type="date" class="form-control" id="marinha_mercante" name="marinha_mercante_inicial"
+                                                <input type="date" class="form-control" id="marinha_mercante"
+                                                    name="marinha_mercante_inicial"
                                                     value="{{ old('marinha_mercante_inicial', $cliente->marinha_mercante_inicial) }}">
                                             </div>
                                         </div>
-                                        
+
                                         <div class="col-3">
                                             <div class="form-group">
-                                                <label for="afrmm_bb">AFRMM Vinculação BB inicial</label>
-                                                <input type="date" class="form-control" id="afrmm_bb" name="afrmm_bb_inicial"
+                                                <label for="afrmm_bb">AFRMM Vinculação BB Inicial</label>
+                                                <input type="date" class="form-control" id="afrmm_bb"
+                                                    name="afrmm_bb_inicial"
                                                     value="{{ old('afrmm_bb_inicial', $cliente->afrmm_bb_inicial) }}">
                                             </div>
                                         </div>
-                                        
+
                                         <div class="col-3">
                                             <div class="form-group">
                                                 <div class="custom-control custom-checkbox">
@@ -401,52 +404,56 @@
                                                 </div>
                                             </div>
                                         </div>
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
                                     </div>
                                     <div class="row">
                                         <div class="col-3">
                                             <div class="form-group">
-                                                <label for="credenciamento_radar">Credenciamento radar final</label>
-                                                <input type="date" class="form-control" id="credenciamento_radar_final" name="credenciamento_radar_final"
+                                                <label for="credenciamento_radar">Credenciamento Radar Final</label>
+                                                <input type="date" class="form-control"
+                                                    id="credenciamento_radar_final" name="credenciamento_radar_final"
                                                     value="{{ old('credenciamento_radar_final', $cliente->credenciamento_radar_final) }}">
                                             </div>
                                         </div>
-                                        
+
                                         <div class="col-3">
                                             <div class="form-group">
-                                                <label for="marinha_mercante">Marinha Mercante final</label>
-                                                <input type="date" class="form-control" id="marinha_mercante_final" name="marinha_mercante_final"
+                                                <label for="marinha_mercante">Marinha Mercante Final</label>
+                                                <input type="date" class="form-control" id="marinha_mercante_final"
+                                                    name="marinha_mercante_final"
                                                     value="{{ old('marinha_mercante_final', $cliente->marinha_mercante_final) }}">
                                             </div>
                                         </div>
-                                        
+
                                         <div class="col-3">
                                             <div class="form-group">
-                                                <label for="afrmm_bb">AFRMM Vinculação BB final</label>
-                                                <input type="date" class="form-control" id="afrmm_bb_final" name="afrmm_bb_final"
+                                                <label for="afrmm_bb">AFRMM Vinculação BB Final</label>
+                                                <input type="date" class="form-control" id="afrmm_bb_final"
+                                                    name="afrmm_bb_final"
                                                     value="{{ old('afrmm_bb_final', $cliente->afrmm_bb_final) }}">
                                             </div>
                                         </div>
-                     
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
                                     </div>
-    
+
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="form-group">
                                                 <label class="font-weight-bold" for="modalidade_radar">Modalidade
                                                     Radar</label>
-                                                <select class="form-control" id="modalidade_radar" name="modalidade_radar">
+                                                <select class="form-control" id="modalidade_radar"
+                                                    name="modalidade_radar">
                                                     <option value=""
                                                         {{ old('modalidade_radar', $cliente->modalidade_radar) == '' ? 'selected' : '' }}>
                                                         Selecione...</option>
@@ -461,8 +468,8 @@
                                                         Ilimitado</option>
                                                 </select>
                                             </div>
-    
-    
+
+
                                         </div>
                                         <div class="col-6">
                                             <div class="form-group">
@@ -474,13 +481,13 @@
                                             </div>
                                         </div>
                                     </div>
-    
+
                                     <div class="form-group">
                                         <label for="beneficio_fiscal" class="font-weight-bold">Observações</label>
                                         <textarea rows="3" type="text" class="form-control" id="observacoes" name="observacoes">{{ old('observacoes', $cliente->observacoes ?? '') }}
                                         </textarea>
                                     </div>
-                                    
+
                                     <div class="form-group">
                                         <label class="font-weight-bold" for="debito_impostos_nix">Débito impostos</label>
                                         <select class="form-control" id="debito_impostos_nix" name="debito_impostos_nix">
@@ -488,9 +495,9 @@
                                                 {{ old('debito_impostos_nix', $cliente->debito_impostos) == 'nix' ? 'selected' : '' }}>
                                                 Débito na conta NIX</option>
                                             <option value="cliente"
-                                                {{ old('debito_impostos_nix', $cliente->debito_impostos) == 'cliente'  ? 'selected' : '' }}>
+                                                {{ old('debito_impostos_nix', $cliente->debito_impostos) == 'cliente' ? 'selected' : '' }}>
                                                 Débito na conta do cliente</option>
-                                     
+
                                         </select>
                                     </div>
 
@@ -512,47 +519,55 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach ($bancosCliente as  $banco)
-                                                    <tr>
-                                                        <td>
-                                                            
-                                                            
-                                                            
-                                                            <input value="{{$banco->nome}}" type="text" {{$banco->banco_nix ? 'disabled':''}} class=" form-control" 
-                                                            data-id="{{ $loop->index }}" id="banco-{{ $loop->index }}"  
-                                                            name="{{$banco->banco_nix ? '':'bancos[]'}}">
-                                                        </td>
-                                                        <td>
-                                                            <input value="{{$banco->agencia}}" {{$banco->banco_nix ? 'disabled':''}}  type="text" class=" form-control" 
-                                                            data-id="{{ $loop->index }}" id="banco-{{ $loop->index }}" 
-                                                            name="{{$banco->banco_nix ? '':'agencias[]'}}">
-                                                        </td>
-                                                        <td>
-                                                            <input value="{{$banco->conta_corrente}}" {{$banco->banco_nix ? 'disabled':''}}  type="text" class=" form-control" 
-                                                            data-id="{{ $loop->index }}" id="banco-{{ $loop->index }}" 
-                                                            name="{{$banco->banco_nix ? '':'conta_correntes[]'}}">
-                                                        </td>
-                                                        <td>
-                                                            <input value="{{$banco->numero_banco}}" {{$banco->banco_nix ? 'disabled':''}}  type="text" class=" form-control" 
-                                                            data-id="{{ $loop->index }}" id="banco-{{ $loop->index }}" 
-                                                            name="{{$banco->banco_nix ? '':'numero_bancos[]'}}">
-                                                        </td>
-                                                        <td>
-                                                            {{-- <form action="{{route('banco.cliente.destroy',$banco->id)}}" method="POST">
+                                                    @foreach ($bancosCliente as $banco)
+                                                        <tr>
+                                                            <td>
+
+
+
+                                                                <input value="{{ $banco->nome }}" type="text"
+                                                                    {{ $banco->banco_nix ? 'disabled' : '' }}
+                                                                    class=" form-control" data-id="{{ $loop->index }}"
+                                                                    id="banco-{{ $loop->index }}"
+                                                                    name="{{ $banco->banco_nix ? '' : 'bancos[]' }}">
+                                                            </td>
+                                                            <td>
+                                                                <input value="{{ $banco->agencia }}"
+                                                                    {{ $banco->banco_nix ? 'disabled' : '' }} type="text"
+                                                                    class=" form-control" data-id="{{ $loop->index }}"
+                                                                    id="banco-{{ $loop->index }}"
+                                                                    name="{{ $banco->banco_nix ? '' : 'agencias[]' }}">
+                                                            </td>
+                                                            <td>
+                                                                <input value="{{ $banco->conta_corrente }}"
+                                                                    {{ $banco->banco_nix ? 'disabled' : '' }} type="text"
+                                                                    class=" form-control" data-id="{{ $loop->index }}"
+                                                                    id="banco-{{ $loop->index }}"
+                                                                    name="{{ $banco->banco_nix ? '' : 'conta_correntes[]' }}">
+                                                            </td>
+                                                            <td>
+                                                                <input value="{{ $banco->numero_banco }}"
+                                                                    {{ $banco->banco_nix ? 'disabled' : '' }} type="text"
+                                                                    class=" form-control" data-id="{{ $loop->index }}"
+                                                                    id="banco-{{ $loop->index }}"
+                                                                    name="{{ $banco->banco_nix ? '' : 'numero_bancos[]' }}">
+                                                            </td>
+                                                            <td>
+                                                                {{-- <form action="{{route('banco.cliente.destroy',$banco->id)}}" method="POST">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <button class="btn btn-danger"><i class="fa fa-trash"></i></button>
                                                             </form> --}}
-                                                        </td>
-                                                    </tr>
+                                                            </td>
+                                                        </tr>
                                                     @endforeach
                                                 </tbody>
-        
+
                                             </table>
                                         </div>
                                     </div>
-                                   
-                                    
+
+
                                     <button type="submit" class="btn btn-primary mt-3">Salvar</button>
 
                                 </form>
@@ -565,23 +580,32 @@
         </div>
 
     </div>
-    <input type="hidden" id="bancoOptions" value="{{json_encode($bancosNix)}}"  alt="">
+    <input type="hidden" id="bancoOptions" value="{{ json_encode($bancosNix) }}" alt="">
     <script>
         $(document).ready(function($) {
             $('input[name=cnpj]').mask('99.999.999/9999-99')
             $('input[name=cpf_responsavel_legal]').mask('999.999.999-99')
+            var activeTab = localStorage.getItem('activeTab');
+            if (activeTab) {
+                $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
+            }
+           
         })
+        $('.nav-link').on('click', function(e) {
+                var currentTab = $(e.target).attr('href');
+                localStorage.setItem('activeTab', currentTab);
+            });
         $('#debito_impostos_nix').on('change', async function() {
-            let value = this.value         
+            let value = this.value
             $('#bancoCliente tbody tr').remove()
-               if(value == 'nix'){
+            if (value == 'nix') {
                 $('#colBancoNix').removeClass('d-none')
                 $('#colNomeBancoNix').addClass('d-none')
-            }else{                
+            } else {
                 $('#colNomeBancoNix').removeClass('d-none')
                 $('#colBancoNix').addClass('d-none')
             }
-            
+
         })
         $('#cep').on('change', async function() {
             let cep = this.value.replace('-', '')
@@ -602,13 +626,14 @@
         $('#addBank').on('click', async function() {
             let id = $('#bancoCliente tbody tr').length;
             let tr = '';
-            if($('#debito_impostos_nix').val() == 'nix'){
+            if ($('#debito_impostos_nix').val() == 'nix') {
                 const bancosNix = JSON.parse($('#bancoOptions').val())
-                let select = `<select name="bancos[]" data-id="${id}" class="bancoNix form-control" id="banco-${id}">`
-                    select += `<option value="">Selecione uma opção</option>`
-                for(let banco of bancosNix){
+                let select =
+                    `<select name="bancos[]" data-id="${id}" class="bancoNix form-control" id="banco-${id}">`
+                select += `<option value="">Selecione uma opção</option>`
+                for (let banco of bancosNix) {
                     select += `<option value="${banco.id}">${banco.nome}</option>`
-                }       
+                }
                 select += "</select>"
 
                 tr = `
@@ -622,7 +647,7 @@
                     </tr>
                 `
 
-            }else{
+            } else {
                 tr = `
                     <tr data-id="${id}">
                         <td>
@@ -652,12 +677,12 @@
         })
 
 
-        $(document).on('change','.bancoNix',function(){
+        $(document).on('change', '.bancoNix', function() {
             let idRow = this.dataset.id;
             let idBanco = this.value;
             const bancosNix = JSON.parse($('#bancoOptions').val())
             const banco = bancosNix.find((el) => el.id == idBanco)
-            console.log(banco,idRow)
+            console.log(banco, idRow)
             $(`#agencia-${idRow}`).text(banco.agencia)
             $(`#conta-corrente-${idRow}`).text(banco.conta_corrente)
             $(`#numero-banco-${idRow}`).text(banco.numero_banco)
