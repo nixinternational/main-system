@@ -80,8 +80,6 @@ class ClienteController extends Controller
                 'cpf_responsavel_legal' => $request->cpf_responsavel_legal,
                 'email_responsavel_legal' => $request->email_responsavel_legal,
                 'telefone_responsavel_legal' => $request->telefone_responsavel_legal,
-                'data_vencimento_procuracao' => $request->data_vencimento_procuracao != null ? Carbon::parse($request->data_vencimento_procuracao) : null,
-                'data_procuracao' => $request->data_procuracao != null ? Carbon::parse($request->data_procuracao) : null,
             ];
             $newCliente = Cliente::create($clientData);
             return redirect(route('cliente.edit', $newCliente->id))->with('messages', ['success' => ['Cliente criado com sucesso!']]);
@@ -178,8 +176,6 @@ class ClienteController extends Controller
                 'cpf_responsavel_legal' => $request->cpf_responsavel_legal,
                 'email_responsavel_legal' => $request->email_responsavel_legal,
                 'telefone_responsavel_legal' => $request->telefone_responsavel_legal,
-                'data_vencimento_procuracao' => $request->data_vencimento_procuracao != null ? Carbon::parse($request->data_vencimento_procuracao) : null,
-                'data_procuracao' => $request->data_procuracao != null ? Carbon::parse($request->data_procuracao) : null,
             ];
             $cliente->update($clientData);
             return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Cliente atualizado com sucesso!']]);
@@ -279,51 +275,60 @@ class ClienteController extends Controller
         }
 
         $aduanasExistentes = ClienteAduana::where('cliente_id', $id)
-            ->get()
-            ->keyBy('urf_despacho');
-
-        $novasAduanas = [];
-        $aduanasParaRemover = $aduanasExistentes->keys()->toArray();
-
-        // Percorre os arrays sincronizando as chaves
-        foreach ($request->urf_despacho as $index => $urf_despacho) {
-            $modalidade = $request->modalidades[$index] ?? null;
-
-            if (empty($urf_despacho)) {
-                // Remove a aduana caso o URF esteja vazio
-                continue;
-            }
-
-            if (isset($aduanasExistentes[$urf_despacho])) {
-                // Atualiza se a aduana já existir
-                $aduanaExistente = $aduanasExistentes[$urf_despacho];
-                $aduanaExistente->update([
-                    'modalidade' => $modalidade,
-                ]);
-                $aduanasParaRemover = array_diff($aduanasParaRemover, [$urf_despacho]);
-            } else {
-                // Adiciona nova aduana se não existir
-                $novasAduanas[] = [
-                    'cliente_id' => $id,
-                    'urf_despacho' => $urf_despacho,
-                    'modalidade' => $modalidade,
-                ];
-            }
+        ->get()
+        ->map(function ($aduana) {
+            return [
+                'urf_despacho' => $aduana->urf_despacho,
+                'modalidade' => $aduana->modalidade,
+            ];
+        });
+    
+    $novasAduanas = [];
+    $aduanasParaRemover = $aduanasExistentes->toArray();
+    
+    foreach ($request->urf_despacho as $index => $urf_despacho) {
+        $modalidade = $request->modalidades[$index] ?? null;
+    
+        if (empty($urf_despacho)) {
+            continue;
         }
-
-        // Insere novas aduanas
-        if (!empty($novasAduanas)) {
-            ClienteAduana::insert($novasAduanas);
+    
+        $novaEntrada = [
+            'cliente_id' => $id,
+            'urf_despacho' => $urf_despacho,
+            'modalidade' => $modalidade,
+        ];
+    
+        $existe = $aduanasExistentes->contains(function ($aduana) use ($urf_despacho, $modalidade) {
+            return $aduana['urf_despacho'] === $urf_despacho && $aduana['modalidade'] === $modalidade;
+        });
+    
+        if (!$existe) {
+            $novasAduanas[] = $novaEntrada;
         }
-
-        // Remove aduanas que não estão mais na requisição ou que tiveram o URF em branco
+    
+        // Remove dos que podem ser excluídos
+        $aduanasParaRemover = array_filter($aduanasParaRemover, function ($aduana) use ($urf_despacho, $modalidade) {
+            return !($aduana['urf_despacho'] === $urf_despacho && $aduana['modalidade'] === $modalidade);
+        });
+    }
+    
+    // Insere novas aduanas
+    if (!empty($novasAduanas)) {
+        ClienteAduana::insert($novasAduanas);
+    }
+    
+    // Remove aduanas que não estão mais presentes
+    foreach ($aduanasParaRemover as $aduana) {
         ClienteAduana::where('cliente_id', $id)
-            ->whereIn('urf_despacho', $aduanasParaRemover)
+            ->where('urf_despacho', $aduana['urf_despacho'])
+            ->where('modalidade', $aduana['modalidade'])
             ->delete();
-
-        return redirect(route('cliente.edit', $id))
-            ->with('messages', ['success' => ['Aduanas atualizadas com sucesso!']]);
-
+    }
+    
+    return redirect(route('cliente.edit', $id))
+        ->with('messages', ['success' => ['Aduanas atualizadas com sucesso!']]);
+    
 
     }
 
@@ -415,7 +420,9 @@ class ClienteController extends Controller
                 'modalidade_radar' => $request->exists('modalidade_radar') ? $request->modalidade_radar : null,
                 'beneficio_fiscal' => $request->beneficio_fiscal,
                 'observacoes' => $request->observacoes,
-                'debito_impostos' => $request->debito_impostos_nix
+                'debito_impostos' => $request->debito_impostos_nix,
+                'data_vencimento_procuracao' => $request->data_vencimento_procuracao != null ? Carbon::parse($request->data_vencimento_procuracao) : null,
+                'data_procuracao' => $request->data_procuracao != null ? Carbon::parse($request->data_procuracao) : null,
             ];
             $cliente->update($clientData);
 

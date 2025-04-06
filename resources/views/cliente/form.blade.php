@@ -71,19 +71,7 @@
                                             @enderror
                                         </div>
                                     </div>
-                                    <div class="col-2">
-                                        <label for="validationTooltip03">Data da procuração</label>
-                                        <input value="{{ isset($cliente) ? $cliente->data_procuracao : '' }}" type="date"
-                                            class="form-control" id="data_procuracao" name="data_procuracao">
-
-                                    </div>
-                                    <div class="col-4">
-                                        <label for="validationTooltip03">Data de vencimento procuração</label>
-                                        <input value="{{ isset($cliente) ? $cliente->data_vencimento_procuracao : '' }}"
-                                            type="date" class="form-control" id="data_vencimento_procuracao"
-                                            name="data_vencimento_procuracao">
-
-                                    </div>
+                          
                                 </div>
                                 <div style="height: 0.1px; width: 100%; border: 0.1px solid #cecece;" class="mb-3"></div>
                                 <div class="row">
@@ -393,18 +381,14 @@
                                                     value="{{ old('afrmm_bb_inicial', $cliente->afrmm_bb_inicial) }}">
                                             </div>
                                         </div>
-
                                         <div class="col-3">
-                                            <div class="form-group">
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" id="itau_di"
-                                                        name="itau_di" value="1"
-                                                        {{ old('itau_di', $cliente->itau_di) ? 'checked' : '' }}>
-                                                    <label class="custom-control-label" for="itau_di">Itau DI</label>
-                                                </div>
-                                            </div>
+                                            <label for="validationTooltip03">Data da Procuração</label>
+                                            <input value="{{ isset($cliente) ? $cliente->data_procuracao : '' }}" type="date"
+                                                class="form-control" id="data_procuracao" name="data_procuracao">
+    
                                         </div>
-
+                                    
+                                 
 
 
 
@@ -438,7 +422,13 @@
                                                     value="{{ old('afrmm_bb_final', $cliente->afrmm_bb_final) }}">
                                             </div>
                                         </div>
-
+                                        <div class="col-3">
+                                            <label for="validationTooltip03">Data de Vencimento da Procuração</label>
+                                            <input value="{{ isset($cliente) ? $cliente->data_vencimento_procuracao : '' }}"
+                                                type="date" class="form-control" id="data_vencimento_procuracao"
+                                                name="data_vencimento_procuracao">
+    
+                                        </div>
 
 
 
@@ -446,7 +436,19 @@
 
 
                                     </div>
+<div class="row">
+    <div class="col-12">
+        <div class="form-group">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="itau_di"
+                    name="itau_di" value="1"
+                    {{ old('itau_di', $cliente->itau_di) ? 'checked' : '' }}>
+                <label class="custom-control-label" for="itau_di">Itau DI</label>
+            </div>
+        </div>
+    </div>
 
+</div>
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="form-group">
@@ -608,10 +610,10 @@
 
         })
         $('#cep').on('change', async function() {
-            let cep = this.value.replace('-', '')
+            let cep = this.value.replace(/\D/g, '');
             if (cep.length == 8) {
 
-                await fetch(`https://viacep.com.br/ws/${this.value}/json/`, ).then(async (response) => {
+                await fetch(`https://viacep.com.br/ws/${cep}/json/`, ).then(async (response) => {
                     const resultado = await response.json();
 
                     $('#logradouro').val(resultado.logradouro)
