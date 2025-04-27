@@ -5,6 +5,8 @@ use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\GrupoController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\PermissaoController;
+use App\Http\Controllers\TipoDocumentoController;
+use App\Models\TipoDocumento;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
@@ -60,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('catalogo', CatalogoController::class)->middleware('permission:admin|root|producao');;
     Route::resource('cliente', ClienteController::class)->middleware('permission:admin|root');;
     Route::resource('produto', ProdutoController::class)->middleware('permission:admin|root');;
+    Route::resource('tipo-documento', TipoDocumentoController::class)->middleware('permission:admin|root');;
 
 
 
@@ -69,13 +72,15 @@ Route::middleware('auth')->group(function () {
     Route::post('update-client-responsaveis/{id}', action: [ClienteController::class, 'updateClientResponsaveis'])->name('cliente.update.responsavel');
     Route::post('update-client-aduanas/{id}', action: [ClienteController::class, 'updateClientAduanas'])->name('cliente.update.aduanas');
     Route::post('update-client-especificidades/{id}', action: [ClienteController::class, 'updateClientEspecificidades'])->name('cliente.update.especificidades');
+    Route::post('update-client-documentos/{id}', action: [ClienteController::class, 'updateClientDocument'])->name('cliente.update.documents');
     
     
     Route::delete('destroy-bank/{id}', action: [ClienteController::class, 'destroyBancoCliente'])->name('banco.cliente.destroy');
+    Route::delete('destroy-document/{id}', action: [ClienteController::class, 'deleteDocument'])->name('documento.cliente.destroy');
 
 
     Route::group(['prefix' => 'ativar'], function () {
-        Route::put('/cliente/{categoria_id}', [ClienteController::class, 'ativar'])->name('cliente.ativar');
+        Route::put('/documento/{documento_id}', [TipoDocumentoController::class, 'ativar'])->name('tipo-documento.ativar');
         Route::put('/marca/{marca_id}', [MarcaController::class, 'ativar'])->name('marca.ativar');
         Route::put('/produto/{produto_id}', [ProdutoController::class, 'ativar'])->name('produto.ativar');
         Route::put('/fornecedor/{fornecedor_id}', [FornecedorController::class, 'ativar'])->name('fornecedor.ativar');

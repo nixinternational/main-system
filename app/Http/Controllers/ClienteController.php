@@ -8,9 +8,12 @@ use App\Models\BancoCliente;
 use App\Models\BancoNix;
 use App\Models\Cliente;
 use App\Models\ClienteAduana;
+use App\Models\ClienteDocumento;
 use App\Models\ClienteEmail;
 use App\Models\ClienteResponsavelProcesso;
 use App\Models\Pedido;
+use App\Models\TipoDocumento;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Repositories\ClienteRepository;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -35,7 +38,8 @@ class ClienteController extends Controller
     public function create()
     {
         $bancosNix = BancoNix::all();
-        return view('cliente.form', compact('bancosNix'));
+        $tipoDocumentos = TipoDocumento::all();
+        return view('cliente.form', compact('bancosNix','tipoDocumentos'));
     }
 
     /**
@@ -107,7 +111,8 @@ class ClienteController extends Controller
             $bancosNix = BancoNix::all();
             $bancosCliente = BancoCliente::where('cliente_id',$id)->get();
             $cliente = Cliente::findOrFail($id);
-            return view('cliente.form', compact('cliente', 'bancosNix','bancosCliente'));
+            $tipoDocumentos = TipoDocumento::all();
+            return view('cliente.form', compact('cliente', 'bancosNix','bancosCliente','tipoDocumentos'));
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possícel editar a cliente!']]);
         }
@@ -479,6 +484,62 @@ class ClienteController extends Controller
         }catch(\Exception $e){
             dd($e);
             return redirect(route('cliente.edit', $clienteId))->with('messages', ['error' => ['Não foi possível excluir o banco do cliente!']]);
+        }
+    }
+
+    public function updateClientDocument(Request $request,$id){
+     
+        try{
+            foreach ($request->tipoDocumentos as $row => $tipoDocumento) {
+                $arquivo = isset($request->documentos[$row]) ? $request->documentos[$row] : null;
+                $nomeOriginal = $arquivo ? $arquivo->getClientOriginalName() : null;
+                $caminho = $nomeOriginal ? "$id/$nomeOriginal" : null;
+        
+                if ($arquivo && $arquivo->isValid()) {
+                    Storage::disk('documentos')->putFileAs('', $arquivo, $caminho);
+                    $url = Storage::disk('documentos')->url($caminho);
+                } else {
+                    $url = null;
+                    $caminho = null;
+                }
+        
+                $documentoExistente = ClienteDocumento::find($request->idDocumentos[$row] ?? null);
+        
+                if ($documentoExistente) {
+                    $documentoExistente->update([
+                        'tipo_documento_id' => $tipoDocumento,
+                        'path_file' => $caminho ?? $documentoExistente->path_file, 
+                        'url' => $url ?? $documentoExistente->url, 
+                    ]);
+                } elseif ($caminho && $url) {
+                        ClienteDocumento::create([
+                            'cliente_id' => $id,
+                            'tipo_documento_id' => $tipoDocumento,
+                            'path_file' => $caminho,
+                            'url' => $url,
+                        ]);
+                }
+                
+            }
+            return redirect( route('cliente.edit', $id))->with('messages', ['success' => ['Documento Adicionado com sucesso!']]);
+        }catch(\Exception $e){
+            dd($e);
+            return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível adicionar o documento do cliente!']]);
+        }
+    
+    }
+
+    public function deleteDocument($id){
+        
+        try{
+            $documentoExistente = ClienteDocumento::findOrFail($id);
+            $cliente_id = $documentoExistente->cliente_id;
+
+            Storage::disk('documentos')->delete($documentoExistente->path_file);
+            $documentoExistente->delete();
+            return redirect( route('cliente.edit', $cliente_id))->with('messages', ['success' => ['Documento Adicionado com sucesso!']]);
+        }catch(\Exception $e){
+            return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível adicionar o documento do cliente!']]);
         }
     }
 

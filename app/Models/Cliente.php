@@ -22,4 +22,8 @@ class Cliente extends Model
     public function aduanas(){
         return $this->hasMany(ClienteAduana::class);
     }
+
+    public function documentos(){
+        return $this->hasMany(ClienteDocumento::class);
+    }
 }

@@ -3,7 +3,54 @@
 
 
 @section('content')
+    <style>
+        /* Aumentar a altura do modal */
+        .modal-dialog.modal-xl {
+            max-width: 90%;
+            height: 80vh;
+            /* Aumenta a altura do modal */
+            margin: 30px auto;
+            /* Ajusta a margem para o modal */
+        }
 
+        .modal-content {
+            height: 100%;
+            /* Garante que o conteúdo ocupe toda a altura do modal */
+        }
+
+        .modal-body {
+            height: 100%;
+            /* Faz com que o corpo do modal ocupe toda a altura disponível */
+            overflow-y: auto;
+            /* Permite rolagem se o conteúdo for maior */
+        }
+
+        /* Ajusta o iframe */
+        #pdf-iframe {
+            width: 100%;
+            height: 80vh;
+            /* Aumenta a altura do iframe */
+            border: none;
+            /* Remove a borda do iframe */
+        }
+
+        /* Ajusta a imagem */
+        #imagePreview {
+            width: 100%;
+            max-height: 80vh;
+            /* Limita a altura da imagem */
+            object-fit: contain;
+            /* Faz com que a imagem se ajuste ao contêiner sem distorção */
+            display: none;
+            /* Inicialmente escondido */
+        }
+
+        /* Ajusta a visibilidade do texto de descrição */
+        #doc-text {
+            display: none;
+            /* Inicialmente escondido */
+        }
+    </style>
     <div class="row">
         <div class="col-12 shadow-lg px-0">
             <div class="card w-100 card-primary card-tabs">
@@ -33,6 +80,11 @@
                                 <a class="nav-link" id="custom-tabs-two-settings-tab" data-toggle="pill"
                                     href="#custom-tabs-two-settings" role="tab" aria-controls="custom-tabs-two-settings"
                                     aria-selected="false">Aduanas</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="custom-tabs-three-settings-tab" data-toggle="pill"
+                                    href="#custom-tabs-three-settings" role="tab"
+                                    aria-controls="custom-tabs-three-settings" aria-selected="false">Documentos</a>
                             </li>
                         @endif
                     </ul>
@@ -71,7 +123,7 @@
                                             @enderror
                                         </div>
                                     </div>
-                          
+
                                 </div>
                                 <div style="height: 0.1px; width: 100%; border: 0.1px solid #cecece;" class="mb-3"></div>
                                 <div class="row">
@@ -383,12 +435,13 @@
                                         </div>
                                         <div class="col-3">
                                             <label for="validationTooltip03">Data da Procuração</label>
-                                            <input value="{{ isset($cliente) ? $cliente->data_procuracao : '' }}" type="date"
-                                                class="form-control" id="data_procuracao" name="data_procuracao">
-    
+                                            <input value="{{ isset($cliente) ? $cliente->data_procuracao : '' }}"
+                                                type="date" class="form-control" id="data_procuracao"
+                                                name="data_procuracao">
+
                                         </div>
-                                    
-                                 
+
+
 
 
 
@@ -424,10 +477,11 @@
                                         </div>
                                         <div class="col-3">
                                             <label for="validationTooltip03">Data de Vencimento da Procuração</label>
-                                            <input value="{{ isset($cliente) ? $cliente->data_vencimento_procuracao : '' }}"
+                                            <input
+                                                value="{{ isset($cliente) ? $cliente->data_vencimento_procuracao : '' }}"
                                                 type="date" class="form-control" id="data_vencimento_procuracao"
                                                 name="data_vencimento_procuracao">
-    
+
                                         </div>
 
 
@@ -436,19 +490,19 @@
 
 
                                     </div>
-<div class="row">
-    <div class="col-12">
-        <div class="form-group">
-            <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="itau_di"
-                    name="itau_di" value="1"
-                    {{ old('itau_di', $cliente->itau_di) ? 'checked' : '' }}>
-                <label class="custom-control-label" for="itau_di">Itau DI</label>
-            </div>
-        </div>
-    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input" id="itau_di"
+                                                        name="itau_di" value="1"
+                                                        {{ old('itau_di', $cliente->itau_di) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="itau_di">Itau DI</label>
+                                                </div>
+                                            </div>
+                                        </div>
 
-</div>
+                                    </div>
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="form-group">
@@ -535,22 +589,25 @@
                                                             </td>
                                                             <td>
                                                                 <input value="{{ $banco->agencia }}"
-                                                                    {{ $banco->banco_nix ? 'disabled' : '' }} type="text"
-                                                                    class=" form-control" data-id="{{ $loop->index }}"
+                                                                    {{ $banco->banco_nix ? 'disabled' : '' }}
+                                                                    type="text" class=" form-control"
+                                                                    data-id="{{ $loop->index }}"
                                                                     id="banco-{{ $loop->index }}"
                                                                     name="{{ $banco->banco_nix ? '' : 'agencias[]' }}">
                                                             </td>
                                                             <td>
                                                                 <input value="{{ $banco->conta_corrente }}"
-                                                                    {{ $banco->banco_nix ? 'disabled' : '' }} type="text"
-                                                                    class=" form-control" data-id="{{ $loop->index }}"
+                                                                    {{ $banco->banco_nix ? 'disabled' : '' }}
+                                                                    type="text" class=" form-control"
+                                                                    data-id="{{ $loop->index }}"
                                                                     id="banco-{{ $loop->index }}"
                                                                     name="{{ $banco->banco_nix ? '' : 'conta_correntes[]' }}">
                                                             </td>
                                                             <td>
                                                                 <input value="{{ $banco->numero_banco }}"
-                                                                    {{ $banco->banco_nix ? 'disabled' : '' }} type="text"
-                                                                    class=" form-control" data-id="{{ $loop->index }}"
+                                                                    {{ $banco->banco_nix ? 'disabled' : '' }}
+                                                                    type="text" class=" form-control"
+                                                                    data-id="{{ $loop->index }}"
                                                                     id="banco-{{ $loop->index }}"
                                                                     name="{{ $banco->banco_nix ? '' : 'numero_bancos[]' }}">
                                                             </td>
@@ -574,6 +631,92 @@
 
                                 </form>
                             </div>
+                            <div class="tab-pane fade" id="custom-tabs-three-settings" role="tabpanel"
+                                aria-labelledby="custom-tabs-three-settings-info">
+                                <div class="row">
+                                    <div class="col-2 d-flex justify-content-center align-center align-items-start">
+                                        <button id="addDocumento" type="button"
+                                            class="btn btn-success rounded shadow">Adicionar Novo Documento
+                                        </button>
+                                    </div>
+                                    <div class="col-10">
+                                        <form enctype="multipart/form-data"
+                                            action="{{ route('cliente.update.documents', $cliente->id) }}"
+                                            method="POST">
+                                            @csrf
+                                            <table class="table table-bordered" id="clientesDocumento">
+                                                <thead class="thead-primary">
+                                                    <tr class="bg-primary">
+                                                        <th scope="col">Id</th>
+                                                        <th scope="col">Tipo do documento</th>
+                                                        <th scope="col">Arquivo</th>
+                                                        <th scope="col">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+
+                                                    @if (count($cliente->documentos) > 0)
+                                                        @foreach ($cliente->documentos as $documento)
+                                                            <tr data-id="{{ $loop->index }}">
+                                                                <input type="hidden" name="idDocumentos[]"
+                                                                    value="{{ $documento->id }}">
+                                                                <td>{{ $documento->id }}</td>
+                                                                <td>
+                                                                    <select class="form-control" id="modalidade"
+                                                                        name="tipoDocumentos[]">
+                                                                        <option value="" hidden disabled>
+                                                                            Selecione...</option>
+                                                                        @foreach ($tipoDocumentos as $tipoDocumento)
+                                                                            <option
+                                                                                {{ $tipoDocumento->id == $documento->tipo_documento_id ? 'selected' : '' }}
+                                                                                value="{{ $tipoDocumento->id }}">
+                                                                                {{ $tipoDocumento->nome }}
+                                                                            </option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </td>
+                                                                <td>
+
+                                                                    <input type="file"
+                                                                        accept="image/*,application/pdf,.docx"
+                                                                        name="documentos[]" class="form-control-file"
+                                                                        id="exampleInputFile">
+                                                                </td>
+
+                                                                <td>
+                                                                    <button type="button" data-toggle="modal"
+                                                                        data-target="#previewModal"
+                                                                        data-nome="{{ $documento->tipo->nome }}"
+                                                                        data-descricao="{{ $documento->tipo->descricao }}"
+                                                                        data-url="{{ $documento->url }}"
+                                                                        class="btn btn-sm btn-info previewModalButton">
+                                                                        <i class="fas fa-info"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-sm btn-danger"
+                                                                        onclick="showDeleteConfirmation({{ $documento->id }})">
+                                                                        <i class="fa fa-trash"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-sm btn-primary" onclick="downloadDocument('{{ $documento->url }}')">
+                                                                        <i class="fas fa-download"></i> 
+                                                                    </button>
+                                                                </td>
+
+                                                            </tr>
+                                                        @endforeach
+                                                    @else
+                                                        <tr>
+                                                            <td>Não há documentos cadastrados</td>
+                                                        </tr>
+                                                    @endif
+                                                </tbody>
+
+                                            </table>
+                                            <button type="submit" class="btn btn-primary mt-3">Salvar</button>
+
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -582,8 +725,88 @@
         </div>
 
     </div>
+
+    <form id="delete-form" method="POST" action="{{ route('documento.cliente.destroy', 'document_id') }}"
+        style="display:none;">
+        @method('DELETE')
+        @csrf
+    </form>
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Documento de <span id="tipoDocumentoName"></span></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body w-100">
+                    <p class="text-break" id="tipoDocumentoDescription"></p>
+                    <img class="w-100" src="" id="imagePreview" alt="">
+                    <iframe class="w-100 h-100" src="" id="pdf-iframe" frameborder="0"></iframe>
+                    <p class="w-100" id="doc-text"> Pré visualização não disponível</p>
+                </div>
+            </div>
+        </div>
+    </div>
     <input type="hidden" id="bancoOptions" value="{{ json_encode($bancosNix) }}" alt="">
+    <input type="hidden" id="tipoDocumentoOptions" value="{{ json_encode($tipoDocumentos) }}" alt="">
     <script>
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            customClass: {
+                popup: 'colored-toast',
+            },
+            animation: true,
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+        });
+
+        function downloadDocument(url) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = url.substring(url.lastIndexOf('/') + 1); // Obtém o nome do arquivo a partir da URL
+
+            link.click();
+
+            Toast.fire({
+                icon: 'success',
+                title: 'Download iniciado...'
+            });
+        }
+
+        function showDeleteConfirmation(documentId) {
+            const deleteUrl = '/destroy-document/' + documentId; // Ajuste a URL conforme necessário
+
+            // SweetAlert de confirmação
+            Swal.fire({
+                title: 'Você tem certeza?',
+                text: 'Esta ação não poderá ser desfeita!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, excluir!',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    confirmButton: 'btn btn-danger',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Modificando o formulário dinamicamente
+                    $('#delete-form').attr('action', deleteUrl); // Atualiza a URL do formulário
+                    $('#delete-form').submit(); // Submete o formulário
+                } else {
+                    // Caso o usuário cancele, podemos mostrar um toast de cancelamento
+                    Toast.fire({
+                        icon: 'info',
+                        title: 'Ação cancelada'
+                    });
+                }
+            });
+        }
         $(document).ready(function($) {
             $('input[name=cnpj]').mask('99.999.999/9999-99')
             $('input[name=cpf_responsavel_legal]').mask('999.999.999-99')
@@ -591,12 +814,12 @@
             if (activeTab) {
                 $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
             }
-           
+
         })
         $('.nav-link').on('click', function(e) {
-                var currentTab = $(e.target).attr('href');
-                localStorage.setItem('activeTab', currentTab);
-            });
+            var currentTab = $(e.target).attr('href');
+            localStorage.setItem('activeTab', currentTab);
+        });
         $('#debito_impostos_nix').on('change', async function() {
             let value = this.value
             $('#bancoCliente tbody tr').remove()
@@ -623,7 +846,6 @@
                 });
             }
         })
-
 
         $('#addBank').on('click', async function() {
             let id = $('#bancoCliente tbody tr').length;
@@ -678,7 +900,6 @@
             $('#bancoCliente tbody').append(tr)
         })
 
-
         $(document).on('change', '.bancoNix', function() {
             let idRow = this.dataset.id;
             let idBanco = this.value;
@@ -713,7 +934,32 @@
 
 
         })
+        $('#addDocumento').on('click', async function() {
+            let id = $('#clientesDocumento tbody tr').length;
+            const tipoDocumentos = JSON.parse($('#tipoDocumentoOptions').val())
+            let select =
+                `<select class="form-control" id="modalidade" name="tipoDocumentos[]" id="documento-${id}">`
+            select += `<option  hidden  value="">Selecione uma opção</option>`
+            for (let tipo of tipoDocumentos) {
+                select += `<option value="${tipo.id}">${tipo.nome}</option>`
+            }
+            select += "</select>"
+            let tr = `<tr data-id="${id}">
+                <td></td>
+                                                                <td>
+                                                                    ${select}
+                                                                </td>
+                                                                <td colspan="2">
+                                                                     
+                                                                     <input type="file" accept="image/*,application/pdf,.docx" name="documentos[]" class="form-control-file" id="exampleInputFile">
+                                                                </td>
+                                                                
+                    </tr>
+                    `
+            $('#clientesDocumento tbody').append(tr)
 
+
+        })
 
         $('#addClientResponsavel').on('click', async function() {
             let id = $('#clientesResponsavelProcesso tbody tr').length;
@@ -727,6 +973,32 @@
             $('#clientesResponsavelProcesso tbody').append(tr)
 
 
+        })
+
+        $('.previewModalButton').on('click', function() {
+
+            const fileUrl = this.dataset.url; // Substitua pelo caminho do arquivo
+            const fileType = fileUrl.split('.').pop().toLowerCase();
+
+            if (fileType === 'pdf') {
+                $('#pdf-iframe').attr('src', fileUrl).show(); // Exibe o iframe
+                $('#imagePreview').hide(); // Esconde a imagem
+                $('#doc-text').hide(); // Esconde o texto de descrição
+            } else if (fileType === 'docx') {
+                $('#doc-text').text('Descrição: Documento indisponível').show();
+                $('#imagePreview').hide(); // Esconde a imagem
+                $('#pdf-iframe').hide(); // Esconde o iframe
+            } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(fileType)) {
+                $('#imagePreview').attr('src', fileUrl).show(); // Exibe a imagem
+                $('#pdf-iframe').hide(); // Esconde o iframe
+                $('#doc-text').hide(); // Esconde o texto de descrição
+            } else {
+                $('#doc-text').text('Tipo de arquivo não suportado').show();
+                $('#imagePreview').hide(); // Esconde a imagem
+                $('#pdf-iframe').hide(); // Esconde o iframe
+            }
+            $('#tipoDocumentoName').text(this.dataset.nome)
+            $('#tipoDocumentoDescription').text(this.dataset.descricao)
         })
     </script>
 
