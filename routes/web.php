@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BancoNixController;
+use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\GrupoController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\PermissaoController;
@@ -56,9 +57,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('permissao', PermissaoController::class)->middleware('permission:admin|root');;
     Route::resource('user', UserController::class)->middleware('permission:admin|root');;
     Route::resource('banco-nix', BancoNixController::class)->middleware('permission:admin|root|producao');;
-
-
+    Route::resource('catalogo', CatalogoController::class)->middleware('permission:admin|root|producao');;
     Route::resource('cliente', ClienteController::class)->middleware('permission:admin|root');;
+    Route::resource('produto', ProdutoController::class)->middleware('permission:admin|root');;
+
+
 
 
     Route::post('atualizar', [PedidoController::class, 'atualizarPedidos'])->name('pedido.atualizar');
@@ -78,4 +81,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/fornecedor/{fornecedor_id}', [FornecedorController::class, 'ativar'])->name('fornecedor.ativar');
         Route::put('/motorista/{motorista_id}', [MotoristaController::class, 'ativar'])->name('motorista.ativar');
     });
+
+    
 });

@@ -24,6 +24,8 @@ class HomeController extends Controller
 
     public function index(): View|RedirectResponse
     {
+
+
         $user = Auth::user();
         if($user->grupoPermissao != null){
             $user_group = $user->grupoPermissao->slug ;

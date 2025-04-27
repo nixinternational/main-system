@@ -44,7 +44,7 @@
                     <option {{isset($user) && $user->grupo_id == $grupo->id ? 'selected': ''}} value="{{ $grupo->id }}">{{ $grupo->nome }}</option>
                   @endforeach
                 </select>
-              </div>
+            </div>
         </div>
      
 

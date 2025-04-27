@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProdutoRequest;
 use App\Http\Requests\RelatorioProduto;
+use App\Models\Catalogo;
 use App\Models\Categoria;
 use App\Models\Fornecedor;
 use App\Models\Marca;
@@ -22,6 +23,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 
 class ProdutoController extends Controller
@@ -50,29 +52,33 @@ class ProdutoController extends Controller
         return view('produto.form',compact('categorias'));
     }
 
-    public function store(ProdutoRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         try {
-
-
-            Produto::create([
-                'nome' => $request->nome,
-                'unidade' => $request->unidade,
-                'categoria_id' => $request->categoria_id,
-                'precos' => [
-                    'a' => $request->precoA,
-                    'b' => $request->precoB,
-                    'c' => $request->precoC,
-                    'd' => $request->precoD,
-                    'e' => $request->precoE,
-                    'f' => $request->precoF,
-                    'g' => $request->precoG,
-                ]
+            $validator = Validator::make($request->all(), [
+                'nome_produto' => 'required',
+                'descricao' => 'required',
+            ], [
+                'nome_produto.required' => 'O campo Nome do produto é obrigatório!',
+                'descricao.required' => 'Necessário informar a descrição do produto'
             ]);
-            return redirect(route('produto.index'))->with('messages', ['success' => ['Produto criado com sucesso!']]);
-        } catch (\Exception $e) {
 
-            return back()->with('messages', ['error' => ['Não foi possível salvar o produto. Tente novamente mais tarde!']])->withInput($request->all());
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $message = $errors->unique();
+                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+            }
+            $data = [
+                'nome' => $request->nome_produto,
+                'descricao' => $request->descricao,
+                'catalogo_id' => $request->catalogo_id,
+            ];
+            $catalogo = Catalogo::findOrFail($request->catalogo_id);
+
+            Produto::create($data);
+            return redirect(route('catalogo.edit', $catalogo->id))->with('messages', ['success' => ['Produto criado com sucesso!']]);
+        } catch (\Exception $e) {
+            return back()->with('messages', ['error' => ['Não foi possível cadastrar o produto!']])->withInput($request->all());
         }
     }
 
@@ -104,27 +110,30 @@ class ProdutoController extends Controller
         }
     }
 
-    public function update(ProdutoRequest $request, int $id): RedirectResponse
+    public function update(Request $request, int $id): RedirectResponse
     {
         try {
-            Produto::findOrFail($id)->update([
-                'nome' => $request->nome,
-                'unidade' => $request->unidade,
-                'categoria_id' => $request->categoria_id,
-
-                'precos' => [
-                    'a' => str_replace(',', '.', $request->precoA),
-                    'b' => str_replace(',', '.', $request->precoB),
-                    'c' => str_replace(',', '.', $request->precoC),
-                    'd' => str_replace(',', '.', $request->precoD),
-                    'e' => str_replace(',', '.', $request->precoE),
-                    'f' => str_replace(',', '.', $request->precoF),
-                    'g' => str_replace(',', '.', $request->precoG),
-
-                ]
+            $validator = Validator::make($request->all(), [
+                'nome_edit_produto' => 'required',
+                'descricao_edit' => 'required',
+            ], [
+                'nome_edit_produto.required' => 'O campo Nome do produto é obrigatório!',
+                'descricao_edit.required' => 'Necessário informar a descrição do produto'
             ]);
-            return redirect(route('produto.index'))->with('messages', ['success' => ['Produto atualizado com sucesso!']]);
-        } catch (\Exception $e) {
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $message = $errors->unique();
+                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+            }
+            $produto = Produto::findOrFail($id);
+            
+            $produto->update([
+                'nome' => $request->nome_edit_produto,
+                'descricao' => $request->descricao_edit,
+            ]);
+            return redirect(route('catalogo.edit', $produto->catalogo_id))->with('messages', ['success' => ['Produto atualizado com sucesso!']]);
+        } catch (Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível atualizar o produto!']])->withInput($request->all());
         }
     }
