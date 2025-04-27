@@ -75,7 +75,7 @@
           </li>
           <li class="nav-item">
             <a href="{{ route('tipo-documento.index') }}" class="nav-link">
-              <i class="nav-icon fa-solid fa-university"></i>
+              <i class="nav-icon fa-solid fa-file"></i>
               <p>
                 Tipos de documento
               </p>
