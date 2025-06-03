@@ -416,12 +416,9 @@ class ClienteController extends Controller
             $cliente = Cliente::findOrFail($id);
             $clientData = [
                 'credenciamento_radar_inicial' => $request->credenciamento_radar_inicial != null ? Carbon::parse($request->credenciamento_radar_inicial) : null,
-                'credenciamento_radar_final' => $request->credenciamento_radar_final != null ? Carbon::parse($request->credenciamento_radar_final) : null,
                 'marinha_mercante_inicial' => $request->marinha_mercante_inicial != null ? Carbon::parse($request->marinha_mercante_inicial) : null,
-                'marinha_mercante_final' => $request->marinha_mercante_final != null ? Carbon::parse($request->marinha_mercante_final) : null,
-                'afrmm_bb_inicial' => $request->afrmm_bb_inicial != null ? Carbon::parse($request->afrmm_bb_inicial) : null,
-                'afrmm_bb_final' => $request->afrmm_bb_final != null ? Carbon::parse($request->afrmm_bb_final) : null,
-                'itau_di' => $request->exists('itau_di'),
+                'afrmm_bb' =>  $request->afrmm_bb == 'true' ,
+                'itau_di' => $request->itau_di == 'true',
                 'modalidade_radar' => $request->exists('modalidade_radar') ? $request->modalidade_radar : null,
                 'beneficio_fiscal' => $request->beneficio_fiscal,
                 'observacoes' => $request->observacoes,

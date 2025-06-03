@@ -406,34 +406,16 @@
                                 <form enctype="multipart/form-data"
                                     action="{{ route('cliente.update.especificidades', $cliente->id) }}" method="POST">
                                     @csrf
-                                    <div class="row">
-                                        <div class="col-3">
+                                    <div class="row gap-2">
+                                        <div class="col-lg-4 col-md-6 col-sm-6">
                                             <div class="form-group">
-                                                <label for="credenciamento_radar">Credenciamento Radar Inicial</label>
+                                                <label for="credenciamento_radar">Credenciamento SISCOMEX</label>
                                                 <input type="date" class="form-control" id="credenciamento_radar"
                                                     name="credenciamento_radar_inicial"
                                                     value="{{ old('credenciamento_radar_inicial', $cliente->credenciamento_radar_inicial) }}">
                                             </div>
                                         </div>
-
-                                        <div class="col-3">
-                                            <div class="form-group">
-                                                <label for="marinha_mercante">Marinha Mercante inicial</label>
-                                                <input type="date" class="form-control" id="marinha_mercante"
-                                                    name="marinha_mercante_inicial"
-                                                    value="{{ old('marinha_mercante_inicial', $cliente->marinha_mercante_inicial) }}">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-3">
-                                            <div class="form-group">
-                                                <label for="afrmm_bb">AFRMM Vinculação BB Inicial</label>
-                                                <input type="date" class="form-control" id="afrmm_bb"
-                                                    name="afrmm_bb_inicial"
-                                                    value="{{ old('afrmm_bb_inicial', $cliente->afrmm_bb_inicial) }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-3">
+                                        <div class="col-lg-4 col-md-6 col-sm-6">
                                             <label for="validationTooltip03">Data da Procuração</label>
                                             <input value="{{ isset($cliente) ? $cliente->data_procuracao : '' }}"
                                                 type="date" class="form-control" id="data_procuracao"
@@ -441,41 +423,7 @@
 
                                         </div>
 
-
-
-
-
-
-
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-3">
-                                            <div class="form-group">
-                                                <label for="credenciamento_radar">Credenciamento Radar Final</label>
-                                                <input type="date" class="form-control"
-                                                    id="credenciamento_radar_final" name="credenciamento_radar_final"
-                                                    value="{{ old('credenciamento_radar_final', $cliente->credenciamento_radar_final) }}">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-3">
-                                            <div class="form-group">
-                                                <label for="marinha_mercante">Marinha Mercante Final</label>
-                                                <input type="date" class="form-control" id="marinha_mercante_final"
-                                                    name="marinha_mercante_final"
-                                                    value="{{ old('marinha_mercante_final', $cliente->marinha_mercante_final) }}">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-3">
-                                            <div class="form-group">
-                                                <label for="afrmm_bb">AFRMM Vinculação BB Final</label>
-                                                <input type="date" class="form-control" id="afrmm_bb_final"
-                                                    name="afrmm_bb_final"
-                                                    value="{{ old('afrmm_bb_final', $cliente->afrmm_bb_final) }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-3">
+                                        <div class="col-lg-4 col-md-6 col-sm-6">
                                             <label for="validationTooltip03">Data de Vencimento da Procuração</label>
                                             <input
                                                 value="{{ isset($cliente) ? $cliente->data_vencimento_procuracao : '' }}"
@@ -483,24 +431,48 @@
                                                 name="data_vencimento_procuracao">
 
                                         </div>
-
-
-
-
-
-
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-12">
+                                        <div class="col-lg-4 col-md-6 col-sm-6">
                                             <div class="form-group">
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" id="itau_di"
-                                                        name="itau_di" value="1"
-                                                        {{ old('itau_di', $cliente->itau_di) ? 'checked' : '' }}>
-                                                    <label class="custom-control-label" for="itau_di">Itau DI</label>
+                                                <label for="marinha_mercante">Cadastro AFRMM - Sistema</label>
+                                                <input type="date" class="form-control" id="marinha_mercante"
+                                                    name="marinha_mercante_inicial"
+                                                    value="{{ old('marinha_mercante_inicial', $cliente->marinha_mercante_inicial) }}">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4 col-md-6">
+                                            <div class="form-group">
+                                                <label for="afrmm_bb">Cadastro AFRMM Banco do Brasil</label>
+                                                <select class="form-control" id="afrmm_bb" name="afrmm_bb">
+                                                    <option value="" disabled selected>Selecione uma opção</option>
+                                                    <option {{ $cliente->afrmm_bb == 1 ? 'selected' : '' }} value="true">
+                                                        Sim</option>
+                                                    <option {{ $cliente->afrmm_bb == 0 ? 'selected' : '' }} value="false">
+                                                        Não</option>
+
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4 col-md-6">
+                                            <div class="form-group px-0">
+                                                <div class="custom-control px-0">
+                                                    <label class="" >Cadastro Itaú
+                                                    </label>
+                                                    <select class="form-control" id="itau_di" name="itau_di">
+                                                        <option value="" disabled selected>Selecione uma opção
+                                                        </option>
+                                                        <option {{ $cliente->itau_di == 1 ? 'selected' : '' }}
+                                                            value="true">Sim</option>
+                                                        <option {{ $cliente->itau_di == 0 ? 'selected' : '' }}
+                                                            value="false">Não</option>
+
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="row">
+                        
 
                                     </div>
                                     <div class="row">
@@ -567,10 +539,10 @@
                                             <table class="table table-bordered" id="bancoCliente">
                                                 <thead class="thead-primary">
                                                     <tr class="bg-primary">
+                                                        <th scope="col">N° Banco</th>
                                                         <th scope="col">Banco</th>
                                                         <th scope="col">Agência</th>
                                                         <th scope="col">Conta corrente</th>
-                                                        <th scope="col">N° Banco</th>
                                                         <th scope="col">Ações</th>
                                                     </tr>
                                                 </thead>
@@ -578,8 +550,14 @@
                                                     @foreach ($bancosCliente as $banco)
                                                         <tr>
                                                             <td>
-
-
+                                                                <input value="{{ $banco->numero_banco }}"
+                                                                    {{ $banco->banco_nix ? 'disabled' : '' }}
+                                                                    type="text" class=" form-control"
+                                                                    data-id="{{ $loop->index }}"
+                                                                    id="banco-{{ $loop->index }}"
+                                                                    name="{{ $banco->banco_nix ? '' : 'numero_bancos[]' }}">
+                                                            </td>
+                                                            <td>
 
                                                                 <input value="{{ $banco->nome }}" type="text"
                                                                     {{ $banco->banco_nix ? 'disabled' : '' }}
@@ -603,14 +581,7 @@
                                                                     id="banco-{{ $loop->index }}"
                                                                     name="{{ $banco->banco_nix ? '' : 'conta_correntes[]' }}">
                                                             </td>
-                                                            <td>
-                                                                <input value="{{ $banco->numero_banco }}"
-                                                                    {{ $banco->banco_nix ? 'disabled' : '' }}
-                                                                    type="text" class=" form-control"
-                                                                    data-id="{{ $loop->index }}"
-                                                                    id="banco-{{ $loop->index }}"
-                                                                    name="{{ $banco->banco_nix ? '' : 'numero_bancos[]' }}">
-                                                            </td>
+
                                                             <td>
                                                                 {{-- <form action="{{route('banco.cliente.destroy',$banco->id)}}" method="POST">
                                                                 @csrf
@@ -664,8 +635,8 @@
                                                                 <td>
                                                                     <select class="form-control" id="modalidade"
                                                                         name="tipoDocumentos[]">
-                                                                        <option value="" hidden disabled>
-                                                                            Selecione...</option>
+                                                                        <option value="" hidden disabled>Selecione...
+                                                                        </option>
                                                                         @foreach ($tipoDocumentos as $tipoDocumento)
                                                                             <option
                                                                                 {{ $tipoDocumento->id == $documento->tipo_documento_id ? 'selected' : '' }}
@@ -677,10 +648,16 @@
                                                                 </td>
                                                                 <td>
 
-                                                                    <input type="file"
+                                                                    <input type="file"+
                                                                         accept="image/*,application/pdf,.docx"
-                                                                        name="documentos[]" class="form-control-file"
-                                                                        id="exampleInputFile">
+                                                                        name="documentos[]" class="d-none"
+                                                                        data-id="{{ $loop->index }}"
+                                                                        id="file-{{ $loop->index }}">
+                                                                    <label data-id="{{ $loop->index }}" for="inputFile"
+                                                                        class="btn btn-primary anexarArquivo">
+                                                                        {{ $documento->url ? '📎 Atualizar documento' : 'Anexar documento' }}
+
+                                                                    </label>
                                                                 </td>
 
                                                                 <td>
@@ -696,8 +673,9 @@
                                                                         onclick="showDeleteConfirmation({{ $documento->id }})">
                                                                         <i class="fa fa-trash"></i>
                                                                     </button>
-                                                                    <button type="button" class="btn btn-sm btn-primary" onclick="downloadDocument('{{ $documento->url }}')">
-                                                                        <i class="fas fa-download"></i> 
+                                                                    <button type="button" class="btn btn-sm btn-primary"
+                                                                        onclick="downloadDocument('{{ $documento->url }}')">
+                                                                        <i class="fas fa-download"></i>
                                                                     </button>
                                                                 </td>
 
@@ -820,6 +798,12 @@
             var currentTab = $(e.target).attr('href');
             localStorage.setItem('activeTab', currentTab);
         });
+        $(document).on('click', '.anexarArquivo', function(e) {
+            const id = this.dataset.id;
+
+            $(`#file-${id}`).click()
+        });
+
         $('#debito_impostos_nix').on('change', async function() {
             let value = this.value
             $('#bancoCliente tbody tr').remove()
@@ -950,7 +934,18 @@
                                                                     ${select}
                                                                 </td>
                                                                 <td colspan="2">
-                                                                     
+                                                                               <input type="file"+
+                                                                        accept="image/*,application/pdf,.docx"
+                                                                        name="documentos[]" class="d-none"
+                                                                        data-id="${id}"
+                                                                        id="file-${id}">
+                                                                    <label data-id="${id}" for="inputFile"
+                                                                        class="btn btn-primary anexarArquivo">
+                                                                       Anexar documento 
+                                                                    </label>
+
+                                                               
+                                                                </td>
                                                                      <input type="file" accept="image/*,application/pdf,.docx" name="documentos[]" class="form-control-file" id="exampleInputFile">
                                                                 </td>
                                                                 

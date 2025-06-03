@@ -33,8 +33,8 @@ return new class extends Migration
             $table->date('data_procuracao')->nullable();
             $table->date('data_vencimento_procuracao')->nullable();
 
-            $table->date('credenciamento_radar_inicial')->nullable();
             $table->date('marinha_mercante_inicial')->nullable();
+            $table->date('credenciamento_radar_inicial')->nullable();
             $table->date('afrmm_bb_inicial')->nullable();
             $table->date('credenciamento_radar_final')->nullable();
             $table->date('marinha_mercante_final')->nullable();

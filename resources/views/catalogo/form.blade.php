@@ -171,8 +171,7 @@
                                 </div>
                                 <div class="col-6">
                                     <label for="descricao" class="font-weight-bold">Descrição</label>
-                                    <textarea rows="3" type="text" class="form-control" id="descricao" name="descricao">{{ old('descricao', '') }}
-                            </textarea>
+                                    <textarea rows="3" type="text" class="form-control" id="descricao" name="descricao">{{ old('descricao', '') }}</textarea>
                                 </div>
                             </div>
                         </div>
