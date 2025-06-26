@@ -10,12 +10,8 @@ class ClienteDocumento extends Model
     use HasFactory;
     protected $fillable = [
         'cliente_id',
-        'tipo_documento_id',
+        'tipo_documento',
         'path_file',
         'url',
     ];
-
-    public function tipo(){
-        return $this->hasOne(TipoDocumento::class,'id','tipo_documento_id');
-    }
 }

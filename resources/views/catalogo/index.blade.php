@@ -45,8 +45,6 @@
                 <table id="produtosTable" class="table shadow rounded table-striped table-hover">
                     <thead class="bg-primary ">
                         <tr>
-                            <th>Id</th>
-                            <th>Nome</th>
                             <th>Cliente</th>
                             <th>Data de Cadastro</th>
                             <th class="d-flex justify-content-center">Ações</th>
@@ -56,8 +54,6 @@
                         @foreach ($catalogos as $catalogo)
                             <tr>
 
-                                <td>{{ $catalogo->id }}</td>
-                                <td>{{ $catalogo->nome }}</td>
                                 <td>{{ $catalogo->cliente->nome}}
                                 </td>
                                 <td>{{ \Carbon\Carbon::parse($catalogo->created_at)->format('d/m/Y H:i') }}

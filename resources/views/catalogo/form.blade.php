@@ -31,15 +31,6 @@
 
                         <div class="row">
                             <div class="col-4">
-                                <label for="exampleInputEmail1" class="form-label">Nome</label>
-                                <input value="{{ isset($catalogo) ? $catalogo->nome : '' }}" class="form-control"
-                                    name="nome" id="nome">
-                                @error('nome')
-                                    <span class="mt-1  text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
-
-                            <div class="col-4">
                                 <label for="exampleInputEmail1" class="form-label">Cliente</label>
 
                                 <select class="custom-select select2" name="cliente_id">
@@ -70,8 +61,9 @@
                                 <table id="produtosTable" class="table shadow rounded table-striped table-hover">
                                     <thead class="bg-primary ">
                                         <tr>
-                                            <th>Id</th>
-                                            <th>Nome</th>
+                                            <th>Modelo</th>
+                                            <th>Codigo</th>
+                                            <th>NCM</th>
                                             <th>Descrição</th>
                                             <th>Data de Criação</th>
                                             <th class="d-flex justify-content-center">Ações</th>
@@ -81,8 +73,9 @@
                                         @foreach ($produtos as $produto)
                                             <tr>
 
-                                                <td>{{ $produto->id }}</td>
-                                                <td>{{ $produto->nome }}</td>
+                                                <td>{{ $produto->modelo }}</td>
+                                                <td>{{ $produto->codigo }}</td>
+                                                <td>{{ $produto->ncm }}</td>
                                                 <td>{{ \Illuminate\Support\Str::limit($produto->descricao, 100) }}
                                                 </td>
                                                 <td>{{ \Carbon\Carbon::parse($produto->created_at)->format('d/m/Y H:i') }}
@@ -158,29 +151,40 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form action="{{ route('produto.store') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" value="{{ $catalogo->id }}" name="catalogo_id">
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-6">
+           <form action="{{ route('produto.store') }}" method="POST" enctype="multipart/form-data">
+    @csrf
+    <input type="hidden" value="{{ $catalogo->id }}" name="catalogo_id">
 
-                                    <label for="nome_produto" class="font-weight-bold">Nome</label>
-                                    <input type="text" class="form-control" id="nome_produto" name="nome_produto"
-                                        value="">
-                                </div>
-                                <div class="col-6">
-                                    <label for="descricao" class="font-weight-bold">Descrição</label>
-                                    <textarea rows="3" type="text" class="form-control" id="descricao" name="descricao">{{ old('descricao', '') }}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
-                            <button type="submit" class="btn btn-primary">Salvar</button>
-                        </div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="modelo" class="font-weight-bold">Modelo</label>
+                <input type="text" class="form-control" id="modelo" name="modelo" value="{{ old('modelo') }}">
+            </div>
+            <div class="col-md-6">
+                <label for="codigo" class="font-weight-bold">Código</label>
+                <input type="text" class="form-control" id="codigo" name="codigo" value="{{ old('codigo') }}">
+            </div>
+        </div>
 
-                    </form>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label for="ncm" class="font-weight-bold">NCM</label>
+                <input type="text" class="form-control" id="ncm" name="ncm" value="{{ old('ncm') }}">
+            </div>
+            <div class="col-md-6">
+                <label for="descricao" class="font-weight-bold">Descrição</label>
+                <textarea rows="3" class="form-control" id="descricao" name="descricao">{{ old('descricao') }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+</form>
+
                 </div>
             </div>
         </div>

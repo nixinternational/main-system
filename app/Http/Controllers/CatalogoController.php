@@ -30,10 +30,8 @@ class CatalogoController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'nome' => 'required',
                 'cliente_id' => 'required',
             ], [
-                'nome.required' => 'O campo Nome da empresa é obrigatório!',
                 'cliente_id.required' => 'Necessário informar cliente'
             ]);
 
@@ -43,7 +41,6 @@ class CatalogoController extends Controller
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
             $data = [
-                'nome' => $request->nome,
                 'cliente_id' => $request->cliente_id,    
             ];
             $catalogo = Catalogo::create($data);

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Clientes')
+@section('title', 'Cadastro de Clientes')
 
 @section('actions')
     <a href="{{ route('cliente.create') }}" class="btn btn-primary">
@@ -49,7 +49,6 @@
             <table id="clienteTable" class="table  shadow rounded table-striped table-hover">
                 <thead class="bg-primary ">
                     <tr>
-                        <th>ID</th>
                         <th>Nome</th>
                         <th>CNPJ</th>
                         <th>Resp. Legal</th>
@@ -62,7 +61,6 @@
                 <tbody>
                     @foreach ($clientes as $cliente)
                         <tr @if ($cliente->deleted_at != null) style="background-color:#ff8e8e" @endif>
-                            <td>{{ $cliente->id }}</td>
                             <td>{{ $cliente->nome }}</td>
                             <td>{{ $cliente->cnpj }}</td>
                             <td>{{ $cliente->nome_responsavel_legal }}</td>

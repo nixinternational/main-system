@@ -445,9 +445,11 @@
                                                 <label for="afrmm_bb">Cadastro AFRMM Banco do Brasil</label>
                                                 <select class="form-control" id="afrmm_bb" name="afrmm_bb">
                                                     <option value="" disabled selected>Selecione uma opção</option>
-                                                    <option {{ $cliente->afrmm_bb == 1 ? 'selected' : '' }} value="true">
+                                                    <option {{ $cliente->afrmm_bb == 1 ? 'selected' : '' }}
+                                                        value="true">
                                                         Sim</option>
-                                                    <option {{ $cliente->afrmm_bb == 0 ? 'selected' : '' }} value="false">
+                                                    <option {{ $cliente->afrmm_bb == 0 ? 'selected' : '' }}
+                                                        value="false">
                                                         Não</option>
 
                                                 </select>
@@ -456,7 +458,7 @@
                                         <div class="col-lg-4 col-md-6">
                                             <div class="form-group px-0">
                                                 <div class="custom-control px-0">
-                                                    <label class="" >Cadastro Itaú
+                                                    <label class="">Cadastro Itaú
                                                     </label>
                                                     <select class="form-control" id="itau_di" name="itau_di">
                                                         <option value="" disabled selected>Selecione uma opção
@@ -472,7 +474,7 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                        
+
 
                                     </div>
                                     <div class="row">
@@ -618,7 +620,6 @@
                                             <table class="table table-bordered" id="clientesDocumento">
                                                 <thead class="thead-primary">
                                                     <tr class="bg-primary">
-                                                        <th scope="col">Id</th>
                                                         <th scope="col">Tipo do documento</th>
                                                         <th scope="col">Arquivo</th>
                                                         <th scope="col">Ações</th>
@@ -631,40 +632,51 @@
                                                             <tr data-id="{{ $loop->index }}">
                                                                 <input type="hidden" name="idDocumentos[]"
                                                                     value="{{ $documento->id }}">
-                                                                <td>{{ $documento->id }}</td>
-                                                                <td>
-                                                                    <select class="form-control" id="modalidade"
+                                                                <td >
+                                                                    <select class="form-control" id="tipo_documento"
                                                                         name="tipoDocumentos[]">
                                                                         <option value="" hidden disabled>Selecione...
                                                                         </option>
-                                                                        @foreach ($tipoDocumentos as $tipoDocumento)
-                                                                            <option
-                                                                                {{ $tipoDocumento->id == $documento->tipo_documento_id ? 'selected' : '' }}
-                                                                                value="{{ $tipoDocumento->id }}">
-                                                                                {{ $tipoDocumento->nome }}
+                                                                        @php
+                                                                            $opcoes = [
+                                                                                'contrato_social' => 'Contrato Social',
+                                                                                'cnpj' => 'CNPJ',
+                                                                                'procuracao' => 'Procuração',
+                                                                                'termo_credenciamento_radar' =>
+                                                                                    'Termo Credenciamento RADAR',
+                                                                                'tare_beneficio_fiscal' =>
+                                                                                    'TARE - Benefício Fiscal',
+                                                                                'proposta_comercial_recintos_aduaneiros' =>
+                                                                                    'Proposta Comercial Recintos Aduaneiros',
+                                                                                'proposta_nix' => 'Proposta nix',
+                                                                            ];
+                                                                        @endphp
+                                                                        @foreach ($opcoes as $valor => $label)
+                                                                            <option value="{{ $valor }}"
+                                                                                {{ $valor == $documento->tipo_documento ? 'selected' : '' }}>
+                                                                                {{ $label }}
                                                                             </option>
                                                                         @endforeach
                                                                     </select>
                                                                 </td>
                                                                 <td>
 
-                                                                    <input type="file"+
+                                                                    <input type="file"
                                                                         accept="image/*,application/pdf,.docx"
                                                                         name="documentos[]" class="d-none"
                                                                         data-id="{{ $loop->index }}"
                                                                         id="file-{{ $loop->index }}">
                                                                     <label data-id="{{ $loop->index }}" for="inputFile"
-                                                                        class="btn btn-primary anexarArquivo">
+                                                                        class="btn btn-secondary w-100 anexarArquivo">
                                                                         {{ $documento->url ? '📎 Atualizar documento' : 'Anexar documento' }}
-
+                                                                        <p id="legenda-file-{{$loop->index}}" style="font-size: 11px">{{explode('/',$documento->path_file)[1]}}</p>
                                                                     </label>
                                                                 </td>
 
                                                                 <td>
                                                                     <button type="button" data-toggle="modal"
                                                                         data-target="#previewModal"
-                                                                        data-nome="{{ $documento->tipo->nome }}"
-                                                                        data-descricao="{{ $documento->tipo->descricao }}"
+                                                                        data-nome="{{ $documento->tipo_documento }}"
                                                                         data-url="{{ $documento->url }}"
                                                                         class="btn btn-sm btn-info previewModalButton">
                                                                         <i class="fas fa-info"></i>
@@ -798,22 +810,36 @@
             var currentTab = $(e.target).attr('href');
             localStorage.setItem('activeTab', currentTab);
         });
-        $(document).on('click', '.anexarArquivo', function(e) {
-            const id = this.dataset.id;
+ $(document).on('click', '.anexarArquivo', function (e) {
+    e.preventDefault();
+    const id = this.dataset.id;
+    $(`#file-${id}`).click();
+    
+});
+$(document).on('change', 'input[type="file"]', function () {
+    const id = this.dataset.id;
+    const file = this.files[0];
 
-            $(`#file-${id}`).click()
-        });
-
-        $('#debito_impostos_nix').on('change', async function() {
-            let value = this.value
-            $('#bancoCliente tbody tr').remove()
-            if (value == 'nix') {
-                $('#colBancoNix').removeClass('d-none')
-                $('#colNomeBancoNix').addClass('d-none')
-            } else {
-                $('#colNomeBancoNix').removeClass('d-none')
-                $('#colBancoNix').addClass('d-none')
-            }
+    if (file) {
+        $(`#legenda-file-${id}`).text(file.name);
+               Toast.fire({
+                icon: 'success',
+                title: 'Documento anexado'
+            });
+    } else {
+        $(`#legenda-file-${id}`).text('Nenhum arquivo selecionado');
+    }
+});        
+$('#debito_impostos_nix').on('change', async function() {
+            // let value = this.value
+            // $('#bancoCliente tbody tr').remove()
+            // if (value == 'nix') {
+            //     $('#colBancoNix').removeClass('d-none')
+            //     $('#colNomeBancoNix').addClass('d-none')
+            // } else {
+            //     $('#colNomeBancoNix').removeClass('d-none')
+            //     $('#colBancoNix').addClass('d-none')
+            // }
 
         })
         $('#cep').on('change', async function() {
@@ -834,30 +860,13 @@
         $('#addBank').on('click', async function() {
             let id = $('#bancoCliente tbody tr').length;
             let tr = '';
-            if ($('#debito_impostos_nix').val() == 'nix') {
-                const bancosNix = JSON.parse($('#bancoOptions').val())
-                let select =
-                    `<select name="bancos[]" data-id="${id}" class="bancoNix form-control" id="banco-${id}">`
-                select += `<option value="">Selecione uma opção</option>`
-                for (let banco of bancosNix) {
-                    select += `<option value="${banco.id}">${banco.nome}</option>`
-                }
-                select += "</select>"
-
-                tr = `
+            tr = `
                     <tr data-id="${id}">
                         <td>
-                            ${select}  
+                            <input type="text" class=" form-control" 
+                            data-id="${id}" id="banco-${id}" 
+                            name="numero_bancos[]">
                         </td>
-                        <td id="agencia-${id}"></td>
-                        <td id="conta-corrente-${id}"></td>
-                        <td id="numero-banco-${id}"></td>
-                    </tr>
-                `
-
-            } else {
-                tr = `
-                    <tr data-id="${id}">
                         <td>
                             <input type="text" class=" form-control" 
                             data-id="${id}" id="banco-${id}" 
@@ -873,14 +882,9 @@
                             data-id="${id}" id="banco-${id}" 
                             name="conta_correntes[]">
                         </td>
-                        <td>
-                            <input type="text" class=" form-control" 
-                            data-id="${id}" id="banco-${id}" 
-                            name="numero_bancos[]">
-                        </td>
+                     
                     <tr>
                 `
-            }
             $('#bancoCliente tbody').append(tr)
         })
 
@@ -920,37 +924,64 @@
         })
         $('#addDocumento').on('click', async function() {
             let id = $('#clientesDocumento tbody tr').length;
-            const tipoDocumentos = JSON.parse($('#tipoDocumentoOptions').val())
-            let select =
-                `<select class="form-control" id="modalidade" name="tipoDocumentos[]" id="documento-${id}">`
-            select += `<option  hidden  value="">Selecione uma opção</option>`
-            for (let tipo of tipoDocumentos) {
-                select += `<option value="${tipo.id}">${tipo.nome}</option>`
-            }
-            select += "</select>"
-            let tr = `<tr data-id="${id}">
-                <td></td>
-                                                                <td>
-                                                                    ${select}
-                                                                </td>
-                                                                <td colspan="2">
-                                                                               <input type="file"+
-                                                                        accept="image/*,application/pdf,.docx"
-                                                                        name="documentos[]" class="d-none"
-                                                                        data-id="${id}"
-                                                                        id="file-${id}">
-                                                                    <label data-id="${id}" for="inputFile"
-                                                                        class="btn btn-primary anexarArquivo">
-                                                                       Anexar documento 
-                                                                    </label>
+            const tipoDocumentos = [{
+                    id: 'contrato_social',
+                    nome: 'Contrato Social'
+                },
+                {
+                    id: 'cnpj',
+                    nome: 'CNPJ'
+                },
+                {
+                    id: 'procuracao',
+                    nome: 'Procuração'
+                },
+                {
+                    id: 'termo_credenciamento_radar',
+                    nome: 'Termo Credenciamento RADAR'
+                },
+                {
+                    id: 'tare_beneficio_fiscal',
+                    nome: 'TARE - Benefício Fiscal'
+                },
+                {
+                    id: 'proposta_comercial_recintos_aduaneiros',
+                    nome: 'Proposta Comercial Recintos Aduaneiros'
+                },
+                {
+                    id: 'proposta_nix',
+                    nome: 'Proposta nix'
+                }
+            ];
 
-                                                               
-                                                                </td>
-                                                                     <input type="file" accept="image/*,application/pdf,.docx" name="documentos[]" class="form-control-file" id="exampleInputFile">
-                                                                </td>
-                                                                
-                    </tr>
-                    `
+            let select = `<select class="form-control" name="tipoDocumentos[]" id="documento-${id}">`;
+            select += `<option hidden value="">Selecione uma opção</option>`;
+
+            for (let tipo of tipoDocumentos) {
+                select += `<option value="${tipo.id}">${tipo.nome}</option>`;
+            }
+
+            select += "</select>";
+
+            let tr = `<tr data-id="${id}">
+    <td>
+        ${select}
+    </td>
+    <td colspan="2" >
+<input type="file"
+    accept="image/*,application/pdf,.docx"
+    name="documentos[]"
+    class="d-none"
+    data-id="${id}"
+    id="file-${id}">
+        <label data-id="${id}" for="file-${id}"
+            class="btn btn-secondary anexarArquivo w-100">
+            📎 Anexar documento
+            <p id="legenda-file-${id}" style="font-size: 11px"></p>
+
+        </label>
+    </td>
+</tr>`;
             $('#clientesDocumento tbody').append(tr)
 
 

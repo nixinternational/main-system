@@ -10,7 +10,6 @@ class Catalogo extends Model
     use HasFactory;
 
     protected $fillable = [
-        'nome',
         'cpf_cnpj',
         'cliente_id',
     ];

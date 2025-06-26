@@ -430,22 +430,22 @@ class ClienteController extends Controller
 
             if($request->bancos && count($request->bancos) > 0){
                 foreach ($request->bancos as $row => $banco) {
-                    if ($request->debito_impostos_nix == 'nix') {
-                        $bancoNix = BancoNix::find($banco);
-                        BancoCliente::where('cliente_id',operator: $id)->where('banco_nix',false)->delete();
-                            BancoCliente::updateOrCreate(
-                            [
-                                'numero_banco' => $bancoNix->numero_banco,
-                                'cliente_id' => $id,
-                                'banco_nix' => true,
-                            ],
-                            [
-                                'nome' => $bancoNix->nome,
-                                'agencia' => $bancoNix->agencia,
-                                'conta_corrente' => $bancoNix->conta_corrente,
-                                ]
-                            );
-                    } else {
+                    // if ($request->debito_impostos_nix == 'nix') {
+                    //     $bancoNix = BancoNix::find($banco);
+                    //     BancoCliente::where('cliente_id',operator: $id)->where('banco_nix',false)->delete();
+                    //         BancoCliente::updateOrCreate(
+                    //         [
+                    //             'numero_banco' => $bancoNix->numero_banco,
+                    //             'cliente_id' => $id,
+                    //             'banco_nix' => true,
+                    //         ],
+                    //         [
+                    //             'nome' => $bancoNix->nome,
+                    //             'agencia' => $bancoNix->agencia,
+                    //             'conta_corrente' => $bancoNix->conta_corrente,
+                    //             ]
+                    //         );
+                    // } else {
                         BancoCliente::where('cliente_id',operator: $id)->where('banco_nix',true)->delete();
                         BancoCliente::updateOrCreate(
                             [
@@ -459,14 +459,14 @@ class ClienteController extends Controller
                                 'conta_corrente' => $request->conta_correntes[$row] ?? null,
                             ]
                         );
-                    }
+                    // }
                 }
             }
             DB::commit();
 
             return redirect( route('cliente.edit', $id).'?tab=custom-tabs-two-home-tab')->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
         } catch (\Exception $e) {
-            dd($e);
+            dd($e,$request->all());
             DB::rollBack();
             return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cadastro siscomex!']]);
         }
@@ -504,14 +504,14 @@ class ClienteController extends Controller
         
                 if ($documentoExistente) {
                     $documentoExistente->update([
-                        'tipo_documento_id' => $tipoDocumento,
+                        'tipo_documento' => $tipoDocumento,
                         'path_file' => $caminho ?? $documentoExistente->path_file, 
                         'url' => $url ?? $documentoExistente->url, 
                     ]);
                 } elseif ($caminho && $url) {
                         ClienteDocumento::create([
                             'cliente_id' => $id,
-                            'tipo_documento_id' => $tipoDocumento,
+                            'tipo_documento' => $tipoDocumento,
                             'path_file' => $caminho,
                             'url' => $url,
                         ]);

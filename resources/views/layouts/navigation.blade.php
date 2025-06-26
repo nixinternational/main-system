@@ -17,7 +17,7 @@
         <a href="{{ route('cliente.index') }}" class="nav-link">
           <i class="nav-icon fa-solid fa-user"></i>
           <p>
-            Clientes
+            Cadastro de Clientes
           </p>
         </a>
       </li>
@@ -25,7 +25,7 @@
         <a href="{{ route('catalogo.index') }}" class="nav-link">
           <i class="nav-icon fa-solid fa-folder-open"></i>
           <p>
-            Catálogo
+            Catálogo de clientes
           </p>
         </a>
       </li>
@@ -65,7 +65,7 @@
               </p>
             </a>
           </li>
-          <li class="nav-item">
+          {{-- <li class="nav-item">
             <a href="{{ route('banco-nix.index') }}" class="nav-link">
               <i class="nav-icon fa-solid fa-university"></i>
               <p>
@@ -80,7 +80,7 @@
                 Tipos de documento
               </p>
             </a>
-          </li>
+          </li> --}}
         </ul>
       </li>
     @endhasGroup
