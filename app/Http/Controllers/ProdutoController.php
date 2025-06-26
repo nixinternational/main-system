@@ -45,13 +45,6 @@ class ProdutoController extends Controller
         return view('produto.index', compact('produtos'));
     }
 
-    public function create(): View|RedirectResponse
-    {
-
-        $categorias = Categoria::all();
-        return view('produto.form',compact('categorias'));
-    }
-
     public function store(Request $request): RedirectResponse
     {
         try {
@@ -98,20 +91,6 @@ class ProdutoController extends Controller
         }
     }
 
-    public function edit($id): View|RedirectResponse
-    {
-
-        try {
-
-            $produto = Produto::findOrFail($id);
-            $categorias = Categoria::all();
-
-            return view('produto.form', compact('produto','categorias'));
-        } catch (\Exception $e) {
-		Log::info(json_encode($e,true));
-		return back()->with('messages', ['error' => ['Não foi possível encontrar o produto!']]);
-        }
-    }
 
     public function update(Request $request, int $id): RedirectResponse
     {

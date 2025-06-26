@@ -29,6 +29,14 @@
           </p>
         </a>
       </li>
+           <li class="nav-item">
+        <a href="{{ route('processo.index') }}" class="nav-link">
+          <i class="nav-icon fa-solid fa-folder-open"></i>
+          <p>
+            Processos  
+          </p>
+        </a>
+      </li>
     @endhasGroup
 
     @hasGroup('admnistrador')

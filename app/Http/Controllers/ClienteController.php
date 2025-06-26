@@ -479,7 +479,6 @@ class ClienteController extends Controller
             $bancoCliente->delete();
             return redirect( route('cliente.edit', $clienteId))->with('messages', ['success' => ['Banco excluido com sucesso!']]);
         }catch(\Exception $e){
-            dd($e);
             return redirect(route('cliente.edit', $clienteId))->with('messages', ['error' => ['Não foi possível excluir o banco do cliente!']]);
         }
     }

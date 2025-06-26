@@ -15,6 +15,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LancamentoController;
 use App\Http\Controllers\MotoristaController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\ProcessoController;
 use App\Http\Controllers\ProducaoBaixaController;
 use App\Http\Controllers\ProducaoController;
 use App\Http\Controllers\ProdutoController;
@@ -63,7 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('cliente', ClienteController::class)->middleware('permission:admin|root');;
     Route::resource('produto', ProdutoController::class)->middleware('permission:admin|root');;
     Route::resource('tipo-documento', TipoDocumentoController::class)->middleware('permission:admin|root');;
-
+    Route::resource('processo', ProcessoController::class)->middleware('permission:admin|root');;
 
 
 
