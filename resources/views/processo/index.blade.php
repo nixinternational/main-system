@@ -54,19 +54,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($processos as $cliente)
-                            {{-- <td>{{ $cliente->nome }}</td>
-                            <td>{{ $cliente->cnpj }}</td>
-                            <td>{{ $cliente->nome_responsavel_legal }}</td>
-                            <td>{{$cliente->data_vencimento_procuracao? \Carbon\Carbon::parse($cliente->data_vencimento_procuracao)->format('d/m/Y'): 'Sem procuração' }}</td>
-                            <td>{{ $cliente->cidade }}</td>
-                            <td>{{ $cliente->modalidade_radar ? $cliente->modalidade_radar: 'Não possui'  }}</td>
+                    @foreach ($processos as $processo)
+                            <td>{{$processo->id}}</td>
                             <td class="d-flex  justify-content-around">
-                                @if ($cliente->deleted_at == null)
-                                    <a href="{{ route('cliente.edit', $cliente->id) }}" type="button"
+                                    <a href="{{ route('processo.edit', $processo->id) }}" type="button"
                                         class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
-                                @endif
-                                <form method="POST"
+                                {{-- <form method="POST"
                                     action="{{ route($cliente->deleted_at == null ? 'cliente.destroy' : 'cliente.ativar', $cliente->id) }}"
                                     enctype="multipart/form-data">
                                     @if ($cliente->deleted_at == null)
@@ -79,8 +72,8 @@
                                         class="btn {{ $cliente->deleted_at == null ? 'btn-danger' : 'btn-success' }}"><i
                                             class="fa fa-power-off"></i></button>
 
-                                </form>
-                            </td> --}}
+                                </form> --}}
+                            </td>
                     @endforeach
                 </tbody>
             </table>

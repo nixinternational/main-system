@@ -8,8 +8,28 @@ use Illuminate\Database\Eloquent\Model;
 class Processo extends Model
 {
     use HasFactory;
-    protected $guarded = [];
-
+protected $fillable = [
+    'codigo_interno',
+    'di',
+    'numero_processo',
+    'valor_fob',
+    'frete_internacional',
+    'seguro_internacional',
+    'acrescimo_frete',
+    'valor_cif',
+    'taxa_dolar',
+    'thc_capatazia',
+    'peso_bruto',
+    'peso_liquido',
+    'ii',
+    'ipi',
+    'pis',
+    'cofins',
+    'despesas_aduaneiras',
+    'quantidade',
+    'especie',
+    'cliente_id',
+];
     public function cliente(){
         return $this->hasOne(Cliente::class,'id','cliente_id');
     }
