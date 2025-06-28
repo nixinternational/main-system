@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Catalogo;
 use App\Models\Cliente;
 use App\Models\Processo;
+use App\Models\ProcessoProduto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
@@ -27,7 +28,7 @@ class ProcessoController extends Controller
         if (isset($data['USDBRL']['bid'])) {
             $valorDolar = floatval($data['USDBRL']['bid']);
         } else {
-            $valorDolar = null; 
+            $valorDolar = null;
         }
         Cache::put('bid', $valorDolar, now()->addHours(24));
 
@@ -112,8 +113,8 @@ class ProcessoController extends Controller
         $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
         $productsClient = $catalogo->produtos;
         $dolar = self::getBid();
-        
-        return view('processo.form', compact('processo', 'clientes', 'productsClient','dolar'));
+
+        return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar'));
     }
 
     /**
@@ -133,7 +134,25 @@ class ProcessoController extends Controller
                 $message = $errors->unique();
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
-            Processo::where('id', $id)->update($request->except(['_token', '_method']));
+
+            $dadosProcesso = [
+                "frete_internacional" => $request->frete_internacional,
+                "seguro_internacional" => $request->seguro_internacional,
+                "acrescimo_frete" => $request->acrescimo_frete,
+                "thc_capatazia" => $request->thc_capatazia,
+                "peso_bruto" => $request->peso_bruto,
+            ];
+            Processo::where('id', $id)->update($dadosProcesso);
+
+            foreach ($request->produtos as $key => $produto_id) {
+                ProcessoProduto::updateOrCreate(
+                    [
+                        'processo_id' => $id,
+                        'produto_id' => $produto_id,
+                    ],
+                    []
+                );
+            }
             return redirect(route('processo.edit', $id))->with('messages', ['success' => ['Processo atualizado com sucesso!']]);
         } catch (\Exception $e) {
             dd($e);

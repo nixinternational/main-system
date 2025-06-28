@@ -189,7 +189,9 @@
                                                         class="form-control" name="frete_internacional"
                                                         id="frete_internacional">
                                                 </td>
-                                                <td class="highlight">R$ <span id="frete_internacional_real">{{ isset($processo) ? $processo->frete_internacional * $dolar : '' }}</span></td>
+                                                <td class="highlight">R$ <span
+                                                        id="frete_internacional_real">{{ isset($processo) ? $processo->frete_internacional * $dolar : '' }}</span>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td>SEGURO INTERNACIONAL</td>
@@ -197,14 +199,18 @@
                                                         value="{{ isset($processo) ? $processo->seguro_internacional : '' }}"
                                                         class="form-control" name="seguro_internacional"
                                                         id="seguro_internacional"></td>
-                                                <td class="highlight">R$ <span id="seguro_internacional_real">{{ isset($processo) ? $processo->seguro_internacional * $dolar : '' }}</span></td>
+                                                <td class="highlight">R$ <span
+                                                        id="seguro_internacional_real">{{ isset($processo) ? $processo->seguro_internacional * $dolar : '' }}</span>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td>ACRESCIMO DO FRETE</td>
                                                 <td class="highlight"> <input class="form-control"
                                                         value="{{ isset($processo) ? $processo->acrescimo_frete : '' }}"
                                                         name="acrescimo_frete" id="acrescimo_frete"></td>
-                                                <td class="highlight">R$ <span id="acrescimo_frete_real">{{ isset($processo) ? $processo->acrescimo_frete * $dolar : '' }}</span></td>
+                                                <td class="highlight">R$ <span
+                                                        id="acrescimo_frete_real">{{ isset($processo) ? $processo->acrescimo_frete * $dolar : '' }}</span>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td>VALOR CIF</td>
@@ -213,7 +219,7 @@
                                             </tr>
                                             <tr>
                                                 <td>TAXA DO DOLAR</td>
-                                                <td class="highlight"> {{$dolar}}</td>
+                                                <td class="highlight"> {{ $dolar }}</td>
                                                 <td class="highlight">DOLAR</td>
                                             </tr>
                                             <tr>
@@ -223,7 +229,9 @@
                                             </tr>
                                             <tr class="green-highlight">
                                                 <td>THC/CAPATAZIA</td>
-                                                <td>R$ 1.250,00</td>
+                                                <td><input class="form-control" name="thc_capatazia"
+                                                        value="{{ isset($processo) ? $processo->thc_capatazia : '' }}"
+                                                        id="thc_capatazia"></td>
                                                 <td>USD 216,26</td>
                                             </tr>
                                             <tr>
@@ -352,6 +360,9 @@
                                         <tbody id="productsBody">
                                             <!-- Dados -->
                                         </tbody>
+                                        <tfoot id="resultado-totalizadores">
+    
+                                        </tfoot>
                                     </table>
                                 </div>
                             </form>
@@ -411,15 +422,15 @@
                     let valor = parseFloat($(this).val()) || 0;
                     totalPesoLiq += valor;
                 });
-                console.log(totalPesoLiq)
-                // Recalcular fatorPeso de todas as linhas
+                let fatorPesoRow = 0;
                 $('.pesoLiqTotal').each(function() {
-                    const rowId = $(this).data('row');
+                    const rowIdLine = $(this).data('row');
                     const pesoTotalLinha = parseFloat($(this).val()) || 0;
-                    const fatorPeso = pesoTotalLinha / (totalPesoLiq ||
-                        1); // totalPesoLiq já calculado acima
-
-                    $(`#fator-peso-${rowId}`).text(fatorPeso.toFixed(6));
+                    const fatorPeso = pesoTotalLinha / (totalPesoLiq || 1);
+                    if (rowId == rowIdLine) {
+                        fatorPesoRow = fatorPeso;
+                    }
+                    $(`#fator-peso-${rowIdLine}`).text(fatorPeso.toFixed(6));
                 });
 
                 let fobTotalGeral = 0;
@@ -432,38 +443,59 @@
                     fobTotalGeral += unitario * qtd;
                 });
                 let dolar = $('#dolarHoje').val()
+
                 $('#fobTotalProcesso').text(fobTotalGeral ?? 0)
                 $('#fobTotalProcessoReal').text(fobTotalGeral * dolar)
 
+                const freteUsdInt = parseFloat($('#frete_internacional').val()) * fatorPesoRow
+                const thc_capataziaBase = parseFloat($('#thc_capatazia').val())
+                const thcRow = thc_capataziaBase * fatorPesoRow;
+
+                const seguroIntUsdTotal = parseFloat($('#seguro_internacional').val())
+                const seguroIntUsdRow = (seguroIntUsdTotal / fobTotalGeral) * fobTotal
+
+                const acrescimoFreteBase = parseFloat($('#acrescimo_frete').val())
+                const acrescimoFreteUsdRow = (acrescimoFreteBase / (fobTotalGeral * dolar)) * fobTotal * dolar
+
+                const vlrAduaneiroUsd = fobTotal + freteUsdInt + acrescimoFreteUsdRow + seguroIntUsdRow + (thcRow /
+                    dolar)
+                const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
+
+                const ii = parseFloat($(`#ii-input-${rowId}`).val()) / 100
+                const ipi = parseFloat($(`#ipi-input-${rowId}`).val()) / 100
+                const pis = parseFloat($(`#pis-input-${rowId}`).val()) / 100
+                const cofins = parseFloat($(`#cofins-input-${rowId}`).val()) / 100
+
+                const vlrII = vlrAduaneiroBrl * parseFloat($(`#ii-input-${rowId}`).val())
+                const bcIpi = vlrAduaneiroBrl + vlrII
+                const vlrIpi = bcIpi * ipi
+                const bcPisCofins = vlrAduaneiroBrl
+                const vlrPis = bcPisCofins * pis
+                const vlrCofins = bcPisCofins * cofins
 
                 const valor = 'teste'
                 $(`#peso-unit-${rowId}`).text(pesoLiqUnit);
-                // $(`#fator-peso-${rowId}`).text(fatorPeso);
                 $(`#fob-total-${rowId}`).text(fobTotal);
-                $(`#fob-total-brl-${rowId}`).text(valor);
-                $(`#frete-usd-${rowId}`).text(valor);
-                $(`#frete-brl-${rowId}`).text(valor);
-                $(`#seguro-usd-${rowId}`).text(valor);
-                $(`#seguro-brl-${rowId}`).text(valor);
-                $(`#acresc-frete-usd-${rowId}`).text(valor);
-                $(`#acresc-frete-brl-${rowId}`).text(valor);
-                $(`#thc-usd-${rowId}`).text(valor);
-                $(`#thc-brl-${rowId}`).text(valor);
-                $(`#vlr-adu-usd-${rowId}`).text(valor);
-                $(`#vlr-adu-brl-${rowId}`).text(valor);
-                $(`#ii-${rowId}`).text(valor);
-                $(`#ipi-${rowId}`).text(valor);
-                $(`#pis-${rowId}`).text(valor);
-                $(`#cofins-${rowId}`).text(valor);
-                $(`#icms-${rowId}`).text(valor);
-                $(`#icms-reduzido-${rowId}`).text(valor);
-                $(`#reducao-${rowId}`).text(valor);
-                $(`#vlr-ii-${rowId}`).text(valor);
-                $(`#bc-ipi-${rowId}`).text(valor);
-                $(`#vlr-ipi-${rowId}`).text(valor);
-                $(`#bc-pis-cofins-${rowId}`).text(valor);
-                $(`#vlr-pis-${rowId}`).text(valor);
-                $(`#vlr-cofins-${rowId}`).text(valor);
+                $(`#fob-total-brl-${rowId}`).text(fobTotal * dolar);
+                $(`#frete-usd-${rowId}`).text(freteUsdInt);
+                $(`#frete-brl-${rowId}`).text(freteUsdInt * dolar);
+                $(`#seguro-usd-${rowId}`).text(seguroIntUsdRow);
+                $(`#seguro-brl-${rowId}`).text(seguroIntUsdRow * dolar);
+                $(`#acresc-frete-usd-${rowId}`).text(acrescimoFreteUsdRow);
+                $(`#acresc-frete-brl-${rowId}`).text(acrescimoFreteUsdRow * dolar);
+                $(`#thc-usd-${rowId}`).text(thcRow / dolar);
+                $(`#thc-brl-${rowId}`).text(thcRow);
+                $(`#vlr-adu-usd-${rowId}`).text(vlrAduaneiroUsd);
+                $(`#vlr-adu-brl-${rowId}`).text(vlrAduaneiroBrl);
+                // $(`#icms-reduzido-${rowId}`).text(valor);
+                // $(`#reducao-${rowId}`).text(valor);
+                $(`#vlr-ii-${rowId}`).text(vlrII);
+                $(`#bc-ipi-${rowId}`).text(bcIpi);
+                $(`#vlr-ipi-${rowId}`).text(vlrIpi);
+                $(`#bc-pis-cofins-${rowId}`).text(bcPisCofins);
+                $(`#vlr-pis-${rowId}`).text(vlrPis);
+                $(`#vlr-cofins-${rowId}`).text(vlrCofins);
+
                 $(`#desp-adu-${rowId}`).text(valor);
                 $(`#bc-icms-sr-${rowId}`).text(valor);
                 $(`#vlr-icms-sr-${rowId}`).text(valor);
@@ -503,7 +535,7 @@
                 $(`#dif-camb-fob-${rowId}`).text(valor);
                 $(`#custo-unit-final-${rowId}`).text(valor);
                 $(`#custo-total-final-${rowId}`).text(valor);
-
+ 
             }
         });
         $(document).on('change', '.selectProduct', function() {
@@ -577,11 +609,11 @@
         <td id="thc-brl-${lengthOptions}"></td>
         <td id="vlr-adu-usd-${lengthOptions}"></td>
         <td id="vlr-adu-brl-${lengthOptions}"></td>
-        <td id="ii-${lengthOptions}"></td>
-        <td id="ipi-${lengthOptions}"></td>
-        <td id="pis-${lengthOptions}"></td>
-        <td id="cofins-${lengthOptions}"></td>
-        <td id="icms-${lengthOptions}"></td>
+        <td id="ii-${lengthOptions}"><input  data-row="${lengthOptions}" class="form-control fobUnitario" name="ii[]"value=""id="ii-input-${lengthOptions}"></td>
+        <td id="ipi-${lengthOptions}"><input  data-row="${lengthOptions}" class="form-control fobUnitario" name="ipi[]"value=""id="ipi-input-${lengthOptions}"></td>
+        <td id="pis-${lengthOptions}"><input  data-row="${lengthOptions}" class="form-control fobUnitario" name="pis[]"value=""id="pis-input-${lengthOptions}"></td>
+        <td id="cofins-${lengthOptions}"><input  data-row="${lengthOptions}" class="form-control fobUnitario" name="cofins[]"value=""id="cofins-input-${lengthOptions}"></td>
+        <td id="icms-${lengthOptions}"><input  data-row="${lengthOptions}" class="form-control fobUnitario" name="icms[]"value=""id="icms-input-${lengthOptions}"></td>
         <td id="icms-reduzido-${lengthOptions}"></td>
         <td id="reducao-${lengthOptions}"></td>
         <td id="vlr-ii-${lengthOptions}"></td>
