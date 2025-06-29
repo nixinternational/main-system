@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Utilities\Formatter;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
@@ -16,7 +17,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        
+        $this->app->bind('formatter', function () {
+            return new Formatter();
+        });
     }
 
     /**
@@ -27,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrap();
-          if(config('app.env') === 'production') {
+        if (config('app.env') === 'production') {
             \URL::forceScheme('https');
         }
 
@@ -36,10 +39,10 @@ class AppServiceProvider extends ServiceProvider
             $grupos = explode('|', $groups);
             $bool   = false;
             $user = Auth::user();
-            if($user->grupoPermissao == null ){
+            if ($user->grupoPermissao == null) {
                 return true;
             }
-            if($user->grupoPermissao == null && $user->obtemTodosGrupos() == 'administrador' || $user->obtemTodosGrupos() == 'root'){
+            if ($user->grupoPermissao == null && $user->obtemTodosGrupos() == 'administrador' || $user->obtemTodosGrupos() == 'root') {
                 return true;
             }
             foreach ($grupos as $grupo) {
@@ -52,14 +55,13 @@ class AppServiceProvider extends ServiceProvider
             $grupos = explode('|', $groups);
             $bool   = false;
             $user = Auth::user();
-            if($user->obtemTodosGrupos() == 'administrador' || $user->obtemTodosGrupos() == 'root'){
+            if ($user->obtemTodosGrupos() == 'administrador' || $user->obtemTodosGrupos() == 'root') {
                 return true;
             }
             foreach ($grupos as $grupo) {
-                if($user->pertenceAPermissao($grupo)){
+                if ($user->pertenceAPermissao($grupo)) {
                     return true;
                 }
-             
             }
 
             return $bool;

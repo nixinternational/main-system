@@ -98,11 +98,11 @@ class ProdutoController extends Controller
     {
         try {
           $validator = Validator::make($request->all(), [
-                'modelo' => 'required',
-                'descricao' => 'required',
+                'modelo_edit' => 'required',
+                'descricao_edit' => 'required',
             ], [
-                'modelo.required' => 'O campo modelo do produto é obrigatório!',
-                'descricao.required' => 'Necessário informar a descrição do produto'
+                'modelo_edit.required' => 'O campo modelo do produto é obrigatório!',
+                'descricao_edit.required' => 'Necessário informar a descrição do produto'
             ]);
 
 
@@ -114,8 +114,9 @@ class ProdutoController extends Controller
             $produto = Produto::findOrFail($id);
             
             $produto->update([
-                'modelo' => $request->modelo,
-                'codigo' => $request->codigo,
+                'modelo' => $request->modelo_edit,
+                'ncm' => $request->ncm_edit,
+                'codigo' => $request->codigo_edit,
                 'descricao' => $request->descricao_edit,
             ]);
             return redirect(route('catalogo.edit', $produto->catalogo_id))->with('messages', ['success' => ['Produto atualizado com sucesso!']]);

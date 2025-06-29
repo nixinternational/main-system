@@ -82,16 +82,18 @@
                                                 </td>
 
                                                 <td class="d-flex  justify-content-around">
-                                                    <button type="button" data-toggle="modal" data-target="#descricaoModal" data-nome="{{$produto->nome}}"
-                                                        data-descricao="{{$produto->descricao}}"
-                                                    class="btn btn-info descricaoModalButton">
+                                                    <button type="button" data-toggle="modal" data-target="#descricaoModal"
+                                                        data-nome="{{ $produto->nome }}"
+                                                        data-descricao="{{ $produto->descricao }}"
+                                                        class="btn btn-info descricaoModalButton">
                                                         <i class="fas fa-info"></i>
                                                     </button>
-                                                    <button type="button"
-                                                        data-nome="{{$produto->nome}}"
-                                                        data-descricao="{{$produto->descricao}}"
-                                                        data-id="{{$produto->id}}"
-                                                        data-toggle="modal"
+                                                    <button type="button" 
+                                                        data-modelo="{{ $produto->modelo }}"
+                                                        data-ncm="{{ $produto->ncm }}"
+                                                        data-codigo="{{ $produto->codigo }}"
+                                                        data-descricao="{{ $produto->descricao }}"
+                                                        data-id="{{ $produto->id }}" data-toggle="modal"
                                                         data-target="#editProductModal"
                                                         class="btn btn-warning mr-1 editModal"><i
                                                             class="fas fa-edit"></i></button>
@@ -101,8 +103,7 @@
                                                         @method('DELETE')
 
                                                         @csrf
-                                                        <button type="submit"
-                                                            class="btn btn-danger"><i
+                                                        <button type="submit" class="btn btn-danger"><i
                                                                 class="fa fa-trash"></i></button>
                                                     </form>
 
@@ -127,10 +128,11 @@
 
     <div class="modal fade" id="descricaoModal" tabindex="-1" aria-labelledby="" aria-hidden="true">
         <div class="modal-dialog modal-xl">
-           
+
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Descrição de <span id="nameProductDescription"></span></h5>
+                    <h5 class="modal-title" id="exampleModalLabel">Descrição de <span id="nameProductDescription"></span>
+                    </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -151,46 +153,50 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-           <form action="{{ route('produto.store') }}" method="POST" enctype="multipart/form-data">
-    @csrf
-    <input type="hidden" value="{{ $catalogo->id }}" name="catalogo_id">
+                    <form action="{{ route('produto.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" value="{{ $catalogo->id }}" name="catalogo_id">
 
-    <div class="modal-body">
-        <div class="row">
-            <div class="col-md-6">
-                <label for="modelo" class="font-weight-bold">Modelo</label>
-                <input type="text" class="form-control" id="modelo" name="modelo" value="{{ old('modelo') }}">
-            </div>
-            <div class="col-md-6">
-                <label for="codigo" class="font-weight-bold">Código</label>
-                <input type="text" class="form-control" id="codigo" name="codigo" value="{{ old('codigo') }}">
-            </div>
-        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="modelo" class="font-weight-bold">Modelo</label>
+                                    <input type="text" class="form-control" id="modelo" name="modelo"
+                                        value="{{ old('modelo') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="codigo" class="font-weight-bold">Código</label>
+                                    <input type="text" class="form-control" id="codigo" name="codigo"
+                                        value="{{ old('codigo') }}">
+                                </div>
+                            </div>
 
-        <div class="row mt-3">
-            <div class="col-md-6">
-                <label for="ncm" class="font-weight-bold">NCM</label>
-                <input type="text" class="form-control" id="ncm" name="ncm" value="{{ old('ncm') }}">
-            </div>
-            <div class="col-md-6">
-                <label for="descricao" class="font-weight-bold">Descrição</label>
-                <textarea rows="3" class="form-control" id="descricao" name="descricao">{{ old('descricao') }}</textarea>
-            </div>
-        </div>
-    </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label for="ncm" class="font-weight-bold">NCM</label>
+                                    <input type="text" class="form-control" id="ncm" name="ncm"
+                                        value="{{ old('ncm') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="descricao" class="font-weight-bold">Descrição</label>
+                                    <textarea rows="3" class="form-control" id="descricao" name="descricao">{{ old('descricao') }}</textarea>
+                                </div>
+                            </div>
+                        </div>
 
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
-        <button type="submit" class="btn btn-primary">Salvar</button>
-    </div>
-</form>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                        </div>
+                    </form>
 
                 </div>
             </div>
         </div>
     @endif
     @if (isset($catalogo))
-        <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -203,17 +209,29 @@
                         @csrf
                         @method('PUT')
                         <div class="modal-body">
-                            <div class="row">
-                                <div class="col-6">
 
-                                    <label for="nome_produto" class="font-weight-bold">Nome</label>
-                                    <input type="text" class="form-control" id="nome_edit_produto" name="nome_edit_produto"
-                                        value="">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="modelo" class="font-weight-bold">Modelo</label>
+                                    <input type="text" id="modelo_edit" name="modelo_edit"
+                                        class="form-control"  value="">
                                 </div>
-                                <div class="col-6">
+                                <div class="col-md-6">
+                                    <label for="codigo" class="font-weight-bold">Código</label>
+                                    <input type="text" class="form-control" id="codigo_edit" name="codigo_edit"
+                                        value="{{ old('codigo') }}">
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label for="ncm" class="font-weight-bold">NCM</label>
+                                    <input type="text" class="form-control" id="ncm_edit" name="ncm_edit"
+                                        value="{{ old('ncm') }}">
+                                </div>
+                                <div class="col-md-6">
                                     <label for="descricao" class="font-weight-bold">Descrição</label>
-                                    <textarea rows="3" type="text" class="form-control" id="descricao_edit" name="descricao_edit">{{ old('descricao_edit', '') }}
-                            </textarea>
+                                    <textarea rows="3" class="form-control" id="descricao_edit" name="descricao_edit">{{ old('descricao') }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -230,23 +248,20 @@
     <script>
         $(document).ready(function($) {
 
-            $('.descricaoModalButton').on('click',function(){
-
-
+            $('.descricaoModalButton').on('click', function() {
                 $('#nameProductDescription').text(this.dataset.nome)
                 $('#descriptionProduct').text(this.dataset.descricao)
             })
-            $('.editModal').on('click',function(){
-                $('#formEdit').attr('action',`/produto/${this.dataset.id}`)
-                $('#nome_edit_produto').val(this.dataset.nome)
+
+            $('.editModal').on('click', function() {
+                $('#formEdit').attr('action', `/produto/${this.dataset.id}`)
+                $('#modelo_edit').val(this.dataset.modelo)
+                $('#ncm_edit').val(this.dataset.ncm)
                 $('#descricao_edit').val(this.dataset.descricao)
+                $('#codigo_edit').val(this.dataset.codigo)
             })
 
-            // Tabs com localStorage
-            // var activeTab = localStorage.getItem('activeTab');
-            // if (activeTab) {
-            //     $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
-            // }
+
 
         })
     </script>

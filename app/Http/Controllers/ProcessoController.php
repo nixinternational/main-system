@@ -43,11 +43,7 @@ class ProcessoController extends Controller
         return view('processo.index', compact('processos'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function create()
     {
         $clientes = Cliente::select(['id', 'nome'])->get();
@@ -55,12 +51,6 @@ class ProcessoController extends Controller
         return view('processo.form', compact('clientes'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         try {
@@ -89,23 +79,12 @@ class ProcessoController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function show($id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
         $processo = Processo::find($id);
@@ -113,17 +92,16 @@ class ProcessoController extends Controller
         $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
         $productsClient = $catalogo->produtos;
         $dolar = self::getBid();
+        $processoProdutos = $processo->processoProdutos;
 
-        return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar'));
+        return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+    private function parseMoneyToFloat($value)
+    {
+        if (empty($value)) return null;
+        return (float) str_replace(['.', ','], ['', '.'], $value);
+    }
     public function update(Request $request, $id)
     {
         try {
@@ -136,24 +114,93 @@ class ProcessoController extends Controller
             }
 
             $dadosProcesso = [
-                "frete_internacional" => $request->frete_internacional,
-                "seguro_internacional" => $request->seguro_internacional,
-                "acrescimo_frete" => $request->acrescimo_frete,
-                "thc_capatazia" => $request->thc_capatazia,
-                "peso_bruto" => $request->peso_bruto,
+                "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
+                "seguro_internacional" => $this->parseMoneyToFloat( $request->seguro_internacional),
+                "acrescimo_frete" => $this->parseMoneyToFloat($request->acrescimo_frete),
+                "thc_capatazia" => $this->parseMoneyToFloat($request->thc_capatazia),
+                "peso_bruto" => $this->parseMoneyToFloat($request->peso_bruto),
+                "codigo_interno" => $request->codigo_interno
             ];
             Processo::where('id', $id)->update($dadosProcesso);
-
-            foreach ($request->produtos as $key => $produto_id) {
+            foreach ($request->produtos as $key => $produto) {
                 ProcessoProduto::updateOrCreate(
                     [
-                        'processo_id' => $id,
-                        'produto_id' => $produto_id,
+                        'id' => $produto['processo_produto_id'],
+                        'processo_id' => $id ?? 0,
                     ],
-                    []
+                    [
+                        'produto_id' => $produto['produto_id'],
+                        'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
+                        'quantidade' => isset($produto['quantidade']) ? intval($produto['quantidade']) : null,
+                        'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
+                        'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
+                        'fator_peso' => isset($produto['fator_peso']) ? floatval($produto['fator_peso']) : null,
+                        'fob_unit_usd' => isset($produto['fob_unit_usd']) ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : null,
+                        'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
+                        'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
+                        'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
+                        'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
+                        'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
+                        'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
+                        'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
+                        'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
+                        'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
+                        'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
+                        'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
+                        'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
+                        'ii_percent' => isset($produto['ii_percent']) ? floatval($produto['ii_percent']) : null,
+                        'ipi_percent' => isset($produto['ipi_percent']) ? floatval($produto['ipi_percent']) : null,
+                        'pis_percent' => isset($produto['pis_percent']) ? floatval($produto['pis_percent']) : null,
+                        'cofins_percent' => isset($produto['cofins_percent']) ? floatval($produto['cofins_percent']) : null,
+                        'icms_percent' => isset($produto['icms_percent']) ? floatval($produto['icms_percent']) : null,
+                        'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? floatval($produto['icms_reduzido_percent']) : null,
+                        'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
+                        'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
+                        'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
+                        'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
+                        'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
+                        'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
+                        'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
+                        'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
+                        'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
+                        'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
+                        'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
+                        'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
+                        'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
+                        'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
+                        'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
+                        'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
+                        'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
+                        'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
+                        'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
+                        'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
+                        'tx_def_li' => isset($produto['tx_def_li']) ? $this->parseMoneyToFloat($produto['tx_def_li']) : null,
+                        'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
+                        'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
+                        'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
+                        'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
+                        'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
+                        'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
+                        'capatazia' => isset($produto['capatazia']) ? $this->parseMoneyToFloat($produto['capatazia']) : null,
+                        'afrmm' => isset($produto['afrmm']) ? $this->parseMoneyToFloat($produto['afrmm']) : null,
+                        'armazenagem_sts' => isset($produto['armazenagem_sts']) ? $this->parseMoneyToFloat($produto['armazenagem_sts']) : null,
+                        'frete_dta_sts_ana' => isset($produto['frete_dta_sts_ana']) ? $this->parseMoneyToFloat($produto['frete_dta_sts_ana']) : null,
+                        'sda' => isset($produto['sda']) ? $this->parseMoneyToFloat($produto['sda']) : null,
+                        'rep_sts' => isset($produto['rep_sts']) ? $this->parseMoneyToFloat($produto['rep_sts']) : null,
+                        'armaz_ana' => isset($produto['armaz_ana']) ? $this->parseMoneyToFloat($produto['armaz_ana']) : null,
+                        'lavagem_container' => isset($produto['lavagem_container']) ? $this->parseMoneyToFloat($produto['lavagem_container']) : null,
+                        'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
+                        'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
+                        'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
+                        'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
+                        'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
+                        'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                        'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
+                        'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
+                    ]
                 );
             }
-            return redirect(route('processo.edit', $id))->with('messages', ['success' => ['Processo atualizado com sucesso!']]);
+            return back()->with('messages', ['success' => ['Processo atualizado com sucesso!']]);
         } catch (\Exception $e) {
             dd($e);
             return back()->with('messages', ['error' => ['Não foi possível cadastrar o tipo de documento!']])->withInput($request->all());

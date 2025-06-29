@@ -14,11 +14,7 @@ return new class extends Migration
             $table->foreignId('produto_id')->constrained()->onDelete('cascade');
             $table->unsignedBigInteger('processo_id')->nullable(); // se quiser vincular também ao processo
 
-            $table->string('descricao')->nullable();
             $table->integer('adicao')->nullable();
-            $table->integer('item')->nullable();
-            $table->string('codigo')->nullable();
-            $table->string('ncm')->nullable();
             $table->decimal('quantidade', 15, 4)->nullable();
             $table->decimal('peso_liquido_unitario', 15, 6)->nullable();
             $table->decimal('peso_liquido_total', 15, 4)->nullable();

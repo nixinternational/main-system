@@ -214,6 +214,8 @@ return [
     */
 
     'aliases' => Facade::defaultAliases()->merge([
+            'Formatter' => App\Utilities\Formatter::class,
+
     ])->toArray(),
 
 ];

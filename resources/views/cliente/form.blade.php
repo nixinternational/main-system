@@ -743,7 +743,7 @@
     <input type="hidden" id="bancoOptions" value="{{ json_encode($bancosNix) }}" alt="">
     <input type="hidden" id="tipoDocumentoOptions" value="{{ json_encode($tipoDocumentos) }}" alt="">
     <script>
-        const Toast = Swal.mixin({
+        const toastLocal = Swal.mixin({
             toast: true,
             position: 'top-end',
             customClass: {
@@ -762,7 +762,7 @@
 
             link.click();
 
-            Toast.fire({
+            toastLocal.fire({
                 icon: 'success',
                 title: 'Download iniciado...'
             });

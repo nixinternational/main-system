@@ -23,6 +23,7 @@ return new class extends Migration
             $table->decimal('seguro_internacional', 15, 2)->nullable();
             $table->decimal('acrescimo_frete', 15, 2)->nullable();
             $table->decimal('valor_cif', 15, 2)->nullable();
+            $table->decimal('multa', 15, 2)->nullable();
 
             $table->decimal('taxa_dolar', 10, 4)->nullable();
             $table->decimal('thc_capatazia', 15, 2)->nullable();

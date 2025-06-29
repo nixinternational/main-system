@@ -9,13 +9,9 @@ class ProcessoProduto extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'adicao',
         'produto_id',
         'processo_id',
-        'descricao',
-        'adicao',
-        'item',
-        'codigo',
-        'ncm',
         'quantidade',
         'peso_liquido_unitario',
         'peso_liquido_total',
@@ -83,4 +79,8 @@ class ProcessoProduto extends Model
         'custo_unitario_final',
         'custo_total_final',
     ];
+
+    public function produto(){
+        return $this->hasOne(Produto::class,'id','produto_id');
+    }
 }
