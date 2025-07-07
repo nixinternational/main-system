@@ -1222,9 +1222,12 @@
                 const vlrPis = bcPisCofins * pis;
                 const vlrCofins = bcPisCofins * cofins;
 
-
-                const multaAZ = parseFloat($(`#multa-${rowId}`).val()) ;
-                const txDefLiBA = parseFloat($(`#tx_def_li-${rowId}`).val());
+                console.log([
+                    $(`#multa-${rowId}`).val() ?? '0',
+                    $(`#tx_def_li-${rowId}`).val() ?? '0'
+                ])
+                const multaAZ =  $(`#multa-${rowId}`).val()  != '' ? parseFloat($(`#multa-${rowId}`).val()) : 0;
+                const txDefLiBA = $(`#tx_def_li-${rowId}`).val() != '' ? parseFloat($(`#tx_def_li-${rowId}`).val()) : 0;
                 const taxaSisComex = calcularTaxaSiscomex($('#productsBody tr').length)
                 const fatorTaxaSiscomex_AY = taxaSisComex / (fobTotal * dolar);
                 const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobUnitario * dolar)
@@ -1233,9 +1236,12 @@
                 const valorAFRMM_BI_17 = 3659.39
                 const afrmm_BI = valorAFRMM_BI_17 * fatorVlrFob_AX
                 const armazenagem_BJ = 2505.79 * fatorVlrFob_AX
-                const frete_dta_BK = 17100.00 * fatorVlrFob_AXl
-                const honorarios_nix = 706 * fatorVlrFob_AXl;
-
+                const frete_dta_BK = 17100.00 * fatorVlrFob_AX
+                const honorarios_nix = 706 * fatorVlrFob_AX;
+                console.log([
+                    multaAZ, txDefLiBA, taxaSisComex, fatorTaxaSiscomex_AY,
+                    taxaSisComexUnitaria_BB
+                ])
                 let despesa_aduaneira = multaAZ + txDefLiBA + taxaSisComex + fatorTaxaSiscomex_AY +
                     taxaSisComexUnitaria_BB;
                 despesa_aduaneira += fatorVlrFob_AX + capatazia_BH + valorAFRMM_BI_17 + afrmm_BI + armazenagem_BJ;
@@ -1262,10 +1268,10 @@
                     vlrIcmsReduzido
 
                 const vlrTotalNfComIcms = vlrTotalNfSemIcms + valor_icms_st
-                
 
 
-                    $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit));
+
+                $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit));
                 $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
                 $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
                 $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(freteUsdInt));
@@ -1450,8 +1456,8 @@
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][valor_total_nf_com_icms_st]" id="valor_total_nf_com_icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][fator_valor_fob]" id="fator_valor_fob-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][fator_tx_siscomex]" id="fator_tx_siscomex-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][multa]" id="multa-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][tx_def_li]" id="tx_def_li-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control" name="produtos[${newIndex}][multa]" id="multa-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control" name="produtos[${newIndex}][tx_def_li]" id="tx_def_li-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][taxa_siscomex]" id="taxa_siscomex-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][outras_taxas_agente]" id="outras_taxas_agente-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][liberacao_bl]" id="liberacao_bl-${newIndex}" value=""></td>
