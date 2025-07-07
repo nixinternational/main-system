@@ -180,13 +180,15 @@
                                         <label for="frete_internacional" class="form-label">FRETE INTERNACIONAL
                                             (USD)</label>
                                         <input value="{{ isset($processo) ? $processo->frete_internacional : '' }}"
-                                            class="form-control moneyReal" name="frete_internacional" id="frete_internacional">
+                                            class="form-control moneyReal" name="frete_internacional"
+                                            id="frete_internacional">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="seguro_internacional" class="form-label">SEGURO INTERNACIONAL
                                             (USD)</label>
                                         <input value="{{ isset($processo) ? $processo->seguro_internacional : '' }}"
-                                            class="form-control moneyReal" name="seguro_internacional" id="seguro_internacional">
+                                            class="form-control moneyReal" name="seguro_internacional"
+                                            id="seguro_internacional">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="acrescimo_frete" class="form-label">ACRESCIMO DO FRETE (USD)</label>
@@ -234,7 +236,8 @@
                                             </tr>
                                             <tr>
                                                 <td>PROCESSO</td>
-                                                <td class="">{{ $processo->codigo_interno }}</td>
+                                                <td class="">
+                                                    {{ isset($processo) ? $processo->codigo_interno : '' }}</td>
                                             </tr>
                                             <tr>
                                                 <td>VALOR FOB</td>
@@ -343,719 +346,725 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <button type="button" class="btn btn-primary mb-2 addProduct">Adicionar Produto</button>
-                                <div style="overflow-x: auto; width: 100%;">
-                                    <table class="table table-bordered table-striped table-products"
-                                        style="min-width: 3000px;">
-                                        <thead class="thead-dark">
-                                            <tr>
-                                                <th
-                                                    style="position: sticky; left: 0; z-index: 10; background-color: #212529; min-width: 50px;">
-                                                    Ações</th>
-                                                <th style="min-width: 300px !important;">PRODUTO</th>
-                                                <th style="min-width: 500px !important;">DESCRIÇÃO</th>
-                                                <th>ADIÇÃO</th>
-                                                <th>ITEM</th>
-                                                <th>CODIGO</th>
-                                                <th>NCM</th>
-                                                <th>QUANTD</th>
-                                                <th>PESO LIQ. UNIT</th>
-                                                <th>PESO LIQ TOTAL</th>
-                                                <th>FATOR PESO</th>
-                                                <th>FOB UNIT USD</th>
-                                                <th>FOB TOTAL USD</th>
-                                                <th>VLR TOTALFOB R$</th>
-                                                <th>FRETE INT.USD</th>
-                                                <th>FRETE INT.R$</th>
-                                                <th>SEGURO INT.USD</th>
-                                                <th>SEGURO INT.R$</th>
-                                                <th>ACRESC. FRETE USD</th>
-                                                <th>ACRESC. FRETE R$</th>
-                                                <th>THC USD</th>
-                                                <th>THC R$</th>
-                                                <th>VLR ADUANEIRO USD</th>
-                                                <th>VLR ADUANEIRO R$</th>
-                                                <th>II</th>
-                                                <th>IPI</th>
-                                                <th>PIS</th>
-                                                <th>COFINS</th>
-                                                <th>ICMS</th>
-                                                <th>ICMS REDUZIDO</th>
-                                                <th>REDUÇÃO</th>
-                                                <th>VLR II</th>
-                                                <th>BC IPI</th>
-                                                <th>VLR IPI</th>
-                                                <th>BC PIS/COFINS</th>
-                                                <th>VLR PIS</th>
-                                                <th>VLR COFINS</th>
-                                                <th>DESP. ADUANEIRA</th>
-                                                <th>BC ICMS S/REDUÇÃO</th>
-                                                <th>VLR ICMS S/RED.</th>
-                                                <th>BC ICMS REDUZIDO</th>
-                                                <th>VLR ICMS REDUZ.</th>
-                                                <th>VLR UNIT PROD. NF</th>
-                                                <th>VLR TOTAL PROD. NF</th>
-                                                <th>VLR TOTAL NF S/ICMS ST</th>
-                                                <th>BC ICMS-ST</th>
-                                                <th>MVA</th>
-                                                <th>ICMS-ST</th>
-                                                <th>VLR ICMS-ST</th>
-                                                <th>VLR TOTAL NF C/ICMS-ST</th>
-                                                <th>FATOR VLR FOB</th>
-                                                <th>FATOR TX SISCOMEX</th>
-                                                <th>MULTA</th>
-                                                <th>TX DEF. LI</th>
-                                                <th>TAXA SISCOMEX</th>
-                                                <th>OUTRAS TX AGENTE</th>
-                                                <th>LIBERAÇÃO BL</th>
-                                                <th>DESCONS.</th>
-                                                <th>ISPS CODE</th>
-                                                <th>HANDLING</th>
-                                                <th>CAPATAZIA</th>
-                                                <th>AFRMM</th>
-                                                <th>ARMAZENAGEM STS</th>
-                                                <th>FRETE DTA STS/ANA</th>
-                                                <th>S.D.A</th>
-                                                <th>REP.STS</th>
-                                                <th>ARMAZ. ANA</th>
-                                                <th>LAVAGEM CONT</th>
-                                                <th>REP. ANAPOLIS</th>
-                                                <th>LI+DTA+HONOR.NIX</th>
-                                                <th>HONORÁRIOS NIX</th>
-                                                <th>DESP. DESEMBARAÇO</th>
-                                                <th>DIF. CAMBIAL FRETE</th>
-                                                <th>DIF.CAMBIAL FOB</th>
-                                                <th>CUSTO UNIT FINAL</th>
-                                                <th>CUSTO TOTAL FINAL</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="productsBody">
-                                            @foreach ($processoProdutos as $index => $processoProduto)
+                                @if (isset($processo) && isset($productsClient))
+                                    <button type="button" class="btn btn-primary mb-2 addProduct">Adicionar
+                                        Produto</button>
+                                    <div style="overflow-x: auto; width: 100%;">
+                                        <table class="table table-bordered table-striped table-products"
+                                            style="min-width: 3000px;">
+                                            <thead class="thead-dark">
                                                 <tr>
-                                                    <td
-                                                        style="position: sticky; left: 0; z-index: 5; background-color: white;">
-                                                        <button type="button" class="btn btn-danger btn-sm btn-remove"
-                                                            data-id="{{ $processoProduto->id }}">
-                                                            <i class="fas fa-trash-alt"></i>
-                                                        </button>
-                                                    </td>
+                                                    <th
+                                                        style="position: sticky; left: 0; z-index: 10; background-color: #212529; min-width: 50px;">
+                                                        Ações</th>
+                                                    <th style="min-width: 300px !important;">PRODUTO</th>
+                                                    <th style="min-width: 500px !important;">DESCRIÇÃO</th>
+                                                    <th>ADIÇÃO</th>
+                                                    <th>ITEM</th>
+                                                    <th>CODIGO</th>
+                                                    <th>NCM</th>
+                                                    <th>QUANTD</th>
+                                                    <th>PESO LIQ. UNIT</th>
+                                                    <th>PESO LIQ TOTAL</th>
+                                                    <th>FATOR PESO</th>
+                                                    <th>FOB UNIT USD</th>
+                                                    <th>FOB TOTAL USD</th>
+                                                    <th>VLR TOTALFOB R$</th>
+                                                    <th>FRETE INT.USD</th>
+                                                    <th>FRETE INT.R$</th>
+                                                    <th>SEGURO INT.USD</th>
+                                                    <th>SEGURO INT.R$</th>
+                                                    <th>ACRESC. FRETE USD</th>
+                                                    <th>ACRESC. FRETE R$</th>
+                                                    <th>THC USD</th>
+                                                    <th>THC R$</th>
+                                                    <th>VLR ADUANEIRO USD</th>
+                                                    <th>VLR ADUANEIRO R$</th>
+                                                    <th>II</th>
+                                                    <th>IPI</th>
+                                                    <th>PIS</th>
+                                                    <th>COFINS</th>
+                                                    <th>ICMS</th>
+                                                    <th>ICMS REDUZIDO</th>
+                                                    <th>REDUÇÃO</th>
+                                                    <th>VLR II</th>
+                                                    <th>BC IPI</th>
+                                                    <th>VLR IPI</th>
+                                                    <th>BC PIS/COFINS</th>
+                                                    <th>VLR PIS</th>
+                                                    <th>VLR COFINS</th>
+                                                    <th>DESP. ADUANEIRA</th>
+                                                    <th>BC ICMS S/REDUÇÃO</th>
+                                                    <th>VLR ICMS S/RED.</th>
+                                                    <th>BC ICMS REDUZIDO</th>
+                                                    <th>VLR ICMS REDUZ.</th>
+                                                    <th>VLR UNIT PROD. NF</th>
+                                                    <th>VLR TOTAL PROD. NF</th>
+                                                    <th>VLR TOTAL NF S/ICMS ST</th>
+                                                    <th>BC ICMS-ST</th>
+                                                    <th>MVA</th>
+                                                    <th>ICMS-ST</th>
+                                                    <th>VLR ICMS-ST</th>
+                                                    <th>VLR TOTAL NF C/ICMS-ST</th>
+                                                    <th>FATOR VLR FOB</th>
+                                                    <th>FATOR TX SISCOMEX</th>
+                                                    <th>MULTA</th>
+                                                    <th>TX DEF. LI</th>
+                                                    <th>TAXA SISCOMEX</th>
+                                                    <th>OUTRAS TX AGENTE</th>
+                                                    <th>LIBERAÇÃO BL</th>
+                                                    <th>DESCONS.</th>
+                                                    <th>ISPS CODE</th>
+                                                    <th>HANDLING</th>
+                                                    <th>CAPATAZIA</th>
+                                                    <th>AFRMM</th>
+                                                    <th>ARMAZENAGEM STS</th>
+                                                    <th>FRETE DTA STS/ANA</th>
+                                                    <th>S.D.A</th>
+                                                    <th>REP.STS</th>
+                                                    <th>ARMAZ. ANA</th>
+                                                    <th>LAVAGEM CONT</th>
+                                                    <th>REP. ANAPOLIS</th>
+                                                    <th>LI+DTA+HONOR.NIX</th>
+                                                    <th>HONORÁRIOS NIX</th>
+                                                    <th>DESP. DESEMBARAÇO</th>
+                                                    <th>DIF. CAMBIAL FRETE</th>
+                                                    <th>DIF.CAMBIAL FOB</th>
+                                                    <th>CUSTO UNIT FINAL</th>
+                                                    <th>CUSTO TOTAL FINAL</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="productsBody">
+                                                @foreach ($processoProdutos as $index => $processoProduto)
+                                                    <tr>
+                                                        <td
+                                                            style="position: sticky; left: 0; z-index: 5; background-color: white;">
+                                                            <button type="button"
+                                                                class="btn btn-danger btn-sm btn-remove"
+                                                                data-id="{{ $processoProduto->id }}">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        </td>
 
-                                                    <input type="hidden"
-                                                        name="produtos[{{ $index }}][processo_produto_id]"
-                                                        id="processo_produto_id-{{ $index }}"
-                                                        value="{{ $processoProduto->id }}">
+                                                        <input type="hidden"
+                                                            name="produtos[{{ $index }}][processo_produto_id]"
+                                                            id="processo_produto_id-{{ $index }}"
+                                                            value="{{ $processoProduto->id }}">
 
-                                                    <td>
-                                                        <select data-row="{{ $index }}"
-                                                            class="custom-select selectProduct select2"
-                                                            name="produtos[{{ $index }}][produto_id]"
-                                                            id="produto_id-{{ $index }}">
-                                                            <option selected disabled>Selecione uma opção</option>
-                                                            @foreach ($productsClient as $produto)
-                                                                <option value="{{ $produto->id }}"
-                                                                    {{ $processoProduto->produto_id == $produto->id ? 'selected' : '' }}>
-                                                                    {{ $produto->modelo }} - {{ $produto->codigo }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </td>
+                                                        <td>
+                                                            <select data-row="{{ $index }}"
+                                                                class="custom-select selectProduct select2"
+                                                                name="produtos[{{ $index }}][produto_id]"
+                                                                id="produto_id-{{ $index }}">
+                                                                <option selected disabled>Selecione uma opção</option>
+                                                                @foreach ($productsClient as $produto)
+                                                                    <option value="{{ $produto->id }}"
+                                                                        {{ $processoProduto->produto_id == $produto->id ? 'selected' : '' }}>
+                                                                        {{ $produto->modelo }} - {{ $produto->codigo }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
 
-                                                    <td>
-                                                        <p id="descricao-{{ $index }}">
-                                                            {{ $processoProduto->produto->descricao }}
-                                                        </p>
-                                                        {{-- <input type="text" class="form-control" readonly
+                                                        <td>
+                                                            <p id="descricao-{{ $index }}">
+                                                                {{ $processoProduto->produto->descricao }}
+                                                            </p>
+                                                            {{-- <input type="text" class="form-control" readonly
                                                             name="produtos[{{ $index }}][descricao]"
                                                             id="descricao-{{ $index }}"
                                                             value="{{ $processoProduto->produto->descricao }}"> --}}
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control"
-                                                            name="produtos[{{ $index }}][adicao]"
-                                                            id="adicao-{{ $index }}"
-                                                            value="{{ $processoProduto->adicao ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly id="item-{{ $index }}"
-                                                            value="{{ $loop->iteration }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" class="form-control" readonly
-                                                            name="produtos[{{ $index }}][codigo]"
-                                                            id="codigo-{{ $index }}"
-                                                            value="{{ $processoProduto->produto->codigo }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" class="form-control" readonly
-                                                            name="produtos[{{ $index }}][ncm]"
-                                                            id="ncm-{{ $index }}"
-                                                            value="{{ $processoProduto->produto->ncm }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="number"
-                                                            step="1" class="form-control"
-                                                            name="produtos[{{ $index }}][quantidade]"
-                                                            id="quantidade-{{ $index }}"
-                                                            value="{{ $processoProduto->quantidade ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][peso_liquido_unitario]"
-                                                            id="peso_liquido_unitario-{{ $index }}"
-                                                            value="{{ $processoProduto->peso_liquido_unitario ?? null }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control pesoLiqTotal moneyReal"
-                                                            name="produtos[{{ $index }}][peso_liquido_total]"
-                                                            id="peso_liquido_total-{{ $index }}"
-                                                            value="{{ $processoProduto->peso_liquido_total ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][fator_peso]"
-                                                            id="fator_peso-{{ $index }}"
-                                                            value="{{ $processoProduto->fator_peso ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control fobUnitario moneyUSD"
-                                                            name="produtos[{{ $index }}][fob_unit_usd]"
-                                                            id="fob_unit_usd-{{ $index }}"
-                                                            value="{{ $processoProduto->fob_unit_usd ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyUSD" readonly
-                                                            name="produtos[{{ $index }}][fob_total_usd]"
-                                                            id="fob_total_usd-{{ $index }}"
-                                                            value="{{ $processoProduto->fob_total_usd ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][fob_total_brl]"
-                                                            id="fob_total_brl-{{ $index }}"
-                                                            value="{{ $processoProduto->fob_total_brl ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyUSD" readonly
-                                                            name="produtos[{{ $index }}][frete_usd]"
-                                                            id="frete_usd-{{ $index }}"
-                                                            value="{{ $processoProduto->frete_usd ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][frete_brl]"
-                                                            id="frete_brl-{{ $index }}"
-                                                            value="{{ $processoProduto->frete_brl ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyUSD" readonly
-                                                            name="produtos[{{ $index }}][seguro_usd]"
-                                                            id="seguro_usd-{{ $index }}"
-                                                            value="{{ $processoProduto->seguro_usd ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][seguro_brl]"
-                                                            id="seguro_brl-{{ $index }}"
-                                                            value="{{ $processoProduto->seguro_brl ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyUSD" readonly
-                                                            name="produtos[{{ $index }}][acresc_frete_usd]"
-                                                            id="acresc_frete_usd-{{ $index }}"
-                                                            value="{{ $processoProduto->acresc_frete_usd ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][acresc_frete_brl]"
-                                                            id="acresc_frete_brl-{{ $index }}"
-                                                            value="{{ $processoProduto->acresc_frete_brl ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyUSD" readonly
-                                                            name="produtos[{{ $index }}][thc_usd]"
-                                                            id="thc_usd-{{ $index }}"
-                                                            value="{{ $processoProduto->thc_usd ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][thc_brl]"
-                                                            id="thc_brl-{{ $index }}"
-                                                            value="{{ $processoProduto->thc_brl ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyUSD" readonly
-                                                            name="produtos[{{ $index }}][valor_aduaneiro_usd]"
-                                                            id="valor_aduaneiro_usd-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_aduaneiro_usd ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][valor_aduaneiro_brl]"
-                                                            id="valor_aduaneiro_brl-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_aduaneiro_brl ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control"
-                                                            name="produtos[{{ $index }}][ii_percent]"
-                                                            id="ii_percent-{{ $index }}"
-                                                            value="{{ $processoProduto->ii_percent ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control"
-                                                            name="produtos[{{ $index }}][ipi_percent]"
-                                                            id="ipi_percent-{{ $index }}"
-                                                            value="{{ $processoProduto->ipi_percent ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control"
-                                                            name="produtos[{{ $index }}][pis_percent]"
-                                                            id="pis_percent-{{ $index }}"
-                                                            value="{{ $processoProduto->pis_percent ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control"
-                                                            name="produtos[{{ $index }}][cofins_percent]"
-                                                            id="cofins_percent-{{ $index }}"
-                                                            value="{{ $processoProduto->cofins_percent ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control"
-                                                            name="produtos[{{ $index }}][icms_percent]"
-                                                            id="icms_percent-{{ $index }}"
-                                                            value="{{ $processoProduto->icms_percent ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][icms_reduzido_percent]"
-                                                            id="icms_reduzido_percent-{{ $index }}"
-                                                            value="{{ $processoProduto->icms_reduzido_percent ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][reducao]"
-                                                            id="reducao-{{ $index }}"
-                                                            value="{{ $processoProduto->reducao ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][valor_ii]"
-                                                            id="valor_ii-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_ii ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][base_ipi]"
-                                                            id="base_ipi-{{ $index }}"
-                                                            value="{{ $processoProduto->base_ipi ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][valor_ipi]"
-                                                            id="valor_ipi-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_ipi ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][base_pis_cofins]"
-                                                            id="base_pis_cofins-{{ $index }}"
-                                                            value="{{ $processoProduto->base_pis_cofins ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][valor_pis]"
-                                                            id="valor_pis-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_pis ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control moneyReal" readonly
-                                                            name="produtos[{{ $index }}][valor_cofins]"
-                                                            id="valor_cofins-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_cofins ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][despesa_aduaneira]"
-                                                            id="despesa_aduaneira-{{ $index }}"
-                                                            value="{{ $processoProduto->despesa_aduaneira ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][base_icms_sem_reducao]"
-                                                            id="base_icms_sem_reducao-{{ $index }}"
-                                                            value="{{ $processoProduto->base_icms_sem_reducao ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][valor_icms_sem_reducao]"
-                                                            id="valor_icms_sem_reducao-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_icms_sem_reducao ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][base_icms_reduzido]"
-                                                            id="base_icms_reduzido-{{ $index }}"
-                                                            value="{{ $processoProduto->base_icms_reduzido ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][valor_icms_reduzido]"
-                                                            id="valor_icms_reduzido-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_icms_reduzido ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input data-row="{{ $index }}" type="text"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][valor_unit_nf]"
-                                                            id="valor_unit_nf-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_unit_nf ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][valor_total_nf]"
-                                                            id="valor_total_nf-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_total_nf ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][valor_total_nf_sem_icms_st]"
-                                                            id="valor_total_nf_sem_icms_st-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_total_nf_sem_icms_st ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][base_icms_st]"
-                                                            id="base_icms_st-{{ $index }}"
-                                                            value="{{ $processoProduto->base_icms_st ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][mva]"
-                                                            id="mva-{{ $index }}"
-                                                            value="{{ $processoProduto->mva ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][icms_st]"
-                                                            id="icms_st-{{ $index }}"
-                                                            value="{{ $processoProduto->icms_st ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][valor_icms_st]"
-                                                            id="valor_icms_st-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_icms_st ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][valor_total_nf_com_icms_st]"
-                                                            id="valor_total_nf_com_icms_st-{{ $index }}"
-                                                            value="{{ $processoProduto->valor_total_nf_com_icms_st ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][fator_valor_fob]"
-                                                            id="fator_valor_fob-{{ $index }}"
-                                                            value="{{ $processoProduto->fator_valor_fob ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][fator_tx_siscomex]"
-                                                            id="fator_tx_siscomex-{{ $index }}"
-                                                            value="{{ $processoProduto->fator_tx_siscomex ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][multa]"
-                                                            id="multa-{{ $index }}"
-                                                            value="{{ $processoProduto->multa ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][tx_def_li]"
-                                                            id="tx_def_li-{{ $index }}"
-                                                            value="{{ $processoProduto->tx_def_li ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][taxa_siscomex]"
-                                                            id="taxa_siscomex-{{ $index }}"
-                                                            value="{{ $processoProduto->taxa_siscomex ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][outras_taxas_agente]"
-                                                            id="outras_taxas_agente-{{ $index }}"
-                                                            value="{{ $processoProduto->outras_taxas_agente ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][liberacao_bl]"
-                                                            id="liberacao_bl-{{ $index }}"
-                                                            value="{{ $processoProduto->liberacao_bl ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][desconsolidacao]"
-                                                            id="desconsolidacao-{{ $index }}"
-                                                            value="{{ $processoProduto->desconsolidacao ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][isps_code]"
-                                                            id="isps_code-{{ $index }}"
-                                                            value="{{ $processoProduto->isps_code ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][handling]"
-                                                            id="handling-{{ $index }}"
-                                                            value="{{ $processoProduto->handling ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][capatazia]"
-                                                            id="capatazia-{{ $index }}"
-                                                            value="{{ $processoProduto->capatazia ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][afrmm]"
-                                                            id="afrmm-{{ $index }}"
-                                                            value="{{ $processoProduto->afrmm ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][armazenagem_sts]"
-                                                            id="armazenagem_sts-{{ $index }}"
-                                                            value="{{ $processoProduto->armazenagem_sts ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][frete_dta_sts_ana]"
-                                                            id="frete_dta_sts_ana-{{ $index }}"
-                                                            value="{{ $processoProduto->frete_dta_sts_ana ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][sda]"
-                                                            id="sda-{{ $index }}"
-                                                            value="{{ $processoProduto->sda ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][rep_sts]"
-                                                            id="rep_sts-{{ $index }}"
-                                                            value="{{ $processoProduto->rep_sts ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][armaz_ana]"
-                                                            id="armaz_ana-{{ $index }}"
-                                                            value="{{ $processoProduto->armaz_ana ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][lavagem_container]"
-                                                            id="lavagem_container-{{ $index }}"
-                                                            value="{{ $processoProduto->lavagem_container ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][rep_anapolis]"
-                                                            id="rep_anapolis-{{ $index }}"
-                                                            value="{{ $processoProduto->rep_anapolis ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][li_dta_honor_nix]"
-                                                            id="li_dta_honor_nix-{{ $index }}"
-                                                            value="{{ $processoProduto->li_dta_honor_nix ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][honorarios_nix]"
-                                                            id="honorarios_nix-{{ $index }}"
-                                                            value="{{ $processoProduto->honorarios_nix ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][desp_desenbaraco]"
-                                                            id="desp_desenbaraco-{{ $index }}"
-                                                            value="{{ $processoProduto->desp_desenbaraco ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][diferenca_cambial_frete]"
-                                                            id="diferenca_cambial_frete-{{ $index }}"
-                                                            value="{{ $processoProduto->diferenca_cambial_frete ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][diferenca_cambial_fob]"
-                                                            id="diferenca_cambial_fob-{{ $index }}"
-                                                            value="{{ $processoProduto->diferenca_cambial_fob ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][custo_unitario_final]"
-                                                            id="custo_unitario_final-{{ $index }}"
-                                                            value="{{ $processoProduto->custo_unitario_final ?? '' }}">
-                                                    </td>
-
-                                                    <td>
-                                                        <input type="text" data-row="{{ $index }}"
-                                                            class="form-control" readonly
-                                                            name="produtos[{{ $index }}][custo_total_final]"
-                                                            id="custo_total_final-{{ $index }}"
-                                                            value="{{ $processoProduto->custo_total_final ?? '' }}">
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                        <tfoot id="resultado-totalizadores">
-                                        </tfoot>
-                                    </table>
-                                </div>
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control"
+                                                                name="produtos[{{ $index }}][adicao]"
+                                                                id="adicao-{{ $index }}"
+                                                                value="{{ $processoProduto->adicao ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                id="item-{{ $index }}"
+                                                                value="{{ $loop->iteration }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" class="form-control" readonly
+                                                                name="produtos[{{ $index }}][codigo]"
+                                                                id="codigo-{{ $index }}"
+                                                                value="{{ $processoProduto->produto->codigo }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" class="form-control" readonly
+                                                                name="produtos[{{ $index }}][ncm]"
+                                                                id="ncm-{{ $index }}"
+                                                                value="{{ $processoProduto->produto->ncm }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="number"
+                                                                step="1" class="form-control"
+                                                                name="produtos[{{ $index }}][quantidade]"
+                                                                id="quantidade-{{ $index }}"
+                                                                value="{{ $processoProduto->quantidade ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][peso_liquido_unitario]"
+                                                                id="peso_liquido_unitario-{{ $index }}"
+                                                                value="{{ $processoProduto->peso_liquido_unitario ?? null }}">
+                                                        </td>
+
+                                                        <td>
+                                                            {{-- @dd() --}}
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control pesoLiqTotal moneyReal"
+                                                                name="produtos[{{ $index }}][peso_liquido_total]"
+                                                                id="peso_liquido_total-{{ $index }}"
+                                                                value="{{ $processoProduto->peso_liquido_total ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][fator_peso]"
+                                                                id="fator_peso-{{ $index }}"
+                                                                value="{{ $processoProduto->fator_peso ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control fobUnitario moneyUSD"
+                                                                name="produtos[{{ $index }}][fob_unit_usd]"
+                                                                id="fob_unit_usd-{{ $index }}"
+                                                                value="{{ $processoProduto->fob_unit_usd ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyUSD" readonly
+                                                                name="produtos[{{ $index }}][fob_total_usd]"
+                                                                id="fob_total_usd-{{ $index }}"
+                                                                value="{{ $processoProduto->fob_total_usd ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][fob_total_brl]"
+                                                                id="fob_total_brl-{{ $index }}"
+                                                                value="{{ $processoProduto->fob_total_brl ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyUSD" readonly
+                                                                name="produtos[{{ $index }}][frete_usd]"
+                                                                id="frete_usd-{{ $index }}"
+                                                                value="{{ $processoProduto->frete_usd ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][frete_brl]"
+                                                                id="frete_brl-{{ $index }}"
+                                                                value="{{ $processoProduto->frete_brl ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyUSD" readonly
+                                                                name="produtos[{{ $index }}][seguro_usd]"
+                                                                id="seguro_usd-{{ $index }}"
+                                                                value="{{ $processoProduto->seguro_usd ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][seguro_brl]"
+                                                                id="seguro_brl-{{ $index }}"
+                                                                value="{{ $processoProduto->seguro_brl ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyUSD" readonly
+                                                                name="produtos[{{ $index }}][acresc_frete_usd]"
+                                                                id="acresc_frete_usd-{{ $index }}"
+                                                                value="{{ $processoProduto->acresc_frete_usd ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][acresc_frete_brl]"
+                                                                id="acresc_frete_brl-{{ $index }}"
+                                                                value="{{ $processoProduto->acresc_frete_brl ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyUSD" readonly
+                                                                name="produtos[{{ $index }}][thc_usd]"
+                                                                id="thc_usd-{{ $index }}"
+                                                                value="{{ $processoProduto->thc_usd ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][thc_brl]"
+                                                                id="thc_brl-{{ $index }}"
+                                                                value="{{ $processoProduto->thc_brl ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyUSD" readonly
+                                                                name="produtos[{{ $index }}][valor_aduaneiro_usd]"
+                                                                id="valor_aduaneiro_usd-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_aduaneiro_usd ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][valor_aduaneiro_brl]"
+                                                                id="valor_aduaneiro_brl-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_aduaneiro_brl ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control"
+                                                                name="produtos[{{ $index }}][ii_percent]"
+                                                                id="ii_percent-{{ $index }}"
+                                                                value="{{ $processoProduto->ii_percent ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control"
+                                                                name="produtos[{{ $index }}][ipi_percent]"
+                                                                id="ipi_percent-{{ $index }}"
+                                                                value="{{ $processoProduto->ipi_percent ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control"
+                                                                name="produtos[{{ $index }}][pis_percent]"
+                                                                id="pis_percent-{{ $index }}"
+                                                                value="{{ $processoProduto->pis_percent ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control"
+                                                                name="produtos[{{ $index }}][cofins_percent]"
+                                                                id="cofins_percent-{{ $index }}"
+                                                                value="{{ $processoProduto->cofins_percent ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control"
+                                                                name="produtos[{{ $index }}][icms_percent]"
+                                                                id="icms_percent-{{ $index }}"
+                                                                value="{{ $processoProduto->icms_percent ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][icms_reduzido_percent]"
+                                                                id="icms_reduzido_percent-{{ $index }}"
+                                                                value="{{ $processoProduto->icms_reduzido_percent ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][reducao]"
+                                                                id="reducao-{{ $index }}"
+                                                                value="{{ $processoProduto->reducao ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][valor_ii]"
+                                                                id="valor_ii-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_ii ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][base_ipi]"
+                                                                id="base_ipi-{{ $index }}"
+                                                                value="{{ $processoProduto->base_ipi ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][valor_ipi]"
+                                                                id="valor_ipi-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_ipi ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][base_pis_cofins]"
+                                                                id="base_pis_cofins-{{ $index }}"
+                                                                value="{{ $processoProduto->base_pis_cofins ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][valor_pis]"
+                                                                id="valor_pis-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_pis ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control moneyReal" readonly
+                                                                name="produtos[{{ $index }}][valor_cofins]"
+                                                                id="valor_cofins-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_cofins ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][despesa_aduaneira]"
+                                                                id="despesa_aduaneira-{{ $index }}"
+                                                                value="{{ $processoProduto->despesa_aduaneira ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][base_icms_sem_reducao]"
+                                                                id="base_icms_sem_reducao-{{ $index }}"
+                                                                value="{{ $processoProduto->base_icms_sem_reducao ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][valor_icms_sem_reducao]"
+                                                                id="valor_icms_sem_reducao-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_icms_sem_reducao ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][base_icms_reduzido]"
+                                                                id="base_icms_reduzido-{{ $index }}"
+                                                                value="{{ $processoProduto->base_icms_reduzido ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][valor_icms_reduzido]"
+                                                                id="valor_icms_reduzido-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_icms_reduzido ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][valor_unit_nf]"
+                                                                id="valor_unit_nf-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_unit_nf ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][valor_total_nf]"
+                                                                id="valor_total_nf-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_total_nf ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][valor_total_nf_sem_icms_st]"
+                                                                id="valor_total_nf_sem_icms_st-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_total_nf_sem_icms_st ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][base_icms_st]"
+                                                                id="base_icms_st-{{ $index }}"
+                                                                value="{{ $processoProduto->base_icms_st ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][mva]"
+                                                                id="mva-{{ $index }}"
+                                                                value="{{ $processoProduto->mva ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][icms_st]"
+                                                                id="icms_st-{{ $index }}"
+                                                                value="{{ $processoProduto->icms_st ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][valor_icms_st]"
+                                                                id="valor_icms_st-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_icms_st ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][valor_total_nf_com_icms_st]"
+                                                                id="valor_total_nf_com_icms_st-{{ $index }}"
+                                                                value="{{ $processoProduto->valor_total_nf_com_icms_st ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][fator_valor_fob]"
+                                                                id="fator_valor_fob-{{ $index }}"
+                                                                value="{{ $processoProduto->fator_valor_fob ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][fator_tx_siscomex]"
+                                                                id="fator_tx_siscomex-{{ $index }}"
+                                                                value="{{ $processoProduto->fator_tx_siscomex ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][multa]"
+                                                                id="multa-{{ $index }}"
+                                                                value="{{ $processoProduto->multa ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][tx_def_li]"
+                                                                id="tx_def_li-{{ $index }}"
+                                                                value="{{ $processoProduto->tx_def_li ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][taxa_siscomex]"
+                                                                id="taxa_siscomex-{{ $index }}"
+                                                                value="{{ $processoProduto->taxa_siscomex ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][outras_taxas_agente]"
+                                                                id="outras_taxas_agente-{{ $index }}"
+                                                                value="{{ $processoProduto->outras_taxas_agente ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][liberacao_bl]"
+                                                                id="liberacao_bl-{{ $index }}"
+                                                                value="{{ $processoProduto->liberacao_bl ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][desconsolidacao]"
+                                                                id="desconsolidacao-{{ $index }}"
+                                                                value="{{ $processoProduto->desconsolidacao ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][isps_code]"
+                                                                id="isps_code-{{ $index }}"
+                                                                value="{{ $processoProduto->isps_code ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][handling]"
+                                                                id="handling-{{ $index }}"
+                                                                value="{{ $processoProduto->handling ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][capatazia]"
+                                                                id="capatazia-{{ $index }}"
+                                                                value="{{ $processoProduto->capatazia ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][afrmm]"
+                                                                id="afrmm-{{ $index }}"
+                                                                value="{{ $processoProduto->afrmm ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][armazenagem_sts]"
+                                                                id="armazenagem_sts-{{ $index }}"
+                                                                value="{{ $processoProduto->armazenagem_sts ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][frete_dta_sts_ana]"
+                                                                id="frete_dta_sts_ana-{{ $index }}"
+                                                                value="{{ $processoProduto->frete_dta_sts_ana ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][sda]"
+                                                                id="sda-{{ $index }}"
+                                                                value="{{ $processoProduto->sda ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][rep_sts]"
+                                                                id="rep_sts-{{ $index }}"
+                                                                value="{{ $processoProduto->rep_sts ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][armaz_ana]"
+                                                                id="armaz_ana-{{ $index }}"
+                                                                value="{{ $processoProduto->armaz_ana ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][lavagem_container]"
+                                                                id="lavagem_container-{{ $index }}"
+                                                                value="{{ $processoProduto->lavagem_container ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][rep_anapolis]"
+                                                                id="rep_anapolis-{{ $index }}"
+                                                                value="{{ $processoProduto->rep_anapolis ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][li_dta_honor_nix]"
+                                                                id="li_dta_honor_nix-{{ $index }}"
+                                                                value="{{ $processoProduto->li_dta_honor_nix ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][honorarios_nix]"
+                                                                id="honorarios_nix-{{ $index }}"
+                                                                value="{{ $processoProduto->honorarios_nix ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][desp_desenbaraco]"
+                                                                id="desp_desenbaraco-{{ $index }}"
+                                                                value="{{ $processoProduto->desp_desenbaraco ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][diferenca_cambial_frete]"
+                                                                id="diferenca_cambial_frete-{{ $index }}"
+                                                                value="{{ $processoProduto->diferenca_cambial_frete ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][diferenca_cambial_fob]"
+                                                                id="diferenca_cambial_fob-{{ $index }}"
+                                                                value="{{ $processoProduto->diferenca_cambial_fob ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][custo_unitario_final]"
+                                                                id="custo_unitario_final-{{ $index }}"
+                                                                value="{{ $processoProduto->custo_unitario_final ?? '' }}">
+                                                        </td>
+
+                                                        <td>
+                                                            <input type="text" data-row="{{ $index }}"
+                                                                class="form-control" readonly
+                                                                name="produtos[{{ $index }}][custo_total_final]"
+                                                                id="custo_total_final-{{ $index }}"
+                                                                value="{{ $processoProduto->custo_total_final ?? '' }}">
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                            <tfoot id="resultado-totalizadores">
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                @endif
                             </form>
                         </div>
                     </div>
@@ -1063,42 +1072,79 @@
             </div>
         </div>
     </div>
-    <input type="hidden" name="productsClient" id="productsClient" value="{{ $productsClient }}">
-    <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ $dolar }}">
-    <input type="hidden" id="processoAlterado" name="processoAlterado" value="0">
+    @if (isset($productsClient))
+        <input type="hidden" name="productsClient" id="productsClient" value="{{ $productsClient }}">
+        <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ $dolar }}">
+        <input type="hidden" id="processoAlterado" name="processoAlterado" value="0">
+    @endif
     <script>
         $(document).ready(function() {
 
-            $('.moneyReal').mask('000.000.000.000.000,00', {
-                reverse: true
-            });
-            $('.moneyUSD').mask('000.000.000.000.000,00', {
-                reverse: true
-            });
-            $('.select2').select2();
+            // $('.moneyReal').mask('#.##0,00', {
+            //     reverse: true,
+            //     placeholder: "",
+            //     maxlength: false
+            // });
 
+            // // Máscara para Dólar (USD) - permite valores como 1,401.23 ou 23.5
+            // $('.moneyUSD').mask('#,##0.00', {
+            //     reverse: true,
+            //     placeholder: "",
+            //     maxlength: false
+            // });
+            $('.select2').select2();
+            let valorReal = MoneyUtils.parseMoney("1.401,23"); // Retorna 1401.23 (float)
+            let valorDolar = MoneyUtils.parseMoney("1,401.23"); // Retorna 1401.23 (float)
+
+            // Formatação
+            console.log(MoneyUtils.formatMoney(1401.23)); // "1.401,23"
+            console.log(MoneyUtils.formatMoney(23.5)); // "23,50"
+            console.log(MoneyUtils.formatUSD(1401.23));
 
         });
         $('#frete_internacional, #seguro_internacional, #acrescimo_frete').trigger('change');
 
         const MoneyUtils = {
             parseMoney: function(value) {
-                if (!value) return 0;
-                return parseFloat(
-                    value.replace(/\./g, '')
-                    .replace(',', '.')
-                ) || 0;
+                if (!value || value === "") return 0;
+
+                // Remove todos os pontos (separadores de milhar)
+                let cleanValue = value.toString().replace(/\./g, '');
+
+                // Para Real (R$): substitui vírgula por ponto para parseFloat
+                cleanValue = cleanValue.replace(',', '.');
+
+                return parseFloat(cleanValue) || 0;
             },
 
             formatMoney: function(value, decimals = 2) {
-                return value.toFixed(decimals)
-                    .replace('.', ',')
-                    .replace(/(\d)(?=(\d{3})+\,)/g, '$1.');
+                if (value === null || value === undefined) return "0,00";
+
+                // Converte para número se for string
+                let num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
+
+                // Formata com 2 decimais por padrão, mas mantém os decimais existentes
+                let fixedDecimals = num.toFixed(decimals);
+
+                // Separa parte inteira e decimal
+                let parts = fixedDecimals.split('.');
+                let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                let decimalPart = parts[1] || '00';
+
+                return `${integerPart},${decimalPart}`;
             },
 
             formatUSD: function(value, decimals = 2) {
-                return value.toFixed(decimals)
-                    .replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
+                if (value === null || value === undefined) return "0.00";
+
+                let num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
+                let fixedDecimals = num.toFixed(decimals);
+
+                let parts = fixedDecimals.split('.');
+                let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                let decimalPart = parts[1] || '00';
+
+                return `${integerPart}.${decimalPart}`;
             }
         };
 
@@ -1116,6 +1162,8 @@
 
                 $('.pesoLiqTotal').each(function() {
                     let valor = MoneyUtils.parseMoney($(this).val());
+                    console.log($(this).val())
+                    console.log(valor)
                     totalPesoLiq += valor;
                 });
 
@@ -1165,6 +1213,7 @@
                 const ipi = parseFloat($(`#ipi_percent-${rowId}`).val()) / 100;
                 const pis = parseFloat($(`#pis_percent-${rowId}`).val()) / 100;
                 const cofins = parseFloat($(`#cofins_percent-${rowId}`).val()) / 100;
+                const icms = parseFloat($(`#icms_percent-${rowId}`).val()) / 100;
 
                 const vlrII = vlrAduaneiroBrl * ii;
                 const bcIpi = vlrAduaneiroBrl + vlrII;
@@ -1173,8 +1222,50 @@
                 const vlrPis = bcPisCofins * pis;
                 const vlrCofins = bcPisCofins * cofins;
 
-                // Atualizando os campos com valores formatados
-                $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit));
+
+                const multaAZ = parseFloat($(`#multa-${rowId}`).val()) ;
+                const txDefLiBA = parseFloat($(`#tx_def_li-${rowId}`).val());
+                const taxaSisComex = calcularTaxaSiscomex($('#productsBody tr').length)
+                const fatorTaxaSiscomex_AY = taxaSisComex / (fobTotal * dolar);
+                const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobUnitario * dolar)
+                const fatorVlrFob_AX = fobTotal / fobTotalGeral
+                const capatazia_BH = thc_capataziaBase * fatorVlrFob_AX
+                const valorAFRMM_BI_17 = 3659.39
+                const afrmm_BI = valorAFRMM_BI_17 * fatorVlrFob_AX
+                const armazenagem_BJ = 2505.79 * fatorVlrFob_AX
+                const frete_dta_BK = 17100.00 * fatorVlrFob_AXl
+                const honorarios_nix = 706 * fatorVlrFob_AXl;
+
+                let despesa_aduaneira = multaAZ + txDefLiBA + taxaSisComex + fatorTaxaSiscomex_AY +
+                    taxaSisComexUnitaria_BB;
+                despesa_aduaneira += fatorVlrFob_AX + capatazia_BH + valorAFRMM_BI_17 + afrmm_BI + armazenagem_BJ;
+                despesa_aduaneira += frete_dta_BK + honorarios_nix
+                const base_icms_st = parseFloat($(`#base_icms_st-${rowId}`).val())
+                const mva = parseFloat($(`#mva-${rowId}`).val())
+                const icms_st = parseFloat($(`#icms_st-${rowId}`).val())
+                const valor_icms_st = parseFloat($(`#valor_icms_st-${rowId}`).val())
+                const bcIcmsSReducao = (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despesa_aduaneira) /
+                    (1 - icms)
+                const vlrIcmsSReducao = bcIcmsSReducao * icms
+                const icms_reduzido_percent = parseFloat($(`#icms_reduzido_percent-${rowId}`).val()) / 100
+                const reducao = parseFloat($(`#reducao-${rowId}`).val())
+
+                const denominadorBcIcmsReduzido = !reducao ? 1 : reducao;
+
+                const bcImcsReduzido = (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despesa_aduaneira) /
+                    denominadorBcIcmsReduzido
+                const vlrIcmsReduzido = bcIcmsSReducao * icms
+
+                const vlrTotalProdutoNf = vlrAduaneiroBrl + vlrII
+                const vlrUnitProdutNf = vlrTotalProdutoNf / quantidade
+                const vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesa_aduaneira +
+                    vlrIcmsReduzido
+
+                const vlrTotalNfComIcms = vlrTotalNfSemIcms + valor_icms_st
+                
+
+
+                    $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit));
                 $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
                 $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
                 $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(freteUsdInt));
@@ -1193,9 +1284,69 @@
                 $(`#base_pis_cofins-${rowId}`).val(MoneyUtils.formatMoney(bcPisCofins));
                 $(`#valor_pis-${rowId}`).val(MoneyUtils.formatMoney(vlrPis));
                 $(`#valor_cofins-${rowId}`).val(MoneyUtils.formatMoney(vlrCofins));
+                $(`#despesa_aduaneira-${rowId}`).val(MoneyUtils.formatMoney(despesa_aduaneira));
+                $(`#base_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(bcIcmsSReducao));
+                $(`#valor_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(vlrIcmsSReducao));
+                $(`#base_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(bcImcsReduzido));
+                $(`#valor_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(vlrIcmsReduzido));
+                $(`#valor_unit_nf-${rowId}`).val(MoneyUtils.formatMoney(vlrUnitProdutNf));
+                $(`#valor_total_nf-${rowId}`).val(MoneyUtils.formatMoney(vlrTotalProdutoNf));
+                $(`#valor_total_nf_sem_icms_st-${rowId}`).val(MoneyUtils.formatMoney(vlrTotalNfSemIcms));
+                $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(vlrTotalNfComIcms));
+                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
+                $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY));
+
+
+
             }
         });
 
+        function calcularTaxaSiscomex(quantidade) {
+            const valorRegistroDI = 115.67;
+
+            const faixas = [{
+                    max: 2,
+                    adicional: 38.56
+                },
+                {
+                    max: 3,
+                    adicional: 30.85
+                },
+                {
+                    max: 5,
+                    adicional: 30.85
+                },
+                {
+                    max: 7,
+                    adicional: 23.14
+                },
+                {
+                    max: 9,
+                    adicional: 23.14
+                },
+                {
+                    max: 10,
+                    adicional: 23.14
+                },
+                {
+                    max: 20,
+                    adicional: 15.42
+                },
+                {
+                    max: 50,
+                    adicional: 7.71
+                },
+                {
+                    max: Infinity,
+                    adicional: 3.86
+                },
+            ];
+
+            const faixa = faixas.find(f => quantidade <= f.max);
+            const total = valorRegistroDI + faixa.adicional;
+
+            return parseFloat(total.toFixed(2));
+        }
         // Atualização para os campos de frete, seguro e acréscimo
         $(document).on('change', '#frete_internacional, #seguro_internacional, #acrescimo_frete', function() {
             let dolar = MoneyUtils.parseMoney($('#dolarHoje').val());

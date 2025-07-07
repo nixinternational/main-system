@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\Http;
 class ProcessoController extends Controller
 {
 
+    private function parseModelFieldsFromModel($model)
+    {
+        foreach ($model->getAttributes() as $field => $value) {
+
+            if (!is_null($value) && is_numeric($value)) {
+                $model->$field = $this->parseMoneyToFloat($value, 2);
+            }
+        }
+
+        return $model;
+    }
     public static function getBid()
     {
         $cachedBid = Cache::get('bid');
@@ -47,8 +58,9 @@ class ProcessoController extends Controller
     public function create()
     {
         $clientes = Cliente::select(['id', 'nome'])->get();
+        $dolar = self::getBid();
 
-        return view('processo.form', compact('clientes'));
+        return view('processo.form', compact('clientes', 'dolar'));
     }
 
     public function store(Request $request)
@@ -87,20 +99,30 @@ class ProcessoController extends Controller
 
     public function edit($id)
     {
-        $processo = Processo::find($id);
+
+
+        $processo =  $this->parseModelFieldsFromModel(Processo::find($id));
         $clientes = Cliente::select(['id', 'nome'])->get();
         $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
         $productsClient = $catalogo->produtos;
         $dolar = self::getBid();
-        $processoProdutos = $processo->processoProdutos;
-
+        $produtos = [];
+        foreach ($processo->processoProdutos as $produto) {
+            $produtos[] = $this->parseModelFieldsFromModel($produto);
+        }
+        $processoProdutos = $produtos;
         return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos'));
     }
 
-    private function parseMoneyToFloat($value)
+    private function parseMoneyToFloat($value, int $decimals = 2)
     {
-        if (empty($value)) return null;
-        return (float) str_replace(['.', ','], ['', '.'], $value);
+        if (is_null($value) || $value === '') return null;
+
+        // se vier com vírgula como decimal: "1.234,56"
+        if (str_contains($value, ',')) {
+            $value = str_replace(['.', ','], ['', '.'], $value);
+        }
+        return round((float) $value, $decimals);
     }
     public function update(Request $request, $id)
     {
@@ -115,7 +137,7 @@ class ProcessoController extends Controller
 
             $dadosProcesso = [
                 "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
-                "seguro_internacional" => $this->parseMoneyToFloat( $request->seguro_internacional),
+                "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
                 "acrescimo_frete" => $this->parseMoneyToFloat($request->acrescimo_frete),
                 "thc_capatazia" => $this->parseMoneyToFloat($request->thc_capatazia),
                 "peso_bruto" => $this->parseMoneyToFloat($request->peso_bruto),
