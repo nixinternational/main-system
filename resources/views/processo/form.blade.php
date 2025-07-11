@@ -62,6 +62,10 @@
             text-align: center
         }
 
+        .table-dados-complementares td:first-child, .table-dados-basicos td:first-child{
+            color: black !important;
+        }
+
         table thead th:first-child {
             /* z-index: 20; */
             background-color: #212529;
@@ -237,7 +241,7 @@
                                 </div>
                                 <div class="dados-container">
 
-                                    <table class="table mt-4">
+                                    <table class="table table-dados-basicos mt-4">
                                         <thead>
                                             <tr>
                                                 <th colspan="2" class="text-white">DADOS BÁSICOS</th>
@@ -311,7 +315,7 @@
 
                                         </tbody>
                                     </table>
-                                    <table class="table mt-4">
+                                    <table class="table table-dados-complementares  mt-4">
                                         <thead>
                                             <tr>
                                                 <th colspan="2" class="text-white">INFORMAÇÕES COMPLEMENTARES</th>
