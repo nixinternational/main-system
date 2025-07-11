@@ -632,7 +632,7 @@
                                                             <tr data-id="{{ $loop->index }}">
                                                                 <input type="hidden" name="idDocumentos[]"
                                                                     value="{{ $documento->id }}">
-                                                                <td >
+                                                                <td>
                                                                     <select class="form-control" id="tipo_documento"
                                                                         name="tipoDocumentos[]">
                                                                         <option value="" hidden disabled>Selecione...
@@ -669,7 +669,9 @@
                                                                     <label data-id="{{ $loop->index }}" for="inputFile"
                                                                         class="btn btn-secondary w-100 anexarArquivo">
                                                                         {{ $documento->url ? '📎 Atualizar documento' : 'Anexar documento' }}
-                                                                        <p id="legenda-file-{{$loop->index}}" style="font-size: 11px">{{explode('/',$documento->path_file)[1]}}</p>
+                                                                        <p id="legenda-file-{{ $loop->index }}"
+                                                                            style="font-size: 11px">
+                                                                            {{ explode('/', $documento->path_file)[1] }}</p>
                                                                     </label>
                                                                 </td>
 
@@ -810,27 +812,27 @@
             var currentTab = $(e.target).attr('href');
             localStorage.setItem('activeTab', currentTab);
         });
- $(document).on('click', '.anexarArquivo', function (e) {
-    e.preventDefault();
-    const id = this.dataset.id;
-    $(`#file-${id}`).click();
-    
-});
-$(document).on('change', 'input[type="file"]', function () {
-    const id = this.dataset.id;
-    const file = this.files[0];
+        $(document).on('click', '.anexarArquivo', function(e) {
+            e.preventDefault();
+            const id = this.dataset.id;
+            $(`#file-${id}`).click();
 
-    if (file) {
-        $(`#legenda-file-${id}`).text(file.name);
-               Toast.fire({
-                icon: 'success',
-                title: 'Documento anexado'
-            });
-    } else {
-        $(`#legenda-file-${id}`).text('Nenhum arquivo selecionado');
-    }
-});        
-$('#debito_impostos_nix').on('change', async function() {
+        });
+        $(document).on('change', 'input[type="file"]', function() {
+            const id = this.dataset.id;
+            const file = this.files[0];
+
+            if (file) {
+                $(`#legenda-file-${id}`).text(file.name);
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Documento anexado'
+                });
+            } else {
+                $(`#legenda-file-${id}`).text('Nenhum arquivo selecionado');
+            }
+        });
+        $('#debito_impostos_nix').on('change', async function() {
             // let value = this.value
             // $('#bancoCliente tbody tr').remove()
             // if (value == 'nix') {

@@ -31,7 +31,7 @@ class ProcessoController extends Controller
         if ($cachedBid) {
             return $cachedBid;
         }
-
+        dd($cachedBid);
         $endpoint = env('AWESOME_API_URL', 'https://economia.awesomeapi.com.br') . "/last/USD-BRL";
         $response = Http::get($endpoint);
         $data = $response->json();
@@ -105,7 +105,8 @@ class ProcessoController extends Controller
         $clientes = Cliente::select(['id', 'nome'])->get();
         $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
         $productsClient = $catalogo->produtos;
-        $dolar = self::getBid();
+        // $dolar = self::getBid();
+        $dolar = 5.44478;
         $produtos = [];
         foreach ($processo->processoProdutos as $produto) {
             $produtos[] = $this->parseModelFieldsFromModel($produto);
@@ -236,6 +237,15 @@ class ProcessoController extends Controller
             return back()->with('messages', ['success' => ['Tipo de documento desativado com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluír o tipo de documento!']]);
+        }
+    }
+    public function destroyProduto(int $id)
+    {
+        try {
+            ProcessoProduto::find($id)->delete();
+            return back()->with('messages', ['success' => ['Produto excluído com sucesso!']]);
+        } catch (\Exception $e) {
+            return back()->with('messages', ['error' => ['Não foi possível excluír o Produto !']]);
         }
     }
 }

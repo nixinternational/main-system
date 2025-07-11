@@ -69,7 +69,6 @@ return new class extends Migration
             $table->decimal('outras_taxas_agente', 15, 2)->nullable();
             $table->decimal('liberacao_bl', 15, 2)->nullable();
             $table->decimal('desconsolidacao', 15, 2)->nullable();
-
             $table->decimal('isps_code', 15, 2)->nullable();
             $table->decimal('handling', 15, 2)->nullable();
             $table->decimal('capatazia', 15, 2)->nullable();
@@ -86,7 +85,6 @@ return new class extends Migration
             $table->decimal('desp_desenbaraco', 15, 2)->nullable();
             $table->decimal('diferenca_cambial_frete', 15, 2)->nullable();
             $table->decimal('diferenca_cambial_fob', 15, 2)->nullable();
-
             $table->decimal('custo_unitario_final', 15, 2)->nullable();
             $table->decimal('custo_total_final', 15, 2)->nullable();
 

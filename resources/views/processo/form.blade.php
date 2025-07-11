@@ -38,6 +38,7 @@
 
         th {
             min-width: 200px;
+            font-size: 12px;
         }
 
         tr {
@@ -56,14 +57,27 @@
             position: sticky;
             left: 0;
             z-index: 10;
-            background-color: #f8f9fa;
+            background-color: #f8f9fa ;
+            color: white;
+            text-align: center
         }
 
         table thead th:first-child {
-            z-index: 20;
+            /* z-index: 20; */
             background-color: #212529;
-        }
+                        color: white
 
+        }
+ .table-products th{
+    background-color: #212529;
+                        color: white
+ }
+ .middleRow th{
+    background-color: transparent;
+ }
+  .middleRowInputTh{
+    background-color: #ffff99 !important;
+ }
         /* Estilo para o botão de remover */
         .btn-remove {
             padding: 0.25rem 0.5rem;
@@ -250,7 +264,8 @@
                                             </tr>
                                             <tr>
                                                 <td>TAXA DO DOLAR</td>
-                                                <td class="">{{ Formatter::moneyUSD($dolar, true) }}</td>
+                                                <td class="">{{ Formatter::moneyUSD($dolar, true) }} /
+                                                    {{ $dolar }}</td>
                                             </tr>
                                             <tr>
                                                 <td>IUAN RENMIMBI</td>
@@ -352,11 +367,69 @@
                                     <div style="overflow-x: auto; width: 100%;">
                                         <table class="table table-bordered table-striped table-products"
                                             style="min-width: 3000px;">
-                                            <thead class="thead-dark">
+                                            <thead class=" text-center">
                                                 <tr>
-                                                    <th
-                                                        style="position: sticky; left: 0; z-index: 10; background-color: #212529; min-width: 50px;">
-                                                        Ações</th>
+                                                    <th ></th>
+                                                    <th style="background-color: #fff" colspan="23"></th>
+                                                    <th colspan="7">ALÍQUOTAS</th>
+
+                                                    <th colspan="7" style="background-color: #fff">VLR II</th>
+
+                                                    <th colspan="2">BASE E VALOR SEM REDUÇÃO</th>
+                                                    <th colspan="2" style="background-color: #fff"></th>
+                                                    <th colspan="8">CALCULADOS SEM A BASE REDUZIDA-COLUNAS AL E AM</th>
+                                                    <th style="background-color:#fff"></th>
+                                                    <th>PREENCHER</th>
+                                                    <th colspan="33" style="background-color:#fff">VLR TOTAL PROD. NF
+                                                    </th>
+                                                </tr>
+                                                <tr class="middleRow">
+                                                    <th ></th>
+                                                    <th colspan="54"></th>
+
+                                                    @php
+                                                        $campos = [
+                                                            'outras_taxas_agente',
+                                                            'liberacao_bl',
+                                                            'desconsolidacao',
+                                                            'isps_code',
+                                                            'handling',
+                                                            'capatazia',
+                                                            'afrmm',
+                                                            'armazenagem_sts',
+                                                            'frete_dta_sts_ana',
+                                                            'sda',
+                                                            'rep_sts',
+                                                            'armaz_ana',
+                                                            'lavagem_container',
+                                                            'rep_anapolis',
+                                                            'li_dta_honor_nix',
+                                                            'honorarios_nix',
+                                                        ];
+                                                    @endphp
+
+                                                    @foreach ($campos as $campo)
+                                                        <th class="middleRowInputTh">
+                                                            @if ($campo == 'capatazia')
+                                                                <input type="text" class="form-control"
+                                                                    name="{{ $campo }}" id="{{ $campo }}"
+                                                                    readonly value="{{ $processo->thc_capatazia ?? 0 }}">
+                                                            @else
+                                                                <input type="text" class="form-control"
+                                                                    name="{{ $campo }}" id="{{ $campo }}"
+                                                                    value="{{ $processoProduto->$campo ?? null }}">
+                                                            @endif
+                                                        </th>
+                                                    @endforeach
+                                                        <th></th>
+                                                        <th></th>
+                                                        <th></th>
+                                                        <th></th>
+                                                        <th></th>
+
+                                                </tr>
+                                                <tr>
+                                                    <th style="background-color: #212529 !important">Ações</th>
                                                     <th style="min-width: 300px !important;">PRODUTO</th>
                                                     <th style="min-width: 500px !important;">DESCRIÇÃO</th>
                                                     <th>ADIÇÃO</th>
@@ -400,12 +473,12 @@
                                                     <th>VLR ICMS REDUZ.</th>
                                                     <th>VLR UNIT PROD. NF</th>
                                                     <th>VLR TOTAL PROD. NF</th>
-                                                    <th>VLR TOTAL NF S/ICMS ST</th>
+                                                    <th style="min-width: 300px !important;">VLR TOTAL NF S/ICMS ST</th>
                                                     <th>BC ICMS-ST</th>
                                                     <th>MVA</th>
                                                     <th>ICMS-ST</th>
                                                     <th>VLR ICMS-ST</th>
-                                                    <th>VLR TOTAL NF C/ICMS-ST</th>
+                                                    <th style="min-width: 300px !important;">VLR TOTAL NF C/ICMS-ST</th>
                                                     <th>FATOR VLR FOB</th>
                                                     <th>FATOR TX SISCOMEX</th>
                                                     <th>MULTA</th>
@@ -427,7 +500,7 @@
                                                     <th>REP. ANAPOLIS</th>
                                                     <th>LI+DTA+HONOR.NIX</th>
                                                     <th>HONORÁRIOS NIX</th>
-                                                    <th>DESP. DESEMBARAÇO</th>
+                                                    <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
                                                     <th>DIF. CAMBIAL FRETE</th>
                                                     <th>DIF.CAMBIAL FOB</th>
                                                     <th>CUSTO UNIT FINAL</th>
@@ -438,8 +511,10 @@
                                                 @foreach ($processoProdutos as $index => $processoProduto)
                                                     <tr>
                                                         <td
-                                                            style="position: sticky; left: 0; z-index: 5; background-color: white;">
+                                                            >
                                                             <button type="button"
+                                                                onclick="showDeleteConfirmation({{ $processoProduto->id}})"
+
                                                                 class="btn btn-danger btn-sm btn-remove"
                                                                 data-id="{{ $processoProduto->id }}">
                                                                 <i class="fas fa-trash-alt"></i>
@@ -470,10 +545,6 @@
                                                             <p id="descricao-{{ $index }}">
                                                                 {{ $processoProduto->produto->descricao }}
                                                             </p>
-                                                            {{-- <input type="text" class="form-control" readonly
-                                                            name="produtos[{{ $index }}][descricao]"
-                                                            id="descricao-{{ $index }}"
-                                                            value="{{ $processoProduto->produto->descricao }}"> --}}
                                                         </td>
 
                                                         <td>
@@ -820,7 +891,7 @@
 
                                                         <td>
                                                             <input type="text" data-row="{{ $index }}"
-                                                                class="form-control" readonly
+                                                                class="form-control"
                                                                 name="produtos[{{ $index }}][mva]"
                                                                 id="mva-{{ $index }}"
                                                                 value="{{ $processoProduto->mva ?? '' }}">
@@ -828,7 +899,7 @@
 
                                                         <td>
                                                             <input type="text" data-row="{{ $index }}"
-                                                                class="form-control" readonly
+                                                                class="form-control"
                                                                 name="produtos[{{ $index }}][icms_st]"
                                                                 id="icms_st-{{ $index }}"
                                                                 value="{{ $processoProduto->icms_st ?? '' }}">
@@ -1077,6 +1148,11 @@
         <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ $dolar }}">
         <input type="hidden" id="processoAlterado" name="processoAlterado" value="0">
     @endif
+    <form id="delete-form" method="POST" action="{{ route('documento.cliente.destroy', 'document_id') }}"
+        style="display:none;">
+        @method('DELETE')
+        @csrf
+    </form>
     <script>
         $(document).ready(function() {
 
@@ -1093,17 +1169,44 @@
             //     maxlength: false
             // });
             $('.select2').select2();
-            let valorReal = MoneyUtils.parseMoney("1.401,23"); // Retorna 1401.23 (float)
-            let valorDolar = MoneyUtils.parseMoney("1,401.23"); // Retorna 1401.23 (float)
+            // let valorReal = MoneyUtils.parseMoney("1.401,23"); // Retorna 1401.23 (float)
+            // let valorDolar = MoneyUtils.parseMoney("1,401.23"); // Retorna 1401.23 (float)
 
-            // Formatação
-            console.log(MoneyUtils.formatMoney(1401.23)); // "1.401,23"
-            console.log(MoneyUtils.formatMoney(23.5)); // "23,50"
-            console.log(MoneyUtils.formatUSD(1401.23));
+            // // Formatação
+            // console.log(MoneyUtils.formatMoney(1401.23)); // "1.401,23"
+            // console.log(MoneyUtils.formatMoney(23.5)); // "23,50"
+            // console.log(MoneyUtils.formatUSD(1401.23));
 
         });
         $('#frete_internacional, #seguro_internacional, #acrescimo_frete').trigger('change');
 
+        function showDeleteConfirmation(documentId) {
+            const deleteUrl = '/destroy-produto-processo/' + documentId; // Ajuste a URL conforme necessário
+
+            Swal.fire({
+                title: 'Você tem certeza que deseja excluir este registro?',
+                text: 'Esta ação não poderá ser desfeita!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, excluir!',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    confirmButton: 'btn btn-danger',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Modificando o formulário dinamicamente
+                    $('#delete-form').attr('action', deleteUrl); // Atualiza a URL do formulário
+                    $('#delete-form').submit(); // Submete o formulário
+                } else {
+                    Toast.fire({
+                        icon: 'info',
+                        title: 'Ação cancelada'
+                    });
+                }
+            });
+        }
         const MoneyUtils = {
             parseMoney: function(value) {
                 if (!value || value === "") return 0;
@@ -1148,164 +1251,382 @@
             }
         };
 
-        $(document).on('change', 'input, select, textarea', function() {
-            $('#avisoProcessoAlterado').removeClass('d-none');
-            let rowId = $(this).data('row');
-            if (rowId != null) {
-                let pesoTotal = MoneyUtils.parseMoney($(`#peso_liquido_total-${rowId}`).val());
-                let fobUnitario = MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val());
-                let quantidade = parseInt($(`#quantidade-${rowId}`).val());
+        function atualizarFatoresFob() {
+            let fobTotalGeral = 0;
+            const fobTotaisPorLinha = {};
 
-                let pesoLiqUnit = pesoTotal / (quantidade || 1);
-                let fobTotal = fobUnitario * quantidade;
-                let totalPesoLiq = 0;
+            // 1. Soma do FOB total geral
+            $('.fobUnitario').each(function() {
+                const rowId = $(this).data('row');
+                const unitario = MoneyUtils.parseMoney($(this).val());
+                const qtd = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val());
+                const fobTotal = unitario * qtd;
 
-                $('.pesoLiqTotal').each(function() {
-                    let valor = MoneyUtils.parseMoney($(this).val());
-                    console.log($(this).val())
-                    console.log(valor)
-                    totalPesoLiq += valor;
-                });
+                fobTotaisPorLinha[rowId] = fobTotal;
+                fobTotalGeral += fobTotal;
+            });
 
-                let fatorPesoRow = 0;
-                $('.pesoLiqTotal').each(function() {
-                    const rowIdLine = $(this).data('row');
-                    const pesoTotalLinha = parseFloat($(this).val());
-                    const fatorPeso = pesoTotalLinha / (totalPesoLiq || 1);
+            // 2. Atualiza fator FOB de cada linha
+            for (const rowId in fobTotaisPorLinha) {
+                const fobLinha = fobTotaisPorLinha[rowId];
+                const fatorFob = fobLinha / (fobTotalGeral || 1);
 
-                    if (rowId == rowIdLine) {
-                        fatorPesoRow = fatorPeso;
-                    }
+                $(`#fator_vlr_fob-${rowId}`).val(fatorFob.toFixed(6));
+                const camposExternos = getCamposExternos();
 
-                    $(`#fator_peso-${rowIdLine}`).val(fatorPeso.toFixed(6));
-                });
+                // 3. Atualiza campos que dependem do fator FOB
+                for (let campo of camposExternos) {
+                    const campoEl = $(`#${campo}-${rowId}`);
+                    const valorOriginal = MoneyUtils.parseMoney(campoEl.val());
+                    const valorComFator = valorOriginal * fatorFob;
 
-                let fobTotalGeral = 0;
-                $('.fobUnitario').each(function() {
-                    const rowId = $(this).data('row');
-                    const unitario = MoneyUtils.parseMoney($(this).val());
-                    const qtd = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val());
-                    fobTotalGeral += unitario * qtd;
-                });
+                    campoEl.val(valorComFator.toFixed(6));
+                }
+            }
 
-                let dolar = parseFloat($('#dolarHoje').val());
+            // 4. Atualiza totais na interface (se necessário)
+            $('#fobTotalProcesso').text(MoneyUtils.formatMoney(fobTotalGeral));
 
-                // Formatando os totais para exibição
-                $('#fobTotalProcesso').text(MoneyUtils.formatMoney(fobTotalGeral));
-                $('#fobTotalProcessoReal').text(MoneyUtils.formatMoney(fobTotalGeral * dolar));
+            const dolar = parseFloat($('#dolarHoje').val() || 1);
+            $('#fobTotalProcessoReal').text(MoneyUtils.formatMoney(fobTotalGeral * dolar));
+        }
 
-                const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) * fatorPesoRow;
-                const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
-                const thcRow = thc_capataziaBase * fatorPesoRow;
+        // === Função principal de escuta ===
+        $(document).on('change', 'input, select, textarea, .form-control', function() {
+            try {
+                $('#avisoProcessoAlterado').removeClass('d-none');
+                const rowId = $(this).data('row');
+                const nome = $(this).attr('name');
+                const camposExternos = getCamposExternos();
 
-                const seguroIntUsdTotal = MoneyUtils.parseMoney($('#seguro_internacional').val());
-                const seguroIntUsdRow = (seguroIntUsdTotal / fobTotalGeral) * fobTotal;
+                if (rowId != null || camposExternos.includes(nome)) {
+                    const {
+                        pesoTotal,
+                        fobUnitario,
+                        quantidade
+                    } = obterValoresBase(rowId);
+                    const pesoLiqUnit = pesoTotal / (quantidade || 1);
+                    const fobTotal = fobUnitario * quantidade;
+                    const totalPesoLiq = calcularPesoTotal();
+                    const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
 
-                const acrescimoFreteBase = MoneyUtils.parseMoney($('#acrescimo_frete').val());
-                const acrescimoFreteUsdRow = (acrescimoFreteBase / (fobTotalGeral * dolar)) * fobTotal * dolar;
+                    const fobTotalGeral = calcularFobTotalGeral();
+                    const dolar = parseFloat($('#dolarHoje').val());
+                    atualizarFatoresFob();
+                    atualizarTotaisGlobais(fobTotalGeral, dolar);
 
-                const vlrAduaneiroUsd = fobTotal + freteUsdInt + acrescimoFreteUsdRow + seguroIntUsdRow + (thcRow /
-                    dolar);
+                    const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) * fatorPesoRow;
+                    const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
+                    const thcRow = thc_capataziaBase * fatorPesoRow;
+                    const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
+                    const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeral, dolar);
 
-                const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
+                    const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
+                        seguroIntUsdRow, thcRow, dolar);
+                    const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
 
-                const ii = parseFloat($(`#ii_percent-${rowId}`).val()) / 100;
-                const ipi = parseFloat($(`#ipi_percent-${rowId}`).val()) / 100;
-                const pis = parseFloat($(`#pis_percent-${rowId}`).val()) / 100;
-                const cofins = parseFloat($(`#cofins_percent-${rowId}`).val()) / 100;
-                const icms = parseFloat($(`#icms_percent-${rowId}`).val()) / 100;
+                    const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
+                    const taxaSisComex = calcularTaxaSiscomex($('#productsBody tr').length);
+                    const fatorTaxaSiscomex_AY = taxaSisComex / ((fobTotal) * dolar);
 
-                const vlrII = vlrAduaneiroBrl * ii;
-                const bcIpi = vlrAduaneiroBrl + vlrII;
-                const vlrIpi = bcIpi * ipi;
-                const bcPisCofins = vlrAduaneiroBrl;
-                const vlrPis = bcPisCofins * pis;
-                const vlrCofins = bcPisCofins * cofins;
+                    const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobUnitario * dolar);
+                    const fatorVlrFob_AX = fobTotal / fobTotalGeral;
 
-                console.log([
-                    $(`#multa-${rowId}`).val() ?? '0',
-                    $(`#tx_def_li-${rowId}`).val() ?? '0'
-                ])
-                const multaAZ =  $(`#multa-${rowId}`).val()  != '' ? parseFloat($(`#multa-${rowId}`).val()) : 0;
-                const txDefLiBA = $(`#tx_def_li-${rowId}`).val() != '' ? parseFloat($(`#tx_def_li-${rowId}`).val()) : 0;
-                const taxaSisComex = calcularTaxaSiscomex($('#productsBody tr').length)
-                const fatorTaxaSiscomex_AY = taxaSisComex / (fobTotal * dolar);
-                const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobUnitario * dolar)
-                const fatorVlrFob_AX = fobTotal / fobTotalGeral
-                const capatazia_BH = thc_capataziaBase * fatorVlrFob_AX
-                const valorAFRMM_BI_17 = 3659.39
-                const afrmm_BI = valorAFRMM_BI_17 * fatorVlrFob_AX
-                const armazenagem_BJ = 2505.79 * fatorVlrFob_AX
-                const frete_dta_BK = 17100.00 * fatorVlrFob_AX
-                const honorarios_nix = 706 * fatorVlrFob_AX;
-                console.log([
-                    multaAZ, txDefLiBA, taxaSisComex, fatorTaxaSiscomex_AY,
-                    taxaSisComexUnitaria_BB
-                ])
-                let despesa_aduaneira = multaAZ + txDefLiBA + taxaSisComex + fatorTaxaSiscomex_AY +
-                    taxaSisComexUnitaria_BB;
-                despesa_aduaneira += fatorVlrFob_AX + capatazia_BH + valorAFRMM_BI_17 + afrmm_BI + armazenagem_BJ;
-                despesa_aduaneira += frete_dta_BK + honorarios_nix
-                const base_icms_st = parseFloat($(`#base_icms_st-${rowId}`).val())
-                const mva = parseFloat($(`#mva-${rowId}`).val())
-                const icms_st = parseFloat($(`#icms_st-${rowId}`).val())
-                const valor_icms_st = parseFloat($(`#valor_icms_st-${rowId}`).val())
-                const bcIcmsSReducao = (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despesa_aduaneira) /
-                    (1 - icms)
-                const vlrIcmsSReducao = bcIcmsSReducao * icms
-                const icms_reduzido_percent = parseFloat($(`#icms_reduzido_percent-${rowId}`).val()) / 100
-                const reducao = parseFloat($(`#reducao-${rowId}`).val())
+                    const despesas = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY,
+                        (taxaSisComexUnitaria_BB ?? 0));
+                    const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas);
+                    const vlrIcmsSReducao = bcIcmsSReducao * impostos.icms;
+                    const bcImcsReduzido = calcularBcIcmsReduzido(rowId, vlrAduaneiroBrl, impostos, despesas);
+                    const vlrIcmsReduzido = bcIcmsSReducao * impostos.icms;
+                    const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
+                        rowId);
 
-                const denominadorBcIcmsReduzido = !reducao ? 1 : reducao;
+                    atualizarCampos(rowId, {
+                        pesoLiqUnit,
+                        fobTotal,
+                        dolar,
+                        freteUsdInt,
+                        seguroIntUsdRow,
+                        acrescimoFreteUsdRow,
+                        thcRow,
+                        vlrAduaneiroUsd,
+                        vlrAduaneiroBrl,
+                        impostos,
+                        despesas,
+                        bcIcmsSReducao,
+                        vlrIcmsSReducao,
+                        bcImcsReduzido,
+                        vlrIcmsReduzido,
+                        totais,
+                        fatorVlrFob_AX,
+                        fatorTaxaSiscomex_AY,
+                        taxaSisComex
+                    });
 
-                const bcImcsReduzido = (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despesa_aduaneira) /
-                    denominadorBcIcmsReduzido
-                const vlrIcmsReduzido = bcIcmsSReducao * icms
-
-                const vlrTotalProdutoNf = vlrAduaneiroBrl + vlrII
-                const vlrUnitProdutNf = vlrTotalProdutoNf / quantidade
-                const vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesa_aduaneira +
-                    vlrIcmsReduzido
-
-                const vlrTotalNfComIcms = vlrTotalNfSemIcms + valor_icms_st
-
-
-
-                $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit));
-                $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
-                $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
-                $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(freteUsdInt));
-                $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(freteUsdInt * dolar));
-                $(`#seguro_usd-${rowId}`).val(MoneyUtils.formatMoney(seguroIntUsdRow));
-                $(`#seguro_brl-${rowId}`).val(MoneyUtils.formatMoney(seguroIntUsdRow * dolar));
-                $(`#acresc_frete_usd-${rowId}`).val(MoneyUtils.formatMoney(acrescimoFreteUsdRow));
-                $(`#acresc_frete_brl-${rowId}`).val(MoneyUtils.formatMoney(acrescimoFreteUsdRow * dolar));
-                $(`#thc_usd-${rowId}`).val(MoneyUtils.formatMoney(thcRow / dolar));
-                $(`#thc_brl-${rowId}`).val(MoneyUtils.formatMoney(thcRow));
-                $(`#valor_aduaneiro_usd-${rowId}`).val(MoneyUtils.formatMoney(vlrAduaneiroUsd));
-                $(`#valor_aduaneiro_brl-${rowId}`).val(MoneyUtils.formatMoney(vlrAduaneiroBrl));
-                $(`#valor_ii-${rowId}`).val(MoneyUtils.formatMoney(vlrII));
-                $(`#base_ipi-${rowId}`).val(MoneyUtils.formatMoney(bcIpi));
-                $(`#valor_ipi-${rowId}`).val(MoneyUtils.formatMoney(vlrIpi));
-                $(`#base_pis_cofins-${rowId}`).val(MoneyUtils.formatMoney(bcPisCofins));
-                $(`#valor_pis-${rowId}`).val(MoneyUtils.formatMoney(vlrPis));
-                $(`#valor_cofins-${rowId}`).val(MoneyUtils.formatMoney(vlrCofins));
-                $(`#despesa_aduaneira-${rowId}`).val(MoneyUtils.formatMoney(despesa_aduaneira));
-                $(`#base_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(bcIcmsSReducao));
-                $(`#valor_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(vlrIcmsSReducao));
-                $(`#base_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(bcImcsReduzido));
-                $(`#valor_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(vlrIcmsReduzido));
-                $(`#valor_unit_nf-${rowId}`).val(MoneyUtils.formatMoney(vlrUnitProdutNf));
-                $(`#valor_total_nf-${rowId}`).val(MoneyUtils.formatMoney(vlrTotalProdutoNf));
-                $(`#valor_total_nf_sem_icms_st-${rowId}`).val(MoneyUtils.formatMoney(vlrTotalNfSemIcms));
-                $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(vlrTotalNfComIcms));
-                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
-                $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY));
-
-
-
+                    atualizarCamposCabecalho();
+                }
+            } catch (error) {
+                console.log(error);
             }
         });
+
+        // === Funções auxiliares ===
+        function getCamposExternos() {
+            return [
+                'outras_taxas_agente', 'liberacao_bl', 'desconsolidacao', 'isps_code', 'handling', 'capatazia',
+                'afrmm', 'armazenagem_sts', 'frete_dta_sts_ana', 'sda', 'rep_sts', 'armaz_ana',
+                'lavagem_container', 'rep_anapolis', 'li_dta_honor_nix', 'honorarios_nix'
+            ];
+        }
+
+        function obterValoresBase(rowId) {
+            return {
+                pesoTotal: MoneyUtils.parseMoney($(`#peso_liquido_total-${rowId}`).val()),
+                fobUnitario: MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val()),
+                quantidade: parseInt($(`#quantidade-${rowId}`).val()) || 0
+            };
+        }
+
+        function calcularPesoTotal() {
+            let total = 0;
+            $('.pesoLiqTotal').each(function() {
+                total += MoneyUtils.parseMoney($(this).val());
+            });
+            return total;
+        }
+
+        function recalcularFatorPeso(totalPeso, currentRowId) {
+            let fator = 0;
+            $('.pesoLiqTotal').each(function() {
+                const rowId = $(this).data('row');
+                const valor = MoneyUtils.parseMoney($(this).val());
+                const fatorLinha = valor / (totalPeso || 1);
+                $(`#fator_peso-${rowId}`).val(fatorLinha.toFixed(6));
+                if (rowId == currentRowId) fator = fatorLinha;
+            });
+            return fator;
+        }
+
+        function calcularFobTotalGeral() {
+            let total = 0;
+            $('.fobUnitario').each(function() {
+                const rowId = $(this).data('row');
+                const unit = MoneyUtils.parseMoney($(this).val());
+                const qtd = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val());
+                total += unit * qtd;
+            });
+            return total;
+        }
+
+        function atualizarTotaisGlobais(fobTotalGeral, dolar) {
+            $('#fobTotalProcesso').text(MoneyUtils.formatMoney(fobTotalGeral));
+            $('#fobTotalProcessoReal').text(MoneyUtils.formatMoney(fobTotalGeral * dolar));
+        }
+
+        function calcularSeguro(fobTotal, fobGeral) {
+            const total = parseFloat($('#seguro_internacional').val());
+            return (total / fobGeral) * fobTotal;
+        }
+
+        function calcularAcrescimoFrete(fobTotal, fobGeral, dolar) {
+            const base = MoneyUtils.parseMoney($('#acrescimo_frete').val());
+            return (base / (fobGeral * dolar)) * fobTotal * dolar;
+        }
+
+        function calcularValorAduaneiro(fob, frete, acrescimo, seguro, thc, dolar) {
+            return fob + frete + acrescimo + seguro + (thc / dolar);
+        }
+
+        function calcularImpostos(rowId, base) {
+            return {
+                ii: $(`#ii_percent-${rowId}`).val() ? parseFloat($(`#ii_percent-${rowId}`).val()) / 100 : 0,
+                ipi: $(`#ipi_percent-${rowId}`).val() ? parseFloat($(`#ipi_percent-${rowId}`).val()) / 100 : 0,
+                pis: $(`#pis_percent-${rowId}`).val() ? parseFloat($(`#pis_percent-${rowId}`).val()) / 100 : 0,
+                cofins: $(`#cofins_percent-${rowId}`).val() ? parseFloat($(`#cofins_percent-${rowId}`).val()) / 100 : 0,
+                icms: $(`#icms_percent-${rowId}`).val() ? parseFloat($(`#icms_percent-${rowId}`).val()) / 100 : 0
+            };
+        }
+
+        function calcularDespesas(rowId, fatorVlrFob_AX, fatorSiscomex, taxaSiscomexUnit) {
+            const multa = $(`#multa-${rowId}`).val() ? parseFloat($(`#multa-${rowId}`).val()) : 0;
+            const txDefLi = $(`#tx_def_li-${rowId}`).val() ? parseFloat($(`#tx_def_li-${rowId}`).val()) : 0;
+            const capatazia = $(`#capatazia-${rowId}`).val() ? parseFloat($(`#capatazia-${rowId}`).val()) : 0
+            const afrmm = $('#afrmm-' + rowId).val() ? parseFloat($('#afrmm-' + rowId).val()) : 0
+            let armazenagem_sts = $('#armazenagem_sts-' + rowId).val() ? parseFloat($('#armazenagem_sts-' + rowId).val()) :
+                0
+            let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + rowId).val() ? parseFloat($('#frete_dta_sts_ana-' + rowId)) :
+                0
+            let honorarios_nix = $('#honorarios_nix-' + rowId).val() ? parseFloat($('#honorarios_nix-' + rowId).val()) : 0
+            console.log({
+                multa,
+                txDefLi,
+                taxatotal: calcularTaxaSiscomex($('#productsBody tr').length),
+                capatazia,
+                taxaSiscomexUnit,
+                afrmm,
+                armazenagem_sts,
+                frete_dta_sts_ana,
+                honorarios_nix
+            })
+            return multa + txDefLi + calcularTaxaSiscomex($('#productsBody tr').length) + capatazia + taxaSiscomexUnit +
+                afrmm + armazenagem_sts + frete_dta_sts_ana + honorarios_nix;
+        }
+
+        function calcularBcIcmsSemReducao(base, impostos, despesas) {
+            return (base + base * impostos.ii + base * impostos.ipi + base * impostos.pis + base * impostos.cofins +
+                despesas) / (1 - impostos.icms);
+        }
+
+        function calcularBcIcmsReduzido(rowId, base, impostos, despesas) {
+            const reducao = $(`#reducao-${rowId}`).val() ? parseFloat($(`#reducao-${rowId}`).val()) : 1;
+            return (base + base * impostos.ii + base * impostos.ipi + base * impostos.pis + base * impostos.cofins +
+                despesas) / reducao;
+        }
+
+        function calcularTotais(base, impostos, despesas, quantidade, vlrIcmsReduzido, rowId) {
+            const vlrII = base * impostos.ii;
+            const bcIpi = base + vlrII;
+            const vlrIpi = bcIpi * impostos.ipi;
+            const bcPisCofins = base;
+            const vlrPis = bcPisCofins * impostos.pis;
+            const vlrCofins = bcPisCofins * impostos.cofins;
+            const vlrTotalProdutoNf = base + vlrII;
+            const vlrUnitProdutNf = vlrTotalProdutoNf / (quantidade || 1);
+            const vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesas + vlrIcmsReduzido;
+            const vlrTotalNfComIcms = vlrTotalNfSemIcms + ($(`#valor_icms_st-${rowId}`).val() ? parseFloat($(
+                `#valor_icms_st-${rowId}`).val()) : 0);
+            return {
+                vlrTotalProdutoNf,
+                vlrUnitProdutNf,
+                vlrTotalNfSemIcms,
+                vlrTotalNfComIcms
+            };
+        }
+
+        function atualizarCampos(rowId, valores) {
+            $(`#peso_liquido_unitario-${rowId}`).val(valores.pesoLiqUnit);
+            $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal));
+            $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal * valores.dolar));
+            $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt));
+            $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt * valores.dolar));
+            $(`#seguro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow));
+            $(`#seguro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow * valores.dolar));
+            $(`#acresc_frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow));
+            $(`#acresc_frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow * valores.dolar));
+            $(`#thc_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow / valores.dolar));
+            $(`#thc_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow));
+            $(`#valor_aduaneiro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroUsd));
+            $(`#valor_aduaneiro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl));
+            $(`#valor_ii-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.ii));
+            $(`#base_ipi-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl + valores.vlrAduaneiroBrl * valores
+                .impostos.ii));
+            $(`#valor_ipi-${rowId}`).val(MoneyUtils.formatMoney((valores.vlrAduaneiroBrl + valores.vlrAduaneiroBrl * valores
+                .impostos.ii) * valores.impostos.ipi));
+            $(`#base_pis_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl));
+            $(`#valor_pis-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.pis));
+            $(`#valor_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.cofins));
+            $(`#despesa_aduaneira-${rowId}`).val(MoneyUtils.formatMoney(valores.despesas));
+            $(`#base_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.bcIcmsSReducao));
+            $(`#valor_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSReducao));
+            $(`#base_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.bcImcsReduzido));
+            $(`#valor_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsReduzido));
+            $(`#valor_unit_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrUnitProdutNf));
+            $(`#valor_total_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalProdutoNf));
+            $(`#valor_total_nf_sem_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalNfSemIcms));
+            $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalNfComIcms));
+            atualizarFatoresFob()
+            // $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.fatorVlrFob_AX));
+            // $(`#fator_tx_siscomex-${rowId}`).val(valores.fatorTaxaSiscomex_AY);
+            // $(`#taxa_siscomex-${rowId}`).val(MoneyUtils.formatMoney(valores.taxaSisComex));
+        }
+
+        function atualizarFatoresFob() {
+            const dolar = parseFloat($('#dolarHoje').val());
+            const taxaSiscomex = calcularTaxaSiscomex($('#productsBody tr').length);
+
+            const dadosFob = []; // cada item = { rowId, fobTotal }
+
+            $('.fobUnitario').each(function() {
+                const rowId = $(this).data('row');
+                const fobUnit = MoneyUtils.parseMoney($(this).val());
+                const qtd = parseFloat($(`#quantidade-${rowId}`).val()) || 0;
+                const fobTotal = fobUnit * qtd;
+
+                dadosFob.push({
+                    rowId,
+                    fobTotal
+                });
+            });
+
+            const fobTotalGeral = dadosFob.reduce((acc, linha) => acc + linha.fobTotal, 0);
+
+            for (const linha of dadosFob) {
+                const {
+                    rowId,
+                    fobTotal
+                } = linha;
+
+                const fatorVlrFob_AX = fobTotal / (fobTotalGeral || 1);
+                const fatorTaxaSiscomex_AY = taxaSiscomex / ((fobTotal * dolar) || 1);
+                const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * fobTotal * dolar;
+
+                // Preenche os campos correspondentes
+                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
+                $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY));
+                $(`#taxa_siscomex-${rowId}`).val(MoneyUtils.formatMoney(taxaSisComexUnitaria_BB));
+                atualizarCamposCabecalho()
+            }
+        }
+
+        function atualizarCamposCabecalho() {
+            const campos = getCamposExternos()
+            const lengthTable = $('#productsBody tr').length
+
+            // Primeiro calcula o FOB total geral
+            let fobTotalGeral = 0
+            for (let i = 0; i < lengthTable; i++) {
+                const fobUnit = MoneyUtils.parseMoney($(`#fob_unit_usd-${i}`).val())
+                const qtd = parseFloat($(`#quantidade-${i}`).val()) || 0
+                fobTotalGeral += fobUnit * qtd
+            }
+
+            // Para cada linha da tabela
+            for (let i = 0; i < lengthTable; i++) {
+                const fobUnit = MoneyUtils.parseMoney($(`#fob_unit_usd-${i}`).val())
+                const qtd = parseFloat($(`#quantidade-${i}`).val()) || 0
+                const fobTotal = fobUnit * qtd
+                const fatorVlrFob_AX = fobTotalGeral ? (fobTotal / fobTotalGeral) : 0
+                let desp_desenbaraco_parte_1 = 0
+
+                for (let campo of campos) {
+                    const valorCampo = parseFloat($(`#${campo}`).val()) || 0
+                    const valorDistribuido = valorCampo * fatorVlrFob_AX
+                    desp_desenbaraco_parte_1 += valorDistribuido;
+                    $(`#${campo}-${i}`).val(valorDistribuido)
+                }
+                let taxa_siscomex = $(`#taxa_siscomex-${i}`).val() ? MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) :
+                    0
+                let multa = $(`#multa-${i}`).val() ? MoneyUtils.parseMoney($(`#multa-${i}`).val()) : 0
+                let taxa_def = $(`#tx_def_li-${i}`).val() ? MoneyUtils.parseMoney($(`#tx_def_li-${i}`).val()) : 0
+
+                desp_desenbaraco_parte_1 += multa + taxa_def + taxa_siscomex;
+
+                let capatazia = $('#capatazia-' + i).val() ? parseFloat($('#capatazia-' + i).val()) : 0
+                let afrmm = $('#afrmm-' + i).val() ? parseFloat($('#afrmm-' + i).val()) : 0
+                let armazenagem_sts = $('#armazenagem_sts-' + i).val() ? parseFloat($('#armazenagem_sts-' + i).val()) : 0
+                let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + i).val() ? parseFloat($('#frete_dta_sts_ana-' + i)
+                    .val()) : 0
+                let honorarios_nix = $('#honorarios_nix-' + i).val() ? parseFloat($('#honorarios_nix-' + i).val()) : 0
+
+
+                let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + armazenagem_sts +
+                    frete_dta_sts_ana + honorarios_nix
+
+                let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2
+                $(`#desp_desenbaraco-${i}`).val(despesa_desembaraco)
+            }
+        }
+
 
         function calcularTaxaSiscomex(quantidade) {
             const valorRegistroDI = 115.67;
@@ -1373,7 +1694,7 @@
             let rowId = $(this).data('row');
 
             if (productObject) {
-                console.log(productObject)
+
                 $(`#codigo-${rowId}`).val(productObject.codigo);
                 $(`#ncm-${rowId}`).val(productObject.ncm);
                 $(`#descricao-${rowId}`).text(productObject.descricao);
@@ -1450,8 +1771,8 @@
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][valor_total_nf]" id="valor_total_nf-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][valor_total_nf_sem_icms_st]" id="valor_total_nf_sem_icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][base_icms_st]" id="base_icms_st-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][mva]" id="mva-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][icms_st]" id="icms_st-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control" name="produtos[${newIndex}][mva]" id="mva-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control" name="produtos[${newIndex}][icms_st]" id="icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][valor_icms_st]" id="valor_icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][valor_total_nf_com_icms_st]" id="valor_total_nf_com_icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control" readonly name="produtos[${newIndex}][fator_valor_fob]" id="fator_valor_fob-${newIndex}" value=""></td>

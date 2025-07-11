@@ -55,7 +55,7 @@
                 </thead>
                 <tbody>
                     @foreach ($processos as $processo)
-                            <td>{{$processo->id}}</td>
+                            <td>{{$processo->cliente->nome}}</td>
                             <td class="d-flex  justify-content-around">
                                     <a href="{{ route('processo.edit', $processo->id) }}" type="button"
                                         class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
