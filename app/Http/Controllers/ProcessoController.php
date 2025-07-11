@@ -31,7 +31,6 @@ class ProcessoController extends Controller
         if ($cachedBid) {
             return $cachedBid;
         }
-        dd($cachedBid);
         $endpoint = env('AWESOME_API_URL', 'https://economia.awesomeapi.com.br') . "/last/USD-BRL";
         $response = Http::get($endpoint);
         $data = $response->json();
