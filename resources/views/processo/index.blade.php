@@ -50,14 +50,15 @@
                 <thead class="bg-primary ">
                     <tr>
                         <th>Cliente</th>
+           
                         <th class="d-flex justify-content-center">AÇÕES</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($processos as $processo)
-                            <td>{{$processo->cliente->nome}}</td>
+                            <td>{{$processo->nome}}</td>
                             <td class="d-flex  justify-content-around">
-                                    <a href="{{ route('processo.edit', $processo->id) }}" type="button"
+                                    <a href="{{ route('processo-cliente', $processo->id) }}" type="button"
                                         class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
                                 {{-- <form method="POST"
                                     action="{{ route($cliente->deleted_at == null ? 'cliente.destroy' : 'cliente.ativar', $cliente->id) }}"

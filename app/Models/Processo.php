@@ -29,13 +29,22 @@ class Processo extends Model
         'quantidade',
         'especie',
         'cliente_id',
+        'frete_internacional_moeda',
+        'seguro_internacional_moeda',
+        'acrescimo_frete_moeda',
+        'descricao',
+        'status',
+        'canal',
+        'data_desembaraco_inicio',
+        'data_desembaraco_fim',
     ];
     public function cliente()
     {
         return $this->hasOne(Cliente::class, 'id', 'cliente_id');
     }
 
-    public function processoProdutos(){
+    public function processoProdutos()
+    {
         return $this->hasMany(ProcessoProduto::class)->orderBy('created_at', 'asc');;
     }
 }

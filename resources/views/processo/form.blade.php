@@ -3,7 +3,11 @@
 
 @section('content')
     <style>
-        /* Aumentar a altura do modal */
+        [class^="col"] {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
         .modal-dialog.modal-xl {
             max-width: 90%;
             height: 80vh;
@@ -57,31 +61,35 @@
             position: sticky;
             left: 0;
             z-index: 10;
-            background-color: #f8f9fa ;
+            background-color: #f8f9fa;
             color: white;
             text-align: center
         }
 
-        .table-dados-complementares td:first-child, .table-dados-basicos td:first-child{
+        .table-dados-complementares td:first-child,
+        .table-dados-basicos td:first-child {
             color: black !important;
         }
 
         table thead th:first-child {
             /* z-index: 20; */
             background-color: #212529;
-                        color: white
-
+            color: white
         }
- .table-products th{
-    background-color: #212529;
-                        color: white
- }
- .middleRow th{
-    background-color: transparent;
- }
-  .middleRowInputTh{
-    background-color: #ffff99 !important;
- }
+
+        .table-products th {
+            background-color: #212529;
+            color: white
+        }
+
+        .middleRow th {
+            background-color: transparent;
+        }
+
+        .middleRowInputTh {
+            background-color: #ffff99 !important;
+        }
+
         /* Estilo para o botão de remover */
         .btn-remove {
             padding: 0.25rem 0.5rem;
@@ -145,35 +153,40 @@
             font-weight: bold;
         }
     </style>
-    <div class="row">
-        <div class="col-12 shadow-lg px-0">
-            <div class="card w-100 card-primary card-tabs">
-                <div class="card-header p-0 pt-1">
-                    <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
-                        <li class="pt-2 px-3">
-                            <h3 class="card-title text-dark font-weight-bold" style="">
-                                {{ $processo->codigo_interno ?? 'Novo Processo' }}</h3>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill"
-                                href="#custom-tabs-two-home" role="tab" aria-controls="custom-tabs-two-home"
-                                aria-selected="false">Informações Cadastrais</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <div class="tab-content" id="custom-tabs-two-tabContent">
-                        <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
-                            aria-labelledby="custom-tabs-two-home-tab">
-                            <small class="text-danger d-none" id="avisoProcessoAlterado">Processo alterado, pressione o
-                                botão salvar para persistir as alterações</small>
-                            <form enctype="multipart/form-data"
-                                action="{{ isset($processo) ? route('processo.update', $processo->id) : route('processo.store') }}"
-                                method="POST">
-                                @csrf
-                                @if (isset($processo))
-                                    @method('PUT')
-                                @endif
+    <form enctype="multipart/form-data"
+        action="{{ isset($processo) ? route('processo.update', $processo->id) : route('processo.store') }}" method="POST">
+        @csrf
+        @if (isset($processo))
+            @method('PUT')
+        @endif
+        <div class="row">
+            <div class="col-12 shadow-lg px-0">
+                <div class="card w-100 card-primary card-tabs">
+                    <div class="card-header p-0 pt-1">
+                        <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
+                            <li class="pt-2 px-3">
+                                <h3 class="card-title text-dark font-weight-bold" style="">
+                                    {{ $processo->codigo_interno ?? 'Novo Processo' }}</h3>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill"
+                                    href="#custom-tabs-two-home" role="tab" aria-controls="custom-tabs-two-home"
+                                    aria-selected="false">Dados Processo</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " id="custom-tabs-three-home-tab" data-toggle="pill"
+                                    href="#custom-tabs-three-home" role="tab" aria-controls="custom-tabs-three-home"
+                                    aria-selected="false">Produtos</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="custom-tabs-two-tabContent">
+
+                            <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
+                                aria-labelledby="custom-tabs-two-home-tab">
+                                <small class="text-danger d-none" id="avisoProcessoAlterado">Processo alterado, pressione o
+                                    botão salvar para persistir as alterações</small>
                                 <div class="row">
                                     <div class="col-4">
                                         <label for="exampleInputEmail1" class="form-label">Cliente</label>
@@ -192,41 +205,653 @@
                                         <input value="{{ isset($processo) ? $processo->codigo_interno : '' }}"
                                             class="form-control" name="codigo_interno" id="processo_codigo_interno">
                                     </div>
+                                    <div class="col-md-4">
+                                        <label for="descricao" class="form-label">Descrição (max 120 caracteres)</label>
+                                        <input value="{{ isset($processo) ? $processo->descricao : '' }}"
+                                            class="form-control" name="descricao" id="descricao">
+                                    </div>
                                 </div>
                                 <div class="row mt-2">
-                                    <div class="col-md-4">
+                                    <div class="col-3">
+                                        <label for="exampleInputEmail1" class="form-label">Canal</label>
+                                        <select class="custom-select select2" name="canal">
+                                            <option value="" selected hidden>Selecione uma opção</option>
+                                            <option
+                                                {{ isset($processo) && $processo->canal == 'vermelho' ? 'selected' : '' }}
+                                                value="vermelho" hidden>Vermelho</option>
+                                            <option
+                                                {{ isset($processo) && $processo->canal == 'amarelo' ? 'selected' : '' }}
+                                                value="amarelo" hidden>Amarelo</option>
+                                            <option {{ isset($processo) && $processo->canal == 'verde' ? 'selected' : '' }}
+                                                value="verde" hidden>Verde</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-3">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select class="custom-select select2" name="status">
+                                            <option value="" selected hidden>Selecione uma opção</option>
+                                            <option
+                                                {{ isset($processo) && $processo->status == 'andamento' ? 'selected' : '' }}
+                                                value="andamento" hidden>Em Andamento</option>
+                                            <option
+                                                {{ isset($processo) && $processo->status == 'finalizado' ? 'selected' : '' }}
+                                                value="finalizado" hidden>Finalizado</option>
+                                            <option
+                                                {{ isset($processo) && $processo->status == 'prestacao_contas' ? 'selected' : '' }}
+                                                value="prestacao_contas" hidden>Prestação de Contas</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-3 col-md-6 col-sm-6">
+                                        <div class="form-group">
+                                            <label for="credenciamento_radar">Início Desembaraço</label>
+                                            <input type="date" class="form-control" id="credenciamento_radar"
+                                                name="data_desembaraco_inicio"
+                                                value="{{ old('data_desembaraco_inicio', isset($processo) ? $processo->data_desembaraco_inicio : '') }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-6 col-sm-6">
+                                        <div class="form-group">
+                                            <label for="credenciamento_radar">Fim Desembaraço</label>
+                                            <input type="date" class="form-control" id="credenciamento_radar"
+                                                name="data_desembaraco_fim"
+                                                value="{{ old('data_desembaraco_fim', isset($processo) ? $processo->data_desembaraco_fim : '') }}">
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-sm-4 col-md-3 col-lg-2">
                                         <label for="frete_internacional" class="form-label">FRETE INTERNACIONAL
-                                            (USD)</label>
+                                        </label>
                                         <input value="{{ isset($processo) ? $processo->frete_internacional : '' }}"
                                             class="form-control moneyReal" name="frete_internacional"
                                             id="frete_internacional">
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-sm-2 col-md-3 col-lg-2">
+
+                                        <label class="">Moeda</label>
+                                        <select name="frete_internacional_moeda" id="frete_internacional_moeda"
+                                            class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
+                                            <option>Selecione um país...</option>
+
+                                            <optgroup label="BRICS">
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'BRL' ? 'selected' : '' }}
+                                                    value="BRL">BRL - Brasil (Real Brasileiro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'RUB' ? 'selected' : '' }}
+                                                    value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'INR' ? 'selected' : '' }}
+                                                    value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'CNY' ? 'selected' : '' }}
+                                                    value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'ZAR' ? 'selected' : '' }}
+                                                    value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'SAR' ? 'selected' : '' }}
+                                                    value="SAR">SAR - Arábia Saudita (Riyal Saudita) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'AED' ? 'selected' : '' }}
+                                                    value="AED">AED - Emirados Árabes (Dirham) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'EGP' ? 'selected' : '' }}
+                                                    value="EGP">EGP - Egito (Libra Egípcia) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'IRR' ? 'selected' : '' }}
+                                                    value="IRR">IRR - Irã (Rial Iraniano) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'ETB' ? 'selected' : '' }}
+                                                    value="ETB">ETB - Etiópia (Birr Etíope) </option>
+                                            </optgroup>
+
+                                            <!-- União Europeia (Euro + países fora do Euro) -->
+                                            <optgroup label="União Europeia (UE)">
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'EUR' ? 'selected' : '' }}
+                                                    value="EUR">EUR - Zona do Euro (Euro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'DKK' ? 'selected' : '' }}
+                                                    value="DKK">DKK - Dinamarca (Coroa Dinamarquesa)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'SEK' ? 'selected' : '' }}
+                                                    value="SEK">SEK - Suécia (Coroa Sueca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'CZK' ? 'selected' : '' }}
+                                                    value="CZK">CZK - República Tcheca (Coroa Tcheca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'HUF' ? 'selected' : '' }}
+                                                    value="HUF">HUF - Hungria (Forint Húngaro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'PLN' ? 'selected' : '' }}
+                                                    value="PLN">PLN - Polônia (Złoty Polonês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'RON' ? 'selected' : '' }}
+                                                    value="RON">RON - Romênia (Leu Romeno)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'BGN' ? 'selected' : '' }}
+                                                    value="BGN">BGN - Bulgária (Lev Búlgaro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'HRK' ? 'selected' : '' }}
+                                                    value="HRK">HRK - Croácia (Kuna Croata)</option>
+                                            </optgroup>
+
+                                            <!-- G20 (inclui membros individuais + UE como bloco) -->
+                                            <optgroup label="G20">
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'USD' ? 'selected' : '' }}
+                                                    value="USD">USD - Estados Unidos (Dólar Americano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'CAD' ? 'selected' : '' }}
+                                                    value="CAD">CAD - Canadá (Dólar Canadense)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'MXN' ? 'selected' : '' }}
+                                                    value="MXN">MXN - México (Peso Mexicano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'ARS' ? 'selected' : '' }}
+                                                    value="ARS">ARS - Argentina (Peso Argentino)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'AUD' ? 'selected' : '' }}
+                                                    value="AUD">AUD - Austrália (Dólar Australiano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'JPY' ? 'selected' : '' }}
+                                                    value="JPY">JPY - Japão (Iene Japonês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'KRW' ? 'selected' : '' }}
+                                                    value="KRW">KRW - Coreia do Sul (Won Sul-Coreano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'IDR' ? 'selected' : '' }}
+                                                    value="IDR">IDR - Indonésia (Rupia Indonésia)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'TRY' ? 'selected' : '' }}
+                                                    value="TRY">TRY - Turquia (Lira Turca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'GBP' ? 'selected' : '' }}
+                                                    value="GBP">GBP - Reino Unido (Libra Esterlina)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'EUR' ? 'selected' : '' }}
+                                                    value="EUR">EUR - União Europeia (Euro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'ZAR' ? 'selected' : '' }}
+                                                    value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'SAR' ? 'selected' : '' }}
+                                                    value="SAR">SAR - Arábia Saudita (Riyal Saudita)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'INR' ? 'selected' : '' }}
+                                                    value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'CNY' ? 'selected' : '' }}
+                                                    value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->frete_internacional_moeda == 'RUB' ? 'selected' : '' }}
+                                                    value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                            </optgroup>
+                                        </select>
+
+                                    </div>
+                                    <div class="col-lg-2 col-md-3 col-md-4 ">
                                         <label for="seguro_internacional" class="form-label">SEGURO INTERNACIONAL
-                                            (USD)</label>
+                                        </label>
                                         <input value="{{ isset($processo) ? $processo->seguro_internacional : '' }}"
                                             class="form-control moneyReal" name="seguro_internacional"
                                             id="seguro_internacional">
                                     </div>
-                                    <div class="col-md-4">
-                                        <label for="acrescimo_frete" class="form-label">ACRESCIMO DO FRETE (USD)</label>
+                                    <div class="col-sm-2 col-md-3 col-lg-2">
+                                        <label class="">Moeda</label>
+                                        <select name="seguro_internacional_moeda" id="seguro_internacional_moeda"
+                                            class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
+                                            <option>Selecione um país...</option>
+
+                                            <!-- BRICS (Brasil, Rússia, Índia, China, África do Sul + Novos Membros) -->
+                                            <optgroup label="BRICS">
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'BRL' ? 'selected' : '' }}
+                                                    value="BRL">BRL - Brasil (Real Brasileiro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'RUB' ? 'selected' : '' }}
+                                                    value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'INR' ? 'selected' : '' }}
+                                                    value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'CNY' ? 'selected' : '' }}
+                                                    value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'ZAR' ? 'selected' : '' }}
+                                                    value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'SAR' ? 'selected' : '' }}
+                                                    value="SAR">SAR - Arábia Saudita (Riyal Saudita) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'AED' ? 'selected' : '' }}
+                                                    value="AED">AED - Emirados Árabes (Dirham) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'EGP' ? 'selected' : '' }}
+                                                    value="EGP">EGP - Egito (Libra Egípcia) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'IRR' ? 'selected' : '' }}
+                                                    value="IRR">IRR - Irã (Rial Iraniano) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'ETB' ? 'selected' : '' }}
+                                                    value="ETB">ETB - Etiópia (Birr Etíope) </option>
+                                            </optgroup>
+
+                                            <!-- União Europeia (Euro + países fora do Euro) -->
+                                            <optgroup label="União Europeia (UE)">
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'EUR' ? 'selected' : '' }}
+                                                    value="EUR">EUR - Zona do Euro (Euro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'DKK' ? 'selected' : '' }}
+                                                    value="DKK">DKK - Dinamarca (Coroa Dinamarquesa)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'SEK' ? 'selected' : '' }}
+                                                    value="SEK">SEK - Suécia (Coroa Sueca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'CZK' ? 'selected' : '' }}
+                                                    value="CZK">CZK - República Tcheca (Coroa Tcheca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'HUF' ? 'selected' : '' }}
+                                                    value="HUF">HUF - Hungria (Forint Húngaro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'PLN' ? 'selected' : '' }}
+                                                    value="PLN">PLN - Polônia (Złoty Polonês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'RON' ? 'selected' : '' }}
+                                                    value="RON">RON - Romênia (Leu Romeno)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'BGN' ? 'selected' : '' }}
+                                                    value="BGN">BGN - Bulgária (Lev Búlgaro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'HRK' ? 'selected' : '' }}
+                                                    value="HRK">HRK - Croácia (Kuna Croata)</option>
+                                            </optgroup>
+
+                                            <!-- G20 (inclui membros individuais + UE como bloco) -->
+                                            <optgroup label="G20">
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'USD' ? 'selected' : '' }}
+                                                    value="USD">USD - Estados Unidos (Dólar Americano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'CAD' ? 'selected' : '' }}
+                                                    value="CAD">CAD - Canadá (Dólar Canadense)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'MXN' ? 'selected' : '' }}
+                                                    value="MXN">MXN - México (Peso Mexicano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'ARS' ? 'selected' : '' }}
+                                                    value="ARS">ARS - Argentina (Peso Argentino)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'AUD' ? 'selected' : '' }}
+                                                    value="AUD">AUD - Austrália (Dólar Australiano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'JPY' ? 'selected' : '' }}
+                                                    value="JPY">JPY - Japão (Iene Japonês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'KRW' ? 'selected' : '' }}
+                                                    value="KRW">KRW - Coreia do Sul (Won Sul-Coreano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'IDR' ? 'selected' : '' }}
+                                                    value="IDR">IDR - Indonésia (Rupia Indonésia)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'TRY' ? 'selected' : '' }}
+                                                    value="TRY">TRY - Turquia (Lira Turca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'GBP' ? 'selected' : '' }}
+                                                    value="GBP">GBP - Reino Unido (Libra Esterlina)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'EUR' ? 'selected' : '' }}
+                                                    value="EUR">EUR - União Europeia (Euro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'ZAR' ? 'selected' : '' }}
+                                                    value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'SAR' ? 'selected' : '' }}
+                                                    value="SAR">SAR - Arábia Saudita (Riyal Saudita)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'INR' ? 'selected' : '' }}
+                                                    value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'CNY' ? 'selected' : '' }}
+                                                    value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->seguro_internacional_moeda == 'RUB' ? 'selected' : '' }}
+                                                    value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                            </optgroup>
+                                        </select>
+
+                                    </div>
+                                    <div class="col-sm-4 col-md-3 col-lg-2">
+                                        <label for="acrescimo_frete" class="form-label">ACRESCIMO DO FRETE</label>
                                         <input value="{{ isset($processo) ? $processo->acrescimo_frete : '' }}"
                                             class="form-control moneyReal" name="acrescimo_frete" id="acrescimo_frete">
                                     </div>
-                                </div>
+                                    <div class="col-sm-2 col-md-3 col-lg-2">
 
+                                        <label class="form-labe">Moeda</label>
+                                        <select name="acrescimo_frete_moeda" id="acrescimo_frete_moeda"
+                                            class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
+                                            <option>Selecione um país</option>
+
+                                            <!-- BRICS (Brasil, Rússia, Índia, China, África do Sul + Novos Membros) -->
+                                            <optgroup label="BRICS">
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'BRL' ? 'selected' : '' }}
+                                                    value="BRL">BRL - Brasil (Real Brasileiro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'RUB' ? 'selected' : '' }}
+                                                    value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'INR' ? 'selected' : '' }}
+                                                    value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'CNY' ? 'selected' : '' }}
+                                                    value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'ZAR' ? 'selected' : '' }}
+                                                    value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'SAR' ? 'selected' : '' }}
+                                                    value="SAR">SAR - Arábia Saudita (Riyal Saudita) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'AED' ? 'selected' : '' }}
+                                                    value="AED">AED - Emirados Árabes (Dirham) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'EGP' ? 'selected' : '' }}
+                                                    value="EGP">EGP - Egito (Libra Egípcia) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'IRR' ? 'selected' : '' }}
+                                                    value="IRR">IRR - Irã (Rial Iraniano) </option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'ETB' ? 'selected' : '' }}
+                                                    value="ETB">ETB - Etiópia (Birr Etíope) </option>
+                                            </optgroup>
+
+                                            <!-- União Europeia (Euro + países fora do Euro) -->
+                                            <optgroup label="União Europeia (UE)">
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'EUR' ? 'selected' : '' }}
+                                                    value="EUR">EUR - Zona do Euro (Euro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'DKK' ? 'selected' : '' }}
+                                                    value="DKK">DKK - Dinamarca (Coroa Dinamarquesa)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'SEK' ? 'selected' : '' }}
+                                                    value="SEK">SEK - Suécia (Coroa Sueca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'CZK' ? 'selected' : '' }}
+                                                    value="CZK">CZK - República Tcheca (Coroa Tcheca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'HUF' ? 'selected' : '' }}
+                                                    value="HUF">HUF - Hungria (Forint Húngaro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'PLN' ? 'selected' : '' }}
+                                                    value="PLN">PLN - Polônia (Złoty Polonês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'RON' ? 'selected' : '' }}
+                                                    value="RON">RON - Romênia (Leu Romeno)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'BGN' ? 'selected' : '' }}
+                                                    value="BGN">BGN - Bulgária (Lev Búlgaro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'HRK' ? 'selected' : '' }}
+                                                    value="HRK">HRK - Croácia (Kuna Croata)</option>
+                                            </optgroup>
+
+                                            <!-- G20 (inclui membros individuais + UE como bloco) -->
+                                            <optgroup label="G20">
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'USD' ? 'selected' : '' }}
+                                                    value="USD">USD - Estados Unidos (Dólar Americano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'CAD' ? 'selected' : '' }}
+                                                    value="CAD">CAD - Canadá (Dólar Canadense)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'MXN' ? 'selected' : '' }}
+                                                    value="MXN">MXN - México (Peso Mexicano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'ARS' ? 'selected' : '' }}
+                                                    value="ARS">ARS - Argentina (Peso Argentino)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'AUD' ? 'selected' : '' }}
+                                                    value="AUD">AUD - Austrália (Dólar Australiano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'JPY' ? 'selected' : '' }}
+                                                    value="JPY">JPY - Japão (Iene Japonês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'KRW' ? 'selected' : '' }}
+                                                    value="KRW">KRW - Coreia do Sul (Won Sul-Coreano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'IDR' ? 'selected' : '' }}
+                                                    value="IDR">IDR - Indonésia (Rupia Indonésia)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'TRY' ? 'selected' : '' }}
+                                                    value="TRY">TRY - Turquia (Lira Turca)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'GBP' ? 'selected' : '' }}
+                                                    value="GBP">GBP - Reino Unido (Libra Esterlina)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'EUR' ? 'selected' : '' }}
+                                                    value="EUR">EUR - União Europeia (Euro)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'ZAR' ? 'selected' : '' }}
+                                                    value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'SAR' ? 'selected' : '' }}
+                                                    value="SAR">SAR - Arábia Saudita (Riyal Saudita)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'INR' ? 'selected' : '' }}
+                                                    value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'CNY' ? 'selected' : '' }}
+                                                    value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option
+                                                    {{ isset($processo) && $processo->acrescimo_frete_moeda == 'RUB' ? 'selected' : '' }}
+                                                    value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                            </optgroup>
+                                        </select>
+
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-sm-4 col-md-3 col-lg-2">
+                                        <input readonly
+                                            value="{{ isset($processo) ? $processo->frete_internacional * ($dolar[$processo->frete_internacional_moeda]['compra'] ?? 0) : '' }}"
+                                            class="form-control moneyReal" name="frete_internacional_visualizacao"
+                                            id="frete_internacional_visualizacao">
+                                    </div>
+                                    <div class="col-sm-2 col-md-3 col-lg-2">
+
+                                        <select disabled class="select2 w-100" aria-label="Moedas BRICS, UE e G20">
+                                            <option>Selecione um país...</option>
+
+                                            <!-- BRICS (Brasil, Rússia, Índia, China, África do Sul + Novos Membros) -->
+                                            <optgroup label="BRICS">
+                                                <option selected value="BRL">BRL - Brasil (Real Brasileiro)</option>
+                                                <option value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                                <option value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option value="SAR">SAR - Arábia Saudita (Riyal Saudita) </option>
+                                                <option value="AED">AED - Emirados Árabes (Dirham) </option>
+                                                <option value="EGP">EGP - Egito (Libra Egípcia) </option>
+                                                <option value="IRR">IRR - Irã (Rial Iraniano) </option>
+                                                <option value="ETB">ETB - Etiópia (Birr Etíope) </option>
+                                            </optgroup>
+
+                                            <!-- União Europeia (Euro + países fora do Euro) -->
+                                            <optgroup label="União Europeia (UE)">
+                                                <option value="EUR">EUR - Zona do Euro (Euro)</option>
+                                                <option value="DKK">DKK - Dinamarca (Coroa Dinamarquesa)</option>
+                                                <option value="SEK">SEK - Suécia (Coroa Sueca)</option>
+                                                <option value="CZK">CZK - República Tcheca (Coroa Tcheca)</option>
+                                                <option value="HUF">HUF - Hungria (Forint Húngaro)</option>
+                                                <option value="PLN">PLN - Polônia (Złoty Polonês)</option>
+                                                <option value="RON">RON - Romênia (Leu Romeno)</option>
+                                                <option value="BGN">BGN - Bulgária (Lev Búlgaro)</option>
+                                                <option value="HRK">HRK - Croácia (Kuna Croata)</option>
+                                            </optgroup>
+
+                                            <!-- G20 (inclui membros individuais + UE como bloco) -->
+                                            <optgroup label="G20">
+                                                <option value="USD">USD - Estados Unidos (Dólar Americano)</option>
+                                                <option value="CAD">CAD - Canadá (Dólar Canadense)</option>
+                                                <option value="MXN">MXN - México (Peso Mexicano)</option>
+                                                <option value="ARS">ARS - Argentina (Peso Argentino)</option>
+                                                <option value="AUD">AUD - Austrália (Dólar Australiano)</option>
+                                                <option value="JPY">JPY - Japão (Iene Japonês)</option>
+                                                <option value="KRW">KRW - Coreia do Sul (Won Sul-Coreano)</option>
+                                                <option value="IDR">IDR - Indonésia (Rupia Indonésia)</option>
+                                                <option value="TRY">TRY - Turquia (Lira Turca)</option>
+                                                <option value="GBP">GBP - Reino Unido (Libra Esterlina)</option>
+                                                <option value="EUR">EUR - União Europeia (Euro)</option>
+                                                <option value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option value="SAR">SAR - Arábia Saudita (Riyal Saudita)</option>
+                                                <option value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                            </optgroup>
+                                        </select>
+
+                                    </div>
+                                    <div class="col-lg-2 col-md-3 col-md-4 ">
+
+                                        <input readonly
+                                            value="{{ isset($processo) ? $processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0) : '' }}"
+                                            class="form-control moneyReal" name="seguro_internacional_visualizacao"
+                                            id="seguro_internacional_visualizacao">
+                                    </div>
+                                    <div class="col-sm-2 col-md-3 col-lg-2">
+
+                                        <select disabled class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
+                                            <option>Selecione um país...</option>
+
+                                            <!-- BRICS (Brasil, Rússia, Índia, China, África do Sul + Novos Membros) -->
+                                            <optgroup label="BRICS">
+                                                <option selected value="BRL">BRL - Brasil (Real Brasileiro)</option>
+                                                <option value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                                <option value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option value="SAR">SAR - Arábia Saudita (Riyal Saudita) </option>
+                                                <option value="AED">AED - Emirados Árabes (Dirham) </option>
+                                                <option value="EGP">EGP - Egito (Libra Egípcia) </option>
+                                                <option value="IRR">IRR - Irã (Rial Iraniano) </option>
+                                                <option value="ETB">ETB - Etiópia (Birr Etíope) </option>
+                                            </optgroup>
+
+                                            <!-- União Europeia (Euro + países fora do Euro) -->
+                                            <optgroup label="União Europeia (UE)">
+                                                <option value="EUR">EUR - Zona do Euro (Euro)</option>
+                                                <option value="DKK">DKK - Dinamarca (Coroa Dinamarquesa)</option>
+                                                <option value="SEK">SEK - Suécia (Coroa Sueca)</option>
+                                                <option value="CZK">CZK - República Tcheca (Coroa Tcheca)</option>
+                                                <option value="HUF">HUF - Hungria (Forint Húngaro)</option>
+                                                <option value="PLN">PLN - Polônia (Złoty Polonês)</option>
+                                                <option value="RON">RON - Romênia (Leu Romeno)</option>
+                                                <option value="BGN">BGN - Bulgária (Lev Búlgaro)</option>
+                                                <option value="HRK">HRK - Croácia (Kuna Croata)</option>
+                                            </optgroup>
+
+                                            <!-- G20 (inclui membros individuais + UE como bloco) -->
+                                            <optgroup label="G20">
+                                                <option value="USD">USD - Estados Unidos (Dólar Americano)</option>
+                                                <option value="CAD">CAD - Canadá (Dólar Canadense)</option>
+                                                <option value="MXN">MXN - México (Peso Mexicano)</option>
+                                                <option value="ARS">ARS - Argentina (Peso Argentino)</option>
+                                                <option value="AUD">AUD - Austrália (Dólar Australiano)</option>
+                                                <option value="JPY">JPY - Japão (Iene Japonês)</option>
+                                                <option value="KRW">KRW - Coreia do Sul (Won Sul-Coreano)</option>
+                                                <option value="IDR">IDR - Indonésia (Rupia Indonésia)</option>
+                                                <option value="TRY">TRY - Turquia (Lira Turca)</option>
+                                                <option value="GBP">GBP - Reino Unido (Libra Esterlina)</option>
+                                                <option value="EUR">EUR - União Europeia (Euro)</option>
+                                                <option value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option value="SAR">SAR - Arábia Saudita (Riyal Saudita)</option>
+                                                <option value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                            </optgroup>
+                                        </select>
+
+                                    </div>
+                                    <div class="col-sm-4 col-md-3 col-lg-2">
+                                        <input readonly
+                                            value="{{ isset($processo) ? $processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0) : '' }}"
+                                            class="form-control moneyReal" name="acrescimo_frete_visualizacao"
+                                            id="acrescimo_frete_visualizacao">
+                                    </div>
+                                    <div class="col-sm-2 col-md-3 col-lg-2">
+
+                                        <select disabled class="select2 w-100" aria-label="Moedas BRICS, UE e G20">
+                                            <option>Selecione um país</option>
+
+                                            <!-- BRICS (Brasil, Rússia, Índia, China, África do Sul + Novos Membros) -->
+                                            <optgroup label="BRICS">
+                                                <option selected value="BRL">BRL - Brasil (Real Brasileiro)</option>
+                                                <option value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                                <option value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option value="SAR">SAR - Arábia Saudita (Riyal Saudita) </option>
+                                                <option value="AED">AED - Emirados Árabes (Dirham) </option>
+                                                <option value="EGP">EGP - Egito (Libra Egípcia) </option>
+                                                <option value="IRR">IRR - Irã (Rial Iraniano) </option>
+                                                <option value="ETB">ETB - Etiópia (Birr Etíope) </option>
+                                            </optgroup>
+
+                                            <!-- União Europeia (Euro + países fora do Euro) -->
+                                            <optgroup label="União Europeia (UE)">
+                                                <option value="EUR">EUR - Zona do Euro (Euro)</option>
+                                                <option value="DKK">DKK - Dinamarca (Coroa Dinamarquesa)</option>
+                                                <option value="SEK">SEK - Suécia (Coroa Sueca)</option>
+                                                <option value="CZK">CZK - República Tcheca (Coroa Tcheca)</option>
+                                                <option value="HUF">HUF - Hungria (Forint Húngaro)</option>
+                                                <option value="PLN">PLN - Polônia (Złoty Polonês)</option>
+                                                <option value="RON">RON - Romênia (Leu Romeno)</option>
+                                                <option value="BGN">BGN - Bulgária (Lev Búlgaro)</option>
+                                                <option value="HRK">HRK - Croácia (Kuna Croata)</option>
+                                            </optgroup>
+
+                                            <!-- G20 (inclui membros individuais + UE como bloco) -->
+                                            <optgroup label="G20">
+                                                <option value="USD">USD - Estados Unidos (Dólar Americano)</option>
+                                                <option value="CAD">CAD - Canadá (Dólar Canadense)</option>
+                                                <option value="MXN">MXN - México (Peso Mexicano)</option>
+                                                <option value="ARS">ARS - Argentina (Peso Argentino)</option>
+                                                <option value="AUD">AUD - Austrália (Dólar Australiano)</option>
+                                                <option value="JPY">JPY - Japão (Iene Japonês)</option>
+                                                <option value="KRW">KRW - Coreia do Sul (Won Sul-Coreano)</option>
+                                                <option value="IDR">IDR - Indonésia (Rupia Indonésia)</option>
+                                                <option value="TRY">TRY - Turquia (Lira Turca)</option>
+                                                <option value="GBP">GBP - Reino Unido (Libra Esterlina)</option>
+                                                <option value="EUR">EUR - União Europeia (Euro)</option>
+                                                <option value="ZAR">ZAR - África do Sul (Rand Sul-Africano)</option>
+                                                <option value="SAR">SAR - Arábia Saudita (Riyal Saudita)</option>
+                                                <option value="INR">INR - Índia (Rúpia Indiana)</option>
+                                                <option value="CNY">CNY - China (Yuan Chinês)</option>
+                                                <option value="RUB">RUB - Rússia (Rublo Russo)</option>
+                                            </optgroup>
+                                        </select>
+
+                                    </div>
+                                </div>
                                 <div class="row mt-1">
 
 
                                     <div class="col-md-4">
-                                        <label for="thc_capatazia" class="form-label">THC/CAPATAZIA (USD)</label>
+                                        <label for="thc_capatazia" class="form-label">THC/CAPATAZIA (R$)</label>
                                         <input value="{{ isset($processo) ? $processo->thc_capatazia : '' }}"
                                             class="form-control moneyReal" name="thc_capatazia" id="thc_capatazia">
                                     </div>
 
                                     <div class="col-md-4">
                                         <label for="peso_bruto" class="form-label">PESO BRUTO</label>
-                                        <input type="number" value="{{ isset($processo) ? $processo->peso_bruto : '' }}"
+                                        <input type="number"
+                                            value="{{ isset($processo) ? $processo->peso_bruto : '' }}"
                                             class="form-control moneyReal" name="peso_bruto" id="peso_bruto">
                                     </div>
                                     <div class="col-md-4">
@@ -236,144 +861,22 @@
                                     </div>
                                 </div>
 
-                                <div class="col-4">
-                                    <button type="submit" class="btn btn-primary mt-3">Salvar</button>
-                                </div>
-                                <div class="dados-container">
-
-                                    <table class="table table-dados-basicos mt-4">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="2" class="text-white">DADOS BÁSICOS</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>DI</td>
-                                                <td class="">24/2387113-8</td>
-                                            </tr>
-                                            <tr>
-                                                <td>PROCESSO</td>
-                                                <td class="">
-                                                    {{ isset($processo) ? $processo->codigo_interno : '' }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td>VALOR FOB</td>
-                                                <td class="">USD <span id="fobTotalProcesso"></span> / R$ <span
-                                                        id="fobTotalProcessoReal"></span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>VALOR CIF</td>
-                                                <td class="">USD 83.185,00 / R$ 480.817,62</td>
-                                            </tr>
-                                            <tr>
-                                                <td>TAXA DO DOLAR</td>
-                                                <td class="">{{ Formatter::moneyUSD($dolar, true) }} /
-                                                    {{ $dolar }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td>IUAN RENMIMBI</td>
-                                                <td class="">-</td>
-                                            </tr>
-                                            <tr>
-                                                <td>PESO LIQUIDO</td>
-                                                <td>14.046,9700</td>
-                                            </tr>
-                                            <tr>
-                                                <td>FRETE INTERNACIONAL</td>
-                                                <td>USD
-                                                    {{ isset($processo) ? Formatter::moneyUSD($processo->frete_internacional) : '' }}
-                                                    / R$
-                                                    {{ isset($processo) ? Formatter::money($processo->frete_internacional * $dolar) : '' }}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>SEGURO INTERNACIONAL</td>
-                                                <td>USD
-                                                    {{ isset($processo) ? Formatter::moneyUSD($processo->seguro_internacional) : '' }}
-                                                    / R$
-                                                    {{ isset($processo) ? Formatter::money($processo->seguro_internacional * $dolar) : '' }}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>ACRESCIMO DO FRETE</td>
-                                                <td>USD
-                                                    {{ isset($processo) ? Formatter::moneyUSD($processo->acrescimo_frete) : '' }}
-                                                    / R$
-                                                    {{ isset($processo) ? Formatter::money($processo->acrescimo_frete * $dolar) : '' }}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>THC/CAPATAZIA</td>
-                                                <td>USD
-                                                    {{ isset($processo) ? Formatter::moneyUSD($processo->thc_capatazia) : '' }}
-                                                    / R$
-                                                    {{ isset($processo) ? Formatter::money($processo->thc_capatazia * $dolar) : '' }}
-                                                </td>
-                                            </tr>
 
 
-                                        </tbody>
-                                    </table>
-                                    <table class="table table-dados-complementares  mt-4">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="2" class="text-white">INFORMAÇÕES COMPLEMENTARES</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>DESCRIÇÃO DA MERCADORIA</td>
-                                                <td>Conforme DI 24/2387113-8, desembaraçada em 31/10/2024</td>
-                                            </tr>
-                                            <tr>
-                                                <td>II</td>
-                                                <td>R$ 59.247,82</td>
-                                            </tr>
-                                            <tr>
-                                                <td>IPI</td>
-                                                <td>R$ 5.977,14</td>
-                                            </tr>
-                                            <tr>
-                                                <td>PIS</td>
-                                                <td>R$ 10.961,58</td>
-                                            </tr>
-                                            <tr>
-                                                <td>COFINS</td>
-                                                <td>R$ 54.764,78</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Desp. Aduanei</td>
-                                                <td>R$ 25.668,48</td>
-                                            </tr>
-                                            <tr>
-                                                <td>QUANTIDADE</td>
-                                                <td>411</td>
-                                            </tr>
-                                            <tr>
-                                                <td>ESPECIE</td>
-                                                <td>VOLUMES</td>
-                                            </tr>
-                                            <tr>
-                                                <td>PESO BRUTO</td>
-                                                <td>14.621,4500</td>
-                                            </tr>
-                                            <tr>
-                                                <td>PESO LIQUIDO</td>
-                                                <td>14.046,9700</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+
+                            </div>
+
+                            <div class="tab-pane fade " id="custom-tabs-three-home" role="tabpanel"
+                                aria-labelledby="custom-tabs-three-home-tab">
                                 @if (isset($processo) && isset($productsClient))
-                                    <button type="button" class="btn btn-primary mb-2 addProduct">Adicionar
+                                    <button type="button" class="btn btn-primary mb-2 addProduct ">Adicionar
                                         Produto</button>
                                     <div style="overflow-x: auto; width: 100%;">
                                         <table class="table table-bordered table-striped table-products"
                                             style="min-width: 3000px;">
                                             <thead class=" text-center">
                                                 <tr>
-                                                    <th ></th>
+                                                    <th></th>
                                                     <th style="background-color: #fff" colspan="23"></th>
                                                     <th colspan="7">ALÍQUOTAS</th>
 
@@ -388,7 +891,7 @@
                                                     </th>
                                                 </tr>
                                                 <tr class="middleRow">
-                                                    <th ></th>
+                                                    <th></th>
                                                     <th colspan="54"></th>
 
                                                     @php
@@ -416,20 +919,22 @@
                                                         <th class="middleRowInputTh">
                                                             @if ($campo == 'capatazia')
                                                                 <input type="text" class="form-control"
-                                                                    name="{{ $campo }}" id="{{ $campo }}"
-                                                                    readonly value="{{ $processo->thc_capatazia ?? 0 }}">
+                                                                    name="{{ $campo }}"
+                                                                    id="{{ $campo }}" readonly
+                                                                    value="{{ $processo->thc_capatazia ?? 0 }}">
                                                             @else
                                                                 <input type="text" class="form-control"
-                                                                    name="{{ $campo }}" id="{{ $campo }}"
-                                                                    value="{{ $processoProduto->$campo ?? null }}">
+                                                                    name="{{ $campo }}"
+                                                                    id="{{ $campo }}"
+                                                                    value="{{ $processo->$campo ?? null }}">
                                                             @endif
                                                         </th>
                                                     @endforeach
-                                                        <th></th>
-                                                        <th></th>
-                                                        <th></th>
-                                                        <th></th>
-                                                        <th></th>
+                                                    <th></th>
+                                                    <th></th>
+                                                    <th></th>
+                                                    <th></th>
+                                                    <th></th>
 
                                                 </tr>
                                                 <tr>
@@ -514,11 +1019,9 @@
                                             <tbody id="productsBody">
                                                 @foreach ($processoProdutos as $index => $processoProduto)
                                                     <tr>
-                                                        <td
-                                                            >
+                                                        <td>
                                                             <button type="button"
-                                                                onclick="showDeleteConfirmation({{ $processoProduto->id}})"
-
+                                                                onclick="showDeleteConfirmation({{ $processoProduto->id }})"
                                                                 class="btn btn-danger btn-sm btn-remove"
                                                                 data-id="{{ $processoProduto->id }}">
                                                                 <i class="fas fa-trash-alt"></i>
@@ -546,9 +1049,14 @@
                                                         </td>
 
                                                         <td>
-                                                            <p id="descricao-{{ $index }}">
+                                                            {{-- <p id="descricao-{{ $index }}">
                                                                 {{ $processoProduto->produto->descricao }}
-                                                            </p>
+                                                            </p> --}}
+                                                            <input data-row="{{ $index }}" type="text"
+                                                                step="1" class="form-control"
+                                                                name="produtos[{{ $index }}][descricao]"
+                                                                id="descricao-{{ $index }}"
+                                                                value="{{ $processoProduto->produto->descricao }}">
                                                         </td>
 
                                                         <td>
@@ -1140,16 +1648,23 @@
                                         </table>
                                     </div>
                                 @endif
-                            </form>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-4">
+                            <button type="submit" class="btn btn-primary mt-3">Salvar</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
     @if (isset($productsClient))
         <input type="hidden" name="productsClient" id="productsClient" value="{{ $productsClient }}">
-        <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ $dolar }}">
+        <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ json_encode($dolar) }}">
         <input type="hidden" id="processoAlterado" name="processoAlterado" value="0">
     @endif
     <form id="delete-form" method="POST" action="{{ route('documento.cliente.destroy', 'document_id') }}"
@@ -1182,6 +1697,22 @@
             // console.log(MoneyUtils.formatUSD(1401.23));
 
         });
+
+        $('.moedas').on('select2:select', function(e) {
+            let dolar = JSON.parse($('#dolarHoje').val());
+
+            const updateValorReal = (inputId, spanId) => {
+                let valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
+                let codigoMoeda = $(`#${inputId}_moeda`).val()
+                console.log((dolar[codigoMoeda].compra))
+                let convertido = valor * (dolar[codigoMoeda].compra);
+                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido));
+            };
+
+            updateValorReal('frete_internacional', 'frete_internacional_visualizacao');
+            updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao');
+            updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao');
+        });
         $('#frete_internacional, #seguro_internacional, #acrescimo_frete').trigger('change');
 
         function showDeleteConfirmation(documentId) {
@@ -1200,9 +1731,9 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Modificando o formulário dinamicamente
-                    $('#delete-form').attr('action', deleteUrl); // Atualiza a URL do formulário
-                    $('#delete-form').submit(); // Submete o formulário
+                    $('#delete-form').attr('action', deleteUrl);
+                    o
+                    $('#delete-form').submit();
                 } else {
                     Toast.fire({
                         icon: 'info',
@@ -1215,10 +1746,8 @@
             parseMoney: function(value) {
                 if (!value || value === "") return 0;
 
-                // Remove todos os pontos (separadores de milhar)
                 let cleanValue = value.toString().replace(/\./g, '');
 
-                // Para Real (R$): substitui vírgula por ponto para parseFloat
                 cleanValue = cleanValue.replace(',', '.');
 
                 return parseFloat(cleanValue) || 0;
@@ -1227,13 +1756,10 @@
             formatMoney: function(value, decimals = 2) {
                 if (value === null || value === undefined) return "0,00";
 
-                // Converte para número se for string
                 let num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
 
-                // Formata com 2 decimais por padrão, mas mantém os decimais existentes
                 let fixedDecimals = num.toFixed(decimals);
 
-                // Separa parte inteira e decimal
                 let parts = fixedDecimals.split('.');
                 let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                 let decimalPart = parts[1] || '00';
@@ -1259,7 +1785,6 @@
             let fobTotalGeral = 0;
             const fobTotaisPorLinha = {};
 
-            // 1. Soma do FOB total geral
             $('.fobUnitario').each(function() {
                 const rowId = $(this).data('row');
                 const unitario = MoneyUtils.parseMoney($(this).val());
@@ -1270,7 +1795,6 @@
                 fobTotalGeral += fobTotal;
             });
 
-            // 2. Atualiza fator FOB de cada linha
             for (const rowId in fobTotaisPorLinha) {
                 const fobLinha = fobTotaisPorLinha[rowId];
                 const fatorFob = fobLinha / (fobTotalGeral || 1);
@@ -1278,7 +1802,6 @@
                 $(`#fator_vlr_fob-${rowId}`).val(fatorFob.toFixed(6));
                 const camposExternos = getCamposExternos();
 
-                // 3. Atualiza campos que dependem do fator FOB
                 for (let campo of camposExternos) {
                     const campoEl = $(`#${campo}-${rowId}`);
                     const valorOriginal = MoneyUtils.parseMoney(campoEl.val());
@@ -1288,14 +1811,13 @@
                 }
             }
 
-            // 4. Atualiza totais na interface (se necessário)
             $('#fobTotalProcesso').text(MoneyUtils.formatMoney(fobTotalGeral));
 
-            const dolar = parseFloat($('#dolarHoje').val() || 1);
+            const moedasOBject = JSON.parse($('#dolarHoje').val())
+            const dolar = parseFloat(moedasOBject['USD']['compra']) ?? 1;
             $('#fobTotalProcessoReal').text(MoneyUtils.formatMoney(fobTotalGeral * dolar));
         }
 
-        // === Função principal de escuta ===
         $(document).on('change', 'input, select, textarea, .form-control', function() {
             try {
                 $('#avisoProcessoAlterado').removeClass('d-none');
@@ -1303,7 +1825,12 @@
                 const nome = $(this).attr('name');
                 const camposExternos = getCamposExternos();
 
-                if (rowId != null || camposExternos.includes(nome)) {
+                // Verifica se é um campo externo (sem rowId)
+                if (camposExternos.includes(nome)) {
+                    // Campo externo alterado - recalcular todas as linhas
+                    recalcularTodaTabela();
+                } else if (rowId != null) {
+                    // Campo normal - calcular apenas a linha afetada
                     const {
                         pesoTotal,
                         fobUnitario,
@@ -1315,7 +1842,8 @@
                     const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
 
                     const fobTotalGeral = calcularFobTotalGeral();
-                    const dolar = parseFloat($('#dolarHoje').val());
+                    const moedasOBject = JSON.parse($('#dolarHoje').val())
+                    const dolar = parseFloat(moedasOBject['USD']['compra']);
                     atualizarFatoresFob();
                     atualizarTotaisGlobais(fobTotalGeral, dolar);
 
@@ -1344,6 +1872,8 @@
                     const vlrIcmsReduzido = bcIcmsSReducao * impostos.icms;
                     const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
                         rowId);
+                    const diferenca_cambial_frete = 0;
+                    const diferenca_cambial_fob = 0;
 
                     atualizarCampos(rowId, {
                         pesoLiqUnit,
@@ -1374,6 +1904,98 @@
             }
         });
 
+        // Nova função para recalcular toda a tabela
+        function recalcularTodaTabela() {
+            const rows = $('#productsBody tr');
+            const moedasOBject = JSON.parse($('#dolarHoje').val());
+            const dolar = parseFloat(moedasOBject['USD']['compra']);
+            const totalPesoLiq = calcularPesoTotal();
+            const fobTotalGeral = calcularFobTotalGeral();
+            const taxaSisComex = calcularTaxaSiscomex(rows.length);
+
+            // Primeiro passada: calcular fatores de peso e FOB
+            rows.each(function() {
+                const rowId = $(this).find('input').first().data('row');
+                const {
+                    pesoTotal,
+                    fobUnitario,
+                    quantidade
+                } = obterValoresBase(rowId);
+
+                // Recalcular fatores
+                const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
+                const fobTotal = fobUnitario * quantidade;
+                const fatorVlrFob_AX = fobTotal / (fobTotalGeral || 1);
+
+                // Atualizar campos básicos
+                $(`#peso_liquido_unitario-${rowId}`).val(pesoTotal / (quantidade || 1));
+                $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
+                $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
+                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
+            });
+
+            // Segunda passada: calcular impostos e despesas
+            rows.each(function() {
+                const rowId = $(this).find('select').first().data('row');
+                console.log(rowId)
+                const {
+                    fobUnitario,
+                    quantidade
+                } = obterValoresBase(rowId);
+                const fobTotal = fobUnitario * quantidade;
+                const fatorPesoRow = parseFloat($(`#fator_peso-${rowId}`).val()) || 0;
+                const fatorVlrFob_AX = parseFloat($(`#fator_valor_fob-${rowId}`).val()) || 0;
+
+                const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) * fatorPesoRow;
+                const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
+                const thcRow = thc_capataziaBase * fatorPesoRow;
+                const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
+                const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeral, dolar);
+
+                const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
+                    seguroIntUsdRow, thcRow, dolar);
+                const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
+
+                const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
+                const fatorTaxaSiscomex_AY = taxaSisComex / ((fobTotal) * dolar);
+                const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobUnitario * dolar);
+
+                const despesas = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY,
+                    (taxaSisComexUnitaria_BB ?? 0));
+                const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas);
+                const vlrIcmsSReducao = bcIcmsSReducao * impostos.icms;
+                const bcImcsReduzido = calcularBcIcmsReduzido(rowId, vlrAduaneiroBrl, impostos, despesas);
+                const vlrIcmsReduzido = bcIcmsSReducao * impostos.icms;
+                const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
+                    rowId);
+
+                atualizarCampos(rowId, {
+                    pesoLiqUnit: MoneyUtils.parseMoney($(`#peso_liquido_unitario-${rowId}`).val()),
+                    fobTotal,
+                    dolar,
+                    freteUsdInt,
+                    seguroIntUsdRow,
+                    acrescimoFreteUsdRow,
+                    thcRow,
+                    vlrAduaneiroUsd,
+                    vlrAduaneiroBrl,
+                    impostos,
+                    despesas,
+                    bcIcmsSReducao,
+                    vlrIcmsSReducao,
+                    bcImcsReduzido,
+                    vlrIcmsReduzido,
+                    totais,
+                    fatorVlrFob_AX,
+                    fatorTaxaSiscomex_AY,
+                    taxaSisComex
+                });
+            });
+
+            atualizarCamposCabecalho();
+            atualizarTotaisGlobais(fobTotalGeral, dolar);
+        }
+
         // === Funções auxiliares ===
         function getCamposExternos() {
             return [
@@ -1384,6 +2006,7 @@
         }
 
         function obterValoresBase(rowId) {
+            console.log(`fob aquiii ` + $(`#fob_unit_usd-${rowId}`).val())
             return {
                 pesoTotal: MoneyUtils.parseMoney($(`#peso_liquido_total-${rowId}`).val()),
                 fobUnitario: MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val()),
@@ -1398,6 +2021,7 @@
             });
             return total;
         }
+
 
         function recalcularFatorPeso(totalPeso, currentRowId) {
             let fator = 0;
@@ -1458,7 +2082,8 @@
             const afrmm = $('#afrmm-' + rowId).val() ? parseFloat($('#afrmm-' + rowId).val()) : 0
             let armazenagem_sts = $('#armazenagem_sts-' + rowId).val() ? parseFloat($('#armazenagem_sts-' + rowId).val()) :
                 0
-            let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + rowId).val() ? parseFloat($('#frete_dta_sts_ana-' + rowId)) :
+            console.log('sts ana ' +  $('#frete_dta_sts_ana-' + rowId).val())
+            let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + rowId).val() ? parseFloat($('#frete_dta_sts_ana-' + rowId).val()) :
                 0
             let honorarios_nix = $('#honorarios_nix-' + rowId).val() ? parseFloat($('#honorarios_nix-' + rowId).val()) : 0
             console.log({
@@ -1508,6 +2133,7 @@
         }
 
         function atualizarCampos(rowId, valores) {
+            console.log(valores)
             $(`#peso_liquido_unitario-${rowId}`).val(valores.pesoLiqUnit);
             $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal));
             $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal * valores.dolar));
@@ -1545,7 +2171,8 @@
         }
 
         function atualizarFatoresFob() {
-            const dolar = parseFloat($('#dolarHoje').val());
+            const moedasOBject = JSON.parse($('#dolarHoje').val())
+            const dolar = parseFloat(moedasOBject['USD']['compra']);
             const taxaSiscomex = calcularTaxaSiscomex($('#productsBody tr').length);
 
             const dadosFob = []; // cada item = { rowId, fobTotal }
@@ -1627,7 +2254,15 @@
                     frete_dta_sts_ana + honorarios_nix
 
                 let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2
-                $(`#desp_desenbaraco-${i}`).val(despesa_desembaraco)
+                const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
+                let qquantidade = parseFloat($(`#quantidade-${i}`).val()) || 0
+                const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val())
+                const custo_unitario_final = ((vlrTotalNfComIcms + despesa_desembaraco + 0 + 0) - vlrIcmsReduzido) /
+                    qquantidade
+                const custo_total_final = custo_unitario_final * qquantidade
+                $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco))
+                $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final))
+                $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final))
             }
         }
 
@@ -1680,17 +2315,20 @@
         }
         // Atualização para os campos de frete, seguro e acréscimo
         $(document).on('change', '#frete_internacional, #seguro_internacional, #acrescimo_frete', function() {
-            let dolar = MoneyUtils.parseMoney($('#dolarHoje').val());
+            let dolar = JSON.parse($('#dolarHoje').val());
+
 
             const updateValorReal = (inputId, spanId) => {
                 let valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
-                let convertido = valor * dolar;
-                $(`#${spanId}`).text(MoneyUtils.formatMoney(convertido));
+                let codigoMoeda = $(`#${inputId}_moeda`).val()
+                console.log((dolar[codigoMoeda].compra))
+                let convertido = valor * (dolar[codigoMoeda].compra);
+                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido));
             };
 
-            updateValorReal('frete_internacional', 'frete_internacional_real');
-            updateValorReal('seguro_internacional', 'seguro_internacional_real');
-            updateValorReal('acrescimo_frete', 'acrescimo_frete_real');
+            updateValorReal('frete_internacional', 'frete_internacional_visualizacao');
+            updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao');
+            updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao');
         });
         $(document).on('change', '.selectProduct', function() {
             let products = JSON.parse($('#productsClient').val());
@@ -1701,7 +2339,7 @@
 
                 $(`#codigo-${rowId}`).val(productObject.codigo);
                 $(`#ncm-${rowId}`).val(productObject.ncm);
-                $(`#descricao-${rowId}`).text(productObject.descricao);
+                $(`#descricao-${rowId}`).val(productObject.descricao);
             }
         });
         $(document).on('click', '.addProduct', function() {
@@ -1731,7 +2369,7 @@
         
         <!-- Colunas de dados -->
         <td>${select}</td>
-        <td><p id="descricao-${newIndex}"></p></td>
+        <td><input data-row="${newIndex}" type="text" step="1" class="form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control" readonly id="item-${newIndex}" value="${newIndex + 1}"></td>
         <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
@@ -1815,6 +2453,19 @@
 
             // Dispara o evento de alteração para calcular os valores iniciais
             $('input[data-row="' + newIndex + '"], select[data-row="' + newIndex + '"]').trigger('change');
+        });
+
+              $(document).ready(function($) {
+
+            var activeTab = localStorage.getItem('activeTab_processo');
+            if (activeTab) {
+                $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
+            }
+
+        })
+            $('.nav-link').on('click', function(e) {
+            var currentTab = $(e.target).attr('href');
+            localStorage.setItem('activeTab_processo', currentTab);
         });
     </script>
 @endsection

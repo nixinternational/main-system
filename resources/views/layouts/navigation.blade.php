@@ -25,7 +25,7 @@
         <a href="{{ route('catalogo.index') }}" class="nav-link">
           <i class="nav-icon fa-solid fa-folder-open"></i>
           <p>
-            Catálogo de clientes
+            Catálogo de Produtos
           </p>
         </a>
       </li>

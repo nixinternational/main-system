@@ -40,7 +40,7 @@
 
 </head>
 
-<body class="hold-transition sidebar-mini sidebar-collapse">
+<body class="hold-transition sidebar-mini sidebar-collapse w-100">
 
     <div class="wrapper">
 

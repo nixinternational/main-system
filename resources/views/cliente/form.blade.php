@@ -615,6 +615,7 @@
                                     <div class="col-10">
                                         <form enctype="multipart/form-data"
                                             action="{{ route('cliente.update.documents', $cliente->id) }}"
+                                            id="form-documents"
                                             method="POST">
                                             @csrf
                                             <table class="table table-bordered" id="clientesDocumento">
@@ -633,7 +634,7 @@
                                                                 <input type="hidden" name="idDocumentos[]"
                                                                     value="{{ $documento->id }}">
                                                                 <td>
-                                                                    <select class="form-control" id="tipo_documento"
+                                                                    <select class="form-control" id="tipo_documento-{{$loop->index}}"
                                                                         name="tipoDocumentos[]">
                                                                         <option value="" hidden disabled>Selecione...
                                                                         </option>
@@ -666,13 +667,10 @@
                                                                         name="documentos[]" class="d-none"
                                                                         data-id="{{ $loop->index }}"
                                                                         id="file-{{ $loop->index }}">
-                                                                    <label data-id="{{ $loop->index }}" for="inputFile"
-                                                                        class="btn btn-secondary w-100 anexarArquivo">
-                                                                        {{ $documento->url ? '📎 Atualizar documento' : 'Anexar documento' }}
-                                                                        <p id="legenda-file-{{ $loop->index }}"
-                                                                            style="font-size: 11px">
-                                                                            {{ explode('/', $documento->path_file)[1] }}</p>
-                                                                    </label>
+                                                                    <p id="legenda-file-{{ $loop->index }}"
+                                                                        style="font-size: 14px">
+                                                                        {{ explode('/', $documento->path_file)[1] }}</p>
+
                                                                 </td>
 
                                                                 <td>
@@ -690,6 +688,12 @@
                                                                     <button type="button" class="btn btn-sm btn-primary"
                                                                         onclick="downloadDocument('{{ $documento->url }}')">
                                                                         <i class="fas fa-download"></i>
+                                                                    </button> 
+                                                                    <button type="button" data-id="{{ $loop->index }}"
+                                                                        for="inputFile"
+                                                                        class="btn btn-sm btn-secondary anexarArquivo">
+                                                                        <i class="fas fa-paperclip"></i>
+
                                                                     </button>
                                                                 </td>
 
@@ -828,6 +832,10 @@
                     icon: 'success',
                     title: 'Documento anexado'
                 });
+                const tipo_documento = $(`#tipo_documento-${id}`).val()
+                if(tipo_documento){
+                    $('#form-documents').submit()
+                }
             } else {
                 $(`#legenda-file-${id}`).text('Nenhum arquivo selecionado');
             }
@@ -956,7 +964,7 @@
                 }
             ];
 
-            let select = `<select class="form-control" name="tipoDocumentos[]" id="documento-${id}">`;
+            let select = `<select class="form-control" name="tipoDocumentos[]" id="tipo_documento-${id}">`;
             select += `<option hidden value="">Selecione uma opção</option>`;
 
             for (let tipo of tipoDocumentos) {
@@ -969,19 +977,23 @@
     <td>
         ${select}
     </td>
-    <td colspan="2" >
+    <td colspan="1" >
 <input type="file"
     accept="image/*,application/pdf,.docx"
     name="documentos[]"
     class="d-none"
     data-id="${id}"
     id="file-${id}">
-        <label data-id="${id}" for="file-${id}"
-            class="btn btn-secondary anexarArquivo w-100">
-            📎 Anexar documento
-            <p id="legenda-file-${id}" style="font-size: 11px"></p>
 
-        </label>
+          <p id="legenda-file-${id}" style="font-size: 14px"></p>
+
+      
+    </td>
+    <td>
+            <button type="button" data-id="${id}" for="inputFile" class="btn btn-sm btn-secondary anexarArquivo">
+                                                                        <i class="fas fa-paperclip"></i>
+
+            </button>
     </td>
 </tr>`;
             $('#clientesDocumento tbody').append(tr)

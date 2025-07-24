@@ -66,7 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('tipo-documento', TipoDocumentoController::class)->middleware('permission:admin|root');;
     Route::resource('processo', ProcessoController::class)->middleware('permission:admin|root');;
 
-
+    Route::get('/processos-cliente/{cliente_id}', [ProcessoController::class, 'processoCliente'])->name('processo-cliente');
 
     Route::post('atualizar', [PedidoController::class, 'atualizarPedidos'])->name('pedido.atualizar');
     Route::post('update-client-emails/{id}', [ClienteController::class, 'updateClientEmail'])->name('cliente.update.email');
@@ -74,12 +74,12 @@ Route::middleware('auth')->group(function () {
     Route::post('update-client-aduanas/{id}', action: [ClienteController::class, 'updateClientAduanas'])->name('cliente.update.aduanas');
     Route::post('update-client-especificidades/{id}', action: [ClienteController::class, 'updateClientEspecificidades'])->name('cliente.update.especificidades');
     Route::post('update-client-documentos/{id}', action: [ClienteController::class, 'updateClientDocument'])->name('cliente.update.documents');
-    
+
     //  Route::get('settings/bid', [ProdutoController::class, 'getBid'])->withoutMiddleware('auth:sanctum');
 
     Route::delete('destroy-bank/{id}', action: [ClienteController::class, 'destroyBancoCliente'])->name('banco.cliente.destroy');
     Route::delete('destroy-document/{id}', action: [ClienteController::class, 'deleteDocument'])->name('documento.cliente.destroy');
-Route::delete('destroy-produto-processo/{id}', action: [ProcessoController::class, 'destroyProduto'])->name('banco.cliente.destroy');
+    Route::delete('destroy-produto-processo/{id}', action: [ProcessoController::class, 'destroyProduto'])->name('banco.cliente.destroy');
 
     Route::group(['prefix' => 'ativar'], function () {
         Route::put('/documento/{documento_id}', [TipoDocumentoController::class, 'ativar'])->name('tipo-documento.ativar');
