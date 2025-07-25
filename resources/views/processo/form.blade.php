@@ -204,13 +204,13 @@
                                     <div class="col-md-4">
                                         <label for="processo_codigo_interno" class="form-label">PROCESSO</label>
                                         <input value="{{ isset($processo) ? $processo->codigo_interno : '' }}"
-                                            class=" form-control moneyReal" name="codigo_interno"
+                                            class=" form-control" name="codigo_interno"
                                             id="processo_codigo_interno">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="descricao" class="form-label">Descrição (max 120 caracteres)</label>
                                         <input value="{{ isset($processo) ? $processo->descricao : '' }}"
-                                            class=" form-control moneyReal" name="descricao" id="descricao">
+                                            class=" form-control" name="descricao" id="descricao">
                                     </div>
                                 </div>
                                 <div class="row mt-3">
@@ -246,7 +246,7 @@
                                     <div class="col-lg-3 col-md-6 col-sm-6">
                                         <div class="form-group">
                                             <label for="credenciamento_radar">Início Desembaraço</label>
-                                            <input type="date" class=" form-control moneyReal" id="credenciamento_radar"
+                                            <input type="date" class=" form-control" id="credenciamento_radar"
                                                 name="data_desembaraco_inicio"
                                                 value="{{ old('data_desembaraco_inicio', isset($processo) ? $processo->data_desembaraco_inicio : '') }}">
                                         </div>
@@ -254,7 +254,7 @@
                                     <div class="col-lg-3 col-md-6 col-sm-6">
                                         <div class="form-group">
                                             <label for="credenciamento_radar">Fim Desembaraço</label>
-                                            <input type="date" class=" form-control moneyReal" id="credenciamento_radar"
+                                            <input type="date" class=" form-control" id="credenciamento_radar"
                                                 name="data_desembaraco_fim"
                                                 value="{{ old('data_desembaraco_fim', isset($processo) ? $processo->data_desembaraco_fim : '') }}">
                                         </div>
