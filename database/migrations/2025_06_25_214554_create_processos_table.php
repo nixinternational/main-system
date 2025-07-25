@@ -38,7 +38,7 @@ return new class extends Migration
             $table->decimal('despesas_aduaneiras', 15, 2)->nullable();
 
             $table->integer('quantidade')->nullable();
-            $table->string('especie')->nullable();
+            $table->string( 'especie')->nullable();
             $table->unsignedBigInteger('cliente_id');
             $table->foreign('cliente_id')->references('id')->on('clientes');
             $table->timestamps();

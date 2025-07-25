@@ -151,7 +151,7 @@ class ProcessoController extends Controller
             }
             $cliente_id = $request->cliente_id;
             $processo = Processo::create([
-                'codigo_interno' => $cliente_id . 'processo',
+                'codigo_interno' => '',
                 'cliente_id' => $cliente_id
             ]);
 
@@ -237,6 +237,8 @@ class ProcessoController extends Controller
                 'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
                 'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
                 'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
+                'quantidade' => $this->parseMoneyToFloat($request->quantidade),
+                'especie' => $request->especie,
             ];
             Processo::where('id', $id)->update($dadosProcesso);
             if ($request->produtos  && count($request->produtos) > 0) {
@@ -249,10 +251,10 @@ class ProcessoController extends Controller
                         [
                             'produto_id' => $produto['produto_id'],
                             'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
-                            'quantidade' => isset($produto['quantidade']) ? intval($produto['quantidade']) : null,
+                            'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
                             'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
                             'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
-                            'fator_peso' => isset($produto['fator_peso']) ? floatval($produto['fator_peso']) : null,
+                            'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
                             'fob_unit_usd' => isset($produto['fob_unit_usd']) ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : null,
                             'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
                             'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
@@ -266,12 +268,12 @@ class ProcessoController extends Controller
                             'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
                             'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
                             'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
-                            'ii_percent' => isset($produto['ii_percent']) ? floatval($produto['ii_percent']) : null,
-                            'ipi_percent' => isset($produto['ipi_percent']) ? floatval($produto['ipi_percent']) : null,
-                            'pis_percent' => isset($produto['pis_percent']) ? floatval($produto['pis_percent']) : null,
-                            'cofins_percent' => isset($produto['cofins_percent']) ? floatval($produto['cofins_percent']) : null,
-                            'icms_percent' => isset($produto['icms_percent']) ? floatval($produto['icms_percent']) : null,
-                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? floatval($produto['icms_reduzido_percent']) : null,
+                            'ii_percent' => isset($produto['ii_percent']) ? $this->parseMoneyToFloat($produto['ii_percent']) : null,
+                            'ipi_percent' => isset($produto['ipi_percent']) ? $this->parseMoneyToFloat($produto['ipi_percent']) : null,
+                            'pis_percent' => isset($produto['pis_percent']) ? $this->parseMoneyToFloat($produto['pis_percent']) : null,
+                            'cofins_percent' => isset($produto['cofins_percent']) ? $this->parseMoneyToFloat($produto['cofins_percent']) : null,
+                            'icms_percent' => isset($produto['icms_percent']) ? $this->parseMoneyToFloat($produto['icms_percent']) : null,
+                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->parseMoneyToFloat($produto['icms_reduzido_percent']) : null,
                             'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
                             'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
                             'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,

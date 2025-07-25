@@ -18,7 +18,7 @@
                     </ul>
                 </div>
                 <div class="card-body">
-                    <a href="{{ route('processo.create') }}" class="btn btn-primary">Criar Processo</a>
+                    <a href="{{ route('processo.create') }}" class="btn btn-primary my-3">Criar Processo</a>
                     <div class="tab-content" id="custom-tabs-two-tabContent">
                         <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
                             aria-labelledby="custom-tabs-two-home-tab">
@@ -37,9 +37,36 @@
                                     <tbody>
                                         @foreach ($processos as $processo)
                                             <td>{{ $processo->codigo_interno }}</td>
-                                            <td>{{ $processo->descricao }}</td>
-                                            <td>{{ $processo->canal }}</td>
-                                            <td>{{ $processo->status }}</td>
+                                            <td>{{ $processo->descricao ?? 'Sem Descrição' }}</td>
+                                            <td>
+
+                                                @php
+                                                    $cores = [
+                                                        'vermelho' => 'bg-danger',
+                                                        'verde' => 'bg-success',
+                                                        'amarelo' => 'bg-warning',
+                                                    ];
+
+                                                    $corClasse = $cores[$processo->canal] ?? 'bg-gray-400';
+                                                @endphp
+
+                                                <span class="d-inline-block rounded-circle {{ $corClasse }}"
+                                                    style="width: 30px; height: 30px;"></span>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $statusMap = [
+                                                        'andamento' => 'Em Andamento',
+                                                        'finalizado' => 'Finalizado',
+                                                        'prestacao_contas' => 'Prestação de Contas',
+                                                    ];
+
+                                                    $statusTexto =
+                                                        $statusMap[$processo->status] ??
+                                                        ucfirst(str_replace('_', ' ', $processo->status));
+                                                @endphp
+                                                {{ $statusTexto }}
+                                            </td>
                                             <td class="d-flex  justify-content-around">
                                                 <a href="{{ route('processo.edit', $processo->id) }}" type="button"
                                                     class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>

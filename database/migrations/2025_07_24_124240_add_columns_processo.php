@@ -34,6 +34,7 @@ return new class extends Migration
             $table->decimal('rep_anapolis')->nullable();
             $table->decimal('li_dta_honor_nix')->nullable();
             $table->decimal('honorarios_nix')->nullable();
+
         });
     }
 
@@ -64,6 +65,7 @@ return new class extends Migration
             $table->dropColumn('rep_anapolis');
             $table->dropColumn('li_dta_honor_nix');
             $table->dropColumn('honorarios_nix');
+        
         });
     }
 };
