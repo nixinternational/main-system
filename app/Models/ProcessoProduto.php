@@ -78,6 +78,7 @@ class ProcessoProduto extends Model
         'diferenca_cambial_fob',
         'custo_unitario_final',
         'custo_total_final',
+        'descricao'
     ];
 
     public function produto(){

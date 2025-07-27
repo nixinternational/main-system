@@ -446,19 +446,19 @@ class ClienteController extends Controller
                     //             ]
                     //         );
                     // } else {
-                        BancoCliente::where('cliente_id',operator: $id)->where('banco_nix',true)->delete();
-                        BancoCliente::updateOrCreate(
+                        BancoCliente::where('cliente_id',$id)->where('banco_nix',true)->delete();
+                        if($request->numero_bancos[$row] && $request->agencias[$row] && $request->conta_correntes[$row]){
+                            BancoCliente::create(
                             [
-                                'numero_banco' => $request->numero_bancos[$row] ?? null,
                                 'cliente_id' => $id,
-                                'banco_nix' => false
-                            ],
-                            [
+                                'banco_nix' => false,
+                                'numero_banco' => $request->numero_bancos[$row] ?? null,
                                 'nome' => $banco, 
                                 'agencia' => $request->agencias[$row] ?? null,
                                 'conta_corrente' => $request->conta_correntes[$row] ?? null,
                             ]
                         );
+                        }
                     // }
                 }
             }

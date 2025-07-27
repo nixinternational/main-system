@@ -6,6 +6,8 @@ use App\Models\Catalogo;
 use App\Models\Cliente;
 use App\Models\Processo;
 use App\Models\ProcessoProduto;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -19,7 +21,12 @@ class ProcessoController extends Controller
     {
         foreach ($model->getAttributes() as $field => $value) {
 
-            if (!is_null($value) && is_numeric($value)) {
+            if (!is_null($value) && is_numeric($value) && !in_array($field,[
+                'cotacao_frete_internacional',
+                'cotacao_seguro_internacional',
+                'cotacao_acrescimo_frete'
+
+            ])) {
                 $model->$field = $this->parseMoneyToFloat($value, 2);
             }
         }
@@ -28,86 +35,101 @@ class ProcessoController extends Controller
     }
     public static function getBid()
     {
-        // Define uma chave de cache única por dia
         $cacheKey = 'cotacoes_bids_' . now()->format('Y-m-d');
 
-        // Retorna do cache se já estiver armazenado
         return Cache::remember($cacheKey, now()->endOfDay(), function () {
-            $moedas = [
-                'BRL' => 'Real Brasileiro',
-                'RUB' => 'Rublo Russo',
-                'INR' => 'Rúpia Indiana',
-                'CNY' => 'Yuan Chinês',
-                'ZAR' => 'Rand Sul-Africano',
-                'SAR' => 'Riyal Saudita',
-                'AED' => 'Dirham dos Emirados',
-                'EGP' => 'Libra Egípcia',
-                'IRR' => 'Rial Iraniano',
-                'ETB' => 'Birr Etíope',
-                'EUR' => 'Euro',
-                'DKK' => 'Coroa Dinamarquesa',
-                'SEK' => 'Coroa Sueca',
-                'CZK' => 'Coroa Tcheca',
-                'HUF' => 'Forint Húngaro',
-                'PLN' => 'Złoty Polonês',
-                'RON' => 'Leu Romeno',
-                'BGN' => 'Lev Búlgaro',
-                'HRK' => 'Kuna Croata',
-                'USD' => 'Dólar Americano',
-                'CAD' => 'Dólar Canadense',
-                'MXN' => 'Peso Mexicano',
-                'ARS' => 'Peso Argentino',
-                'AUD' => 'Dólar Australiano',
-                'JPY' => 'Iene Japonês',
-                'KRW' => 'Won Sul-Coreano',
-                'IDR' => 'Rupia Indonésia',
-                'TRY' => 'Lira Turca',
-                'GBP' => 'Libra Esterlina',
-            ];
+            $moedasSuportadas = self::buscarMoedasSuportadas();
+
+            $dataCotacao = self::obterDataUtil();
 
             $resultado = [];
-            $token = 'e86e0c2abd90d318e19b5c47f384ed6be61d64eaef23c22dc98e0ad471136f35';
 
-            foreach ($moedas as $codigo => $nome) {
-                if ($codigo === 'BRL') {
-                    $resultado[$codigo] = ['nome' => $nome, 'moeda' => $codigo, 'compra' => 1.0];
-                    continue;
-                }
-
-                // Tenta primeiro PTAX, depois a cotação normal
-                $urls = [
-                    "https://economia.awesomeapi.com.br/json/last/{$codigo}-BRLPTAX?token=" . $token,
-                    "https://economia.awesomeapi.com.br/json/last/{$codigo}-BRL?token=" . $token,
-                ];
-
-                $compra = null;
-                foreach ($urls as $url) {
-                    try {
-                        $resposta = Http::timeout(5)->get($url);
-                        if ($resposta->successful()) {
-                            $dados = $resposta->json();
-                            $key = array_key_first($dados); // Pega a primeira chave (ex: "USDBRLPTAX")
-                            $compra = (float) $dados[$key]['bid'];
-                            break; // Se encontrar, sai do loop
-                        }
-                    } catch (\Exception $e) {
-                        continue; // Tenta a próxima URL
-                    }
-                }
-
-                $resultado[$codigo] = [
-                    'nome' => $nome,
-                    'moeda' => $codigo,
-                    'compra' => $compra, // Pode ser null se nenhuma URL funcionar
-                ];
-
-                usleep(150000); // Evita flood na API
+            foreach ($moedasSuportadas as $codigo => $nome) {
+                $resultado[$codigo] = self::buscarCotacao($codigo, $nome, $dataCotacao);
+                usleep(100000); // respeita limites da API
             }
-
             return $resultado;
         });
     }
+    private static function buscarMoedasSuportadas(): array
+    {
+        try {
+            $resposta = Http::timeout(10)->get('https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas?$format=json');
+            $dados = $resposta->json()['value'] ?? [];
 
+            return collect($dados)
+                ->pluck('nomeFormatado', 'simbolo')
+                ->toArray();
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    private static function obterDataUtil(): string
+    {
+        $data = now();
+
+        while (in_array($data->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+            $data->subDay();
+        }
+
+        return $data->format('m-d-Y');
+    }
+
+    private static function buscarCotacao(string $codigo, string $nome, string $dataCotacao): array
+    {
+        if ($codigo === 'BRL') {
+            return [
+                'nome' => 'Real Brasileiro',
+                'moeda' => 'BRL',
+                'compra' => 1.0,
+                'venda' => 1.0,
+                'data' => now()->toDateTimeString(),
+            ];
+        }
+
+        $url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/"
+            . "CotacaoMoedaDia(moeda=@moeda,dataCotacao=@dataCotacao)?"
+            . "@moeda='" . urlencode($codigo) . "'"
+            . "&@dataCotacao='" . urlencode($dataCotacao) . "'"
+            . "&\$filter=tipoBoletim eq 'Fechamento PTAX'&\$format=json";
+
+        try {
+            $resp = Http::timeout(10)->get($url);
+
+            if (!$resp->successful()) {
+                throw new \Exception('Falha na requisição');
+            }
+            $items = $resp->json()['value'] ?? [];
+            
+            $fechamento = collect($items)->first(fn($i) => $i['tipoBoletim'] === 'Fechamento PTAX');
+
+            if ($fechamento) {
+                return [
+                    'nome' => $nome,
+                    'moeda' => $codigo,
+                    'compra' => (float) $fechamento['cotacaoCompra'],
+                    'venda' => (float) $fechamento['cotacaoVenda'],
+                    'data' => $fechamento['dataHoraCotacao'],
+                ];
+            }
+
+            return self::cotacaoVazia($codigo, $nome, 'Sem fechamento encontrado');
+        } catch (\Exception $e) {
+            return self::cotacaoVazia($codigo, $nome, $e->getMessage());
+        }
+    }
+
+    private static function cotacaoVazia(string $codigo, string $nome, ?string $erro = null): array
+    {
+        return [
+            'nome' => $nome,
+            'moeda' => $codigo,
+            'compra' => null,
+            'venda' => null,
+            'erro' => $erro,
+        ];
+    }
 
     public function index()
     {
@@ -120,7 +142,8 @@ class ProcessoController extends Controller
     public function processoCliente($cliente_id)
     {
 
-        $processos =    Processo::when(request()->search != '', function ($query) {})->where('cliente_id', $cliente_id)->paginate(request()->paginacao ?? 10);;
+        $processos =    Processo::when(request()->search != '', function ($query) {})->where('cliente_id', $cliente_id)
+        ->paginate(request()->paginacao ?? 10);;
         $cliente = Cliente::find($cliente_id);
         return view('processo.processos', compact('processos', 'cliente'));
     }
@@ -167,7 +190,18 @@ class ProcessoController extends Controller
     {
         //
     }
+public function esbocoPdf($id)
+{
+    $processo = Processo::findOrFail($id);
+    // todos os dados necessários
+    $dados = [
+        'processo' => $processo,
+        // outros dados como clientes, etc
+    ];
 
+    $pdf = Pdf::loadView('processo.esboco', $dados);
+    return $pdf->stream('esboco.pdf');
+}
     public function edit($id)
     {
 
@@ -177,12 +211,13 @@ class ProcessoController extends Controller
         $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
         $productsClient = $catalogo->produtos;
         $dolar = self::getBid();
+            $moedasSuportadas = self::buscarMoedasSuportadas();
         $produtos = [];
         foreach ($processo->processoProdutos as $produto) {
             $produtos[] = $this->parseModelFieldsFromModel($produto);
         }
         $processoProdutos = $produtos;
-        return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos'));
+        return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos','moedasSuportadas'));
     }
 
     private function parseMoneyToFloat($value, int $decimals = 2)
@@ -205,7 +240,6 @@ class ProcessoController extends Controller
                 $message = $errors->unique();
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
-
             $dadosProcesso = [
                 "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
                 "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
@@ -239,7 +273,11 @@ class ProcessoController extends Controller
                 'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
                 'quantidade' => $this->parseMoneyToFloat($request->quantidade),
                 'especie' => $request->especie,
+                'cotacao_frete_internacional' => floatval($request->cotacao_frete_internacional),
+                'cotacao_seguro_internacional' => floatval($request->cotacao_seguro_internacional),
+                'cotacao_acrescimo_frete' => floatval($request->cotacao_acrescimo_frete),
             ];
+
             Processo::where('id', $id)->update($dadosProcesso);
             if ($request->produtos  && count($request->produtos) > 0) {
                 foreach ($request->produtos as $key => $produto) {
@@ -317,6 +355,8 @@ class ProcessoController extends Controller
                             'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
                             'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
                             'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
+                                            "descricao" => $produto['descricao'],
+
                         ]
                     );
                 }

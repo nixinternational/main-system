@@ -11,7 +11,7 @@
                     <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
                         <li class="pt-2 px-3">
                             <h3 class="card-title text-dark font-weight-bold" style="">
-                                {{ $catalogo?->nome ?? 'Novo Catálogo' }}</h3>
+                                {{ isset($catalogo) ? '':'Novo Catálogo' }}</h3>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill"
@@ -58,6 +58,7 @@
                             </div>
 
                             @if (!$produtos->isEmpty())
+                             {{ $produtos->appends([]) }}
                                 <table id="produtosTable" class="table shadow rounded table-striped table-hover">
                                     <thead class="bg-primary ">
                                         <tr>

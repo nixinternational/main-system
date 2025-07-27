@@ -42,8 +42,8 @@ class ProdutoController extends Controller
         $produtos = Produto::withTrashed()->when(request()->search != '', function ($query) {
             $query->where(DB::raw('lower(nome)'), 'like', '%' . request()->search . '%');
         })
-        ->orderBy('id','asc')
-        ->paginate(request()->paginacao ?? 10);
+            ->orderBy('id', 'asc')
+            ->paginate(request()->paginacao ?? 10);
         return view('produto.index', compact('produtos'));
     }
 
@@ -63,6 +63,15 @@ class ProdutoController extends Controller
                 $errors = $validator->errors();
                 $message = $errors->unique();
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+            }
+            $produtoDuplicado = Produto::where('modelo', $request->modelo)
+                ->where('codigo', $request->codigo)
+                ->where('catalogo_id', $request->catalogo_id)
+                ->exists();
+
+            if ($produtoDuplicado) {
+                return back()->with('messages', ['error' => ['Já existe um produto com esse modelo e código nesse catálogo.']])
+                    ->withInput($request->all());
             }
             $data = [
                 'modelo' => $request->modelo,
@@ -97,7 +106,7 @@ class ProdutoController extends Controller
     public function update(Request $request, int $id): RedirectResponse
     {
         try {
-          $validator = Validator::make($request->all(), [
+            $validator = Validator::make($request->all(), [
                 'modelo_edit' => 'required',
                 'descricao_edit' => 'required',
             ], [
@@ -112,7 +121,7 @@ class ProdutoController extends Controller
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
             $produto = Produto::findOrFail($id);
-            
+
             $produto->update([
                 'modelo' => $request->modelo_edit,
                 'ncm' => $request->ncm_edit,
@@ -197,21 +206,20 @@ class ProdutoController extends Controller
             $datas = explode(' - ', $request->data);
             $inicio = Carbon::createFromFormat('d/m/Y H:i', $datas[0])->startOfDay();
             $fim = Carbon::createFromFormat('d/m/Y H:i', $datas[1])->endOfDay();
-            
-            $producaos = Producao::whereBetween('dt_inicio', [$inicio, $fim])
-            ->when($request->produto != null && count($request->produto), function ($query) use ($request) {
-                    $produtos = Produto::whereIn('categoria_id',$request->produto)->pluck('id')->toArray();
-                    $query->whereIn('produto_id', $produtos);
 
+            $producaos = Producao::whereBetween('dt_inicio', [$inicio, $fim])
+                ->when($request->produto != null && count($request->produto), function ($query) use ($request) {
+                    $produtos = Produto::whereIn('categoria_id', $request->produto)->pluck('id')->toArray();
+                    $query->whereIn('produto_id', $produtos);
                 })
                 ->selectRaw('categorias.nome as categoria ,produtos.nome as nome, sum(producaos.quantidade) as quantidade, producaos.turno  as turno')
                 ->join('produtos', 'producaos.produto_id', '=', 'produtos.id')
                 ->join('categorias', 'produtos.categoria_id', '=', 'categorias.id') // Realiza o INNER JOIN
 
-                ->groupBy('producaos.produto_id','produtos.nome','producaos.turno','categorias.nome')
+                ->groupBy('producaos.produto_id', 'produtos.nome', 'producaos.turno', 'categorias.nome')
                 ->get();
             $producaoCategorias = [];
-            foreach($producaos as $producao) {
+            foreach ($producaos as $producao) {
                 $producaoCategorias[$producao->categoria][] = $producao;
             }
             $pdf =  Pdf::loadView('relatorios.pdf.producao', [

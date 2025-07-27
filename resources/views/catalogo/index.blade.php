@@ -23,7 +23,7 @@
             </div>
         </div>
         <div class="d-flex row col-md-12 col-sm-12 col-6">
-            <div class="input-group  col-2">
+            {{-- <div class="input-group  col-2">
                 <select id="paginacao" name="paginacao" class="custom-select mr-2" style="min-width: 80px"
                     id="inputGroupSelect01">
                     <option value="10" {{ isset($_GET['paginacao']) && $_GET['paginacao'] == '10' ? 'selected' : '' }}>
@@ -38,7 +38,9 @@
 
 
                 </select>
-            </div>
+            </div> --}}
+                            {{ $catalogos->appends(['paginacao' => $_GET['paginacao'] ?? 10]) }}
+
         </form>
 
             @if (!$catalogos->isEmpty())

@@ -21,6 +21,15 @@
           </p>
         </a>
       </li>
+
+            <li class="nav-item">
+                <a href="{{ route('fornecedor.index') }}" class="nav-link">
+                    <i class="nav-icon fa-solid fa-business-time"></i>
+                    <p>
+                        Fornecedores
+                    </p>
+                </a>
+            </li>
       <li class="nav-item">
         <a href="{{ route('catalogo.index') }}" class="nav-link">
           <i class="nav-icon fa-solid fa-folder-open"></i>

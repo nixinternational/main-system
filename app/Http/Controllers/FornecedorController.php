@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\FornecedorRequest;
 use App\Models\Fornecedor;
 use App\Repositories\FornecedorRepository;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 
 class FornecedorController extends Controller
 {
@@ -18,39 +16,42 @@ class FornecedorController extends Controller
     {
         $this->fornecedorRepository = $fornecedorRepository;
     }
+
     public function index(): View|RedirectResponse
     {
         $fornecedores = $this->fornecedorRepository->getIndex();
         return view('fornecedor.index', compact('fornecedores'));
     }
 
-    public function create(): View|RedirectResponse
+    public function create(): View
     {
         return view('fornecedor.form');
     }
 
-
-    public function store(FornecedorRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         try {
+         if (!empty($request->cnpj)) {
             if (!validar_cnpj($request->cnpj)) {
-                return back()->with('messages', ['error' => ['CNPJ Inválido!']])->withInput($request->all());
+                return back()->with('messages', ['error' => ['CNPJ inválido!']])->withInput();
             }
-            $request['cnpj'] = preg_replace('/[.\/-]/', '', $request->cnpj);
-            $this->fornecedorRepository->store($request);
+        }
 
-            return redirect(route('fornecedor.index'))->with('messages', ['success' => ['Fornecedor criado com sucesso!']]);
+        $this->fornecedorRepository->store($request); // <- mantém o FornecedorRequest
+
+
+            return redirect()->route('fornecedor.index')->with('messages', ['success' => ['Fornecedor criado com sucesso!']]);
         } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível criar o fornecedor!']])->withInput($request->all());;
+            return back()->with('messages', ['error' => ['Não foi possível criar o fornecedor!']])->withInput();
         }
     }
 
-
     public function show(int $id)
     {
+        // Se necessário no futuro
     }
 
-    public function edit(int $id)
+    public function edit(int $id): View|RedirectResponse
     {
         try {
             $fornecedor = Fornecedor::findOrFail($id);
@@ -60,20 +61,25 @@ class FornecedorController extends Controller
         }
     }
 
-    public function update(FornecedorRequest $request, int $id): RedirectResponse
+    public function update(Request $request, int $id): RedirectResponse
     {
         try {
+         if (!empty($request->cnpj)) {
             if (!validar_cnpj($request->cnpj)) {
-                return back()->with('messages', ['error' => ['CNPJ Inválido!']])->withInput($request->all());
+                return back()->with('messages', ['error' => ['CNPJ inválido!']])->withInput();
             }
+        }
+         if (empty($request->nome)) {
+             return back()->with('messages', ['error' => ['Nome é obrigatório!']])->withInput();
+            
+        }
 
-            $request['cnpj'] = preg_replace('/[.\/-]/', '', $request->cnpj);
 
             $this->fornecedorRepository->update($request, $id);
 
-            return redirect(route('fornecedor.index'))->with('messages', ['success' => ['Fornecedor atualizado com sucesso!']]);
+            return redirect()->route('fornecedor.index')->with('messages', ['success' => ['Fornecedor atualizado com sucesso!']]);
         } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível atualizar o fornecedor!']])->withInput($request->all());
+            return back()->with('messages', ['error' => ['Não foi possível atualizar o fornecedor!']])->withInput();
         }
     }
 
@@ -87,12 +93,13 @@ class FornecedorController extends Controller
         }
     }
 
-    public function ativar(int $categoria_id){
+    public function ativar(int $id): RedirectResponse
+    {
         try {
-            $this->fornecedorRepository->ativar($categoria_id);
-            return back()->with('messages', ['success' => ['Categoria ativada com sucesso!']]);
+            $this->fornecedorRepository->ativar($id);
+            return back()->with('messages', ['success' => ['Fornecedor ativado com sucesso!']]);
         } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível ativar a categoria!'.$e->getMessage()]]);
+            return back()->with('messages', ['error' => ['Não foi possível ativar o fornecedor!']]);
         }
     }
 }

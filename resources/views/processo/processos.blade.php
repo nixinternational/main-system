@@ -23,7 +23,7 @@
                         <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
                             aria-labelledby="custom-tabs-two-home-tab">
                             <div class="table-responsive">
-
+                                {{$processos->appends([])}}
                                 <table id="clienteTable" class="table  shadow rounded table-striped table-hover">
                                     <thead class="bg-primary ">
                                         <tr>

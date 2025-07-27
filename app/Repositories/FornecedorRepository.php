@@ -5,11 +5,11 @@ namespace App\Repositories;
 use App\Http\Requests\FornecedorRequest;
 use App\Interfaces\FornecedorRepositoryInterface;
 use App\Models\Fornecedor;
+use Illuminate\Http\Request;
 
-class FornecedorRepository implements FornecedorRepositoryInterface
+class FornecedorRepository 
 {
     private Fornecedor $fornecedor;
-
     public function __construct(Fornecedor $fornecedor)
     {
         $this->fornecedor = $fornecedor;
@@ -20,15 +20,25 @@ class FornecedorRepository implements FornecedorRepositoryInterface
         return $this->fornecedor->index();
     }
 
-    public function store(FornecedorRequest $request)
+    public function store(Request $request)
     {
 
-        $this->fornecedor->create($request->except(['_token']));
+        $dados = $request->except(['_token']);
+
+        if (!empty($dados['cnpj'])) {
+            $dados['cnpj'] = preg_replace('/[.\/-]/', '', $dados['cnpj']);
+        }
+        $this->fornecedor->create($dados);
     }
 
-    public function update(FornecedorRequest $request, int $id)
+    public function update(Request  $request, int $id)
     {
-        $this->fornecedor->findOrFail($id)->update($request->except(['_token','_method']));
+        $dados = $request->except(['_token','_method']);
+
+        if (!empty($dados['cnpj'])) {
+            $dados['cnpj'] = preg_replace('/[.\/-]/', '', $dados['cnpj']);
+        }
+        $this->fornecedor->findOrFail($id)->update($dados);
     }
 
     public function destroy(int $id)
@@ -38,6 +48,6 @@ class FornecedorRepository implements FornecedorRepositoryInterface
     }
     public function ativar(int $fornecedor_id)
     {
-        return $this->fornecedor->withTrashed()->where('id',$fornecedor_id)->update(['deleted_at' => null]);
+        return $this->fornecedor->withTrashed()->where('id', $fornecedor_id)->update(['deleted_at' => null]);
     }
 }

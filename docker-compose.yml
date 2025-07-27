@@ -11,6 +11,8 @@ services:
             POSTGRES_PASSWORD: nix_international_develop
         ports:
             - "54321:5432"
+        volumes:
+            - db_data:/var/lib/postgresql/data
         healthcheck:
             test: [ "CMD-SHELL", "pg_isready -d nix_international -U nix_international" ]
             interval: 5s
@@ -64,3 +66,6 @@ services:
 networks:
     rede-aplicacao:
         driver: bridge
+        
+volumes:
+  db_data:

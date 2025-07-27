@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('produto', ProdutoController::class)->middleware('permission:admin|root');;
     Route::resource('tipo-documento', TipoDocumentoController::class)->middleware('permission:admin|root');;
     Route::resource('processo', ProcessoController::class)->middleware('permission:admin|root');;
+    Route::resource('fornecedor', FornecedorController::class);
 
     Route::get('/processos-cliente/{cliente_id}', [ProcessoController::class, 'processoCliente'])->name('processo-cliente');
 
@@ -74,6 +75,7 @@ Route::middleware('auth')->group(function () {
     Route::post('update-client-aduanas/{id}', action: [ClienteController::class, 'updateClientAduanas'])->name('cliente.update.aduanas');
     Route::post('update-client-especificidades/{id}', action: [ClienteController::class, 'updateClientEspecificidades'])->name('cliente.update.especificidades');
     Route::post('update-client-documentos/{id}', action: [ClienteController::class, 'updateClientDocument'])->name('cliente.update.documents');
+    Route::get('/processo/{id}/esboco-pdf', [ProcessoController::class, 'esbocoPdf'])->name('processo.esboco.pdf');
 
     //  Route::get('settings/bid', [ProdutoController::class, 'getBid'])->withoutMiddleware('auth:sanctum');
 

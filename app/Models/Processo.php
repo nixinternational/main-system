@@ -37,6 +37,9 @@ class Processo extends Model
         'canal',
         'data_desembaraco_inicio',
         'data_desembaraco_fim',
+        'cotacao_frete_internacional',
+        'cotacao_seguro_internacional',
+        'cotacao_acrescimo_frete',
     ];
     public function cliente()
     {
