@@ -649,7 +649,7 @@
                                                                                     'TARE - Benefício Fiscal',
                                                                                 'proposta_comercial_recintos_aduaneiros' =>
                                                                                     'Proposta Comercial Recintos Aduaneiros',
-                                                                                'proposta_nix' => 'Proposta nix',
+                                                                                'proposta_nix' => 'Proposta NIX',
                                                                             ];
                                                                         @endphp
                                                                         @foreach ($opcoes as $valor => $label)
@@ -960,7 +960,7 @@
                 },
                 {
                     id: 'proposta_nix',
-                    nome: 'Proposta nix'
+                    nome: 'Proposta NIX'
                 }
             ];
 

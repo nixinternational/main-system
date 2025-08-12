@@ -11,14 +11,17 @@ class Fornecedor extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-'nome',
-'cnpj',
-'pais_origem',
-'logradouro',
-'numero',
-'complemento',
-'cidade',
-'estado',
+        'nome',
+        'cnpj',
+        'pais_origem',
+        'logradouro',
+        'numero',
+        'complemento',
+        'cidade',
+        'estado',
+        'nome_contato',
+        'email_contato',
+        'telefone_contato',
     ];
 
     public function scopeIndex($query)

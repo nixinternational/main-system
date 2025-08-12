@@ -257,12 +257,6 @@
                     </div>
                 </div>
                 <div class="row">
-                    {{-- Logradouro --}}
-
-                    {{-- Número --}}
-
-
-                    {{-- Complemento --}}
                     <div class="col-4 form-group">
                         <label class="form-label">Complemento</label>
                         <input value="{{ old('complemento', $fornecedor->complemento ?? '') }}" class="form-control"
@@ -273,18 +267,48 @@
                         <input value="{{ old('cidade', $fornecedor->cidade ?? '') }}" class="form-control" name="cidade">
                     </div>
 
-                    {{-- Estado --}}
                     <div class=" col-2 form-group">
                         <label class="form-label">Estado</label>
                         <input value="{{ old('estado', $fornecedor->estado ?? '') }}" class="form-control" name="estado">
                     </div>
 
                 </div>
-                <div class="row">
-                    {{-- Cidade --}}
-
+                <div style="height: 0.1px; width: 100%; border: 0.1px solid #cecece;" class="mb-3">
                 </div>
+                <div class="row">
+                    <div class="col-12">
+                        <h4>Contato</h4>
+                    </div>
+                    <div class="col-4">
+                        <label for="exampleInputEmail1" class="form-label">Nome</label>
+                        <input value="{{ isset($fornecedor) ? $fornecedor->nome_contato : '' }}" class="form-control"
+                            name="nome_contato" id="nome_contato">
+                        @error('nome_contato')
+                            <span class="mt-1  text-red p-1 rounded"><small>{{ $message }}</small></span>
+                        @enderror
+                    </div>
+             
+                    <div class="col-2">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1" class="form-label">Email</label>
+                            <input
+                                value="{{ isset($fornecedor) ? $fornecedor->email_contato : old('email_contato') ?? '' }}"
+                                class="form-control" name="email_contato" id="email_contato">
 
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1" class="form-label">Telefone</label>
+                            <input
+                                value="{{ isset($fornecedor) ? $fornecedor->telefone_contato : old('telefone_contato') ?? '' }}"
+                                class="form-control" name="telefone_contato" id="telefone_contato">
+                            @error('telefone_contato')
+                                <span class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
 
                 <button type="submit" class="btn btn-primary mt-3">Salvar</button>
             </form>
