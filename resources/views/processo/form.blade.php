@@ -275,7 +275,7 @@
                                         </div>
                                         <div class="col-lg-3 col-md-6 col-sm-6">
                                             <div class="form-group">
-                                                <label for="credenciamento_radar">Início Desembaraço</label>
+                                                <label for="credenciamento_radar">Início Processo</label>
                                                 <input type="date" class=" form-control" id="credenciamento_radar"
                                                     name="data_desembaraco_inicio"
                                                     value="{{ old('data_desembaraco_inicio', isset($processo) ? $processo->data_desembaraco_inicio : '') }}">
@@ -283,7 +283,7 @@
                                         </div>
                                         <div class="col-lg-3 col-md-6 col-sm-6">
                                             <div class="form-group">
-                                                <label for="credenciamento_radar">Fim Desembaraço</label>
+                                                <label for="credenciamento_radar">Data Desembaraço</label>
                                                 <input type="date" class=" form-control" id="credenciamento_radar"
                                                     name="data_desembaraco_fim"
                                                     value="{{ old('data_desembaraco_fim', isset($processo) ? $processo->data_desembaraco_fim : '') }}">
@@ -291,163 +291,8 @@
                                         </div>
 
                                     </div>
-                                    <div class="row mt-2">
-                                        <div class="col-sm-4 col-md-3 col-lg-2">
-                                            <label for="frete_internacional" class="form-label">FRETE INTERNACIONAL
-                                            </label>
-                                            <input
-                                                value="{{ isset($processo->frete_internacional) ? number_format($processo->frete_internacional, 2, ',', '.') : '' }}"
-                                                class="form-control moneyReal" name="frete_internacional"
-                                                id="frete_internacional">
-                                        </div>
-                                        <div class="col-sm-2 col-md-3 col-lg-2">
 
-                                            <label class="">Moeda</label>
-                                            <select name="frete_internacional_moeda" id="frete_internacional_moeda"
-                                                class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
-                                                <option value="">Selecione um país...</option>
-
-                                                @foreach ($moedasSuportadas as $codigo => $nome)
-                                                    <option value="{{ $codigo }}"
-                                                        {{ isset($processo) && $processo->frete_internacional_moeda == $codigo ? 'selected' : '' }}>
-                                                        {{ $codigo }} - {{ $nome }}
-                                                    </option>
-                                                @endforeach
-
-                                            </select>
-                                            {{-- <p id="cotacao_frete_internacional" class="w-100 text-center mb-0">{{isset($processo) && $processo->frete_internacional_moeda ? $dolar[$processo->frete_internacional_moeda]['venda'] : '-'}}</p> --}}
-
-                                        </div>
-                                        <div class="col-lg-2 col-md-3 col-md-4 ">
-                                            <label for="seguro_internacional" class="form-label">SEGURO INTERNACIONAL
-                                            </label>
-                                            <input
-                                                value="{{ isset($processo->seguro_internacional) ? number_format($processo->seguro_internacional, 2, ',', '.') : '' }}"
-                                                class="form-control moneyReal" name="seguro_internacional"
-                                                id="seguro_internacional">
-                                        </div>
-                                        <div class="col-sm-2 col-md-3 col-lg-2">
-                                            <label class="">Moeda</label>
-                                            <select name="seguro_internacional_moeda" id="seguro_internacional_moeda"
-                                                class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
-                                                <option value="">Selecione um país...</option>
-                                                @foreach ($moedasSuportadas as $codigo => $nome)
-                                                    <option value="{{ $codigo }}"
-                                                        {{ isset($processo) && $processo->seguro_internacional_moeda == $codigo ? 'selected' : '' }}>
-                                                        {{ $codigo }} - {{ $nome }}
-                                                    </option>
-                                                @endforeach
-
-
-                                            </select>
-                                            {{-- <p id="cotacao_seguro_internacional" class="w-100 text-center mb-0">{{isset($processo) && $processo->seguro_internacional_moeda ? $dolar[$processo->seguro_internacional_moeda]['venda'] : '-'}}</p> --}}
-
-                                        </div>
-                                        <div class="col-sm-4 col-md-3 col-lg-2">
-                                            <label for="acrescimo_frete" class="form-label">ACRESCIMO DO FRETE</label>
-                                            <input
-                                                value="{{ isset($processo->acrescimo_frete) ? number_format($processo->acrescimo_frete, 2, ',', '.') : '' }}"
-                                                class="form-control moneyReal" name="acrescimo_frete"
-                                                id="acrescimo_frete">
-                                        </div>
-                                        <div class="col-sm-2 col-md-3 col-lg-2">
-
-                                            <label class="form-labe">Moeda</label>
-                                            <select name="acrescimo_frete_moeda" id="acrescimo_frete_moeda"
-                                                class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
-                                                <option value="">Selecione um país</option>
-
-                                                @foreach ($moedasSuportadas as $codigo => $nome)
-                                                    <option value="{{ $codigo }}"
-                                                        {{ isset($processo) && $processo->acrescimo_frete_moeda == $codigo ? 'selected' : '' }}>
-                                                        {{ $codigo }} - {{ $nome }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            {{-- <p id="cotacao_acrescimo_frete" class="w-100 text-center mb-0">{{isset($processo) && $processo->acrescimo_frete_moeda ? $dolar[$processo->acrescimo_frete_moeda]['venda'] : '-'}}</p> --}}
-                                        </div>
-                                    </div>
-                                    <div style="margin-top: 5px; margin-bottom:5px" class="row">
-                                        <div class="col-4"> <input
-                                                value="{{ isset($processo->cotacao_frete_internacional) ? $processo->cotacao_frete_internacional : '' }}"
-                                                class="form-control w-25" id="cotacao_frete_internacional"
-                                                name="cotacao_frete_internacional" style="margin: 0 auto">
-                                        </div>
-                                        <div class="col-4"> <input
-                                                value="{{ isset($processo->cotacao_seguro_internacional) ? $processo->cotacao_seguro_internacional : '' }}"
-                                                class="form-control w-25" id="cotacao_seguro_internacional"
-                                                name="cotacao_seguro_internacional" style="margin: 0 auto">
-                                        </div>
-                                        <div class="col-4 d-flex justify-content-center">
-                                            <input
-                                                value="{{ isset($processo->cotacao_acrescimo_frete) ? $processo->cotacao_acrescimo_frete : '' }}"
-                                                style="margin: 0 auto" class="form-control w-25"
-                                                id="cotacao_acrescimo_frete" name="cotacao_acrescimo_frete">
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-4 col-md-3 col-lg-2">
-                                            <input readonly
-                                                value="{{ isset($processo) ? number_format($processo->frete_internacional * ($dolar[$processo->frete_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
-                                                class="form-control moneyReal" name="frete_internacional_visualizacao"
-                                                id="frete_internacional_visualizacao">
-                                        </div>
-                                        <div class="col-sm-2 col-md-3 col-lg-2">
-
-                                            <select disabled class="select2 w-100" aria-label="Moedas BRICS, UE e G20">
-                                                <option>Selecione um país...</option>
-
-                                                <optgroup label="BRICS">
-                                                    <option selected value="BRL">BRL - Brasil (Real Brasileiro)</option>
-
-                                                </optgroup>
-
-
-                                            </select>
-
-                                        </div>
-                                        <div class="col-lg-2 col-md-3 col-md-4 ">
-
-                                            <input readonly
-                                                value="{{ isset($processo) ? number_format($processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
-                                                class="form-control moneyReal" name="seguro_internacional_visualizacao"
-                                                id="seguro_internacional_visualizacao">
-                                        </div>
-                                        <div class="col-sm-2 col-md-3 col-lg-2">
-
-                                            <select disabled class="select2 w-100 moedas"
-                                                aria-label="Moedas BRICS, UE e G20">
-                                                <option>Selecione um país...</option>
-
-                                                <optgroup label="BRICS">
-                                                    <option selected value="BRL">BRL - Brasil (Real Brasileiro)</option>
-
-                                                </optgroup>
-
-
-                                            </select>
-
-                                        </div>
-                                        <div class="col-sm-4 col-md-3 col-lg-2">
-                                            <input readonly
-                                                value="{{ isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
-                                                class="form-control moneyReal" name="acrescimo_frete_visualizacao"
-                                                id="acrescimo_frete_visualizacao">
-                                        </div>
-                                        <div class="col-sm-2 col-md-3 col-lg-2">
-
-                                            <select disabled class="select2 w-100" aria-label="Moedas BRICS, UE e G20">
-                                                <option>Selecione um país</option>
-
-                                                <optgroup label="BRICS">
-                                                    <option selected value="BRL">BRL - Brasil (Real Brasileiro)</option>
-                                                </optgroup>
-
-                                            </select>
-
-                                        </div>
-                                    </div>
-                                    <div class="row mt-3">
+                                    <div class="row mt-1">
 
 
                                         <div class="col-md-2">
@@ -461,13 +306,13 @@
                                             <label for="peso_bruto" class="form-label">PESO BRUTO</label>
                                             <input type="text"
                                                 value="{{ isset($processo->peso_bruto) ? number_format($processo->peso_bruto, 2, ',', '.') : '' }}"
-                                                \ class="form-control moneyReal" name="peso_bruto" id="peso_bruto">
+                                                class="form-control moneyReal" name="peso_bruto" id="peso_bruto">
                                         </div>
                                         <div class="col-md-2">
                                             <label for="multa" class="form-label">MULTA</label>
                                             <input type="text"
                                                 value="{{ isset($processo->multa) ? number_format($processo->multa, 2, ',', '.') : '' }}"
-                                                ] class="form-control moneyReal" name="multa" id="multa">
+                                                class="form-control moneyReal" name="multa" id="multa">
                                         </div>
                                         <div class="col-md-3">
                                             <label for="multa" class="form-label">QUANTIDADE</label>
@@ -482,6 +327,198 @@
                                                 class="form-control " name="especie" id="especie">
                                         </div>
                                     </div>
+
+                                    <div class=""
+                                        style="margin: 2% 0; height:1px; background-color:black; width: 100%"></div>
+
+                                    <div class="d-flex align-center">
+                                        <h4 class="mr-2">Cotações</h4> <button class="btn btn-success" type="button"
+                                            id="atualizarCotacoes">Atualizar
+                                            cotações</button>
+                                    </div>
+                                    <div class=" mt-3" style="display: flex; gap:10px">
+
+                                        <div class=" alert alert-secondary p-3">
+                                            <div class="row">
+                                                <div class="col-sm-6 ">
+                                                    <label for="frete_internacional" class="form-label text-white">FRETE
+                                                        INTERNACIONAL
+                                                    </label>
+                                                    <input
+                                                        value="{{ isset($processo->frete_internacional) ? number_format($processo->frete_internacional, 2, ',', '.') : '' }}"
+                                                        class="form-control moneyReal" name="frete_internacional"
+                                                        id="frete_internacional">
+                                                </div>
+                                                <div class="col-sm-6 ">
+
+                                                    <label class="text-white">MOEDA</label>
+                                                    <select name="frete_internacional_moeda"
+                                                        id="frete_internacional_moeda" class="select2 w-100 moedas"
+                                                        aria-label="Moedas BRICS, UE e G20">
+                                                        <option value="">Selecione um país...</option>
+
+                                                        @foreach ($moedasSuportadas as $codigo => $nome)
+                                                            <option value="{{ $codigo }}"
+                                                                {{ isset($processo) && $processo->frete_internacional_moeda == $codigo ? 'selected' : '' }}>
+                                                                {{ $codigo }} - {{ $nome }}
+                                                            </option>
+                                                        @endforeach
+
+                                                    </select>
+
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-6 ">
+
+                                                    <input readonly
+                                                        value="{{ isset($processo) ? number_format($processo->frete_internacional * ($dolar[$processo->frete_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
+                                                        class="form-control moneyReal"
+                                                        name="frete_internacional_visualizacao"
+                                                        id="frete_internacional_visualizacao">
+                                                </div>
+                                                <div class="col-sm-6 ">
+
+                                                    <input
+                                                        value="{{ isset($processo->cotacao_frete_internacional) ? $processo->cotacao_frete_internacional : '' }}"
+                                                        class="form-control cotacao" id="cotacao_frete_internacional"
+                                                        name="cotacao_frete_internacional" style="margin: 0 auto">
+
+                                                </div>
+
+                                            </div>
+                                            <div class="row mt-1">
+                                                <div class="col-12">
+                                                    <span id="">Data de
+                                                        Cotação: </span>
+
+                                                    <input type="date" class=" form-control"
+                                                        name="data_moeda_frete_internacional"
+                                                        id="data_moeda_frete_internacional"
+                                                        value="{{ isset($processo->data_moeda_frete_internacional) ? $processo->data_moeda_frete_internacional : '' }}">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class=" alert alert-secondary p-3">
+                                            <div class="row">
+                                                <div class="col-lg-6  ">
+                                                    <label for="seguro_internacional" class="form-label text-white">SEGURO
+                                                        INTERNACIONAL
+                                                    </label>
+                                                    <input
+                                                        value="{{ isset($processo->seguro_internacional) ? number_format($processo->seguro_internacional, 2, ',', '.') : '' }}"
+                                                        class="form-control moneyReal" name="seguro_internacional"
+                                                        id="seguro_internacional">
+                                                </div>
+                                                <div class="col-sm-6 ">
+                                                    <label class="text-white">MOEDA</label>
+                                                    <select name="seguro_internacional_moeda"
+                                                        id="seguro_internacional_moeda" class="select2 w-100 moedas"
+                                                        aria-label="Moedas BRICS, UE e G20">
+                                                        <option value="">Selecione um país...</option>
+                                                        @foreach ($moedasSuportadas as $codigo => $nome)
+                                                            <option value="{{ $codigo }}"
+                                                                {{ isset($processo) && $processo->seguro_internacional_moeda == $codigo ? 'selected' : '' }}>
+                                                                {{ $codigo }} - {{ $nome }}
+                                                            </option>
+                                                        @endforeach
+
+
+                                                    </select>
+
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-lg-6  ">
+
+                                                    <input readonly
+                                                        value="{{ isset($processo) ? number_format($processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
+                                                        class="form-control moneyReal"
+                                                        name="seguro_internacional_visualizacao"
+                                                        id="seguro_internacional_visualizacao">
+                                                </div>
+                                                <div class="col-sm-6 ">
+                                                    <input
+                                                        value="{{ isset($processo->cotacao_seguro_internacional) ? $processo->cotacao_seguro_internacional : '' }}"
+                                                        class="form-control cotacao" id="cotacao_seguro_internacional"
+                                                        name="cotacao_seguro_internacional" style="margin: 0 auto">
+                                                </div>
+                                            </div>
+                                            <div class="row mt-1">
+                                                <div class="col-12">
+                                                    <span id="">Data de
+                                                        Cotação: </span>
+                                                    <input type="date" class=" form-control"
+                                                        name="data_moeda_seguro_internacional"
+                                                        id="data_moeda_seguro_internacional"
+                                                        value="{{ isset($processo->data_moeda_seguro_internacional) ? $processo->data_moeda_seguro_internacional : '' }}">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class=" alert alert-secondary p-3">
+                                            <div class="row">
+                                                <div class="col-6 ">
+                                                    <label for="acrescimo_frete" class="form-label text-white">ACRESCIMO
+                                                        DO
+                                                        FRETE</label>
+                                                    <input
+                                                        value="{{ isset($processo->acrescimo_frete) ? number_format($processo->acrescimo_frete, 2, ',', '.') : '' }}"
+                                                        class="form-control moneyReal" name="acrescimo_frete"
+                                                        id="acrescimo_frete">
+                                                </div>
+                                                <div class="col-6 ">
+
+                                                    <label class="form-label text-white">MOEDA</label>
+                                                    <select name="acrescimo_frete_moeda" id="acrescimo_frete_moeda"
+                                                        class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
+                                                        <option value="">Selecione um país</option>
+
+                                                        @foreach ($moedasSuportadas as $codigo => $nome)
+                                                            <option value="{{ $codigo }}"
+                                                                {{ isset($processo) && $processo->acrescimo_frete_moeda == $codigo ? 'selected' : '' }}>
+                                                                {{ $codigo }} - {{ $nome }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="row ">
+
+
+
+                                                <div class="col-sm-6 ">
+                                                    <input readonly
+                                                        value="{{ isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
+                                                        class="form-control moneyReal" name="acrescimo_frete_visualizacao"
+                                                        id="acrescimo_frete_visualizacao">
+                                                </div>
+                                                <div class="col-sm-6 ">
+                                                    <input
+                                                        value="{{ isset($processo->cotacao_acrescimo_frete) ? $processo->cotacao_acrescimo_frete : '' }}"
+                                                        style="margin: 0 auto" class="form-control cotacao"
+                                                        id="cotacao_acrescimo_frete" name="cotacao_acrescimo_frete">
+                                                </div>
+                                            </div>
+
+                                            <div class="row mt-1">
+                                                <div class="col-12">
+                                                    <span id="">Data de
+                                                        Cotação: </span>
+                                                    <input type="date" class=" form-control"
+                                                        name="data_moeda_acrescimo_frete" id="data_moeda_acrescimo_frete"
+                                                        value="{{ isset($processo->data_moeda_acrescimo_frete) ? $processo->data_moeda_acrescimo_frete : '' }}">
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+
+
                                 @endif
 
 
@@ -1323,6 +1360,53 @@
             });
 
         });
+
+        function updateValorReal(inputId, spanId, automatic = true) {
+            let dolar = JSON.parse($('#dolarHoje').val());
+
+            let valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
+            let codigoMoeda = $(`#${inputId}_moeda`).val()
+
+            if (codigoMoeda && dolar[codigoMoeda] && automatic) {
+                let convertido = valor * (dolar[codigoMoeda].venda);
+                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido));
+            } else if (codigoMoeda && dolar[codigoMoeda] && !automatic) {
+                let taxa = parseFloat($(`#cotacao_${inputId}`).val().replace(',', '.'))
+                let convertido = valor * taxa;
+                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido));
+            } else {
+                $(`#${spanId}`).val(0);
+            }
+        };
+
+        function updateValorCotacao(inputId, spanId) {
+            let dolar = JSON.parse($('#dolarHoje').val());
+
+            let valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
+            let codigoMoeda = $(`#${inputId}_moeda`).val()
+            let nome = $(`#${inputId}_moeda option:selected`).text();
+            $(`#description_moeda_${inputId}`).text(`Taxa: ${nome}`)
+
+
+            console.log(inputId, codigoMoeda, dolar)
+            if (codigoMoeda && dolar[codigoMoeda]) {
+                let convertido = dolar[codigoMoeda].venda;
+                $(`#${spanId}`).val(convertido);
+
+                const data = new Date(dolar[codigoMoeda].data);
+
+                const formatada = data.getFullYear() + '-' +
+                    String(data.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(data.getDate()).padStart(2, '0');
+
+
+                $(`#data_moeda_${inputId}`).val(formatada);
+
+            } else {
+                $(`#${spanId}`).val(0);
+                $(`#data_moeda_${inputId}`).val('');
+            }
+        };
         const initialInputs = new Set(
             Array.from(document.querySelectorAll('#productsBody input, #productsBody select, #productsBody textarea'))
         );
@@ -1440,58 +1524,41 @@
                     }
 
                 });
+
+
+
             $('.moedas').on('select2:select', function(e) {
-                let dolar = JSON.parse($('#dolarHoje').val());
-
-                const updateValorReal = (inputId, spanId) => {
-                    let valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
-                    let codigoMoeda = $(`#${inputId}_moeda`).val()
-
-                    if (codigoMoeda && dolar[codigoMoeda]) {
-                        let convertido = valor * (dolar[codigoMoeda].venda);
-                        $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido));
-                    } else {
-                        $(`#${spanId}`).val(0);
-                    }
-                };
-                const updateValorCotacao = (inputId, spanId) => {
-                    let valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
-                    let codigoMoeda = $(`#${inputId}_moeda`).val()
-                    if (codigoMoeda && dolar[codigoMoeda]) {
-                        let convertido = dolar[codigoMoeda].venda;
-                        $(`#${spanId}`).val(convertido);
-                    } else {
-                        $(`#${spanId}`).val(0);
-                    }
-                };
-
                 updateValorReal('frete_internacional', 'frete_internacional_visualizacao');
                 updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao');
                 updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao');
-
                 updateValorCotacao('frete_internacional', 'cotacao_frete_internacional');
                 updateValorCotacao('seguro_internacional', 'cotacao_seguro_internacional');
                 updateValorCotacao('acrescimo_frete', 'cotacao_acrescimo_frete');
             });
             $('#frete_internacional, #seguro_internacional, #acrescimo_frete').trigger('change');
             $(document).on('change', '#frete_internacional, #seguro_internacional, #acrescimo_frete', function() {
-                let dolar = JSON.parse($('#dolarHoje').val());
-
-
-                const updateValorReal = (inputId, spanId) => {
-                    let valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
-                    let codigoMoeda = $(`#${inputId}_moeda`).val()
-                    let convertido = valor * (dolar[codigoMoeda].venda);
-                    $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido));
-                };
 
                 updateValorReal('frete_internacional', 'frete_internacional_visualizacao');
                 updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao');
                 updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao');
             });
 
+            $(document).on('change', '.cotacao', function() {
+                updateValorReal('frete_internacional', 'frete_internacional_visualizacao',false);
+                updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao',false);
+                updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao',false);
+            })
+
         }, 1000);
 
+        $('#atualizarCotacoes').on('click', function() {
+            updateValorReal('frete_internacional', 'frete_internacional_visualizacao');
+            updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao');
+            updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao');
+            updateValorCotacao('frete_internacional', 'cotacao_frete_internacional');
+            updateValorCotacao('seguro_internacional', 'cotacao_seguro_internacional');
+            updateValorCotacao('acrescimo_frete', 'cotacao_acrescimo_frete');
+        })
 
         function showDeleteConfirmation(documentId) {
             const deleteUrl = '/destroy-produto-processo/' + documentId; // Ajuste a URL conforme necessário
@@ -1604,7 +1671,6 @@
             const fobTotalGeral = calcularFobTotalGeral();
             const taxaSisComex = calcularTaxaSiscomex(rows.length);
 
-            // Primeiro passada: calcular fatores de peso e FOB
             rows.each(function() {
                 const rowId = $(this).find('input').first().data('row');
                 const {
@@ -1613,12 +1679,10 @@
                     quantidade
                 } = obterValoresBase(rowId);
 
-                // Recalcular fatores
                 const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
                 const fobTotal = fobUnitario * quantidade;
                 const fatorVlrFob_AX = fobTotal / (fobTotalGeral || 1);
 
-                // Atualizar campos básicos
                 $(`#peso_liquido_unitario-${rowId}`).val(pesoTotal / (quantidade || 1));
                 $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
                 $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
@@ -1642,8 +1706,7 @@
                 const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
                 const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeral, dolar);
 
-                const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
-                    seguroIntUsdRow, thcRow, dolar);
+                const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow, seguroIntUsdRow, thcRow, dolar);
                 const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
 
                 const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);

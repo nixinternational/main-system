@@ -40,6 +40,9 @@ class Processo extends Model
         'cotacao_frete_internacional',
         'cotacao_seguro_internacional',
         'cotacao_acrescimo_frete',
+        'data_moeda_frete_internacional',
+        'data_moeda_seguro_internacional',
+        'data_moeda_acrescimo_frete',
     ];
     public function cliente()
     {

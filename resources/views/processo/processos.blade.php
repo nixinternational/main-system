@@ -23,7 +23,7 @@
                         <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
                             aria-labelledby="custom-tabs-two-home-tab">
                             <div class="table-responsive">
-                                {{$processos->appends([])}}
+                                {{ $processos->appends([]) }}
                                 <table id="clienteTable" class="table  shadow rounded table-striped table-hover">
                                     <thead class="bg-primary ">
                                         <tr>
@@ -36,7 +36,8 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($processos as $processo)
-                                            <td>{{ $processo->codigo_interno }}</td>
+                                        <tr>
+                                                      <td>{{ $processo->codigo_interno }}</td>
                                             <td>{{ $processo->descricao ?? 'Sem Descrição' }}</td>
                                             <td>
 
@@ -70,6 +71,8 @@
                                             <td class="d-flex  justify-content-around">
                                                 <a href="{{ route('processo.edit', $processo->id) }}" type="button"
                                                     class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
+                                            </td>
+                                        </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
