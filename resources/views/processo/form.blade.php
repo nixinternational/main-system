@@ -318,7 +318,7 @@
                                             <label for="multa" class="form-label">QUANTIDADE</label>
                                             <input type="text"
                                                 value="{{ isset($processo->quantidade) ? number_format($processo->quantidade, 2, ',', '.') : '' }}"
-                                                class="form-control moneyReal" name="quantidade" id="quantidade">
+                                                class="form-control" name="quantidade" id="quantidade">
                                         </div>
                                         <div class="col-md-3">
                                             <label for="multa" class="form-label">ESPÉCIE</label>
@@ -758,7 +758,7 @@
 
                                                             <td>
                                                                 <input data-row="{{ $index }}" type="text"
-                                                                    step="1" class=" form-control moneyReal"
+                                                                    step="1" class=" form-control"
                                                                     name="produtos[{{ $index }}][quantidade]"
                                                                     value="{{ number_format($processoProduto->quantidade ?? 0, 2, ',', '.') }}"
                                                                     id="quantidade-{{ $index }}">
@@ -2105,7 +2105,7 @@
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly id="item-${newIndex}" value="${newIndex + 1}"></td>
         <td><input type="text" class=" form-control " readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
         <td><input type="text" class=" form-control " readonly name="produtos[${newIndex}][ncm]" id="ncm-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" step="1" class=" form-control moneyReal" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" step="1" class=" form-control" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][peso_liquido_unitario]" id="peso_liquido_unitario-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal pesoLiqTotal" name="produtos[${newIndex}][peso_liquido_total]" id="peso_liquido_total-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fator_peso]" id="fator_peso-${newIndex}" value=""></td>
