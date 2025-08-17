@@ -39,7 +39,7 @@
 
                 </select>
             </div> --}}
-                {{ $processos->appends(['paginacao' => $_GET['paginacao'] ?? 10]) }}
+            {{ $processos->appends(['paginacao' => $_GET['paginacao'] ?? 10]) }}
 
         </div>
     </form>
@@ -50,31 +50,20 @@
                 <thead class="bg-primary ">
                     <tr>
                         <th>Cliente</th>
-           
+
                         <th class="d-flex justify-content-center">AÇÕES</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($processos as $processo)
-                            <td>{{$processo->nome}}</td>
+                        <tr>
+                            <td>{{ $processo->nome }}</td>
                             <td class="d-flex  justify-content-around">
-                                    <a href="{{ route('processo-cliente', $processo->id) }}" type="button"
-                                        class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
-                                {{-- <form method="POST"
-                                    action="{{ route($cliente->deleted_at == null ? 'cliente.destroy' : 'cliente.ativar', $cliente->id) }}"
-                                    enctype="multipart/form-data">
-                                    @if ($cliente->deleted_at == null)
-                                        @method('DELETE')
-                                    @else
-                                        @method('PUT')
-                                    @endif
-                                    @csrf
-                                    <button type="submit"
-                                        class="btn {{ $cliente->deleted_at == null ? 'btn-danger' : 'btn-success' }}"><i
-                                            class="fa fa-power-off"></i></button>
+                                <a href="{{ route('processo-cliente', $processo->id) }}" type="button"
+                                    class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
 
-                                </form> --}}
                             </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>

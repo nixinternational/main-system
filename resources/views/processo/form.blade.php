@@ -1456,7 +1456,9 @@
 
                                 const fobTotalGeral = calcularFobTotalGeral();
                                 const moedasOBject = JSON.parse($('#dolarHoje').val())
-                                const dolar = parseFloat(moedasOBject['USD'].venda);
+                                const moedaDolar = moedasOBject['USD'].venda ?? $(
+                                    `#cotacao_frete_internacional`).val().replace(',', '.')
+                                const dolar = parseFloat(moedaDolar);
                                 atualizarFatoresFob();
                                 atualizarTotaisGlobais(fobTotalGeral, dolar);
 
@@ -1544,9 +1546,9 @@
             });
 
             $(document).on('change', '.cotacao', function() {
-                updateValorReal('frete_internacional', 'frete_internacional_visualizacao',false);
-                updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao',false);
-                updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao',false);
+                updateValorReal('frete_internacional', 'frete_internacional_visualizacao', false);
+                updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao', false);
+                updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao', false);
             })
 
         }, 1000);
@@ -1659,14 +1661,16 @@
             $('#fobTotalProcesso').text(MoneyUtils.formatMoney(fobTotalGeral));
 
             const moedasOBject = JSON.parse($('#dolarHoje').val())
-            const dolar = parseFloat(moedasOBject['USD'].venda) ?? 1;
+            const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.')
+            const dolar = parseFloat(moedaDolar);
             $('#fobTotalProcessoReal').text(MoneyUtils.formatMoney(fobTotalGeral * dolar));
         }
 
         function recalcularTodaTabela() {
             const rows = $('#productsBody tr');
             const moedasOBject = JSON.parse($('#dolarHoje').val());
-            const dolar = parseFloat(moedasOBject['USD'].venda);
+            const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.')
+            const dolar = parseFloat(moedaDolar);
             const totalPesoLiq = calcularPesoTotal();
             const fobTotalGeral = calcularFobTotalGeral();
             const taxaSisComex = calcularTaxaSiscomex(rows.length);
@@ -1706,7 +1710,8 @@
                 const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
                 const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeral, dolar);
 
-                const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow, seguroIntUsdRow, thcRow, dolar);
+                const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
+                    seguroIntUsdRow, thcRow, dolar);
                 const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
 
                 const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
@@ -1912,7 +1917,8 @@
 
         function atualizarFatoresFob() {
             const moedasOBject = JSON.parse($('#dolarHoje').val())
-            const dolar = parseFloat(moedasOBject['USD'].venda);
+            const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.')
+            const dolar = parseFloat(moedaDolar);
             const taxaSiscomex = calcularTaxaSiscomex($('#productsBody tr').length);
 
             const dadosFob = []; // cada item = { rowId, fobTotal }
@@ -1920,7 +1926,7 @@
             $('.fobUnitario').each(function() {
                 const rowId = $(this).data('row');
                 const fobUnit = MoneyUtils.parseMoney($(this).val());
-                const qtd = parseFloat($(`#quantidade-${rowId}`).val()) || 0;
+                const qtd = parseInt($(`#quantidade-${rowId}`).val()) || 0;
                 const fobTotal = fobUnit * qtd;
 
                 dadosFob.push({
@@ -1957,14 +1963,14 @@
             let fobTotalGeral = 0
             for (let i = 0; i < lengthTable; i++) {
                 const fobUnit = MoneyUtils.parseMoney($(`#fob_unit_usd-${i}`).val())
-                const qtd = parseFloat($(`#quantidade-${i}`).val()) || 0
+                const qtd = parseInt($(`#quantidade-${i}`).val()) || 0
                 fobTotalGeral += fobUnit * qtd
             }
 
             // Para cada linha da tabela
             for (let i = 0; i < lengthTable; i++) {
                 const fobUnit = MoneyUtils.parseMoney($(`#fob_unit_usd-${i}`).val())
-                const qtd = parseFloat($(`#quantidade-${i}`).val()) || 0
+                const qtd = parseInt($(`#quantidade-${i}`).val()) || 0
                 const fobTotal = fobUnit * qtd
                 const fatorVlrFob_AX = fobTotalGeral ? (fobTotal / fobTotalGeral) : 0
                 let desp_desenbaraco_parte_1 = 0
@@ -1995,7 +2001,7 @@
 
                 let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2
                 const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
-                let qquantidade = parseFloat($(`#quantidade-${i}`).val()) || 0
+                let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0
                 const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val())
                 const custo_unitario_final = ((vlrTotalNfComIcms + despesa_desembaraco + 0 + 0) - vlrIcmsReduzido) /
                     qquantidade
