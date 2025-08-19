@@ -39,7 +39,6 @@ class UpdateCurrencies extends Command
                 $resultado[$codigo] = $this->buscarCotacao($codigo, $nome, $dataCotacao);
                 usleep(100000); // respeita limites da API
             }
-            dd($resultado);
             return $resultado;
         });
 
@@ -96,7 +95,6 @@ class UpdateCurrencies extends Command
 
             $resposta = Http::timeout(10)->get($url . $query);
 
-            dump($resposta->status(), $resposta->body());
 
             $dados = $resposta->json()['value'][0] ?? null;
 
