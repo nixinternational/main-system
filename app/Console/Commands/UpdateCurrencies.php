@@ -90,7 +90,7 @@ class UpdateCurrencies extends Command
             ];
 
             $resposta = Http::timeout(10)->get($url . http_build_query($params));
-            dump($resposta,$params);
+            dump($resposta->status(), $resposta->body());
             $dados = $resposta->json()['value'][0] ?? null;
 
             if ($dados) {
