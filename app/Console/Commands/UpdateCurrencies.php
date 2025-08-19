@@ -33,7 +33,7 @@ class UpdateCurrencies extends Command
         $resultado = Cache::remember($cacheKey, now()->endOfDay(), function () {
             $moedasSuportadas = $this->buscarMoedasSuportadas();
             $dataCotacao = $this->obterDataUtil();
-
+            dd($moedasSuportadas);
             $resultado = [];
 
             foreach ($moedasSuportadas as $codigo => $nome) {
