@@ -2,9 +2,7 @@
 @section('title', 'Processos')
 
 @section('actions')
-    <a href="{{ route('processo.create') }}" class="btn btn-primary">
-        Cadastrar processo
-    </a>
+
 @endsection
 
 
