@@ -2,7 +2,9 @@
 @section('title', 'Processos')
 
 @section('actions')
-
+    <a href="{{ route('currency.update') }}" class="btn btn-primary">
+        Atualizar moedas
+    </a>
 @endsection
 
 

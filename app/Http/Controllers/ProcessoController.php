@@ -34,21 +34,27 @@ class ProcessoController extends Controller
 
         return $model;
     }
-public static function getBid()
-{
-    $cacheKey = 'cotacoes_bids_' . now()->format('Y-m-d');
 
-    // tenta pegar do cache
-    $resultado = Cache::get($cacheKey);
-
-    // se não existir, executa o comando e tenta pegar novamente
-    if (!$resultado) {
+    public function updatecurrencies()
+    {
         Artisan::call('atualizar:moedas'); // dispara a command
-        $resultado = Cache::get($cacheKey, []); // pega do cache após atualização
+        return back();
     }
+    public static function getBid()
+    {
+        $cacheKey = 'cotacoes_bids_' . now()->format('Y-m-d');
 
-    return $resultado;
-}
+        // tenta pegar do cache
+        $resultado = Cache::get($cacheKey);
+
+        // se não existir, executa o comando e tenta pegar novamente
+        if (!$resultado) {
+            Artisan::call('atualizar:moedas'); // dispara a command
+            $resultado = Cache::get($cacheKey, []); // pega do cache após atualização
+        }
+
+        return $resultado;
+    }
 
     private static function buscarMoedasSuportadas(): array
     {

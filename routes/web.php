@@ -91,5 +91,5 @@ Route::middleware('auth')->group(function () {
         Route::put('/motorista/{motorista_id}', [MotoristaController::class, 'ativar'])->name('motorista.ativar');
     });
 
-    
+    Route::any('currency-update',[ProcessoController::class, 'updatecurrencies'])->name('currency.update');
 });
