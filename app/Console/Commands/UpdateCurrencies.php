@@ -85,12 +85,19 @@ class UpdateCurrencies extends Command
                 '@moeda'       => "'$codigo'",
                 '@dataCotacao' => "'$dataCotacao'",
                 '$top'         => 1,
-                '$orderby'     => 'dataHoraCotacao desc',
                 '$format'      => 'json',
             ];
 
-            $resposta = Http::timeout(10)->get($url . http_build_query($params));
+            // monta a query string normal
+            $query = http_build_query($params);
+
+            // adiciona o orderby manualmente, com espaço em vez de +
+            $query .= "&\$orderby=dataHoraCotacao desc";
+
+            $resposta = Http::timeout(10)->get($url . $query);
+
             dump($resposta->status(), $resposta->body());
+
             $dados = $resposta->json()['value'][0] ?? null;
 
             if ($dados) {
