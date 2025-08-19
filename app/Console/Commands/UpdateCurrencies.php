@@ -101,6 +101,7 @@ class UpdateCurrencies extends Command
             if ($dados) {
                 return [
                     'nome'   => $nome,
+                    'data' => $dataCotacao,
                     'moeda'  => $codigo,
                     'compra' => $dados['cotacaoCompra'],
                     'venda'  => $dados['cotacaoVenda'],
