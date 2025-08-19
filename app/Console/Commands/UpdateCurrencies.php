@@ -33,14 +33,13 @@ class UpdateCurrencies extends Command
         $resultado = Cache::remember($cacheKey, now()->endOfDay(), function () {
             $moedasSuportadas = $this->buscarMoedasSuportadas();
             $dataCotacao = $this->obterDataUtil();
-            dd($moedasSuportadas);
             $resultado = [];
 
             foreach ($moedasSuportadas as $codigo => $nome) {
                 $resultado[$codigo] = $this->buscarCotacao($codigo, $nome, $dataCotacao);
                 usleep(100000); // respeita limites da API
             }
-
+            dd($resultado);
             return $resultado;
         });
 
@@ -91,6 +90,7 @@ class UpdateCurrencies extends Command
             ];
 
             $resposta = Http::timeout(10)->get($url . http_build_query($params));
+            dump($resposta);
             $dados = $resposta->json()['value'][0] ?? null;
 
             if ($dados) {
