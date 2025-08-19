@@ -38,7 +38,7 @@ class ProcessoController extends Controller
     public function updatecurrencies()
     {
         Artisan::call('atualizar:moedas'); // dispara a command
-        return back();
+        return back()->with('messages', ['success' => ['Moedas atualizadas com sucesso!']]);;
     }
     public static function getBid()
     {
