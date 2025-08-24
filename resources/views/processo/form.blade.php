@@ -308,24 +308,34 @@
                                                 value="{{ isset($processo->peso_bruto) ? number_format($processo->peso_bruto, 2, ',', '.') : '' }}"
                                                 class="form-control moneyReal" name="peso_bruto" id="peso_bruto">
                                         </div>
+                                                    <div class="col-md-2">
+                                            <label for="peso_bruto" class="form-label">PESO LÍQUIDO</label>
+                                            <input type="text"
+                                                value="{{ isset($processo->peso_liquido) ? number_format($processo->peso_liquido, 2, ',', '.') : '' }}"
+                                                class="form-control moneyReal" readonly>
+                                        </div>
                                         <div class="col-md-2">
                                             <label for="multa" class="form-label">MULTA</label>
                                             <input type="text"
                                                 value="{{ isset($processo->multa) ? number_format($processo->multa, 2, ',', '.') : '' }}"
                                                 class="form-control moneyReal" name="multa" id="multa">
                                         </div>
-                                        <div class="col-md-3">
+                                                     <div class="col-md-2">
                                             <label for="multa" class="form-label">QUANTIDADE</label>
                                             <input type="text"
                                                 value="{{ isset($processo->quantidade) ? number_format($processo->quantidade, 2, ',', '.') : '' }}"
                                                 class="form-control" name="quantidade" id="quantidade">
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <label for="multa" class="form-label">ESPÉCIE</label>
                                             <input type="text"
                                                 value="{{ isset($processo) ? $processo->especie : '' }}"
                                                 class="form-control " name="especie" id="especie">
                                         </div>
+                               
+                                    </div>
+                                    <div class="row">
+                                    
                                     </div>
 
                                     <div class=""

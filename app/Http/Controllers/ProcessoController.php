@@ -44,10 +44,9 @@ class ProcessoController extends Controller
     {
         $cacheKey = 'cotacoes_bids_' . now()->format('Y-m-d');
 
-        // tenta pegar do cache
+
         $resultado = Cache::get($cacheKey);
 
-        // se não existir, executa o comando e tenta pegar novamente
         if (!$resultado) {
             Artisan::call('atualizar:moedas'); // dispara a command
             $resultado = Cache::get($cacheKey, []); // pega do cache após atualização
@@ -127,7 +126,8 @@ class ProcessoController extends Controller
             }
             $cliente_id = $request->cliente_id;
             $processo = Processo::create([
-                'codigo_interno' => '',
+                'codigo_interno' => 'Processo',
+                'numero_processo' => '45',
                 'cliente_id' => $cliente_id
             ]);
 
@@ -202,7 +202,7 @@ class ProcessoController extends Controller
                 'frete_internacional_moeda' => $request->frete_internacional_moeda,
                 'seguro_internacional_moeda' => $request->seguro_internacional_moeda,
                 'acrescimo_frete_moeda' => $request->acrescimo_frete_moeda,
-                "codigo_interno" => $request->codigo_interno,
+                "codigo_interno" => $request->codigo_interno ?? $id,
                 "descricao" => $request->descricao,
                 "canal" => $request->canal,
                 "status" => $request->status,
@@ -235,8 +235,10 @@ class ProcessoController extends Controller
             ];
 
             Processo::where('id', $id)->update($dadosProcesso);
+            $pesoLiquidoTotal = 0;
             if ($request->produtos  && count($request->produtos) > 0) {
                 foreach ($request->produtos as $key => $produto) {
+                    $pesoLiquidoTotal +=  isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
                     ProcessoProduto::updateOrCreate(
                         [
                             'id' => $produto['processo_produto_id'],
@@ -317,6 +319,8 @@ class ProcessoController extends Controller
                     );
                 }
             }
+            Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
+
 
             return back()->with('messages', ['success' => ['Processo atualizado com sucesso!']]);
         } catch (\Exception $e) {
