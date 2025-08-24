@@ -29,6 +29,7 @@ class ProcessoProduto extends Model
         'thc_brl',
         'valor_aduaneiro_usd',
         'valor_aduaneiro_brl',
+        'item',
         'ii_percent',
         'ipi_percent',
         'pis_percent',

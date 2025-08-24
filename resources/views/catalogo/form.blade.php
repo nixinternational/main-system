@@ -11,7 +11,7 @@
                     <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
                         <li class="pt-2 px-3">
                             <h3 class="card-title text-dark font-weight-bold" style="">
-                                {{ isset($catalogo) ? '':'Novo Catálogo' }}</h3>
+                                {{ isset($catalogo) ? '' : 'Novo Catálogo' }}</h3>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill"
@@ -33,7 +33,7 @@
                             <div class="col-4">
                                 <label for="exampleInputEmail1" class="form-label">Cliente</label>
 
-                                <select class="custom-select select2" name="cliente_id">
+                                <select {{isset($catalogo) ? 'disabled' : ''}} class="custom-select select2" name="cliente_id">
                                     <option selected disabled>Selecione uma opção</option>
                                     @foreach ($clientes as $cliente)
                                         <option
@@ -43,12 +43,29 @@
                                 </select>
                             </div>
                         </div>
+                        @if(!isset($catalogo))
                         <button type="submit" class="btn btn-primary mt-3">Salvar</button>
+                        @endif
                     </form>
                     @if (isset($catalogo))
 
                         <div style="height: 0.1px; width: 100%; border: 0.1px solid #cecece;" class="my-3">
                         </div>
+                        <form class="mr-2 d-flex justify-content-between" id="formSearch"
+                            action="{{ route('catalogo.edit', $id) }}" method="GET">
+                            <div class="d-flex ">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon1"><i
+                                                class="fas fa-search"></i></span>
+                                    </div>
+                                    <input value="{{ $_GET['search'] ?? '' }}" type="text" id="search" name="search"
+                                        class="form-control" placeholder="" aria-label="" aria-describedby="basic-addon1">
+                                    <a href="{{ route('catalogo.edit', $id) }}" class="btn btn-primary">Limpar busca</a>
+
+                                </div>
+                            </div>
+                        </form>
                         <div class="row w-100">
 
                             <div class="col-12 d-flex mb-2" style="justify-content: space-between; align-items: center;">
@@ -58,7 +75,7 @@
                             </div>
 
                             @if (!$produtos->isEmpty())
-                             {{ $produtos->appends([]) }}
+                                {{ $produtos->appends([]) }}
                                 <table id="produtosTable" class="table shadow rounded table-striped table-hover">
                                     <thead class="bg-primary ">
                                         <tr>
@@ -89,8 +106,7 @@
                                                         class="btn btn-info descricaoModalButton">
                                                         <i class="fas fa-info"></i>
                                                     </button>
-                                                    <button type="button" 
-                                                        data-modelo="{{ $produto->modelo }}"
+                                                    <button type="button" data-modelo="{{ $produto->modelo }}"
                                                         data-ncm="{{ $produto->ncm }}"
                                                         data-codigo="{{ $produto->codigo }}"
                                                         data-descricao="{{ $produto->descricao }}"
@@ -145,7 +161,8 @@
         </div>
     </div>
     @if (isset($catalogo))
-        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -156,7 +173,10 @@
                     </div>
                     <form action="{{ route('produto.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="page" value="{{ $_GET['page'] ?? '1' }}">
+
                         <input type="hidden" value="{{ $catalogo->id }}" name="catalogo_id">
+                        <input type="hidden" id="add_more" name="add_more" value="0"> {{-- default = não adicionar mais --}}
 
                         <div class="modal-body">
                             <div class="row">
@@ -188,8 +208,13 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
                             <button type="submit" class="btn btn-primary">Salvar</button>
+                            <button type="submit" class="btn btn-success"
+                                onclick="document.getElementById('add_more').value=1">
+                                Adicionar mais produtos
+                            </button>
                         </div>
                     </form>
+
 
                 </div>
             </div>
@@ -209,13 +234,17 @@
                     <form id="formEdit" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
+                        <input type="hidden" name="page" value="{{ $_GET['page'] ?? '1' }}">
+                        <input type="hidden" id="add_more_edit" name="add_more_edit" value="0">
+                        {{-- default = não adicionar mais --}}
+
                         <div class="modal-body">
 
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="modelo" class="font-weight-bold">Modelo</label>
-                                    <input type="text" id="modelo_edit" name="modelo_edit"
-                                        class="form-control"  value="">
+                                    <input type="text" id="modelo_edit" name="modelo_edit" class="form-control"
+                                        value="">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="codigo" class="font-weight-bold">Código</label>
@@ -239,7 +268,12 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Salvar</button>
+                            <button type="submit" class="btn btn-success"
+                                onclick="document.getElementById('add_more_edit').value=1">
+                                Adicionar mais produtos
+                            </button>
                         </div>
+
 
                     </form>
                 </div>
@@ -265,7 +299,19 @@
 
 
         })
+
+        setTimeout(() => {
+            document.getElementById('search').addEventListener('change', function() {
+                document.getElementById('formSearch').submit()
+            })
+        }, 500);
     </script>
-
-
+    @if (session('open_modal') === 'exampleModal')
+        <script>
+            $(document).ready(function() {
+                $('#exampleModal').modal('show');
+                $('#exampleModal').find('input[type="text"], textarea').val('');
+            });
+        </script>
+    @endif
 @endsection

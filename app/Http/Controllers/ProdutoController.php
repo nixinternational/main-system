@@ -58,12 +58,13 @@ class ProdutoController extends Controller
                 'descricao.required' => 'Necessário informar a descrição do produto'
             ]);
 
-
             if ($validator->fails()) {
                 $errors = $validator->errors();
                 $message = $errors->unique();
-                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+                return back()->with('messages', ['error' => [implode('<br> ', $message)]])
+                    ->withInput($request->all());
             }
+
             $produtoDuplicado = Produto::where('modelo', $request->modelo)
                 ->where('codigo', $request->codigo)
                 ->where('catalogo_id', $request->catalogo_id)
@@ -73,19 +74,31 @@ class ProdutoController extends Controller
                 return back()->with('messages', ['error' => ['Já existe um produto com esse modelo e código nesse catálogo.']])
                     ->withInput($request->all());
             }
+
             $data = [
-                'modelo' => $request->modelo,
-                'codigo' => $request->codigo,
-                'ncm' => $request->ncm,
-                'descricao' => $request->descricao,
+                'modelo'      => $request->modelo,
+                'codigo'      => $request->codigo,
+                'ncm'         => $request->ncm,
+                'descricao'   => $request->descricao,
                 'catalogo_id' => $request->catalogo_id,
             ];
+
             $catalogo = Catalogo::findOrFail($request->catalogo_id);
 
             Produto::create($data);
-            return redirect(route('catalogo.edit', $catalogo->id))->with('messages', ['success' => ['Produto criado com sucesso!']]);
+
+            if ($request->has('add_more') && $request->add_more == 1) {
+                return redirect(route('catalogo.edit', $catalogo->id).'?page='.$request->page)
+                    ->with('messages', ['success' => ['Produto criado com sucesso!']])
+                    ->with('open_modal', 'exampleModal');
+            }
+
+            // Caso contrário, só volta para edição normal
+            return redirect(route('catalogo.edit', $catalogo->id.'?page='.$request->page))
+                ->with('messages', ['success' => ['Produto criado com sucesso!']]);
         } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível cadastrar o produto!']])->withInput($request->all());
+            return back()->with('messages', ['error' => ['Não foi possível cadastrar o produto!']])
+                ->withInput($request->all());
         }
     }
 
@@ -128,7 +141,16 @@ class ProdutoController extends Controller
                 'codigo' => $request->codigo_edit,
                 'descricao' => $request->descricao_edit,
             ]);
-            return redirect(route('catalogo.edit', $produto->catalogo_id))->with('messages', ['success' => ['Produto atualizado com sucesso!']]);
+
+
+            if ($request->has('add_more_edit') && $request->add_more_edit == 1) {
+                return redirect(route('catalogo.edit', $produto->catalogo_id).'?page='.$request->page)
+                    ->with('messages', ['success' => ['Produto atualizado com sucesso!']])
+                    ->with('open_modal', 'exampleModal');
+            }   
+
+                
+            return redirect(route('catalogo.edit', $produto->catalogo_id).'?page='.$request->page)->with('messages', ['success' => ['Produto atualizado com sucesso!']]);
         } catch (Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível atualizar o produto!']])->withInput($request->all());
         }

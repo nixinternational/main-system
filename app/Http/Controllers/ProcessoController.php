@@ -238,6 +238,13 @@ class ProcessoController extends Controller
             $pesoLiquidoTotal = 0;
             if ($request->produtos  && count($request->produtos) > 0) {
                 foreach ($request->produtos as $key => $produto) {
+                    if (!isset($produto['produto_id']) || empty($produto['produto_id'])) {
+                        return back()->with('messages', ['error' => ['Todos as linhas devem ter um produto selecionado!']])
+                            ->withInput($request->all());
+                    }
+                }
+
+                foreach ($request->produtos as $key => $produto) {
                     $pesoLiquidoTotal +=  isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
                     ProcessoProduto::updateOrCreate(
                         [
@@ -245,6 +252,7 @@ class ProcessoController extends Controller
                             'processo_id' => $id ?? 0,
                         ],
                         [
+                            'item' => $produto['item'],
                             'produto_id' => $produto['produto_id'],
                             'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
                             'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
@@ -264,12 +272,13 @@ class ProcessoController extends Controller
                             'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
                             'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
                             'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
-                            'ii_percent' => isset($produto['ii_percent']) ? $this->parseMoneyToFloat($produto['ii_percent']) : null,
-                            'ipi_percent' => isset($produto['ipi_percent']) ? $this->parseMoneyToFloat($produto['ipi_percent']) : null,
-                            'pis_percent' => isset($produto['pis_percent']) ? $this->parseMoneyToFloat($produto['pis_percent']) : null,
-                            'cofins_percent' => isset($produto['cofins_percent']) ? $this->parseMoneyToFloat($produto['cofins_percent']) : null,
-                            'icms_percent' => isset($produto['icms_percent']) ? $this->parseMoneyToFloat($produto['icms_percent']) : null,
-                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->parseMoneyToFloat($produto['icms_reduzido_percent']) : null,
+                            'ii_percent' => isset($produto['ii_percent']) ? $this->safePercentage($produto['ii_percent']) : null,
+                            'ipi_percent' => isset($produto['ipi_percent']) ? $this->safePercentage($produto['ipi_percent']) : null,
+                            'pis_percent' => isset($produto['pis_percent']) ? $this->safePercentage($produto['pis_percent']) : null,
+                            'cofins_percent' => isset($produto['cofins_percent']) ? $this->safePercentage($produto['cofins_percent']) : null,
+                            'icms_percent' => isset($produto['icms_percent']) ? $this->safePercentage($produto['icms_percent']) : null,
+                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
+
                             'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
                             'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
                             'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
@@ -346,5 +355,37 @@ class ProcessoController extends Controller
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluír o Produto !']]);
         }
+    }
+    private function parsePercentageToFloat($value)
+    {
+        if (is_null($value) || $value === '') {
+            return null;
+        }
+
+        // Se já for numérico, retorna como está (o banco espera valores como 33.45, não 0.3345)
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        // Remove símbolo de porcentagem e espaços
+        $cleanValue = str_replace(['%', ' '], '', trim($value));
+
+        // Substitui vírgula por ponto para decimal
+        $cleanValue = str_replace(',', '.', $cleanValue);
+
+        // Converte para float
+        return (float) $cleanValue;
+    }
+
+    private function safePercentage($value)
+    {
+        $percentage = $this->parsePercentageToFloat($value);
+
+        if (is_null($percentage)) {
+            return null;
+        }
+
+        // Retorna o valor como está, pois o campo decimal(5,2) suporta até 999.99
+        return $percentage;
     }
 }

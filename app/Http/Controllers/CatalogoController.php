@@ -14,8 +14,8 @@ class CatalogoController extends Controller
     public function index()
     {
         $catalogos = Catalogo::paginate(request()->paginacao ?? 10);
-        
-        return view("catalogo.index",compact('catalogos'));
+
+        return view("catalogo.index", compact('catalogos'));
     }
 
 
@@ -41,7 +41,7 @@ class CatalogoController extends Controller
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
             $data = [
-                'cliente_id' => $request->cliente_id,    
+                'cliente_id' => $request->cliente_id,
             ];
             $catalogo = Catalogo::create($data);
             return redirect(route('catalogo.edit', $catalogo->id))->with('messages', ['success' => ['Catálogo criado com sucesso!']]);
@@ -60,26 +60,35 @@ class CatalogoController extends Controller
     public function edit($id)
     {
         $catalogo = Catalogo::find($id);
-        $clientes = Cliente::select(['id','nome'])->get();
-        $produtos = Produto::where('catalogo_id',$id)->paginate(10);
-        return view("catalogo.form", compact("clientes",'catalogo','produtos'));
+        $clientes = Cliente::select(['id', 'nome'])->get();
+        $search = request()->query('search');
+
+        $produtos = Produto::where('catalogo_id', $id)
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('modelo', 'ILIKE', "%{$search}%")
+                        ->orWhere('ncm', 'ILIKE', "%{$search}%")
+                        ->orWhere('codigo', 'ILIKE', "%{$search}%")
+                        ->orWhere('descricao', 'ILIKE', "%{$search}%");
+                });
+            })
+            ->paginate(10);
+        return view("catalogo.form", compact('id', "clientes", 'catalogo', 'produtos'));
     }
 
 
     public function update(Request $request, $id)
     {
-        //
     }
 
     public function destroy($id)
     {
         try {
-            Produto::where('catalogo_id',$id)->delete();
+            Produto::where('catalogo_id', $id)->delete();
             Catalogo::find($id)->delete();
-            return redirect(route('catalogo.index', ))->with('messages', ['success' => ['Catálogo excluído com sucesso!']]);
+            return redirect(route('catalogo.index',))->with('messages', ['success' => ['Catálogo excluído com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluir o catálogo!']]);
         }
-
     }
 }

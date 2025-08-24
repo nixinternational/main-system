@@ -10,7 +10,7 @@
 
 @section('content')
 
-    <form class="mr-2 d-flex justify-content-between" id="formSearch" action="{{ route('fornecedor.index') }}" method="GET">
+    <form class="mr-2 d-flex justify-content-between" id="formSearch" action="{{ route('catalogo.edit',$id) }}" method="GET">
         <div class="d-flex ">
 
             <div class="input-group mb-3">
@@ -19,7 +19,7 @@
                 </div>
                 <input value="{{ $_GET['search'] ?? '' }}" type="text" id="search" name="search" class="form-control"
                     placeholder="" aria-label="" aria-describedby="basic-addon1">
-                <a href="{{ route('fornecedor.index') }}" class="btn btn-primary">Limpar busca</a>
+                <a href="{{ route('catalogo.edit',$id) }}" class="btn btn-primary">Limpar busca</a>
 
             </div>
         </div>

@@ -308,7 +308,7 @@
                                                 value="{{ isset($processo->peso_bruto) ? number_format($processo->peso_bruto, 2, ',', '.') : '' }}"
                                                 class="form-control moneyReal" name="peso_bruto" id="peso_bruto">
                                         </div>
-                                                    <div class="col-md-2">
+                                        <div class="col-md-2">
                                             <label for="peso_bruto" class="form-label">PESO LÍQUIDO</label>
                                             <input type="text"
                                                 value="{{ isset($processo->peso_liquido) ? number_format($processo->peso_liquido, 2, ',', '.') : '' }}"
@@ -320,7 +320,7 @@
                                                 value="{{ isset($processo->multa) ? number_format($processo->multa, 2, ',', '.') : '' }}"
                                                 class="form-control moneyReal" name="multa" id="multa">
                                         </div>
-                                                     <div class="col-md-2">
+                                        <div class="col-md-2">
                                             <label for="multa" class="form-label">QUANTIDADE</label>
                                             <input type="text"
                                                 value="{{ isset($processo->quantidade) ? number_format($processo->quantidade, 2, ',', '.') : '' }}"
@@ -332,10 +332,10 @@
                                                 value="{{ isset($processo) ? $processo->especie : '' }}"
                                                 class="form-control " name="especie" id="especie">
                                         </div>
-                               
+
                                     </div>
                                     <div class="row">
-                                    
+
                                     </div>
 
                                     <div class=""
@@ -746,10 +746,11 @@
                                                             </td>
 
                                                             <td>
-                                                                <input data-row="{{ $index }}" type="text"
-                                                                    class=" form-control moneyReal" readonly
+                                                                <input data-row="{{ $index }}" type="number"
+                                                                    class=" form-control "
+                                                                    name="produtos[{{ $index }}][item]"
                                                                     id="item-{{ $index }}"
-                                                                    value="{{ $loop->iteration }}">
+                                                                    value="{{ $processoProduto->item }}">
                                                             </td>
 
                                                             <td>
@@ -767,10 +768,10 @@
                                                             </td>
 
                                                             <td>
-                                                                <input data-row="{{ $index }}" type="text"
+                                                                <input data-row="{{ $index }}" type="number"
                                                                     step="1" class=" form-control"
                                                                     name="produtos[{{ $index }}][quantidade]"
-                                                                    value="{{ number_format($processoProduto->quantidade ?? 0, 2, ',', '.') }}"
+                                                                    value="{{ $processoProduto->quantidade }}"
                                                                     id="quantidade-{{ $index }}">
                                                             </td>
 
@@ -904,7 +905,7 @@
 
                                                             <td>
                                                                 <input data-row="{{ $index }}" type="text"
-                                                                    class=" form-control moneyReal"
+                                                                    class=" form-control percentage"
                                                                     name="produtos[{{ $index }}][ii_percent]"
                                                                     id="ii_percent-{{ $index }}"
                                                                     value="{{ isset($processoProduto->ii_percent) ? number_format($processoProduto->ii_percent, 2, ',', '.') : '' }}">
@@ -912,7 +913,7 @@
 
                                                             <td>
                                                                 <input data-row="{{ $index }}" type="text"
-                                                                    class=" form-control moneyReal"
+                                                                    class=" form-control percentage"
                                                                     name="produtos[{{ $index }}][ipi_percent]"
                                                                     id="ipi_percent-{{ $index }}"
                                                                     value="{{ isset($processoProduto->ipi_percent) ? number_format($processoProduto->ipi_percent, 2, ',', '.') : '' }}">
@@ -920,7 +921,7 @@
 
                                                             <td>
                                                                 <input data-row="{{ $index }}" type="text"
-                                                                    class=" form-control moneyReal"
+                                                                    class=" form-control percentage"
                                                                     name="produtos[{{ $index }}][pis_percent]"
                                                                     id="pis_percent-{{ $index }}"
                                                                     value="{{ isset($processoProduto->pis_percent) ? number_format($processoProduto->pis_percent, 2, ',', '.') : '' }}">
@@ -928,7 +929,7 @@
 
                                                             <td>
                                                                 <input data-row="{{ $index }}" type="text"
-                                                                    class=" form-control moneyReal"
+                                                                    class=" form-control percentage"
                                                                     name="produtos[{{ $index }}][cofins_percent]"
                                                                     id="cofins_percent-{{ $index }}"
                                                                     value="{{ isset($processoProduto->cofins_percent) ? number_format($processoProduto->cofins_percent, 2, ',', '.') : '' }}">
@@ -936,7 +937,7 @@
 
                                                             <td>
                                                                 <input data-row="{{ $index }}" type="text"
-                                                                    class=" form-control moneyReal"
+                                                                    class=" form-control percentage"
                                                                     name="produtos[{{ $index }}][icms_percent]"
                                                                     id="icms_percent-{{ $index }}"
                                                                     value="{{ isset($processoProduto->icms_percent) ? number_format($processoProduto->icms_percent, 2, ',', '.') : '' }}">
@@ -944,7 +945,7 @@
 
                                                             <td>
                                                                 <input data-row="{{ $index }}" type="text"
-                                                                    class=" form-control moneyReal" readonly
+                                                                    class=" form-control percentage" readonly
                                                                     name="produtos[{{ $index }}][icms_reduzido_percent]"
                                                                     id="icms_reduzido_percent-{{ $index }}"
                                                                     value="{{ isset($processoProduto->icms_reduzido_percent) ? number_format($processoProduto->icms_reduzido_percent, 2, ',', '.') : '' }}">
@@ -1365,6 +1366,12 @@
                 placeholder: "",
                 maxlength: false
             });
+            $('.percentage').mask('#.##0,00 %', {
+                reverse: true,
+                placeholder: "",
+                maxlength: false
+            });
+
             $('.select2').select2({
                 width: '100%'
             });
@@ -1398,7 +1405,6 @@
             $(`#description_moeda_${inputId}`).text(`Taxa: ${nome}`)
 
 
-            console.log(inputId, codigoMoeda, dolar)
             if (codigoMoeda && dolar[codigoMoeda]) {
                 let convertido = dolar[codigoMoeda].venda;
                 $(`#${spanId}`).val(convertido);
@@ -1471,7 +1477,7 @@
                                 const dolar = parseFloat(moedaDolar);
                                 atualizarFatoresFob();
                                 atualizarTotaisGlobais(fobTotalGeral, dolar);
-
+                         
                                 const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) *
                                     fatorPesoRow;
                                 const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
@@ -1599,44 +1605,79 @@
                 }
             });
         }
-        const MoneyUtils = {
-            parseMoney: function(value) {
-                if (!value || value === "") return 0;
+  const MoneyUtils = {
+    parseMoney: function(value) {
+        if (!value || value === "") return 0;
 
-                let cleanValue = value.toString().replace(/\./g, '');
+        let cleanValue = value.toString().replace(/\./g, '');
+        cleanValue = cleanValue.replace(',', '.');
 
-                cleanValue = cleanValue.replace(',', '.');
+        return parseFloat(cleanValue) || 0;
+    },
 
-                return parseFloat(cleanValue) || 0;
-            },
+    parsePercentage: function(value) {
+        if (!value || value === "") return 0;
+        
+        // Converter para string e remover espaços
+        let stringValue = value.toString().trim();
+        
+        // Remover o símbolo de porcentagem se existir
+        stringValue = stringValue.replace(/%/g, '');
+        
+        // Substituir vírgula por ponto para decimal
+        stringValue = stringValue.replace(',', '.');
+        
+        // Remover espaços extras que possam ter sobrado
+        stringValue = stringValue.replace(/\s/g, '');
+        
+        // Converter para float e dividir por 100 para obter a fração
+        const parsedValue = parseFloat(stringValue) || 0;
+        
+        return parsedValue / 100;
+    },
 
-            formatMoney: function(value, decimals = 2) {
-                if (value === null || value === undefined) return "0,00";
+    formatMoney: function(value, decimals = 2) {
+        if (value === null || value === undefined) return "0,00";
 
-                let num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
+        let num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
+        let fixedDecimals = num.toFixed(decimals);
 
-                let fixedDecimals = num.toFixed(decimals);
+        let parts = fixedDecimals.split('.');
+        let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        let decimalPart = parts[1] || '00';
 
-                let parts = fixedDecimals.split('.');
-                let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                let decimalPart = parts[1] || '00';
+        return `${integerPart},${decimalPart}`;
+    },
 
-                return `${integerPart},${decimalPart}`;
-            },
+    formatUSD: function(value, decimals = 2) {
+        if (value === null || value === undefined) return "0.00";
 
-            formatUSD: function(value, decimals = 2) {
-                if (value === null || value === undefined) return "0.00";
+        let num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
+        let fixedDecimals = num.toFixed(decimals);
 
-                let num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
-                let fixedDecimals = num.toFixed(decimals);
+        let parts = fixedDecimals.split('.');
+        let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        let decimalPart = parts[1] || '00';
 
-                let parts = fixedDecimals.split('.');
-                let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                let decimalPart = parts[1] || '00';
+        return `${integerPart}.${decimalPart}`;
+    },
 
-                return `${integerPart}.${decimalPart}`;
-            }
-        };
+    formatPercentage: function(value, decimals = 2) {
+        if (value === null || value === undefined) return "0,00%";
+        
+        // Multiplicar por 100 para obter a porcentagem
+        const percentageValue = (typeof value === 'string' ? 
+                                parseFloat(value.replace(',', '.')) : value) * 100;
+        
+        let fixedDecimals = percentageValue.toFixed(decimals);
+        
+        let parts = fixedDecimals.split('.');
+        let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        let decimalPart = parts[1] || '00';
+        
+        return `${integerPart},${decimalPart}%`;
+    }
+};
 
         function atualizarFatoresFob() {
             let fobTotalGeral = 0;
@@ -1711,13 +1752,15 @@
                     quantidade
                 } = obterValoresBase(rowId);
                 const fobTotal = fobUnitario * quantidade;
-                const fatorPesoRow = parseFloat($(`#fator_peso-${rowId}`).val()) || 0;
+                const fatorPesoRow = MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
                 const fatorVlrFob_AX = parseFloat($(`#fator_valor_fob-${rowId}`).val()) || 0;
 
                 const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) * fatorPesoRow;
+                console.log(freteUsdInt)
                 const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
                 const thcRow = thc_capataziaBase * fatorPesoRow;
                 const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
+                console.log(fobTotal, fobTotalGeral)
                 const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeral, dolar);
 
                 const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
@@ -1818,7 +1861,10 @@
         }
 
         function calcularSeguro(fobTotal, fobGeral) {
-            const total = parseFloat($('#seguro_internacional').val());
+            if (fobGeral == 0) {
+                return 0
+            }
+            const total = MoneyUtils.parseMoney($('#seguro_internacional').val());
             return (total / fobGeral) * fobTotal;
         }
 
@@ -1828,16 +1874,31 @@
         }
 
         function calcularValorAduaneiro(fob, frete, acrescimo, seguro, thc, dolar) {
-            return fob + frete + acrescimo + seguro + (thc / dolar);
+            // Função para validar e converter valores
+            const parseSafe = (value, defaultValue = 0) => {
+                if (value === null || value === undefined) return defaultValue;
+                const num = Number(value);
+                return isNaN(num) ? defaultValue : num;
+            };
+
+            const safeFob = parseSafe(fob);
+            const safeFrete = parseSafe(frete);
+            const safeAcrescimo = parseSafe(acrescimo);
+            const safeSeguro = parseSafe(seguro);
+            const safeThc = parseSafe(thc);
+            const safeDolar = parseSafe(dolar, 1); // Default 1 para evitar divisão por zero
+
+            return safeFob + safeFrete + safeAcrescimo + safeSeguro +
+                (safeThc / (safeDolar || 1)); // Garantir que não divida por zero
         }
 
         function calcularImpostos(rowId, base) {
             return {
-                ii: $(`#ii_percent-${rowId}`).val() ? parseFloat($(`#ii_percent-${rowId}`).val()) / 100 : 0,
-                ipi: $(`#ipi_percent-${rowId}`).val() ? parseFloat($(`#ipi_percent-${rowId}`).val()) / 100 : 0,
-                pis: $(`#pis_percent-${rowId}`).val() ? parseFloat($(`#pis_percent-${rowId}`).val()) / 100 : 0,
-                cofins: $(`#cofins_percent-${rowId}`).val() ? parseFloat($(`#cofins_percent-${rowId}`).val()) / 100 : 0,
-                icms: $(`#icms_percent-${rowId}`).val() ? parseFloat($(`#icms_percent-${rowId}`).val()) / 100 : 0
+                ii: $(`#ii_percent-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#ii_percent-${rowId}`).val()) / 100 : 0,
+                ipi: $(`#ipi_percent-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#ipi_percent-${rowId}`).val()) / 100 : 0,
+                pis: $(`#pis_percent-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#pis_percent-${rowId}`).val()) / 100 : 0,
+                cofins: $(`#cofins_percent-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#cofins_percent-${rowId}`).val()) / 100 : 0,
+                icms: $(`#icms_percent-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#icms_percent-${rowId}`).val()) / 100 : 0
             };
         }
 
@@ -2118,7 +2179,7 @@
         <td>${select}</td>
         <td><input data-row="${newIndex}" type="text" step="1" class=" form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control " name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly id="item-${newIndex}" value="${newIndex + 1}"></td>
+        <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]"  id="item-${newIndex}" value=""></td>
         <td><input type="text" class=" form-control " readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
         <td><input type="text" class=" form-control " readonly name="produtos[${newIndex}][ncm]" id="ncm-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" step="1" class=" form-control" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
