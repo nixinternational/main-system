@@ -18,22 +18,7 @@ use Illuminate\Support\Facades\Http;
 class ProcessoController extends Controller
 {
 
-    private function parseModelFieldsFromModel($model)
-    {
-        foreach ($model->getAttributes() as $field => $value) {
 
-            if (!is_null($value) && is_numeric($value) && !in_array($field, [
-                'cotacao_frete_internacional',
-                'cotacao_seguro_internacional',
-                'cotacao_acrescimo_frete'
-
-            ])) {
-                $model->$field = $this->parseMoneyToFloat($value, 2);
-            }
-        }
-
-        return $model;
-    }
 
     public function updatecurrencies()
     {
@@ -155,6 +140,27 @@ class ProcessoController extends Controller
         $pdf = Pdf::loadView('processo.esboco', $dados);
         return $pdf->stream('esboco.pdf');
     }
+    private function parseModelFieldsFromModel($model)
+    {
+        foreach ($model->getAttributes() as $field => $value) {
+
+            if (!is_null($value) && is_numeric($value) && !in_array($field, [
+                'cotacao_frete_internacional',
+                'cotacao_seguro_internacional',
+                'cotacao_acrescimo_frete'
+            ])) {
+
+                // apenas transforma string numérica em float, sem truncar casas decimais
+                $model->$field = (float) $value;
+
+                // se quiser, pode controlar arredondamento só para exibição:
+                // $model->$field = round((float)$value, 7); // por exemplo, até 7 casas
+            }
+        }
+
+        return $model;
+    }
+
     public function edit($id)
     {
 
@@ -164,6 +170,7 @@ class ProcessoController extends Controller
         $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
         $productsClient = $catalogo->produtos;
         $dolar = self::getBid();
+
         $moedasSuportadas = self::buscarMoedasSuportadas();
         $produtos = [];
         foreach ($processo->processoProdutos as $produto) {
@@ -176,12 +183,13 @@ class ProcessoController extends Controller
     private function parseMoneyToFloat($value, int $decimals = 2)
     {
         if (is_null($value) || $value === '') return null;
-
-        // se vier com vírgula como decimal: "1.234,56"
+        //1.231,23123
+        //1231.23123
         if (str_contains($value, ',')) {
             $value = str_replace(['.', ','], ['', '.'], $value);
         }
-        return round((float) $value, $decimals);
+        // dump($value);
+        return (float) $value;
     }
     public function update(Request $request, $id)
     {
@@ -193,6 +201,7 @@ class ProcessoController extends Controller
                 $message = $errors->unique();
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
+
             $dadosProcesso = [
                 "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
                 "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
@@ -213,7 +222,7 @@ class ProcessoController extends Controller
                 'desconsolidacao' => $this->parseMoneyToFloat($request->desconsolidacao),
                 'isps_code' => $this->parseMoneyToFloat($request->isps_code),
                 'handling' => $this->parseMoneyToFloat($request->handling),
-                'capatazia' => $this->parseMoneyToFloat($request->capatazia),
+                'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
                 'afrmm' => $this->parseMoneyToFloat($request->afrmm),
                 'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
                 'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
@@ -233,7 +242,6 @@ class ProcessoController extends Controller
                 'data_moeda_seguro_internacional' => $request->data_moeda_seguro_internacional,
                 'data_moeda_acrescimo_frete' => $request->data_moeda_acrescimo_frete,
             ];
-
             Processo::where('id', $id)->update($dadosProcesso);
             $pesoLiquidoTotal = 0;
             if ($request->produtos  && count($request->produtos) > 0) {
@@ -245,8 +253,12 @@ class ProcessoController extends Controller
                 }
 
                 foreach ($request->produtos as $key => $produto) {
+                        
+
                     $pesoLiquidoTotal +=  isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
-                    ProcessoProduto::updateOrCreate(
+
+
+                    $processoProduto =   ProcessoProduto::updateOrCreate(
                         [
                             'id' => $produto['processo_produto_id'],
                             'processo_id' => $id ?? 0,

@@ -30,14 +30,15 @@ class UpdateCurrencies extends Command
     {
         $cacheKey = 'cotacoes_bids_' . now()->format('Y-m-d');
 
+        Cache::forget($cacheKey); // limpa antes de salvar de novo
+
         $resultado = Cache::remember($cacheKey, now()->endOfDay(), function () {
             $moedasSuportadas = $this->buscarMoedasSuportadas();
             $dataCotacao = $this->obterDataUtil();
             $resultado = [];
-
             foreach ($moedasSuportadas as $codigo => $nome) {
                 $resultado[$codigo] = $this->buscarCotacao($codigo, $nome, $dataCotacao);
-                usleep(100000); // respeita limites da API
+                usleep(100000);
             }
             return $resultado;
         });
@@ -54,7 +55,7 @@ class UpdateCurrencies extends Command
             $data->subDay();
         }
 
-        return $data->format('m-d-Y');
+        return $data->subDay()->format('m-d-Y');
     }
 
     private function buscarMoedasSuportadas(): array
