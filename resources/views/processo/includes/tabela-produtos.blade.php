@@ -509,14 +509,14 @@
 
                             <td>
                                 <input type="text" data-row="{{ $index }}"
-                                    class=" form-control moneyReal7" name="produtos[{{ $index }}][mva]"
+                                    class=" form-control percentage" name="produtos[{{ $index }}][mva]"
                                     id="mva-{{ $index }}"
                                     value="{{ $processoProduto->mva ? number_format($processoProduto->mva, 7, ',', '.') : '' }}">
                             </td>
 
                             <td>
                                 <input type="text" data-row="{{ $index }}"
-                                    class=" form-control moneyReal7" name="produtos[{{ $index }}][icms_st]"
+                                    class=" form-control percentage" name="produtos[{{ $index }}][icms_st]"
                                     id="icms_st-{{ $index }}"
                                     value="{{ $processoProduto->icms_st ? number_format($processoProduto->icms_st, 7, ',', '.') : '' }}">
                             </td>

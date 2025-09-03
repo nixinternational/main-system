@@ -509,13 +509,18 @@
                                 let vlrIcmsSt = 0;
                                 if (mva) {
                                     base_icms_st = totais.vlrTotalNfSemIcms * (1 + mva)
-                                    const icms_st = $(`#icms_st_percent-${rowId}`).val() ? MoneyUtils
+                                    const icms_st = $(`#icms_st-${rowId}`).val() ? MoneyUtils
                                         .parsePercentage($(
-                                            `#icms_st_percent-${rowId}`).val()) : 0;
+                                            `#icms_st-${rowId}`).val()) : 0;
+                                            
                                     if (icms_st) {
-                                        vlrIcmsSt = (base_icms_st * icms_st) - totais.vlrIcmsReduzido;
+                                        console.log([
+                                            base_icms_st , icms_st , vlrIcmsReduzido
+                                        ])
+                                        vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
                                     }
                                 }
+                                console.log(vlrIcmsSt)
                                 atualizarCampos(rowId, {
                                     pesoLiqUnit,
                                     fobTotal,
@@ -800,7 +805,7 @@
                     const icms_st = $(`#icms_st_percent-${rowId}`).val() ? MoneyUtils.parsePercentage($(
                         `#icms_st_percent-${rowId}`).val()) : 0;
                     if (icms_st) {
-                        vlrIcmsSt = (base_icms_st * icms_st) - totais.vlrIcmsReduzido;
+                        vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
                     }
                 }
 
@@ -972,10 +977,10 @@
             const vlrTotalNfComIcms = vlrTotalNfSemIcms + ($(`#valor_icms_st-${rowId}`).val() ? MoneyUtils.parseMoney($(
                 `#valor_icms_st-${rowId}`).val()) : 0);
             return {
-                vlrTotalProdutoNf,
-                vlrUnitProdutNf,
-                vlrTotalNfSemIcms,
-                vlrTotalNfComIcms
+                vlrTotalProdutoNf : vlrTotalProdutoNf ?? 0,
+                vlrUnitProdutNf : vlrUnitProdutNf ?? 0,
+                vlrTotalNfSemIcms : vlrTotalNfSemIcms ?? 0,
+                vlrTotalNfComIcms : vlrTotalNfComIcms ?? 0
             };
         }
 
@@ -1258,8 +1263,8 @@
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_total_nf]" id="valor_total_nf-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_total_nf_sem_icms_st]" id="valor_total_nf_sem_icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][base_icms_st]" id="base_icms_st-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" name="produtos[${newIndex}][mva]" id="mva-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" name="produtos[${newIndex}][icms_st]" id="icms_st-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class=" form-control percentage" name="produtos[${newIndex}][mva]" id="mva-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class=" form-control percentage" name="produtos[${newIndex}][icms_st]" id="icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_icms_st]" id="valor_icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_total_nf_com_icms_st]" id="valor_total_nf_com_icms_st-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fator_valor_fob]" id="fator_valor_fob-${newIndex}" value=""></td>
