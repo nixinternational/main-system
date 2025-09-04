@@ -136,8 +136,8 @@
                                INTERNACIONAL
                            </label>
                            <input
-                               value="{{ isset($processo->frete_internacional) ? number_format($processo->frete_internacional, 5, ',', '.') : '' }}"
-                               class="form-control moneyReal" name="frete_internacional" id="frete_internacional">
+                               value="{{ isset($processo->frete_internacional) ? number_format($processo->frete_internacional, 2, ',', '.') : '' }}"
+                               class="form-control moneyReal2" name="frete_internacional" id="frete_internacional">
                        </div>
                        <div class="col-sm-6 ">
 
@@ -161,14 +161,14 @@
                        <div class="col-sm-6 ">
 
                            <input readonly
-                               value="{{ isset($processo) ? number_format($processo->frete_internacional * ($dolar[$processo->frete_internacional_moeda]['compra'] ?? 0), 5, ',', '.') : '' }}"
+                               value="{{ isset($processo) ? number_format($processo->frete_internacional * ($dolar[$processo->frete_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
                                class="form-control moneyReal" name="frete_internacional_visualizacao"
                                id="frete_internacional_visualizacao">
                        </div>
                        <div class="col-sm-6 ">
 
                            <input
-                               value="{{ isset($processo->cotacao_frete_internacional) ? $processo->cotacao_frete_internacional : '' }}"
+                               value="{{ isset($processo->cotacao_frete_internacional) ? number_format($processo->cotacao_frete_internacional,4, ',', '.') : '' }}"
                                class="form-control cotacao" id="cotacao_frete_internacional"
                                name="cotacao_frete_internacional" style="margin: 0 auto">
 
@@ -194,8 +194,8 @@
                                INTERNACIONAL
                            </label>
                            <input
-                               value="{{ isset($processo->seguro_internacional) ? number_format($processo->seguro_internacional, 5, ',', '.') : '' }}"
-                               class="form-control moneyReal" name="seguro_internacional" id="seguro_internacional">
+                               value="{{ isset($processo->seguro_internacional) ? number_format($processo->seguro_internacional, 2, ',', '.') : '' }}"
+                               class="form-control moneyReal2" name="seguro_internacional" id="seguro_internacional">
                        </div>
                        <div class="col-sm-6 ">
                            <label class="text-white">MOEDA</label>
@@ -218,13 +218,13 @@
                        <div class="col-lg-6  ">
 
                            <input readonly
-                               value="{{ isset($processo) ? number_format($processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0), 5, ',', '.') : '' }}"
-                               class="form-control moneyReal" name="seguro_internacional_visualizacao"
+                               value="{{ isset($processo) ? number_format($processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0),2, ',', '.') : '' }}"
+                               class="form-control moneyReal2" name="seguro_internacional_visualizacao"
                                id="seguro_internacional_visualizacao">
                        </div>
                        <div class="col-sm-6 ">
                            <input
-                               value="{{ isset($processo->cotacao_seguro_internacional) ? $processo->cotacao_seguro_internacional : '' }}"
+                               value="{{ isset($processo->cotacao_seguro_internacional) ? number_format($processo->cotacao_seguro_internacional,4, ',', '.') : '' }}"
                                class="form-control cotacao" id="cotacao_seguro_internacional"
                                name="cotacao_seguro_internacional" style="margin: 0 auto">
                        </div>
@@ -247,7 +247,7 @@
                                DO
                                FRETE</label>
                            <input
-                               value="{{ isset($processo->acrescimo_frete) ? number_format($processo->acrescimo_frete, 5, ',', '.') : '' }}"
+                               value="{{ isset($processo->acrescimo_frete) ? number_format($processo->acrescimo_frete, 2, ',', '.') : '' }}"
                                class="form-control moneyReal" name="acrescimo_frete" id="acrescimo_frete">
                        </div>
                        <div class="col-6 ">
@@ -268,18 +268,18 @@
                    </div>
 
                    <div class="row ">
-
-
+{{-- 
+@dd(isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 2, ',', '.') : '' ) --}}
 
                        <div class="col-sm-6 ">
                            <input readonly
-                               value="{{ isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 5, ',', '.') : '' }}"
+                               value="{{ isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
                                class="form-control moneyReal" name="acrescimo_frete_visualizacao"
                                id="acrescimo_frete_visualizacao">
                        </div>
                        <div class="col-sm-6 ">
                            <input
-                               value="{{ isset($processo->cotacao_acrescimo_frete) ? $processo->cotacao_acrescimo_frete : '' }}"
+                               value="{{ isset($processo->cotacao_acrescimo_frete) ? number_format($processo->cotacao_acrescimo_frete,4, ',', '.') : '' }}"
                                style="margin: 0 auto" class="form-control cotacao" id="cotacao_acrescimo_frete"
                                name="cotacao_acrescimo_frete">
                        </div>

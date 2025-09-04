@@ -201,7 +201,7 @@ class ProcessoController extends Controller
                 $message = $errors->unique();
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
-
+            
             $dadosProcesso = [
                 "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
                 "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
@@ -235,9 +235,9 @@ class ProcessoController extends Controller
                 'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
                 'quantidade' => $this->parseMoneyToFloat($request->quantidade),
                 'especie' => $request->especie,
-                'cotacao_frete_internacional' => floatval($request->cotacao_frete_internacional),
-                'cotacao_seguro_internacional' => floatval($request->cotacao_seguro_internacional),
-                'cotacao_acrescimo_frete' => floatval($request->cotacao_acrescimo_frete),
+                'cotacao_frete_internacional' => $this->parseMoneyToFloat($request->cotacao_frete_internacional),
+                'cotacao_seguro_internacional' => $this->parseMoneyToFloat($request->cotacao_seguro_internacional),
+                'cotacao_acrescimo_frete' => $this->parseMoneyToFloat($request->cotacao_acrescimo_frete),
                 'data_moeda_frete_internacional' => $request->data_moeda_frete_internacional,
                 'data_moeda_seguro_internacional' => $request->data_moeda_seguro_internacional,
                 'data_moeda_acrescimo_frete' => $request->data_moeda_acrescimo_frete,

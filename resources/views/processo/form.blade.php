@@ -271,6 +271,53 @@
                     $(this).val('');
                 }
             });
+            // Dinheiro com 7 casas decimais
+            $('.moneyReal2').on('blur', function() {
+                let val = $(this).val();
+                if (val) {
+                    val = val.trim().replace('%', '').trim();
+                    if (val.includes(',')) {
+                        val = val.replace(/\./g, '').replace(',', '.');
+                    } else {
+                        val = val.replace(',', '.');
+                    }
+                    let numero = parseFloat(val);
+                    if (!isNaN(numero)) {
+                        let formatado = numero.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                        $(this).val(formatado);
+                    } else {
+                        $(this).val('');
+                    }
+                } else {
+                    $(this).val('');
+                }
+            });
+            $('.cotacao').on('blur', function() {
+                let val = $(this).val();
+                if (val) {
+                    val = val.trim().replace('%', '').trim();
+                    if (val.includes(',')) {
+                        val = val.replace(/\./g, '').replace(',', '.');
+                    } else {
+                        val = val.replace(',', '.');
+                    }
+                    let numero = parseFloat(val);
+                    if (!isNaN(numero)) {
+                        let formatado = numero.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 4,
+                            maximumFractionDigits: 4
+                        });
+                        $(this).val(formatado);
+                    } else {
+                        $(this).val('');
+                    }
+                } else {
+                    $(this).val('');
+                }
+            });
 
             // Dinheiro com 7 casas decimais
             $('.moneyReal7').on('blur', function() {
@@ -377,11 +424,11 @@
 
             if (codigoMoeda && dolar[codigoMoeda] && automatic) {
                 let convertido = valor * (dolar[codigoMoeda].venda);
-                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido));
+                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido,2));
             } else if (codigoMoeda && dolar[codigoMoeda] && !automatic) {
-                let taxa = parseFloat($(`#cotacao_${inputId}`).val().replace(',', '.'))
+                let taxa = MoneyUtils.parseMoney($(`#cotacao_${inputId}`).val().replace(',', '.'))
                 let convertido = valor * taxa;
-                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido));
+                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 4));
             } else {
                 $(`#${spanId}`).val(0);
             }
@@ -398,14 +445,13 @@
 
             if (codigoMoeda && dolar[codigoMoeda]) {
                 let convertido = dolar[codigoMoeda].venda;
-                $(`#${spanId}`).val(convertido);
+                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 4));
 
                 const data = new Date(dolar[codigoMoeda].data);
 
                 const formatada = data.getFullYear() + '-' +
-                    String(data.getMonth() + 1).padStart(5, '0') + '-' +
-                    String(data.getDate() + 1).padStart(5, '0');
-
+                    String(data.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(data.getDate() + 1).padStart(2, '0');
 
                 $(`#data_moeda_${inputId}`).val(formatada);
 
@@ -465,7 +511,7 @@
                                 const moedasOBject = JSON.parse($('#dolarHoje').val())
                                 const moedaDolar = moedasOBject['USD'].venda ?? $(
                                     `#cotacao_frete_internacional`).val().replace(',', '.')
-                                const dolar = parseFloat(moedaDolar);
+                                const dolar = MoneyUtils.parseMoney(moedaDolar);
                                 atualizarFatoresFob();
                                 atualizarTotaisGlobais(fobTotalGeral, dolar);
 
@@ -512,10 +558,10 @@
                                     const icms_st = $(`#icms_st-${rowId}`).val() ? MoneyUtils
                                         .parsePercentage($(
                                             `#icms_st-${rowId}`).val()) : 0;
-                                            
+
                                     if (icms_st) {
                                         console.log([
-                                            base_icms_st , icms_st , vlrIcmsReduzido
+                                            base_icms_st, icms_st, vlrIcmsReduzido
                                         ])
                                         vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
                                     }
@@ -685,7 +731,6 @@
 
             formatMoney: function(value, decimals = 6) {
                 if (value === null || value === undefined) return "0,000000";
-
                 let num = typeof value === 'string' ?
                     parseFloat(value.replace(',', '.')) : value;
 
@@ -731,7 +776,7 @@
 
             const moedasOBject = JSON.parse($('#dolarHoje').val())
             const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.')
-            const dolar = parseFloat(moedaDolar);
+            const dolar = MoneyUtils.parseMoney(moedaDolar);
             $('#fobTotalProcessoReal').text(MoneyUtils.formatMoney(fobTotalGeral * dolar));
         }
 
@@ -739,7 +784,7 @@
             const rows = $('#productsBody tr');
             const moedasOBject = JSON.parse($('#dolarHoje').val());
             const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.')
-            const dolar = parseFloat(moedaDolar);
+            const dolar = MoneyUtils.parseMoney(moedaDolar);
             const totalPesoLiq = calcularPesoTotal();
             const fobTotalGeral = calcularFobTotalGeral();
             const taxaSisComex = calcularTaxaSiscomex(rows.length);
@@ -977,10 +1022,10 @@
             const vlrTotalNfComIcms = vlrTotalNfSemIcms + ($(`#valor_icms_st-${rowId}`).val() ? MoneyUtils.parseMoney($(
                 `#valor_icms_st-${rowId}`).val()) : 0);
             return {
-                vlrTotalProdutoNf : vlrTotalProdutoNf ?? 0,
-                vlrUnitProdutNf : vlrUnitProdutNf ?? 0,
-                vlrTotalNfSemIcms : vlrTotalNfSemIcms ?? 0,
-                vlrTotalNfComIcms : vlrTotalNfComIcms ?? 0
+                vlrTotalProdutoNf: vlrTotalProdutoNf ?? 0,
+                vlrUnitProdutNf: vlrUnitProdutNf ?? 0,
+                vlrTotalNfSemIcms: vlrTotalNfSemIcms ?? 0,
+                vlrTotalNfComIcms: vlrTotalNfComIcms ?? 0
             };
         }
 
@@ -1031,7 +1076,7 @@
         function atualizarFatoresFob() {
             const moedasOBject = JSON.parse($('#dolarHoje').val())
             const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.')
-            const dolar = parseFloat(moedaDolar);
+            const dolar = MoneyUtils.parseMoney(moedaDolar);
             const taxaSiscomex = calcularTaxaSiscomex($('#productsBody tr').length);
 
             const dadosFob = []; // cada item = { rowId, fobTotal }
