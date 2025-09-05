@@ -368,7 +368,29 @@
                     $(this).val('');
                 }
             });
-
+    $('.percentage2').on('blur', function() {
+                let val = $(this).val();
+                if (val) {
+                    val = val.trim().replace('%', '').trim();
+                    if (val.includes(',')) {
+                        val = val.replace(/\./g, '').replace(',', '.');
+                    } else {
+                        val = val.replace(',', '.');
+                    }
+                    let numero = parseFloat(val);
+                    if (!isNaN(numero)) {
+                        let formatado = numero.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                        $(this).val(formatado + ' %');
+                    } else {
+                        $(this).val('');
+                    }
+                } else {
+                    $(this).val('');
+                }
+            });
             $('.select2').select2({
                 width: '100%'
             });
@@ -424,7 +446,7 @@
 
             if (codigoMoeda && dolar[codigoMoeda] && automatic) {
                 let convertido = valor * (dolar[codigoMoeda].venda);
-                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido,2));
+                $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 2));
             } else if (codigoMoeda && dolar[codigoMoeda] && !automatic) {
                 let taxa = MoneyUtils.parseMoney($(`#cotacao_${inputId}`).val().replace(',', '.'))
                 let convertido = valor * taxa;
@@ -511,6 +533,7 @@
                                 const moedasOBject = JSON.parse($('#dolarHoje').val())
                                 const moedaDolar = moedasOBject['USD'].venda ?? $(
                                     `#cotacao_frete_internacional`).val().replace(',', '.')
+
                                 const dolar = MoneyUtils.parseMoney(moedaDolar);
                                 atualizarFatoresFob();
                                 atualizarTotaisGlobais(fobTotalGeral, dolar);
@@ -566,7 +589,7 @@
                                         vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
                                     }
                                 }
-                                console.log(vlrIcmsSt)
+                                console.log(fobTotal)
                                 atualizarCampos(rowId, {
                                     pesoLiqUnit,
                                     fobTotal,
@@ -716,9 +739,14 @@
                 return `${integerPart},${decimalPart}%`;
             },
             parseMoney: function(value) {
-                if (!value || value === "") return 0;
+                if (value === null || value === undefined || value === "") return 0;
 
-                // Remover formatação completa
+                // Se já for número, retorna direto
+                if (typeof value === "number") {
+                    return value;
+                }
+
+                // Se for string, trata a formatação
                 let cleanValue = value.toString()
                     .replace(/\./g, '') // Remove todos os pontos
                     .replace(/,/g, '.'); // Substitui vírgula por ponto
@@ -1032,6 +1060,7 @@
         function atualizarCampos(rowId, valores) {
             $(`#peso_liquido_unitario-${rowId}`).val(valores.pesoLiqUnit);
             $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal));
+            console.log([valores.fobTotal, valores.dolar])
             $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal * valores.dolar));
             $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt));
             $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt * valores.dolar));
@@ -1285,12 +1314,12 @@
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][thc_brl]" id="thc_brl-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_aduaneiro_usd]" id="valor_aduaneiro_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_aduaneiro_brl]" id="valor_aduaneiro_brl-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" name="produtos[${newIndex}][ii_percent]" id="ii_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" name="produtos[${newIndex}][ipi_percent]" id="ipi_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" name="produtos[${newIndex}][pis_percent]" id="pis_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" name="produtos[${newIndex}][cofins_percent]" id="cofins_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" name="produtos[${newIndex}][icms_percent]" id="icms_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][icms_reduzido_percent]" id="icms_reduzido_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][ii_percent]" id="ii_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][ipi_percent]" id="ipi_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][pis_percent]" id="pis_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][cofins_percent]" id="cofins_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][icms_percent]" id="icms_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" readonly name="produtos[${newIndex}][icms_reduzido_percent]" id="icms_reduzido_percent-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][reducao]" id="reducao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_ii]" id="valor_ii-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][base_ipi]" id="base_ipi-${newIndex}" value=""></td>

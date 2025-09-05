@@ -334,7 +334,7 @@
 
                             <td>
                                 <input data-row="{{ $index }}" type="text"
-                                    class=" form-control percentage"
+                                    class=" form-control percentage2"
                                     name="produtos[{{ $index }}][ii_percent]"
                                     id="ii_percent-{{ $index }}"
                                     value="{{ $processoProduto->ii_percent ? number_format($processoProduto->ii_percent, 7, ',', '.') : '' }}">
@@ -342,7 +342,7 @@
 
                             <td>
                                 <input data-row="{{ $index }}" type="text"
-                                    class=" form-control percentage"
+                                    class=" form-control percentage2"
                                     name="produtos[{{ $index }}][ipi_percent]"
                                     id="ipi_percent-{{ $index }}"
                                     value="{{ $processoProduto->ipi_percent ? number_format($processoProduto->ipi_percent, 7, ',', '.') : '' }}">
@@ -350,7 +350,7 @@
 
                             <td>
                                 <input data-row="{{ $index }}" type="text"
-                                    class=" form-control percentage"
+                                    class=" form-control percentage2"
                                     name="produtos[{{ $index }}][pis_percent]"
                                     id="pis_percent-{{ $index }}"
                                     value="{{ $processoProduto->pis_percent ? number_format($processoProduto->pis_percent, 7, ',', '.') : '' }}">
@@ -358,7 +358,7 @@
 
                             <td>
                                 <input data-row="{{ $index }}" type="text"
-                                    class=" form-control percentage"
+                                    class=" form-control percentage2"
                                     name="produtos[{{ $index }}][cofins_percent]"
                                     id="cofins_percent-{{ $index }}"
                                     value="{{ $processoProduto->cofins_percent ? number_format($processoProduto->cofins_percent, 7, ',', '.') : '' }}">
@@ -366,7 +366,7 @@
 
                             <td>
                                 <input data-row="{{ $index }}" type="text"
-                                    class=" form-control percentage"
+                                    class=" form-control percentage2"
                                     name="produtos[{{ $index }}][icms_percent]"
                                     id="icms_percent-{{ $index }}"
                                     value="{{ $processoProduto->icms_percent ? number_format($processoProduto->icms_percent, 7, ',', '.') : '' }}">
@@ -374,7 +374,7 @@
 
                             <td>
                                 <input data-row="{{ $index }}" type="text"
-                                    class=" form-control percentage" readonly
+                                    class=" form-control percentage2" readonly
                                     name="produtos[{{ $index }}][icms_reduzido_percent]"
                                     id="icms_reduzido_percent-{{ $index }}"
                                     value="{{ $processoProduto->icms_reduzido_percent ? number_format($processoProduto->icms_reduzido_percent, 7, ',', '.') : '' }}">
