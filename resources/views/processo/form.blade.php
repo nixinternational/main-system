@@ -368,7 +368,7 @@
                     $(this).val('');
                 }
             });
-    $('.percentage2').on('blur', function() {
+            $('.percentage2').on('blur', function() {
                 let val = $(this).val();
                 if (val) {
                     val = val.trim().replace('%', '').trim();
@@ -502,12 +502,14 @@
             $(document).on('keyup',
                 '#productsBody input, #productsBody select, #productsBody textarea, #productsBody .form-control',
                 function(e) {
+                    console.log(!initialInputs.has(e.target))
                     if (!initialInputs.has(e.target)) {
                         return; // Ignora inputs criados dinamicamente
                     }
-
                     $('#avisoProcessoAlterado').removeClass('d-none');
                     const rowId = $(this).data('row');
+
+                    console.log('alterado')
                     if ($(`#produto_id-${rowId}`).val()) {
                         try {
                             const nome = $(this).attr('name');
@@ -622,6 +624,7 @@
                     }
 
                 });
+
 
 
 
@@ -1374,10 +1377,8 @@
                 width: '100%'
             });
             $('input[data-row="' + newIndex + '"], select[data-row="' + newIndex + '"]').trigger('change');
-            $('.moneyReal').mask('#.##0,00', {
-                reverse: true,
-                placeholder: "",
-                maxlength: false
+            $(`#row-${newIndex} input, #row-${newIndex} select, #row-${newIndex} textarea`).each(function() {
+                initialInputs.add(this); // Adiciona cada novo elemento ao Set
             });
         });
 
