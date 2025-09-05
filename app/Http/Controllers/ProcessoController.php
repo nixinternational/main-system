@@ -164,20 +164,23 @@ class ProcessoController extends Controller
     public function edit($id)
     {
 
+        try {
+            $processo =  $this->parseModelFieldsFromModel(Processo::findOrFail($id));
+            $clientes = Cliente::select(['id', 'nome'])->get();
+            $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
+            $productsClient = $catalogo->produtos;
+            $dolar = self::getBid();
 
-        $processo =  $this->parseModelFieldsFromModel(Processo::find($id));
-        $clientes = Cliente::select(['id', 'nome'])->get();
-        $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
-        $productsClient = $catalogo->produtos;
-        $dolar = self::getBid();
-
-        $moedasSuportadas = self::buscarMoedasSuportadas();
-        $produtos = [];
-        foreach ($processo->processoProdutos as $produto) {
-            $produtos[] = $this->parseModelFieldsFromModel($produto);
+            $moedasSuportadas = self::buscarMoedasSuportadas();
+            $produtos = [];
+            foreach ($processo->processoProdutos as $produto) {
+                $produtos[] = $this->parseModelFieldsFromModel($produto);
+            }
+            $processoProdutos = $produtos;
+            return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos', 'moedasSuportadas'));
+        } catch (Exception $e) {
+            return redirect(route('processo.index'))->with('messages', ['error' => ['Processo não encontrado!']]);
         }
-        $processoProdutos = $produtos;
-        return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos', 'moedasSuportadas'));
     }
 
     private function parseMoneyToFloat($value, int $decimals = 2)
@@ -201,7 +204,7 @@ class ProcessoController extends Controller
                 $message = $errors->unique();
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
-            
+
             $dadosProcesso = [
                 "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
                 "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
@@ -214,6 +217,7 @@ class ProcessoController extends Controller
                 "codigo_interno" => $request->codigo_interno ?? $id,
                 "descricao" => $request->descricao,
                 "canal" => $request->canal,
+                'multa' => isset($request->multa) ? $this->parseMoneyToFloat($request->multa) : null,
                 "status" => $request->status,
                 "data_desembaraco_inicio" => $request->data_desembaraco_inicio,
                 "data_desembaraco_fim" => $request->data_desembaraco_fim,
@@ -253,7 +257,7 @@ class ProcessoController extends Controller
                 }
 
                 foreach ($request->produtos as $key => $produto) {
-                        
+
 
                     $pesoLiquidoTotal +=  isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
 

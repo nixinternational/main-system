@@ -77,33 +77,33 @@
                <div class="col-md-2">
                    <label for="thc_capatazia" class="form-label">THC/CAPATAZIA (R$)</label>
                    <input
-                       value="{{ isset($processo->thc_capatazia) ? number_format($processo->thc_capatazia, 5, ',', '.') : '' }}"
+                       value="{{ isset($processo->thc_capatazia) ? number_format($processo->thc_capatazia, 2, ',', '.') : '' }}"
                        class="form-control moneyReal" name="thc_capatazia" id="thc_capatazia">
                </div>
 
                <div class="col-md-2">
                    <label for="peso_bruto" class="form-label">PESO BRUTO</label>
                    <input type="text"
-                       value="{{ isset($processo->peso_bruto) ? number_format($processo->peso_bruto, 5, ',', '.') : '' }}"
+                       value="{{ isset($processo->peso_bruto) ? number_format($processo->peso_bruto, 4, ',', '.') : '' }}"
                        class="form-control moneyReal" name="peso_bruto" id="peso_bruto">
                </div>
                <div class="col-md-2">
                    <label for="peso_bruto" class="form-label">PESO LÍQUIDO</label>
                    <input type="text"
-                       value="{{ isset($processo->peso_liquido) ? number_format($processo->peso_liquido, 5, ',', '.') : '' }}"
+                       value="{{ isset($processo->peso_liquido) ? number_format($processo->peso_liquido, 4, ',', '.') : '' }}"
                        class="form-control moneyReal" readonly>
                </div>
                <div class="col-md-2">
                    <label for="multa" class="form-label">MULTA</label>
                    <input type="text"
-                       value="{{ isset($processo->multa) ? number_format($processo->multa, 5, ',', '.') : '' }}"
-                       class="form-control moneyReal" name="multa" id="multa">
+                       value="{{ isset($processo->multa) ? number_format($processo->multa, 2, ',', '.') : '' }}"
+                       class="form-control moneyReal2" name="multa" id="multa">
                </div>
                <div class="col-md-2">
                    <label for="multa" class="form-label">QUANTIDADE</label>
                    <input type="text"
-                       value="{{ isset($processo->quantidade) ? number_format($processo->quantidade, 5, ',', '.') : '' }}"
-                       class="form-control" name="quantidade" id="quantidade">
+                       value="{{ isset($processo->quantidade) ? number_format($processo->quantidade, 4, ',', '.') : '' }}"
+                       class="form-control moneyReal" name="quantidade" id="quantidade">
                </div>
                <div class="col-md-2">
                    <label for="multa" class="form-label">ESPÉCIE</label>
@@ -116,15 +116,20 @@
 
            </div>
 
-           <div class="" style="margin: 2% 0; height:1px; background-color:black; width: 100%"></div>
+           <div class="" style="margin: 1.5% 0; height:1px; background-color:black; width: 100%"></div>
 
-           <div class="d-flex align-center">
-               <h4 class="mr-2">Cotações</h4> <button class="btn btn-success" type="button"
-                   id="atualizarCotacoes">Atualizar
-                   cotações</button>
-               <a href="{{ route('currency.update') }}" class="btn btn-primary">
-                   Atualizar moedas
-               </a>
+           <div class="d-flex align-center flex-column">
+               <h4 class="mr-2">Cotações</h4>
+               <div>
+                   <button class="btn btn-success " style="margin-right: 10px" type="button"
+                       id="atualizarCotacoes">Atualizar
+                       cotações
+                   </button>
+
+                   <a href="{{ route('currency.update') }}" class="btn btn-primary">
+                       Atualizar moedas
+                   </a>
+               </div>
 
            </div>
            <div class=" mt-3" style="display: flex; gap:10px">
@@ -168,7 +173,7 @@
                        <div class="col-sm-6 ">
 
                            <input
-                               value="{{ isset($processo->cotacao_frete_internacional) ? number_format($processo->cotacao_frete_internacional,4, ',', '.') : '' }}"
+                               value="{{ isset($processo->cotacao_frete_internacional) ? number_format($processo->cotacao_frete_internacional, 4, ',', '.') : '' }}"
                                class="form-control cotacao" id="cotacao_frete_internacional"
                                name="cotacao_frete_internacional" style="margin: 0 auto">
 
@@ -218,13 +223,13 @@
                        <div class="col-lg-6  ">
 
                            <input readonly
-                               value="{{ isset($processo) ? number_format($processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0),2, ',', '.') : '' }}"
+                               value="{{ isset($processo) ? number_format($processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
                                class="form-control moneyReal2" name="seguro_internacional_visualizacao"
                                id="seguro_internacional_visualizacao">
                        </div>
                        <div class="col-sm-6 ">
                            <input
-                               value="{{ isset($processo->cotacao_seguro_internacional) ? number_format($processo->cotacao_seguro_internacional,4, ',', '.') : '' }}"
+                               value="{{ isset($processo->cotacao_seguro_internacional) ? number_format($processo->cotacao_seguro_internacional, 4, ',', '.') : '' }}"
                                class="form-control cotacao" id="cotacao_seguro_internacional"
                                name="cotacao_seguro_internacional" style="margin: 0 auto">
                        </div>
@@ -268,7 +273,7 @@
                    </div>
 
                    <div class="row ">
-{{-- 
+                       {{-- 
 @dd(isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 2, ',', '.') : '' ) --}}
 
                        <div class="col-sm-6 ">
@@ -279,7 +284,7 @@
                        </div>
                        <div class="col-sm-6 ">
                            <input
-                               value="{{ isset($processo->cotacao_acrescimo_frete) ? number_format($processo->cotacao_acrescimo_frete,4, ',', '.') : '' }}"
+                               value="{{ isset($processo->cotacao_acrescimo_frete) ? number_format($processo->cotacao_acrescimo_frete, 4, ',', '.') : '' }}"
                                style="margin: 0 auto" class="form-control cotacao" id="cotacao_acrescimo_frete"
                                name="cotacao_acrescimo_frete">
                        </div>
