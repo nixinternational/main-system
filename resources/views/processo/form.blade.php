@@ -1066,7 +1066,6 @@
             $(`#valor_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSt));
 
 
-            vlrIcmsSt
             atualizarFatoresFob()
             // $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.fatorVlrFob_AX));
             // $(`#fator_tx_siscomex-${rowId}`).val(valores.fatorTaxaSiscomex_AY);
