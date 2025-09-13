@@ -39,7 +39,7 @@ class ClienteController extends Controller
     {
         $bancosNix = BancoNix::all();
         $tipoDocumentos = TipoDocumento::all();
-        return view('cliente.form', compact('bancosNix','tipoDocumentos'));
+        return view('cliente.form', compact('bancosNix', 'tipoDocumentos'));
     }
 
     /**
@@ -90,8 +90,6 @@ class ClienteController extends Controller
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível cadastrar o cliente!']])->withInput($request->all());
         }
-
-
     }
 
     /**
@@ -100,19 +98,17 @@ class ClienteController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
-    {
-    }
+    public function show($id) {}
 
 
     public function edit($id)
     {
         try {
             $bancosNix = BancoNix::all();
-            $bancosCliente = BancoCliente::where('cliente_id',$id)->get();
+            $bancosCliente = BancoCliente::where('cliente_id', $id)->get();
             $cliente = Cliente::findOrFail($id);
             $tipoDocumentos = TipoDocumento::all();
-            return view('cliente.form', compact('cliente', 'bancosNix','bancosCliente','tipoDocumentos'));
+            return view('cliente.form', compact('cliente', 'bancosNix', 'bancosCliente', 'tipoDocumentos'));
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possícel editar a cliente!']]);
         }
@@ -184,7 +180,6 @@ class ClienteController extends Controller
             ];
             $cliente->update($clientData);
             return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Cliente atualizado com sucesso!']]);
-
         } catch (\Exception $e) {
             return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cliente!!']])->withInput($request->all());
         }
@@ -258,7 +253,6 @@ class ClienteController extends Controller
             ->whereIn('email', $emailsRemovidos)
             ->delete();
         return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Emails atualizados com sucesso!']]);
-
     }
     public function updateClientAduanas(Request $request, $id)
     {
@@ -280,133 +274,134 @@ class ClienteController extends Controller
         }
 
         $aduanasExistentes = ClienteAduana::where('cliente_id', $id)
-        ->get()
-        ->map(function ($aduana) {
-            return [
-                'urf_despacho' => $aduana->urf_despacho,
-                'modalidade' => $aduana->modalidade,
-            ];
-        });
-    
-    $novasAduanas = [];
-    $aduanasParaRemover = $aduanasExistentes->toArray();
-    
-    foreach ($request->urf_despacho as $index => $urf_despacho) {
-        $modalidade = $request->modalidades[$index] ?? null;
-    
-        if (empty($urf_despacho)) {
-            continue;
-        }
-    
-        $novaEntrada = [
-            'cliente_id' => $id,
-            'urf_despacho' => $urf_despacho,
-            'modalidade' => $modalidade,
-        ];
-    
-        $existe = $aduanasExistentes->contains(function ($aduana) use ($urf_despacho, $modalidade) {
-            return $aduana['urf_despacho'] === $urf_despacho && $aduana['modalidade'] === $modalidade;
-        });
-    
-        if (!$existe) {
-            $novasAduanas[] = $novaEntrada;
-        }
-    
-        // Remove dos que podem ser excluídos
-        $aduanasParaRemover = array_filter($aduanasParaRemover, function ($aduana) use ($urf_despacho, $modalidade) {
-            return !($aduana['urf_despacho'] === $urf_despacho && $aduana['modalidade'] === $modalidade);
-        });
-    }
-    
-    // Insere novas aduanas
-    if (!empty($novasAduanas)) {
-        ClienteAduana::insert($novasAduanas);
-    }
-    
-    // Remove aduanas que não estão mais presentes
-    foreach ($aduanasParaRemover as $aduana) {
-        ClienteAduana::where('cliente_id', $id)
-            ->where('urf_despacho', $aduana['urf_despacho'])
-            ->where('modalidade', $aduana['modalidade'])
-            ->delete();
-    }
-    
-    return redirect(route('cliente.edit', $id))
-        ->with('messages', ['success' => ['Aduanas atualizadas com sucesso!']]);
-    
+            ->get()
+            ->map(function ($aduana) {
+                return [
+                    'urf_despacho' => $aduana->urf_despacho,
+                    'modalidade' => $aduana->modalidade,
+                ];
+            });
 
+        $novasAduanas = [];
+        $aduanasParaRemover = $aduanasExistentes->toArray();
+
+        foreach ($request->urf_despacho as $index => $urf_despacho) {
+            $modalidade = $request->modalidades[$index] ?? null;
+
+            if (empty($urf_despacho)) {
+                continue;
+            }
+
+            $novaEntrada = [
+                'cliente_id' => $id,
+                'urf_despacho' => $urf_despacho,
+                'modalidade' => $modalidade,
+            ];
+
+            $existe = $aduanasExistentes->contains(function ($aduana) use ($urf_despacho, $modalidade) {
+                return $aduana['urf_despacho'] === $urf_despacho && $aduana['modalidade'] === $modalidade;
+            });
+
+            if (!$existe) {
+                $novasAduanas[] = $novaEntrada;
+            }
+
+            // Remove dos que podem ser excluídos
+            $aduanasParaRemover = array_filter($aduanasParaRemover, function ($aduana) use ($urf_despacho, $modalidade) {
+                return !($aduana['urf_despacho'] === $urf_despacho && $aduana['modalidade'] === $modalidade);
+            });
+        }
+
+        // Insere novas aduanas
+        if (!empty($novasAduanas)) {
+            ClienteAduana::insert($novasAduanas);
+        }
+
+        // Remove aduanas que não estão mais presentes
+        foreach ($aduanasParaRemover as $aduana) {
+            ClienteAduana::where('cliente_id', $id)
+                ->where('urf_despacho', $aduana['urf_despacho'])
+                ->where('modalidade', $aduana['modalidade'])
+                ->delete();
+        }
+
+        return redirect(route('cliente.edit', $id))
+            ->with('messages', ['success' => ['Aduanas atualizadas com sucesso!']]);
     }
 
 
 
     public function updateClientResponsaveis(Request $request, $id)
     {
+        try {
 
-        if (count($request->nomes) == 0 && count($request->emails) == 0 && count($request->departamento) == 0 && count($request->telefone) == 0) {
-
-
-            return back()->with('messages', ['error' => ['Não é possível inserir um registro vazio']])->withInput($request->all());
-        }
-
-        // Obtendo os responsáveis existentes no banco
-        $responsaveisExistentes = ClienteResponsavelProcesso::where('cliente_id', $id)
-            ->get(['id', 'nome', 'telefone', 'email', 'departamento'])
-            ->keyBy('nome')
-            ->toArray();
-
-        $responsaveisEnviados = [];
-        foreach ($request->nomes as $index => $nome) {
-            if ($nome) {
-                $responsaveisEnviados[$nome] = [
-                    'telefone' => $request->telefones[$index] ?? null,
-                    'email' => $request->emails[$index] ?? null,
-                    'departamento' => $request->departamentos[$index] ?? null,
-                ];
-            }
-        }
-
-        // Atualizando ou inserindo responsáveis
-        foreach ($responsaveisEnviados as $nome => $dados) {
-            if (isset($responsaveisExistentes[$nome])) {
-                $responsavel = $responsaveisExistentes[$nome];
-
-                // Verifica se houve mudança nos dados
-                if (
-                    $responsavel['telefone'] !== $dados['telefone'] ||
-                    $responsavel['email'] !== $dados['email'] ||
-                    $responsavel['departamento'] !== $dados['departamento']
-                ) {
-                    ClienteResponsavelProcesso::where('id', $responsavel['id'])
-                        ->update([
-                            'telefone' => $dados['telefone'],
-                            'email' => $dados['email'],
-                            'departamento' => $dados['departamento'],
-                        ]);
+            if ($request->nomes) {
+                if (count($request->nomes) == 0 && count($request->emails) == 0 && count($request->departamento) == 0 && count($request->telefone) == 0) {
+                    return back()->with('messages', ['error' => ['Não é possível inserir um registro vazio']])->withInput($request->all());
                 }
-            } else {
-                ClienteResponsavelProcesso::create([
-                    'cliente_id' => $id,
-                    'nome' => $nome,
-                    'telefone' => $dados['telefone'],
-                    'email' => $dados['email'],
-                    'departamento' => $dados['departamento'],
-                ]);
             }
+
+            // Obtendo os responsáveis existentes no banco
+            $responsaveisExistentes = ClienteResponsavelProcesso::where('cliente_id', $id)
+                ->get(['id', 'nome', 'telefone', 'email', 'departamento'])
+                ->keyBy('nome')
+                ->toArray();
+
+            $responsaveisEnviados = [];
+            foreach ($request->nomes as $index => $nome) {
+                if ($nome) {
+                    $responsaveisEnviados[$nome] = [
+                        'telefone' => $request->telefones[$index] ?? null,
+                        'email' => $request->emails[$index] ?? null,
+                        'departamento' => $request->departamentos[$index] ?? null,
+                    ];
+                }
+            }
+
+            // Atualizando ou inserindo responsáveis
+            foreach ($responsaveisEnviados as $nome => $dados) {
+                if (isset($responsaveisExistentes[$nome])) {
+                    $responsavel = $responsaveisExistentes[$nome];
+
+                    // Verifica se houve mudança nos dados
+                    if (
+                        $responsavel['telefone'] !== $dados['telefone'] ||
+                        $responsavel['email'] !== $dados['email'] ||
+                        $responsavel['departamento'] !== $dados['departamento']
+                    ) {
+                        ClienteResponsavelProcesso::where('id', $responsavel['id'])
+                            ->update([
+                                'telefone' => $dados['telefone'],
+                                'email' => $dados['email'],
+                                'departamento' => $dados['departamento'],
+                            ]);
+                    }
+                } else {
+                    ClienteResponsavelProcesso::create([
+                        'cliente_id' => $id,
+                        'nome' => $nome,
+                        'telefone' => $dados['telefone'],
+                        'email' => $dados['email'],
+                        'departamento' => $dados['departamento'],
+                    ]);
+                }
+            }
+
+            // Removendo responsáveis que não estão mais na lista enviada
+            $nomesRemovidos = array_diff(array_keys($responsaveisExistentes), array_keys($responsaveisEnviados));
+
+            $registrosParaExcluir = ClienteResponsavelProcesso::where('cliente_id', $id)
+                ->whereIn('nome', $nomesRemovidos)
+                ->get();
+
+            foreach ($registrosParaExcluir as $registro) {
+                $registro->delete(); // Ou $registro->forceDelete(); se precisar remover permanentemente
+            }
+
+            return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Responsáveis atualizados com sucesso!']]);
+        } catch (\Exception $e) {
+            dd($e);
         }
-
-        // Removendo responsáveis que não estão mais na lista enviada
-        $nomesRemovidos = array_diff(array_keys($responsaveisExistentes), array_keys($responsaveisEnviados));
-
-        $registrosParaExcluir = ClienteResponsavelProcesso::where('cliente_id', $id)
-            ->whereIn('nome', $nomesRemovidos)
-            ->get();
-
-        foreach ($registrosParaExcluir as $registro) {
-            $registro->delete(); // Ou $registro->forceDelete(); se precisar remover permanentemente
-        }
-
-        return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Responsáveis atualizados com sucesso!']]);
-
     }
     public function updateClientEspecificidades($id, Request $request)
     {
@@ -417,7 +412,7 @@ class ClienteController extends Controller
             $clientData = [
                 'credenciamento_radar_inicial' => $request->credenciamento_radar_inicial != null ? Carbon::parse($request->credenciamento_radar_inicial) : null,
                 'marinha_mercante_inicial' => $request->marinha_mercante_inicial != null ? Carbon::parse($request->marinha_mercante_inicial) : null,
-                'afrmm_bb' =>  $request->afrmm_bb == 'true' ,
+                'afrmm_bb' =>  $request->afrmm_bb == 'true',
                 'itau_di' => $request->itau_di == 'true',
                 'modalidade_radar' => $request->exists('modalidade_radar') ? $request->modalidade_radar : null,
                 'beneficio_fiscal' => $request->beneficio_fiscal,
@@ -428,7 +423,7 @@ class ClienteController extends Controller
             ];
             $cliente->update($clientData);
 
-            if($request->bancos && count($request->bancos) > 0){
+            if ($request->bancos && count($request->bancos) > 0) {
                 foreach ($request->bancos as $row => $banco) {
                     // if ($request->debito_impostos_nix == 'nix') {
                     //     $bancoNix = BancoNix::find($banco);
@@ -446,51 +441,78 @@ class ClienteController extends Controller
                     //             ]
                     //         );
                     // } else {
-                        BancoCliente::where('cliente_id',$id)->where('banco_nix',true)->delete();
-                        if($request->numero_bancos[$row] && $request->agencias[$row] && $request->conta_correntes[$row]){
-                            BancoCliente::create(
+                    BancoCliente::where('cliente_id', $id)->where('banco_nix', true)->delete();
+                    if ($request->numero_bancos[$row] && $request->agencias[$row] && $request->conta_correntes[$row]) {
+                        BancoCliente::create(
                             [
                                 'cliente_id' => $id,
                                 'banco_nix' => false,
                                 'numero_banco' => $request->numero_bancos[$row] ?? null,
-                                'nome' => $banco, 
+                                'nome' => $banco,
                                 'agencia' => $request->agencias[$row] ?? null,
                                 'conta_corrente' => $request->conta_correntes[$row] ?? null,
                             ]
                         );
-                        }
+                    }
                     // }
                 }
             }
             DB::commit();
 
-            return redirect( route('cliente.edit', $id).'?tab=custom-tabs-two-home-tab')->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
+            return redirect(route('cliente.edit', $id) . '?tab=custom-tabs-two-home-tab')->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
         } catch (\Exception $e) {
-            dd($e,$request->all());
+            dd($e, $request->all());
             DB::rollBack();
             return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cadastro siscomex!']]);
         }
     }
 
-    public function destroyBancoCliente($id){
+    public function destroyBancoCliente($id)
+    {
         $bancoCliente = BancoCliente::find($id);
         $clienteId = $bancoCliente->cliente_id;
-        try{
+        try {
             $bancoCliente->delete();
-            return redirect( route('cliente.edit', $clienteId))->with('messages', ['success' => ['Banco excluido com sucesso!']]);
-        }catch(\Exception $e){
+            return redirect(route('cliente.edit', $clienteId))->with('messages', ['success' => ['Banco excluido com sucesso!']]);
+        } catch (\Exception $e) {
             return redirect(route('cliente.edit', $clienteId))->with('messages', ['error' => ['Não foi possível excluir o banco do cliente!']]);
         }
     }
 
-    public function updateClientDocument(Request $request,$id){
-     
-        try{
+    public function updateClientDocument(Request $request, $id)
+    {
+
+        try {
+            $validator = Validator::make($request->all(), [
+                'tipoDocumentos' => 'required|array|min:1',
+                'tipoDocumentos.*' => 'required|distinct|not_in:null,""',
+                'documentos' => 'required|array',
+                // Garante que cada novo tipo de documento tenha um arquivo anexado
+                'tipoDocumentos.*' => function ($attribute, $value, $fail) use ($request) {
+                    $row = explode('.', $attribute)[1];
+                    $isNovo = empty($request->idDocumentos[$row] ?? null);
+                    $hasFile = !empty($request->documentos[$row] ?? null);
+                    if ($isNovo && !$hasFile) {
+                        $fail('É obrigatório anexar um arquivo para cada novo tipo de documento.');
+                    }
+                },
+            ], [
+                'tipoDocumentos.required' => 'É necessário informar pelo menos um tipo de documento.',
+                'tipoDocumentos.*.required' => 'O tipo de documento não pode ser vazio ou nulo.',
+                'tipoDocumentos.*.distinct' => 'Os tipos de documento devem ser distintos.',
+                'tipoDocumentos.*.not_in' => 'O tipo de documento não pode ser nulo ou vazio.',
+            ]);
+
+            if ($validator->fails()) {
+                return back()->with('messages', ['error' => $validator->errors()->all()])
+                    ->withInput($request->all());
+            }
+
             foreach ($request->tipoDocumentos as $row => $tipoDocumento) {
                 $arquivo = isset($request->documentos[$row]) ? $request->documentos[$row] : null;
                 $nomeOriginal = $arquivo ? $arquivo->getClientOriginalName() : null;
                 $caminho = $nomeOriginal ? "$id/$nomeOriginal" : null;
-        
+
                 if ($arquivo && $arquivo->isValid()) {
                     Storage::disk('documentos')->putFileAs('', $arquivo, $caminho);
                     $url = Storage::disk('documentos')->url($caminho);
@@ -498,45 +520,43 @@ class ClienteController extends Controller
                     $url = null;
                     $caminho = null;
                 }
-        
+
                 $documentoExistente = ClienteDocumento::find($request->idDocumentos[$row] ?? null);
-        
+
                 if ($documentoExistente) {
                     $documentoExistente->update([
                         'tipo_documento' => $tipoDocumento,
-                        'path_file' => $caminho ?? $documentoExistente->path_file, 
-                        'url' => $url ?? $documentoExistente->url, 
+                        'path_file' => $caminho ?? $documentoExistente->path_file,
+                        'url' => $url ?? $documentoExistente->url,
                     ]);
                 } elseif ($caminho && $url) {
-                        ClienteDocumento::create([
-                            'cliente_id' => $id,
-                            'tipo_documento' => $tipoDocumento,
-                            'path_file' => $caminho,
-                            'url' => $url,
-                        ]);
+                    ClienteDocumento::create([
+                        'cliente_id' => $id,
+                        'tipo_documento' => $tipoDocumento,
+                        'path_file' => $caminho,
+                        'url' => $url,
+                    ]);
                 }
-                
             }
-            return redirect( route('cliente.edit', $id))->with('messages', ['success' => ['Documento Adicionado com sucesso!']]);
-        }catch(\Exception $e){
+            return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Documento Adicionado com sucesso!']]);
+        } catch (\Exception $e) {
             dd($e);
             return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível adicionar o documento do cliente!']]);
         }
-    
     }
 
-    public function deleteDocument($id){
-        
-        try{
+    public function deleteDocument($id)
+    {
+
+        try {
             $documentoExistente = ClienteDocumento::findOrFail($id);
             $cliente_id = $documentoExistente->cliente_id;
 
             Storage::disk('documentos')->delete($documentoExistente->path_file);
             $documentoExistente->delete();
-            return redirect( route('cliente.edit', $cliente_id))->with('messages', ['success' => ['Documento Adicionado com sucesso!']]);
-        }catch(\Exception $e){
-            return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível adicionar o documento do cliente!']]);
+            return redirect(route('cliente.edit', $cliente_id))->with('messages', ['success' => ['Documento excluído com sucesso!']]);
+        } catch (\Exception $e) {
+            return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível excluir o documento do cliente!']]);
         }
     }
-
 }

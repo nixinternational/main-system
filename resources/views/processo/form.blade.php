@@ -525,7 +525,7 @@
                                     fobUnitario,
                                     quantidade
                                 } = obterValoresBase(rowId);
-
+                              
                                 const pesoLiqUnit = pesoTotal / (quantidade || 1);
                                 const fobTotal = fobUnitario * quantidade;
                                 const totalPesoLiq = calcularPesoTotal();
@@ -537,6 +537,10 @@
                                     `#cotacao_frete_internacional`).val().replace(',', '.')
 
                                 const dolar = MoneyUtils.parseMoney(moedaDolar);
+                                  console.log([
+                                    pesoTotal, fobUnitario, quantidade,dolar
+                                    
+                                ])
                                 atualizarFatoresFob();
                                 atualizarTotaisGlobais(fobTotalGeral, dolar);
 
