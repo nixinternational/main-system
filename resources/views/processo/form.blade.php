@@ -515,7 +515,6 @@
         setTimeout(function() {
             $(document).on('change', '.selectProduct', function(e) {
                 let products = JSON.parse($('#productsClient').val());
-                console.log(this)
                 let productObject = products.find(el => el.id == this.value);
                 let rowId = $(this).data('row');
 
@@ -528,14 +527,12 @@
             $(document).on('keyup',
                 '#productsBody input, #productsBody select, #productsBody textarea, #productsBody .form-control',
                 function(e) {
-                    console.log(!initialInputs.has(e.target))
                     if (!initialInputs.has(e.target)) {
                         return; // Ignora inputs criados dinamicamente
                     }
                     $('#avisoProcessoAlterado').removeClass('d-none');
                     const rowId = $(this).data('row');
 
-                    console.log('alterado')
                     if ($(`#produto_id-${rowId}`).val()) {
                         try {
                             const nome = $(this).attr('name');
@@ -612,13 +609,10 @@
                                             `#icms_st-${rowId}`).val()) : 0;
 
                                     if (icms_st) {
-                                        console.log([
-                                            base_icms_st, icms_st, vlrIcmsReduzido
-                                        ])
+                                     
                                         vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
                                     }
                                 }
-                                console.log(fobTotal)
                                 atualizarCampos(rowId, {
                                     pesoLiqUnit,
                                     fobTotal,
@@ -874,14 +868,13 @@
                 } = obterValoresBase(rowId);
                 const fobTotal = fobUnitario * quantidade;
                 const fatorPesoRow = MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
+            
                 const fatorVlrFob_AX = parseFloat($(`#fator_valor_fob-${rowId}`).val()) || 0;
 
                 const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) * fatorPesoRow;
-                console.log(freteUsdInt)
                 const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
                 const thcRow = thc_capataziaBase * fatorPesoRow;
                 const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
-                console.log(fobTotal, fobTotalGeral)
                 const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeral, dolar);
 
                 const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
@@ -972,7 +965,7 @@
                 const rowId = $(this).data('row');
                 const valor = MoneyUtils.parseMoney($(this).val());
                 const fatorLinha = valor / (totalPeso || 1);
-                $(`#fator_peso-${rowId}`).val(fatorLinha.toFixed(6));
+                $(`#fator_peso-${rowId}`).val(MoneyUtils.formatMoney(fatorLinha,6));
                 if (rowId == currentRowId) fator = fatorLinha;
             });
             return fator;
@@ -1090,7 +1083,6 @@
         function atualizarCampos(rowId, valores) {
             $(`#peso_liquido_unitario-${rowId}`).val(valores.pesoLiqUnit);
             $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal));
-            console.log([valores.fobTotal, valores.dolar])
             $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal * valores.dolar));
             $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt));
             $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt * valores.dolar));
