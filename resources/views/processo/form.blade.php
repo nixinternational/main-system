@@ -435,6 +435,32 @@
                     maxlength: false
                 });
             });
+             $('#recalcularTabela').on('click', function() {
+        // Mostrar indicador de carregamento
+        const btn = $(this);
+        const originalText = btn.html();
+        btn.html('<i class="fas fa-spinner fa-spin"></i> Calculando...').prop('disabled', true);
+        
+        // Pequeno delay para permitir a atualização visual do botão
+        setTimeout(function() {
+            try {
+                recalcularTodaTabela();
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Tabela recalculada com sucesso!'
+                });
+            } catch (error) {
+                console.error('Erro ao recalcular tabela:', error);
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Erro ao recalcular tabela'
+                });
+            } finally {
+                // Restaurar o botão
+                btn.html(originalText).prop('disabled', false);
+            }
+        }, 100);
+    });
 
         });
 
