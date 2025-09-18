@@ -474,7 +474,7 @@
                 let convertido = valor * (dolar[codigoMoeda].venda);
                 $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 2));
             } else if (codigoMoeda && dolar[codigoMoeda] && !automatic) {
-                let taxa = MoneyUtils.parseMoney($(`#cotacao_${inputId}`).val().replace(',', '.'))
+                let taxa = MoneyUtils.parseMoney($(`#cotacao_${inputId}`).val())
                 let convertido = valor * taxa;
                 $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 4));
             } else {
@@ -769,6 +769,7 @@
                 if (typeof value === "number") {
                     return value;
                 }
+    
 
                 // Se for string, trata a formatação
                 let cleanValue = value.toString()
@@ -904,7 +905,7 @@
                         vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
                     }
                 }
-
+         
                 atualizarCampos(rowId, {
                     pesoLiqUnit: MoneyUtils.parseMoney($(`#peso_liquido_unitario-${rowId}`).val()),
                     fobTotal,
@@ -946,7 +947,7 @@
             return {
                 pesoTotal: MoneyUtils.parseMoney($(`#peso_liquido_total-${rowId}`).val()),
                 fobUnitario: MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val()),
-                quantidade: parseFloat($(`#quantidade-${rowId}`).val()) || 0
+                quantidade: MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0
             };
         }
 

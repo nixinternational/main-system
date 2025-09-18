@@ -2,7 +2,7 @@
     @if (isset($productsClient))
         <button type="button" class="btn btn-primary mb-2 addProduct ">Adicionar
             Produto</button>
-        <button type="button" class="btn btn-info" id="recalcularTabela">
+        <button type="button" class="btn btn-info mb-2" id="recalcularTabela">
             <i class="fas fa-calculator"></i> Recalcular Toda a Tabela
         </button>
         <button type="button" class="btn btn-secondary mb-2 btn-reordenar">
