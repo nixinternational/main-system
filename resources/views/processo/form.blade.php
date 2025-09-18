@@ -525,7 +525,7 @@
                                     fobUnitario,
                                     quantidade
                                 } = obterValoresBase(rowId);
-                              
+
                                 const pesoLiqUnit = pesoTotal / (quantidade || 1);
                                 const fobTotal = fobUnitario * quantidade;
                                 const totalPesoLiq = calcularPesoTotal();
@@ -537,10 +537,7 @@
                                     `#cotacao_frete_internacional`).val().replace(',', '.')
 
                                 const dolar = MoneyUtils.parseMoney(moedaDolar);
-                                  console.log([
-                                    pesoTotal, fobUnitario, quantidade,dolar
-                                    
-                                ])
+                            
                                 atualizarFatoresFob();
                                 atualizarTotaisGlobais(fobTotalGeral, dolar);
 
@@ -1399,52 +1396,59 @@
             localStorage.setItem('activeTab_processo', currentTab);
         });
 
-        function adicionarSeparadoresAdicao() {
-            const tbody = document.getElementById('productsBody');
-            const linhas = Array.from(tbody.querySelectorAll('tr:not(.separador-adicao)'));
+     function adicionarSeparadoresAdicao() {
+    const tbody = document.getElementById('productsBody');
+    const linhas = Array.from(tbody.querySelectorAll('tr:not(.separador-adicao)'));
 
-            // Primeiro remova todos os separadores existentes
-            document.querySelectorAll('.separador-adicao').forEach(el => el.remove());
+    // Primeiro remove todos os separadores existentes
+    document.querySelectorAll('.separador-adicao').forEach(el => el.remove());
 
-            if (linhas.length === 0) return;
+    if (linhas.length === 0) return;
 
-            // Ordenar as linhas por adição (mantendo a ordem original dentro do mesmo grupo)
-            linhas.sort((a, b) => {
-                const adicaoA = parseFloat(a.querySelector('input[name*="[adicao]"]').value) || 0;
-                const adicaoB = parseFloat(b.querySelector('input[name*="[adicao]"]').value) || 0;
-                return adicaoA - adicaoB;
-            });
+    // Ordenar as linhas por adição e depois por item
+    linhas.sort((a, b) => {
+        const adicaoA = parseFloat(a.querySelector('input[name*="[adicao]"]').value) || 0;
+        const adicaoB = parseFloat(b.querySelector('input[name*="[adicao]"]').value) || 0;
 
-            // Agrupar linhas por adição
-            const grupos = {};
-            linhas.forEach(linha => {
-                const adicao = parseFloat(linha.querySelector('input[name*="[adicao]"]').value) || 0;
-                if (!grupos[adicao]) grupos[adicao] = [];
-                grupos[adicao].push(linha);
-            });
-
-            // Limpar o tbody
-            while (tbody.firstChild) {
-                tbody.removeChild(tbody.firstChild);
-            }
-
-            // Adicionar linhas com separadores
-            Object.keys(grupos).sort().forEach((adicao, index) => {
-                // Adicionar separador antes de cada grupo (exceto o primeiro)
-                if (index > 0) {
-                    const separador = document.createElement('tr');
-                    separador.className = 'separador-adicao';
-                    separador.innerHTML =
-                        `<td colspan="100" style="background-color: #B7AA09 !important;border-top: 20px dashed #999; height: 10px;"></td>`;
-                    tbody.appendChild(separador);
-                }
-
-                // Adicionar linhas do grupo
-                grupos[adicao].forEach(linha => {
-                    tbody.appendChild(linha);
-                });
-            });
+        if (adicaoA !== adicaoB) {
+            return adicaoA - adicaoB; // primeiro pela adição
         }
+
+        const itemA = parseFloat(a.querySelector('input[name*="[item]"]').value) || 0;
+        const itemB = parseFloat(b.querySelector('input[name*="[item]"]').value) || 0;
+        return itemA - itemB; // depois pelo item
+    });
+
+    // Agrupar linhas por adição
+    const grupos = {};
+    linhas.forEach(linha => {
+        const adicao = parseFloat(linha.querySelector('input[name*="[adicao]"]').value) || 0;
+        if (!grupos[adicao]) grupos[adicao] = [];
+        grupos[adicao].push(linha);
+    });
+
+    // Limpar o tbody
+    while (tbody.firstChild) {
+        tbody.removeChild(tbody.firstChild);
+    }
+
+    // Adicionar linhas com separadores
+    Object.keys(grupos).sort((a, b) => a - b).forEach((adicao, index) => {
+        if (index > 0) {
+            const separador = document.createElement('tr');
+            separador.className = 'separador-adicao';
+            separador.innerHTML =
+                `<td colspan="100" style="background-color: #B7AA09 !important;border-top: 20px dashed #999; height: 10px;"></td>`;
+            tbody.appendChild(separador);
+        }
+
+        grupos[adicao].forEach(linha => {
+            tbody.appendChild(linha);
+        });
+    });
+}
+
+
 
         // Atualizar a função reordenarLinhas para usar os separadores
         function reordenarLinhas() {
