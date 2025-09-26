@@ -1,7 +1,6 @@
    <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
        aria-labelledby="custom-tabs-two-home-tab">
 
-
        <div class="row">
            <div class="col-4">
                <label for="exampleInputEmail1" class="form-label">Cliente</label>
@@ -28,6 +27,12 @@
 
        </div>
        @if (isset($processo))
+
+           @php
+
+               $processo->cotacao_moeda_processo = json_decode($processo->cotacao_moeda_processo, true);
+
+           @endphp
            <div class="row mt-3">
                <div class="col-3">
                    <label for="exampleInputEmail1" class="form-label">Canal</label>
@@ -273,8 +278,6 @@
                    </div>
 
                    <div class="row ">
-                       {{-- 
-@dd(isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 2, ',', '.') : '' ) --}}
 
                        <div class="col-sm-6 ">
                            <input readonly
@@ -304,7 +307,63 @@
 
            </div>
 
+           <div class=" mt-3" style="display: flex; gap:10px">
+               <div class=" alert alert-secondary p-3">
+                   <div class="row">
+                       <div class="col-6 ">
+                           <label for="acrescimo_frete" class="form-label text-white">COTAÇÃO DO PROCESSO</label>
+                           <input
+                               value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo])
+                                   ? number_format($processo->cotacao_moeda_processo[$processo->moeda_processo]['venda'], 4, ',', '.')
+                                   : '' }}"
+                               class="form-control moneyReal" name="display_cotacao" id="display_cotacao">
+                           <input type="hidden" id="cotacao_moeda_processo" name="cotacao_moeda_processo"
+                               value="{{ json_encode($processo->cotacao_moeda_processo) }}">
+                       </div>
+                       <div class="col-6 ">
 
+                           <label class="form-label text-white">MOEDA</label>
+                           <select name="moeda_processo" id="moeda_processo" class="select2 w-100 moedas"
+                               aria-label="Moedas BRICS, UE e G20">
+                               <option value="">Selecione um país</option>
+
+                               @foreach ($moedasSuportadas as $codigo => $nome)
+                                   <option value="{{ $codigo }}"
+                                       {{ isset($processo) && $processo->moeda_processo == $codigo ? 'selected' : '' }}>
+                                       {{ $codigo }} - {{ $nome }}
+                                   </option>
+                               @endforeach
+                           </select>
+                       </div>
+
+                       <div id="visualizacaoMoedaDolar"
+                           class=" mt-3 {{ $processo->cotacao_moeda_processo == 'USD' || !$processo->cotacao_moeda_processo ? 'd-none ' : 'col-12' }}  ">
+
+                           <label for="acrescimo_frete" class="form-label text-white">MOEDA EM USD</label>
+                           <input class="form-control moneyReal"
+                               value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo . '_USD'])
+                                   ? number_format($processo->cotacao_moeda_processo[$processo->moeda_processo . '_USD']['venda'], 4, ',', '.')
+                                   : '' }}"
+                               name="moeda_processo_usd" id="moeda_processo_usd">
+
+                       </div>
+      
+
+                   </div>
+
+                   <div class="row mt-3">
+                       <div class="col-12">
+                           <span id="">Data de
+                               Cotação: </span>
+
+                           <input type="date" class=" form-control" name="data_cotacao_processo"
+                               id="data_cotacao_processo"
+                               value="{{ isset($processo->data_cotacao_processo) ? $processo->data_cotacao_processo : '' }}">
+                       </div>
+
+                   </div>
+               </div>
+           </div>
 
        @endif
 

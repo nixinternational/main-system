@@ -239,12 +239,15 @@ class ProcessoController extends Controller
                 'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
                 'quantidade' => $this->parseMoneyToFloat($request->quantidade),
                 'especie' => $request->especie,
-                'cotacao_frete_internacional' => $this->parseMoneyToFloat($request->cotacao_frete_internacional),
-                'cotacao_seguro_internacional' => $this->parseMoneyToFloat($request->cotacao_seguro_internacional),
-                'cotacao_acrescimo_frete' => $this->parseMoneyToFloat($request->cotacao_acrescimo_frete),
+                'cotacao_frete_internacional' => $this->parseMoneyToFloat($request->cotacao_frete_internacional, 4),
+                'cotacao_seguro_internacional' => $this->parseMoneyToFloat($request->cotacao_seguro_internacional, 4),
+                'cotacao_acrescimo_frete' => $this->parseMoneyToFloat($request->cotacao_acrescimo_frete, 4),
                 'data_moeda_frete_internacional' => $request->data_moeda_frete_internacional,
                 'data_moeda_seguro_internacional' => $request->data_moeda_seguro_internacional,
                 'data_moeda_acrescimo_frete' => $request->data_moeda_acrescimo_frete,
+                'cotacao_moeda_processo' => json_encode($request->cotacao_moeda_processo),
+                'data_cotacao_processo' => $request->data_cotacao_processo,
+                'moeda_processo' => $request->moeda_processo,
             ];
             Processo::where('id', $id)->update($dadosProcesso);
             $pesoLiquidoTotal = 0;
@@ -294,7 +297,12 @@ class ProcessoController extends Controller
                             'cofins_percent' => isset($produto['cofins_percent']) ? $this->safePercentage($produto['cofins_percent']) : null,
                             'icms_percent' => isset($produto['icms_percent']) ? $this->safePercentage($produto['icms_percent']) : null,
                             'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
-
+                            'frete_moeda_estrangeira' => $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) ?? null,
+                            'seguro_moeda_estrangeira' => $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) ?? null,
+                            'acrescimo_moeda_estrangeira' => $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) ?? null,
+                            'frete_moeda' => $request->frete_internacional_moeda,
+                            'seguro_moeda' => $request->seguro_internacional_moeda,
+                            'acrescimo_moeda' => $request->acrescimo_frete_moeda,
                             'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
                             'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
                             'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,

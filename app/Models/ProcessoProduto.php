@@ -79,10 +79,24 @@ class ProcessoProduto extends Model
         'diferenca_cambial_fob',
         'custo_unitario_final',
         'custo_total_final',
-        'descricao'
-    ];
+        'descricao',
+        'frete_moeda_estrangeira',
+        'seguro_moeda_estrangeira',
+        'acrescimo_moeda_estrangeira',
+        'frete_moeda',
+        'seguro_moeda',
+        'acrescimo_moeda',
+            'fob_unit_moeda_estrangeira',
+    'fob_total_moeda_estrangeira',
 
-    public function produto(){
-        return $this->hasOne(Produto::class,'id','produto_id');
+    ];
+    protected $casts = [
+        'frete_moeda_estrangeira' => 'decimal:7',
+        'seguro_moeda_estrangeira' => 'decimal:7',
+        'acrescimo_moeda_estrangeira' => 'decimal:7',
+    ];
+    public function produto()
+    {
+        return $this->hasOne(Produto::class, 'id', 'produto_id');
     }
 }

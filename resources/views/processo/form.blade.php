@@ -212,7 +212,6 @@
 
                             @include('processo.includes.dados-processo')
 
-
                             @if (isset($processo))
                                 @include('processo.includes.tabela-produtos')
                                 <div class="tab-pane fade" id="custom-tabs-four-home"
@@ -246,8 +245,119 @@
         let reordenando = false;
         let products = JSON.parse($('#productsClient').val());
 
+        function getCotacaoesProcesso() {
+            let cotacaoProcesso = '';
+            if (!$('#cotacao_moeda_processo').val()) {
+                $('#cotacao_moeda_processo').val($('#dolarHoje').val())
+                cotacaoProcesso = JSON.parse($('#dolarHoje').val())
+            } else {
+                cotacaoProcesso = JSON.parse($('#cotacao_moeda_processo').val())
+            }
+            return cotacaoProcesso;
+        }
+
+        function atualizarVisibilidadeColunasMoeda() {
+            let moedaFrete = $('#frete_internacional_moeda').val();
+            let moedaSeguro = $('#seguro_internacional_moeda').val();
+            let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
+            let moedaProcesso = $('#moeda_processo').val(); // Nova variável para moeda do processo
+
+            // Atualizar títulos das colunas
+            atualizarTitulosColunas(moedaFrete, moedaSeguro, moedaAcrescimo, moedaProcesso);
+
+            // Mostrar/ocultar colunas de frete
+            if (moedaFrete && moedaFrete !== 'USD') {
+                $('[id*="frete_moeda_estrangeira-"]').closest('td').show();
+                $('th:contains("FRETE INT.USD")').prev('th').show().text(`FRETE INT.${moedaFrete}`);
+            } else {
+                $('[id*="frete_moeda_estrangeira-"]').closest('td').hide();
+                $('th:contains("FRETE INT.USD")').prev('th').hide();
+            }
+
+            // Mostrar/ocultar colunas de seguro
+            if (moedaSeguro && moedaSeguro !== 'USD') {
+                $('[id*="seguro_moeda_estrangeira-"]').closest('td').show();
+                $('th:contains("SEGURO INT.USD")').prev('th').show().text(`SEGURO INT.${moedaSeguro}`);
+            } else {
+                $('[id*="seguro_moeda_estrangeira-"]').closest('td').hide();
+                $('th:contains("SEGURO INT.USD")').prev('th').hide();
+            }
+
+            // Mostrar/ocultar colunas de acréscimo
+            if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                $('[id*="acrescimo_moeda_estrangeira-"]').closest('td').show();
+                $('th:contains("ACRESC. FRETE USD")').prev('th').show().text(`ACRESC. FRETE ${moedaAcrescimo}`);
+            } else {
+                $('[id*="acrescimo_moeda_estrangeira-"]').closest('td').hide();
+                $('th:contains("ACRESC. FRETE USD")').prev('th').hide();
+            }
+
+            // Mostrar/ocultar colunas de FOB
+            if (moedaProcesso && moedaProcesso !== 'USD') {
+                $('[id*="fob_unit_moeda_estrangeira-"]').closest('td').show();
+                $('[id*="fob_total_moeda_estrangeira-"]').closest('td').show();
+                $('th:contains("FOB UNIT USD")').prev('th').show().text(`FOB UNIT ${moedaProcesso}`);
+                $('th:contains("FOB TOTAL USD")').prev('th').show().text(`FOB TOTAL ${moedaProcesso}`);
+            } else {
+                $('[id*="fob_unit_moeda_estrangeira-"]').closest('td').hide();
+                $('[id*="fob_total_moeda_estrangeira-"]').closest('td').hide();
+                $('th:contains("FOB UNIT USD")').prev('th').hide();
+                $('th:contains("FOB TOTAL USD")').prev('th').hide();
+            }
+        }
+
+        // Função para atualizar títulos
+        function atualizarTitulosColunas(moedaFrete, moedaSeguro, moedaAcrescimo, moedaProcesso) {
+            // Atualizar títulos dinamicamente se necessário
+            $('th').each(function() {
+                let texto = $(this).text();
+
+                if (texto.includes('FRETE INT.') && !texto.includes('USD') && !texto.includes('R$')) {
+                    if (moedaFrete && moedaFrete !== 'USD') {
+                        $(this).text(`FRETE INT.${moedaFrete}`).show();
+                    } else {
+                        $(this).hide();
+                    }
+                }
+                if (texto.includes('SEGURO INT.') && !texto.includes('USD') && !texto.includes('R$')) {
+                    if (moedaSeguro && moedaSeguro !== 'USD') {
+                        $(this).text(`SEGURO INT.${moedaSeguro}`).show();
+                    } else {
+                        $(this).hide();
+                    }
+                }
+                if (texto.includes('ACRESC. FRETE') && !texto.includes('USD') && !texto.includes('R$')) {
+                    if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                        $(this).text(`ACRESC. FRETE ${moedaAcrescimo}`).show();
+                    } else {
+                        $(this).hide();
+                    }
+                }
+                // Novos para FOB
+                if (texto.includes('FOB UNIT') && !texto.includes('USD') && !texto.includes('R$')) {
+                    if (moedaProcesso && moedaProcesso !== 'USD') {
+                        $(this).text(`FOB UNIT ${moedaProcesso}`).show();
+                    } else {
+                        $(this).hide();
+                    }
+                }
+                if (texto.includes('FOB TOTAL') && !texto.includes('USD') && !texto.includes('R$')) {
+                    if (moedaProcesso && moedaProcesso !== 'USD') {
+                        $(this).text(`FOB TOTAL ${moedaProcesso}`).show();
+                    } else {
+                        $(this).hide();
+                    }
+                }
+            });
+        }
+
         $(document).ready(function() {
             reordenarLinhas();
+            // Chamar quando as moedas mudarem
+            $('#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda, #moeda_processo')
+                .on('change', function() {
+                    setTimeout(atualizarVisibilidadeColunasMoeda, 100);
+                });
             $('.moneyReal').on('blur', function() {
                 let val = $(this).val();
                 if (val) {
@@ -435,32 +545,32 @@
                     maxlength: false
                 });
             });
-             $('#recalcularTabela').on('click', function() {
-        // Mostrar indicador de carregamento
-        const btn = $(this);
-        const originalText = btn.html();
-        btn.html('<i class="fas fa-spinner fa-spin"></i> Calculando...').prop('disabled', true);
-        
-        // Pequeno delay para permitir a atualização visual do botão
-        setTimeout(function() {
-            try {
-                recalcularTodaTabela();
-                Toast.fire({
-                    icon: 'success',
-                    title: 'Tabela recalculada com sucesso!'
-                });
-            } catch (error) {
-                console.error('Erro ao recalcular tabela:', error);
-                Toast.fire({
-                    icon: 'error',
-                    title: 'Erro ao recalcular tabela'
-                });
-            } finally {
-                // Restaurar o botão
-                btn.html(originalText).prop('disabled', false);
-            }
-        }, 100);
-    });
+            $('#recalcularTabela').on('click', function() {
+                // Mostrar indicador de carregamento
+                const btn = $(this);
+                const originalText = btn.html();
+                btn.html('<i class="fas fa-spinner fa-spin"></i> Calculando...').prop('disabled', true);
+
+                // Pequeno delay para permitir a atualização visual do botão
+                setTimeout(function() {
+                    try {
+                        recalcularTodaTabela();
+                        Toast.fire({
+                            icon: 'success',
+                            title: 'Tabela recalculada com sucesso!'
+                        });
+                    } catch (error) {
+                        console.error('Erro ao recalcular tabela:', error);
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'Erro ao recalcular tabela'
+                        });
+                    } finally {
+                        // Restaurar o botão
+                        btn.html(originalText).prop('disabled', false);
+                    }
+                }, 100);
+            });
 
         });
 
@@ -555,15 +665,25 @@
                                 const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
 
                                 const fobTotalGeral = calcularFobTotalGeral();
-                                const moedasOBject = JSON.parse($('#dolarHoje').val())
-                                const moedaDolar = moedasOBject['USD'].venda ?? $(
-                                    `#cotacao_frete_internacional`).val().replace(',', '.')
+                                const moedasOBject = $('#cotacao_moeda_processo').val() ? JSON.parse($(
+                                    '#cotacao_moeda_processo').val()) : JSON.parse($('#dolarHoje').val())
+                                const moedaDolar = moedasOBject['USD'].venda
 
                                 const dolar = MoneyUtils.parseMoney(moedaDolar);
-                            
+
                                 atualizarFatoresFob();
                                 atualizarTotaisGlobais(fobTotalGeral, dolar);
+                                const moedaFrete = $('#frete_internacional_moeda').val();
+                                console.log(moedaFrete)
+                                if (moedaDolar == 'USD') {
 
+                                } else {
+                                    if (moedaDolar) {
+
+                                    } else {
+
+                                    }
+                                }
                                 const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) *
                                     fatorPesoRow;
                                 const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
@@ -609,10 +729,11 @@
                                             `#icms_st-${rowId}`).val()) : 0;
 
                                     if (icms_st) {
-                                     
+
                                         vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
                                     }
                                 }
+
                                 atualizarCampos(rowId, {
                                     pesoLiqUnit,
                                     fobTotal,
@@ -634,7 +755,9 @@
                                     fatorTaxaSiscomex_AY,
                                     taxaSisComex,
                                     vlrIcmsSt,
-                                    base_icms_st
+                                    base_icms_st,
+                                    fatorPesoRow,
+                                    fobTotalGeral
                                 });
 
                                 atualizarCamposCabecalho();
@@ -657,6 +780,103 @@
                 updateValorCotacao('seguro_internacional', 'cotacao_seguro_internacional');
                 updateValorCotacao('acrescimo_frete', 'cotacao_acrescimo_frete');
             });
+
+
+            $('#moeda_processo').on('change', function() {
+                let cotacaoProcesso = getCotacaoesProcesso();
+                let moeda = this.value;
+
+                if (!cotacaoProcesso[moeda]) {
+                    cotacaoProcesso[moeda] = {
+                        nome: moeda,
+                        moeda: moeda,
+                        compra: 0,
+                        venda: 0,
+                        data: null
+                    };
+                }
+
+                let cotacaoMoeda = cotacaoProcesso[moeda]?.venda ?? 0;
+                let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+
+                // sempre mostra a cotação em BRL
+                $('#display_cotacao').val(MoneyUtils.formatMoney(cotacaoMoeda, 4));
+
+                if (moeda && moeda !== 'USD') {
+                    // Moeda -> USD
+                    let moedaEmUSD = cotacaoMoeda / cotacaoUSD;
+                    $('#moeda_processo_usd').val(MoneyUtils.formatMoney(moedaEmUSD, 4));
+                    $('#visualizacaoMoedaDolar').removeClass('d-none').addClass('col-12');
+
+                    // cria/atualiza versão USD
+                    cotacaoProcesso[`${moeda}_USD`] = {
+                        nome: `${cotacaoProcesso[moeda].nome} em USD`,
+                        data: cotacaoProcesso[moeda].data || (() => {
+                            let hoje = new Date();
+                            return `${String(hoje.getMonth()+1).padStart(2,'0')}/${String(hoje.getDate()).padStart(2,'0')}/${hoje.getFullYear()}`;
+                        })(),
+                        moeda: `${moeda}_USD`,
+                        compra: moedaEmUSD,
+                        venda: moedaEmUSD
+                    };
+                } else {
+                    $('#visualizacaoMoedaDolar').addClass('d-none').removeClass('col-12');
+                    $('#moeda_processo_usd').val('');
+                }
+
+                // atualiza o hidden sempre
+                $('#cotacao_moeda_processo').val(JSON.stringify(cotacaoProcesso));
+            });
+
+
+            $('#display_cotacao').on('change', function() {
+                let cotacaoProcesso = getCotacaoesProcesso();
+                let cotacaoMoedaFloat = MoneyUtils.parseMoney(this.value);
+                let moeda = $('#moeda_processo').val();
+                let data = $('#data_cotacao_processo').val();
+
+                // se a moeda não existir, cria
+                if (!cotacaoProcesso[moeda]) {
+                    cotacaoProcesso[moeda] = {
+                        nome: moeda,
+                        moeda: moeda,
+                        compra: cotacaoMoedaFloat,
+                        venda: cotacaoMoedaFloat,
+                        data: null
+                    };
+                } else {
+                    cotacaoProcesso[moeda].venda = cotacaoMoedaFloat;
+                    cotacaoProcesso[moeda].compra = cotacaoMoedaFloat;
+                }
+
+                // atualiza a data
+                if (data) {
+                    let [dia, mes, ano] = data.split('/');
+                    cotacaoProcesso[moeda].data = `${mes}/${dia}/${ano}`;
+                } else if (!cotacaoProcesso[moeda].data) {
+                    let hoje = new Date();
+                    cotacaoProcesso[moeda].data =
+                        `${String(hoje.getMonth()+1).padStart(2,'0')}/${String(hoje.getDate()).padStart(2,'0')}/${hoje.getFullYear()}`;
+                }
+
+                // se não for USD, cria/atualiza versão moeda -> USD
+                if (moeda && moeda !== 'USD') {
+                    let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+                    let moedaEmUSD = cotacaoMoedaFloat / cotacaoUSD;
+
+                    cotacaoProcesso[`${moeda}_USD`] = {
+                        nome: `${cotacaoProcesso[moeda].nome} em USD`,
+                        data: cotacaoProcesso[moeda].data,
+                        moeda: `${moeda}_USD`,
+                        compra: moedaEmUSD,
+                        venda: moedaEmUSD
+                    };
+                }
+
+                // persiste tudo no hidden
+                $('#cotacao_moeda_processo').val(JSON.stringify(cotacaoProcesso));
+            });
+
             $('#frete_internacional, #seguro_internacional, #acrescimo_frete').trigger('change');
             $(document).on('change', '#frete_internacional, #seguro_internacional, #acrescimo_frete', function() {
 
@@ -769,7 +989,7 @@
                 if (typeof value === "number") {
                     return value;
                 }
-    
+
 
                 // Se for string, trata a formatação
                 let cleanValue = value.toString()
@@ -869,10 +1089,32 @@
                 } = obterValoresBase(rowId);
                 const fobTotal = fobUnitario * quantidade;
                 const fatorPesoRow = MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
-            
+
                 const fatorVlrFob_AX = parseFloat($(`#fator_valor_fob-${rowId}`).val()) || 0;
 
-                const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) * fatorPesoRow;
+                const moedaFrete = $('#frete_internacional_moeda').val();
+                let valorFreteInternacional = MoneyUtils.parseMoney($('#frete_internacional').val());
+                let valorFreteInternacionalDolar = 0;
+                let valorFreteInternacionalMoedaEstrangeira = 0;
+
+                if (moedaFrete != 'USD') {
+                    let cotacaoProcesso = getCotacaoesProcesso();
+                    let cotacaoMoedaFloat = MoneyUtils.parseMoney($('#cotacao_frete_internacional').val());
+                    let moeda = $('#moeda_processo').val();
+                    let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+                    let moedaEmUSD = cotacaoMoedaFloat / cotacaoUSD;
+                    valorFreteInternacionalMoedaEstrangeira = valorFreteInternacional;
+                    valorFreteInternacionalDolar = valorFreteInternacional * moedaEmUSD
+                    console.log({
+                        valorFreteInternacional,
+                        moedaEmUSD,
+                        cotacaoUSD
+                    })
+                } else {
+                    valorFreteInternacionalDolar = valorFreteInternacional;
+                }
+
+                const freteUsdInt = valorFreteInternacionalDolar * fatorPesoRow;
                 const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
                 const thcRow = thc_capataziaBase * fatorPesoRow;
                 const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
@@ -905,7 +1147,7 @@
                         vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
                     }
                 }
-         
+
                 atualizarCampos(rowId, {
                     pesoLiqUnit: MoneyUtils.parseMoney($(`#peso_liquido_unitario-${rowId}`).val()),
                     fobTotal,
@@ -927,7 +1169,9 @@
                     fatorTaxaSiscomex_AY,
                     taxaSisComex,
                     vlrIcmsSt,
-                    base_icms_st
+                    base_icms_st,
+                    fatorPesoRow,
+                    fobTotalGeral
                 });
             });
 
@@ -966,7 +1210,7 @@
                 const rowId = $(this).data('row');
                 const valor = MoneyUtils.parseMoney($(this).val());
                 const fatorLinha = valor / (totalPeso || 1);
-                $(`#fator_peso-${rowId}`).val(MoneyUtils.formatMoney(fatorLinha,6));
+                $(`#fator_peso-${rowId}`).val(MoneyUtils.formatMoney(fatorLinha, 6));
                 if (rowId == currentRowId) fator = fatorLinha;
             });
             return fator;
@@ -990,19 +1234,77 @@
 
         function calcularSeguro(fobTotal, fobGeral) {
             if (fobGeral == 0) {
-                return 0
+                return 0;
             }
+
             const total = MoneyUtils.parseMoney($('#seguro_internacional').val());
-            return (total / fobGeral) * fobTotal;
+            const moedaSeguro = $('#seguro_internacional_moeda').val();
+            let valorSeguroInternacionalDolar = 0;
+
+            if (moedaSeguro && moedaSeguro !== 'USD') {
+                let cotacaoProcesso = getCotacaoesProcesso();
+
+                // Usar a cotação específica do seguro, não do frete
+                let cotacaoMoedaSeguro = MoneyUtils.parseMoney($('#cotacao_seguro_internacional').val());
+                let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+
+                // Se não temos cotação específica, usar a cotação padrão da moeda
+                if (!cotacaoMoedaSeguro && cotacaoProcesso[moedaSeguro]) {
+                    cotacaoMoedaSeguro = cotacaoProcesso[moedaSeguro].venda;
+                }
+
+                if (cotacaoMoedaSeguro) {
+                    let moedaEmUSD = cotacaoMoedaSeguro / cotacaoUSD;
+                    valorSeguroInternacionalDolar = total * moedaEmUSD;
+                } else {
+                    // Fallback: usar cotação 1:1 se não encontrada
+                    valorSeguroInternacionalDolar = total;
+                }
+            } else {
+                valorSeguroInternacionalDolar = total;
+            }
+
+            return (valorSeguroInternacionalDolar / fobGeral) * fobTotal;
         }
 
         function calcularAcrescimoFrete(fobTotal, fobGeral, dolar) {
+            if (fobGeral == 0) {
+                return 0;
+            }
+
             const base = MoneyUtils.parseMoney($('#acrescimo_frete').val());
-            return (base / (fobGeral * dolar)) * fobTotal * dolar;
+            const moedaFrete = $('#acrescimo_frete_moeda').val();
+            let valorFreteUSD = 0;
+
+            if (moedaFrete && moedaFrete !== 'USD') {
+                let cotacaoProcesso = getCotacaoesProcesso();
+
+                // Usar a cotação específica do acréscimo de frete, se houver
+                let cotacaoMoedaFrete = MoneyUtils.parseMoney($('#cotacao_acrescimo_frete').val());
+                let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+
+                // Se não tem cotação específica, usar a cotação padrão da moeda
+                if (!cotacaoMoedaFrete && cotacaoProcesso[moedaFrete]) {
+                    cotacaoMoedaFrete = cotacaoProcesso[moedaFrete].venda;
+                }
+
+                if (cotacaoMoedaFrete) {
+                    let moedaEmUSD = cotacaoMoedaFrete / cotacaoUSD;
+                    valorFreteUSD = base * moedaEmUSD;
+                } else {
+                    // Fallback 1:1
+                    valorFreteUSD = base;
+                }
+            } else {
+                valorFreteUSD = base;
+            }
+
+            return (valorFreteUSD / fobGeral) * fobTotal;
         }
 
+
         function calcularValorAduaneiro(fob, frete, acrescimo, seguro, thc, dolar) {
-            // Função para validar e converter valores
+            // Função para validar e convert#er valores
             const parseSafe = (value, defaultValue = 0) => {
                 if (value === null || value === undefined) return defaultValue;
                 const num = Number(value);
@@ -1014,7 +1316,7 @@
             const safeAcrescimo = parseSafe(acrescimo);
             const safeSeguro = parseSafe(seguro);
             const safeThc = parseSafe(thc);
-            const safeDolar = parseSafe(dolar, 1); // Default 1 para evitar divisão por zero
+            const safeDolar = parseSafe(dolar, 1);
 
             return safeFob + safeFrete + safeAcrescimo + safeSeguro +
                 (safeThc / (safeDolar || 1)); // Garantir que não divida por zero
@@ -1085,10 +1387,57 @@
             $(`#peso_liquido_unitario-${rowId}`).val(valores.pesoLiqUnit);
             $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal));
             $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal * valores.dolar));
+            // Atualizar colunas de moeda estrangeira quando necessário
+            let moedaFrete = $('#frete_internacional_moeda').val();
+            let moedaSeguro = $('#seguro_internacional_moeda').val();
+            let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
+            let moedaProcesso = $('#moeda_processo').val(); // Nova variável
+
+            if (moedaFrete && moedaFrete !== 'USD') {
+                let valorFreteMoedaEstrangeira = MoneyUtils.parseMoney($('#frete_internacional').val()) * valores
+                    .fatorPesoRow;
+
+                $(`#frete_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorFreteMoedaEstrangeira));
+            }
+
             $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt));
             $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt * valores.dolar));
+
+            // Seguro - valor na moeda estrangeira original  
+            if (moedaSeguro && moedaSeguro !== 'USD') {
+
+                let valorSeguroMoedaEstrangeira = MoneyUtils.parseMoney($('#seguro_internacional').val()) * (valores
+                    .fobTotal / valores.fobTotalGeral);
+                $(`#seguro_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorSeguroMoedaEstrangeira));
+            }
+
             $(`#seguro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow));
             $(`#seguro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow * valores.dolar));
+
+            // Acréscimo - valor na moeda estrangeira original
+            if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                let valorAcrescimoMoedaEstrangeira = MoneyUtils.parseMoney($('#acrescimo_frete').val()) * valores
+                    .fatorVlrFob_AX;
+                $(`#acrescimo_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorAcrescimoMoedaEstrangeira));
+            }
+
+            let cotacaoProcesso = getCotacaoesProcesso();
+            let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+            if (moedaProcesso && moedaProcesso !== 'USD') {
+                let cotacaoMoedaProcesso = MoneyUtils.parseMoney($('#display_cotacao').val());
+                if (!cotacaoMoedaProcesso && cotacaoProcesso[moedaProcesso]) {
+                    cotacaoMoedaProcesso = cotacaoProcesso[moedaProcesso].venda;
+                }
+
+                if (cotacaoMoedaProcesso) {
+                    // Converter de USD para a moeda estrangeira
+                    let fobUnitMoedaEstrangeira = valores.fobUnitario * (cotacaoMoedaProcesso / cotacaoUSD);
+                    let fobTotalMoedaEstrangeira = valores.fobTotal * (cotacaoMoedaProcesso / cotacaoUSD);
+
+                    $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobUnitMoedaEstrangeira));
+                    $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira));
+                }
+            }
             $(`#acresc_frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow));
             $(`#acresc_frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow * valores.dolar));
             $(`#thc_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow / valores.dolar));
@@ -1297,14 +1646,48 @@
             let newIndex = lengthOptions;
 
             let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
-            <option selected disabled>Selecione uma opção</option>`;
+        <option selected disabled>Selecione uma opção</option>`;
 
             for (let produto of products) {
                 select += `<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`;
             }
             select += '</select>';
 
-            let tr = `<tr id="row-${newIndex}" >
+            // Obter moedas atuais
+            let moedaFrete = $('#frete_internacional_moeda').val();
+            let moedaSeguro = $('#seguro_internacional_moeda').val();
+            let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
+            let moedaProcesso = $('#moeda_processo').val(); // Nova variável
+
+            // Gerar colunas condicionais
+            let colunaFreteMoeda = '';
+            let colunaSeguroMoeda = '';
+            let colunaAcrescimoMoeda = '';
+            let colunaFobUnitMoeda = '';
+            let colunaFobTotalMoeda = '';
+
+            if (moedaFrete && moedaFrete !== 'USD') {
+                colunaFreteMoeda =
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][frete_moeda_estrangeira]" id="frete_moeda_estrangeira-${newIndex}" value=""></td>`;
+            }
+
+            if (moedaSeguro && moedaSeguro !== 'USD') {
+                colunaSeguroMoeda =
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][seguro_moeda_estrangeira]" id="seguro_moeda_estrangeira-${newIndex}" value=""></td>`;
+            }
+
+            if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                colunaAcrescimoMoeda =
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][acrescimo_moeda_estrangeira]" id="acrescimo_moeda_estrangeira-${newIndex}" value=""></td>`;
+            }
+            if (moedaProcesso && moedaProcesso !== 'USD') {
+                colunaFobUnitMoeda =
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7 fobUnitarioMoedaEstrangeira" name="produtos[${newIndex}][fob_unit_moeda_estrangeira]" id="fob_unit_moeda_estrangeira-${newIndex}" value=""></td>`;
+                colunaFobTotalMoeda =
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_moeda_estrangeira]" id="fob_total_moeda_estrangeira-${newIndex}" value=""></td>`;
+            }
+
+            let tr = `<tr id="row-${newIndex}">
         <!-- Coluna fixa de ações -->
         <td style="position: sticky; left: 0; z-index: 5; background-color: white;">
             <button type="button" class="btn btn-danger removeLine btn-sm btn-remove" data-id="${newIndex}">
@@ -1315,26 +1698,42 @@
         <input type="hidden" name="produtos[${newIndex}][processo_produto_id]" id="processo_produto_id-${newIndex}" value="">
         
         <td>${select}</td>
-        <td><input data-row="${newIndex}" type="text" step="1" class=" form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control " name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]"  id="item-${newIndex}" value=""></td>
-        <td><input type="text" class=" form-control " readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
-        <td><input type="text" class=" form-control " readonly name="produtos[${newIndex}][ncm]" id="ncm-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text"  class=" form-control moneyReal" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][peso_liquido_unitario]" id="peso_liquido_unitario-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" step="1" class="form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]" id="item-${newIndex}" value=""></td>
+        <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
+        <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][ncm]" id="ncm-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][peso_liquido_unitario]" id="peso_liquido_unitario-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal pesoLiqTotal" name="produtos[${newIndex}][peso_liquido_total]" id="peso_liquido_total-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fator_peso]" id="fator_peso-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fator_peso]" id="fator_peso-${newIndex}" value=""></td>
+               ${colunaFobUnitMoeda}
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal fobUnitario" name="produtos[${newIndex}][fob_unit_usd]" id="fob_unit_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][thc_usd]" id="thc_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][thc_brl]" id="thc_brl-${newIndex}" value=""></td>
+        ${colunaFobTotalMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal fobUnitario" name="produtos[${newIndex}][fob_unit_usd]" id="fob_unit_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
+        
+        <!-- FRETE -->
+        ${colunaFreteMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
+        
+        <!-- SEGURO -->
+        ${colunaSeguroMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>
+        
+        <!-- ACRÉSCIMO -->
+        ${colunaAcrescimoMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
+        
+        <!-- Resto das colunas permanecem iguais -->
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][thc_usd]" id="thc_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][thc_brl]" id="thc_brl-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_aduaneiro_usd]" id="valor_aduaneiro_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_aduaneiro_brl]" id="valor_aduaneiro_brl-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][ii_percent]" id="ii_percent-${newIndex}" value=""></td>
@@ -1415,57 +1814,57 @@
             localStorage.setItem('activeTab_processo', currentTab);
         });
 
-     function adicionarSeparadoresAdicao() {
-    const tbody = document.getElementById('productsBody');
-    const linhas = Array.from(tbody.querySelectorAll('tr:not(.separador-adicao)'));
+        function adicionarSeparadoresAdicao() {
+            const tbody = document.getElementById('productsBody');
+            const linhas = Array.from(tbody.querySelectorAll('tr:not(.separador-adicao)'));
 
-    // Primeiro remove todos os separadores existentes
-    document.querySelectorAll('.separador-adicao').forEach(el => el.remove());
+            // Primeiro remove todos os separadores existentes
+            document.querySelectorAll('.separador-adicao').forEach(el => el.remove());
 
-    if (linhas.length === 0) return;
+            if (linhas.length === 0) return;
 
-    // Ordenar as linhas por adição e depois por item
-    linhas.sort((a, b) => {
-        const adicaoA = parseFloat(a.querySelector('input[name*="[adicao]"]').value) || 0;
-        const adicaoB = parseFloat(b.querySelector('input[name*="[adicao]"]').value) || 0;
+            // Ordenar as linhas por adição e depois por item
+            linhas.sort((a, b) => {
+                const adicaoA = parseFloat(a.querySelector('input[name*="[adicao]"]').value) || 0;
+                const adicaoB = parseFloat(b.querySelector('input[name*="[adicao]"]').value) || 0;
 
-        if (adicaoA !== adicaoB) {
-            return adicaoA - adicaoB; // primeiro pela adição
+                if (adicaoA !== adicaoB) {
+                    return adicaoA - adicaoB; // primeiro pela adição
+                }
+
+                const itemA = parseFloat(a.querySelector('input[name*="[item]"]').value) || 0;
+                const itemB = parseFloat(b.querySelector('input[name*="[item]"]').value) || 0;
+                return itemA - itemB; // depois pelo item
+            });
+
+            // Agrupar linhas por adição
+            const grupos = {};
+            linhas.forEach(linha => {
+                const adicao = parseFloat(linha.querySelector('input[name*="[adicao]"]').value) || 0;
+                if (!grupos[adicao]) grupos[adicao] = [];
+                grupos[adicao].push(linha);
+            });
+
+            // Limpar o tbody
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+
+            // Adicionar linhas com separadores
+            Object.keys(grupos).sort((a, b) => a - b).forEach((adicao, index) => {
+                if (index > 0) {
+                    const separador = document.createElement('tr');
+                    separador.className = 'separador-adicao';
+                    separador.innerHTML =
+                        `<td colspan="100" style="background-color: #B7AA09 !important;border-top: 20px dashed #999; height: 10px;"></td>`;
+                    tbody.appendChild(separador);
+                }
+
+                grupos[adicao].forEach(linha => {
+                    tbody.appendChild(linha);
+                });
+            });
         }
-
-        const itemA = parseFloat(a.querySelector('input[name*="[item]"]').value) || 0;
-        const itemB = parseFloat(b.querySelector('input[name*="[item]"]').value) || 0;
-        return itemA - itemB; // depois pelo item
-    });
-
-    // Agrupar linhas por adição
-    const grupos = {};
-    linhas.forEach(linha => {
-        const adicao = parseFloat(linha.querySelector('input[name*="[adicao]"]').value) || 0;
-        if (!grupos[adicao]) grupos[adicao] = [];
-        grupos[adicao].push(linha);
-    });
-
-    // Limpar o tbody
-    while (tbody.firstChild) {
-        tbody.removeChild(tbody.firstChild);
-    }
-
-    // Adicionar linhas com separadores
-    Object.keys(grupos).sort((a, b) => a - b).forEach((adicao, index) => {
-        if (index > 0) {
-            const separador = document.createElement('tr');
-            separador.className = 'separador-adicao';
-            separador.innerHTML =
-                `<td colspan="100" style="background-color: #B7AA09 !important;border-top: 20px dashed #999; height: 10px;"></td>`;
-            tbody.appendChild(separador);
-        }
-
-        grupos[adicao].forEach(linha => {
-            tbody.appendChild(linha);
-        });
-    });
-}
 
 
 

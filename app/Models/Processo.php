@@ -43,7 +43,15 @@ class Processo extends Model
         'data_moeda_frete_internacional',
         'data_moeda_seguro_internacional',
         'data_moeda_acrescimo_frete',
+        'cotacao_moeda_processo',
+        'data_cotacao_processo',
+        'moeda_processo',
     ];
+
+    protected $casts = [
+        'cotacao_moeda_processo' => 'json'
+    ];
+    
     public function cliente()
     {
         return $this->hasOne(Cliente::class, 'id', 'cliente_id');
