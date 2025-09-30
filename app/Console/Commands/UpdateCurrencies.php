@@ -49,14 +49,16 @@ class UpdateCurrencies extends Command
 
     private function obterDataUtil(): string
     {
-        $data = now();
+        // começa por "ontem" e recua até achar um dia não-final-de-semana
+        $data = now()->subDay();
 
-        while (in_array($data->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+        while ($data->isWeekend()) {
             $data->subDay();
         }
 
-        return $data->subDay()->format('m-d-Y');
+        return $data->format('m-d-Y');
     }
+
 
     private function buscarMoedasSuportadas(): array
     {

@@ -154,6 +154,7 @@
         }
     </style>
     <form enctype="multipart/form-data"
+    id="formProcesso"
         action="{{ isset($processo) ? route('processo.update', $processo->id) : route('processo.store') }}" method="POST">
         @csrf
         @if (isset($processo))
@@ -215,7 +216,7 @@
                             @if (isset($processo))
                                 @include('processo.includes.tabela-produtos')
                                 <div class="tab-pane fade" id="custom-tabs-four-home"
-                                    aria-labelledby="custom-tabs-four-home-tab" role="tabpanel">
+                                    ari{a-labelledby="custom-tabs-four-home-tab" role="tabpanel">
                                     <iframe src="{{ route('processo.esboco.pdf', $processo->id) }}" width="100%"
                                         height="800px" frameborder="0"></iframe>
                                 </div>
@@ -260,52 +261,163 @@
             let moedaFrete = $('#frete_internacional_moeda').val();
             let moedaSeguro = $('#seguro_internacional_moeda').val();
             let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
-            let moedaProcesso = $('#moeda_processo').val(); // Nova variável para moeda do processo
+            let moedaProcesso = $('#moeda_processo').val();
+
+            console.log('Atualizando visibilidade das colunas:', {
+                moedaFrete,
+                moedaSeguro,
+                moedaAcrescimo,
+                moedaProcesso
+            });
 
             // Atualizar títulos das colunas
             atualizarTitulosColunas(moedaFrete, moedaSeguro, moedaAcrescimo, moedaProcesso);
 
+            // Mostrar/ocultar colunas baseado na moeda do processo
+            if (moedaProcesso && moedaProcesso !== 'USD') {
+                // Mostrar colunas da moeda estrangeira
+                $('[id*="fob_unit_moeda_estrangeira-"]').closest('td').show();
+                $('[id*="fob_total_moeda_estrangeira-"]').closest('td').show();
+
+                // Ocultar colunas USD
+                $('[id*="fob_unit_usd-"]').closest('td').hide();
+
+                // Atualizar títulos
+                $('th').each(function() {
+                    let texto = $(this).text();
+                    if (texto.includes('FOB UNIT')) {
+                        $(this).text('FOB UNIT ' + moedaProcesso);
+                    }
+                    if (texto.includes('FOB TOTAL') && !texto.includes('USD') && !texto.includes('BRL')) {
+                        $(this).text('FOB TOTAL ' + moedaProcesso);
+                    }
+                });
+            } else {
+                // Mostrar colunas USD
+                $('[id*="fob_unit_usd-"]').closest('td').show();
+
+                // Ocultar colunas da moeda estrangeira
+                $('[id*="fob_unit_moeda_estrangeira-"]').closest('td').hide();
+                $('[id*="fob_total_moeda_estrangeira-"]').closest('td').hide();
+
+                // Atualizar títulos
+                $('th').each(function() {
+                    let texto = $(this).text();
+                    if (texto.includes('FOB UNIT')) {
+                        $(this).text('FOB UNIT USD');
+                    }
+                    if (texto.includes('FOB TOTAL') && !texto.includes('USD') && !texto.includes('BRL')) {
+                        $(this).text('FOB TOTAL USD');
+                    }
+                });
+            }
+
             // Mostrar/ocultar colunas de frete
             if (moedaFrete && moedaFrete !== 'USD') {
                 $('[id*="frete_moeda_estrangeira-"]').closest('td').show();
-                $('th:contains("FRETE INT.USD")').prev('th').show().text(`FRETE INT.${moedaFrete}`);
+                $('th').each(function() {
+                    let texto = $(this).text();
+                    if (texto.includes('FRETE INT.') && !texto.includes('USD') && !texto.includes('BRL')) {
+                        $(this).text('FRETE INT.' + moedaFrete).show();
+                    }
+                });
             } else {
                 $('[id*="frete_moeda_estrangeira-"]').closest('td').hide();
-                $('th:contains("FRETE INT.USD")').prev('th').hide();
             }
 
             // Mostrar/ocultar colunas de seguro
             if (moedaSeguro && moedaSeguro !== 'USD') {
                 $('[id*="seguro_moeda_estrangeira-"]').closest('td').show();
-                $('th:contains("SEGURO INT.USD")').prev('th').show().text(`SEGURO INT.${moedaSeguro}`);
+                $('th').each(function() {
+                    let texto = $(this).text();
+                    if (texto.includes('SEGURO INT.') && !texto.includes('USD') && !texto.includes('BRL')) {
+                        $(this).text('SEGURO INT.' + moedaSeguro).show();
+                    }
+                });
             } else {
                 $('[id*="seguro_moeda_estrangeira-"]').closest('td').hide();
-                $('th:contains("SEGURO INT.USD")').prev('th').hide();
             }
 
             // Mostrar/ocultar colunas de acréscimo
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 $('[id*="acrescimo_moeda_estrangeira-"]').closest('td').show();
-                $('th:contains("ACRESC. FRETE USD")').prev('th').show().text(`ACRESC. FRETE ${moedaAcrescimo}`);
+                $('th').each(function() {
+                    let texto = $(this).text();
+                    if (texto.includes('ACRESC. FRETE') && !texto.includes('USD') && !texto.includes('BRL')) {
+                        $(this).text('ACRESC. FRETE ' + moedaAcrescimo).show();
+                    }
+                });
             } else {
                 $('[id*="acrescimo_moeda_estrangeira-"]').closest('td').hide();
-                $('th:contains("ACRESC. FRETE USD")').prev('th').hide();
-            }
-
-            // Mostrar/ocultar colunas de FOB
-            if (moedaProcesso && moedaProcesso !== 'USD') {
-                $('[id*="fob_unit_moeda_estrangeira-"]').closest('td').show();
-                $('[id*="fob_total_moeda_estrangeira-"]').closest('td').show();
-                $('th:contains("FOB UNIT USD")').prev('th').show().text(`FOB UNIT ${moedaProcesso}`);
-                $('th:contains("FOB TOTAL USD")').prev('th').show().text(`FOB TOTAL ${moedaProcesso}`);
-            } else {
-                $('[id*="fob_unit_moeda_estrangeira-"]').closest('td').hide();
-                $('[id*="fob_total_moeda_estrangeira-"]').closest('td').hide();
-                $('th:contains("FOB UNIT USD")').prev('th').hide();
-                $('th:contains("FOB TOTAL USD")').prev('th').hide();
             }
         }
 
+        function converterMoedaProcessoParaUSD(valor, moedaProcesso) {
+            if (!moedaProcesso || moedaProcesso === 'USD') {
+                return valor;
+            }
+
+            let cotacaoProcesso = getCotacaoesProcesso();
+            let cotacaoMoeda = cotacaoProcesso[moedaProcesso]?.venda ?? 0;
+            let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+
+            // VERIFICAR SE AS COTAÇÕES SÃO VÁLIDAS
+            if (!cotacaoMoeda || cotacaoMoeda === 0 || !cotacaoUSD || cotacaoUSD === 0) {
+                console.warn(`Cotações inválidas para conversão: ${moedaProcesso} = ${cotacaoMoeda}, USD = ${cotacaoUSD}`);
+                return valor; // Retorna o valor original se não puder converter
+            }
+
+            return valor * (cotacaoMoeda / cotacaoUSD);
+        }
+
+        function converterUSDParaMoedaProcesso(valor, moedaProcesso) {
+            if (!moedaProcesso || moedaProcesso === 'USD') {
+                return valor;
+            }
+
+            let cotacaoProcesso = getCotacaoesProcesso();
+            let cotacaoMoeda = cotacaoProcesso[moedaProcesso]?.venda ?? 0;
+            let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+
+            // VERIFICAR SE AS COTAÇÕES SÃO VÁLIDAS
+            if (!cotacaoMoeda || cotacaoMoeda === 0 || !cotacaoUSD || cotacaoUSD === 0) {
+                console.warn(`Cotações inválidas para conversão: ${moedaProcesso} = ${cotacaoMoeda}, USD = ${cotacaoUSD}`);
+                return valor; // Retorna o valor original se não puder converter
+            }
+
+            return valor * (cotacaoUSD / cotacaoMoeda);
+        }
+        // Modifique a função que atualiza os campos FOB
+        function atualizarCamposFOB(rowId, valores) {
+            let moedaProcesso = $('#moeda_processo').val();
+            let quantidade = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
+            // Garantir que os valores são válidos
+            if (isNaN(valores.fobUnitario)) valores.fobUnitario = 0;
+            if (isNaN(valores.fobTotal)) valores.fobTotal = 0;
+            if (isNaN(valores.dolar)) valores.dolar = 1;
+
+            // Calcular totais
+            let fobTotalUSD = valores.fobTotal;
+            let fobTotalBRL = valores.fobTotal * valores.dolar;
+
+            if (moedaProcesso && moedaProcesso !== 'USD') {
+                // Calcular valores na moeda do processo
+                let fobTotalMoedaEstrangeira = valores.fobUnitarioMoedaEstrangeira * quantidade;
+
+                // Atualizar campos da moeda estrangeira
+                // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitarioMoedaEstrangeira));
+                $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira));
+
+                // Para moeda diferente de USD, o fobTotalUSD já está convertido na função obterValoresBase
+            } else {
+                // Moeda é USD - atualizar campo USD diretamente
+                $(`#fob_unit_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitario));
+            }
+
+            // Valores totais (sempre em USD e BRL)
+            $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotalUSD));
+            $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotalBRL));
+        }
         // Função para atualizar títulos
         function atualizarTitulosColunas(moedaFrete, moedaSeguro, moedaAcrescimo, moedaProcesso) {
             // Atualizar títulos dinamicamente se necessário
@@ -661,31 +773,62 @@
 
                                 const pesoLiqUnit = pesoTotal / (quantidade || 1);
                                 const fobTotal = fobUnitario * quantidade;
-                                const totalPesoLiq = calcularPesoTotal();
-                                const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
 
+                                // SEGUNDO: Atualizar os campos FOB da linha ANTES de calcular o total geral
+                                let moedaProcesso = $('#moeda_processo').val();
+                                let cotacaoProcesso = getCotacaoesProcesso();
+                                let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+
+                                // Atualizar campos FOB da linha
+                                $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
+
+                                // TERCEIRO: AGORA calcular o FOB total geral (com os valores atualizados)
                                 const fobTotalGeral = calcularFobTotalGeral();
+
+                                // QUARTO: Obter cotação do dólar e prosseguir com outros cálculos
                                 const moedasOBject = $('#cotacao_moeda_processo').val() ? JSON.parse($(
                                     '#cotacao_moeda_processo').val()) : JSON.parse($('#dolarHoje').val())
                                 const moedaDolar = moedasOBject['USD'].venda
-
                                 const dolar = MoneyUtils.parseMoney(moedaDolar);
+
+                                // Atualizar FOB total em BRL
+                                $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
+
+                                // QUINTO: Continuar com os outros cálculos...
+                                const totalPesoLiq = calcularPesoTotal();
+                                const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
 
                                 atualizarFatoresFob();
                                 atualizarTotaisGlobais(fobTotalGeral, dolar);
                                 const moedaFrete = $('#frete_internacional_moeda').val();
-                                console.log(moedaFrete)
-                                if (moedaDolar == 'USD') {
+
+                                let valorFreteInternacional = MoneyUtils.parseMoney($('#frete_internacional')
+                                    .val());
+                                let valorFreteInternacionalDolar = 0;
+                                let valorFreteInternacionalMoedaEstrangeira = 0;
+
+                                if (moedaFrete != 'USD') {
+                                    let cotacaoProcesso = getCotacaoesProcesso();
+                                    let cotacaoMoedaFloat = MoneyUtils.parseMoney($(
+                                        '#cotacao_frete_internacional').val());
+                                    let moeda = $('#moeda_processo').val();
+                                    let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+                                    let moedaEmUSD = cotacaoMoedaFloat / cotacaoUSD;
+                                    valorFreteInternacionalMoedaEstrangeira = valorFreteInternacional;
+                                    valorFreteInternacionalDolar = valorFreteInternacional * moedaEmUSD
+                                    console.log({
+                                        valorFreteInternacional,
+                                        cotacaoMoedaFloat,
+                                        cotacaoUSD,
+                                        moedaEmUSD,
+                                        valorFreteInternacionalDolar
+                                    })
 
                                 } else {
-                                    if (moedaDolar) {
-
-                                    } else {
-
-                                    }
+                                    valorFreteInternacionalDolar = valorFreteInternacional;
                                 }
-                                const freteUsdInt = MoneyUtils.parseMoney($('#frete_internacional').val()) *
-                                    fatorPesoRow;
+
+                                const freteUsdInt = valorFreteInternacionalDolar * fatorPesoRow;
                                 const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
                                 const thcRow = thc_capataziaBase * fatorPesoRow;
                                 const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
@@ -757,7 +900,8 @@
                                     vlrIcmsSt,
                                     base_icms_st,
                                     fatorPesoRow,
-                                    fobTotalGeral
+                                    fobTotalGeral,
+                                    fobUnitario
                                 });
 
                                 atualizarCamposCabecalho();
@@ -826,6 +970,14 @@
 
                 // atualiza o hidden sempre
                 $('#cotacao_moeda_processo').val(JSON.stringify(cotacaoProcesso));
+
+                // ADICIONAR ESTA LINHA PARA ATUALIZAR A VISIBILIDADE DAS COLUNAS
+                setTimeout(atualizarVisibilidadeColunasMoeda, 100);
+                
+                // ADICIONAR ESTA LINHA PARA RECALCULAR A TABELA COM A NOVA MOEDA
+                setTimeout(recalcularTodaTabela, 200);
+                $('#formProcesso').submit();
+
             });
 
 
@@ -1016,7 +1168,7 @@
         };
 
         function atualizarFatoresFob() {
-            let fobTotalGeral = 0;
+            let fobTotalGeral = calcularFobTotalGeral();
             const fobTotaisPorLinha = {};
 
             $('.fobUnitario').each(function() {
@@ -1026,7 +1178,6 @@
                 const fobTotal = unitario * qtd;
 
                 fobTotaisPorLinha[rowId] = fobTotal;
-                fobTotalGeral += fobTotal;
             });
 
             for (const rowId in fobTotaisPorLinha) {
@@ -1056,11 +1207,14 @@
         function recalcularTodaTabela() {
             const rows = $('#productsBody tr');
             const moedasOBject = JSON.parse($('#dolarHoje').val());
-            const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.')
+            const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.');
             const dolar = MoneyUtils.parseMoney(moedaDolar);
             const totalPesoLiq = calcularPesoTotal();
-            const fobTotalGeral = calcularFobTotalGeral();
             const taxaSisComex = calcularTaxaSiscomex(rows.length);
+
+            // PRIMEIRA PASSADA: Atualizar FOBs e calcular novo FOB Total Geral
+            let fobTotalGeralAtualizado = 0;
+            const fobTotaisPorLinha = {};
 
             rows.each(function() {
                 const rowId = $(this).find('input').first().data('row');
@@ -1072,30 +1226,43 @@
 
                 const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
                 const fobTotal = fobUnitario * quantidade;
-                const fatorVlrFob_AX = fobTotal / (fobTotalGeral || 1);
 
+                // Armazena os valores para usar depois
+                fobTotaisPorLinha[rowId] = {
+                    fobTotal,
+                    fobUnitario,
+                    quantidade,
+                    fatorPesoRow,
+                    pesoTotal
+                };
+
+                fobTotalGeralAtualizado += fobTotal;
+
+                // Atualiza campos básicos
                 $(`#peso_liquido_unitario-${rowId}`).val(pesoTotal / (quantidade || 1));
                 $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
                 $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
-                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
             });
 
-            // Segunda passada: calcular impostos e despesas
+            // SEGUNDA PASSADA: Calcular fatores e atualizar campos que dependem do FOB Total Geral atualizado
             rows.each(function() {
-                const rowId = $(this).find('select').first().data('row');
-                const {
-                    fobUnitario,
-                    quantidade
-                } = obterValoresBase(rowId);
-                const fobTotal = fobUnitario * quantidade;
-                const fatorPesoRow = MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
+                const rowId = $(this).find('input').first().data('row');
+                const linha = fobTotaisPorLinha[rowId];
 
-                const fatorVlrFob_AX = parseFloat($(`#fator_valor_fob-${rowId}`).val()) || 0;
+                const fobTotal = linha.fobTotal;
+                const fobUnitario = linha.fobUnitario;
+                const quantidade = linha.quantidade;
+                const fatorPesoRow = linha.fatorPesoRow;
+                const pesoTotal = linha.pesoTotal;
 
+                // AGORA calcula o fator com o FOB Total Geral atualizado
+                const fatorVlrFob_AX = fobTotal / (fobTotalGeralAtualizado || 1);
+                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
+
+                // Resto dos cálculos usando o FOB Total Geral ATUALIZADO
                 const moedaFrete = $('#frete_internacional_moeda').val();
                 let valorFreteInternacional = MoneyUtils.parseMoney($('#frete_internacional').val());
                 let valorFreteInternacionalDolar = 0;
-                let valorFreteInternacionalMoedaEstrangeira = 0;
 
                 if (moedaFrete != 'USD') {
                     let cotacaoProcesso = getCotacaoesProcesso();
@@ -1103,13 +1270,7 @@
                     let moeda = $('#moeda_processo').val();
                     let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
                     let moedaEmUSD = cotacaoMoedaFloat / cotacaoUSD;
-                    valorFreteInternacionalMoedaEstrangeira = valorFreteInternacional;
-                    valorFreteInternacionalDolar = valorFreteInternacional * moedaEmUSD
-                    console.log({
-                        valorFreteInternacional,
-                        moedaEmUSD,
-                        cotacaoUSD
-                    })
+                    valorFreteInternacionalDolar = valorFreteInternacional * moedaEmUSD;
                 } else {
                     valorFreteInternacionalDolar = valorFreteInternacional;
                 }
@@ -1117,15 +1278,19 @@
                 const freteUsdInt = valorFreteInternacionalDolar * fatorPesoRow;
                 const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
                 const thcRow = thc_capataziaBase * fatorPesoRow;
-                const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
-                const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeral, dolar);
+
+                // IMPORTANTE: Usar fobTotalGeralAtualizado aqui
+                const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeralAtualizado);
+                const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeralAtualizado, dolar);
 
                 const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
                     seguroIntUsdRow, thcRow, dolar);
                 const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
 
                 const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
-                const fatorTaxaSiscomex_AY = taxaSisComex / ((fobTotal) * dolar);
+
+                // CORREÇÃO: Usar fobTotalGeralAtualizado no cálculo do fatorTaxaSiscomex_AY
+                const fatorTaxaSiscomex_AY = taxaSisComex / ((fobTotalGeralAtualizado) * dolar);
                 const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobUnitario * dolar);
 
                 const despesas = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY,
@@ -1136,11 +1301,12 @@
                 const vlrIcmsReduzido = bcIcmsSReducao * impostos.icms;
                 const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
                     rowId);
+
                 const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#mva-${rowId}`).val()) : 0;
                 let base_icms_st = 0;
                 let vlrIcmsSt = 0;
                 if (mva) {
-                    base_icms_st = totais.vlrTotalNfSemIcms * (1 + mva)
+                    base_icms_st = totais.vlrTotalNfSemIcms * (1 + mva);
                     const icms_st = $(`#icms_st_percent-${rowId}`).val() ? MoneyUtils.parsePercentage($(
                         `#icms_st_percent-${rowId}`).val()) : 0;
                     if (icms_st) {
@@ -1171,12 +1337,14 @@
                     vlrIcmsSt,
                     base_icms_st,
                     fatorPesoRow,
-                    fobTotalGeral
+                    fobTotalGeral: fobTotalGeralAtualizado, // Usar o valor atualizado
+                    fobUnitario
                 });
             });
 
             atualizarCamposCabecalho();
-            atualizarTotaisGlobais(fobTotalGeral, dolar);
+            atualizarTotaisGlobais(fobTotalGeralAtualizado, dolar); // Usar o valor atualizado
+            atualizarFatoresFob(); // Atualizar fatores FOB após todos os cálculos
         }
 
         function getCamposExternos() {
@@ -1187,11 +1355,46 @@
             ];
         }
 
+        // Função para obter valores base com a nova lógica
         function obterValoresBase(rowId) {
+            let moedaProcesso = $('#moeda_processo').val();
+            let fobUnitario;
+            let fobUnitarioMoedaEstrangeira;
+
+            let pesoTotal = MoneyUtils.parseMoney($(`#peso_liquido_total-${rowId}`).val()) || 0;
+            let quantidade = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
+
+            if (moedaProcesso && moedaProcesso !== 'USD') {
+                // Se tem moeda estrangeira, usar o valor dela como base
+                fobUnitarioMoedaEstrangeira = MoneyUtils.parseMoney($(`#fob_unit_moeda_estrangeira-${rowId}`).val()) || 0;
+
+                if (fobUnitarioMoedaEstrangeira > 0) {
+                    // Converter da moeda estrangeira para USD
+                    fobUnitario = converterMoedaProcessoParaUSD(fobUnitarioMoedaEstrangeira, moedaProcesso);
+                } else {
+                    // Se não tem valor na moeda estrangeira, tentar usar USD como fallback
+                    fobUnitario = MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val()) || 0;
+                    // E converter USD para moeda estrangeira
+                    if (fobUnitario > 0) {
+                        fobUnitarioMoedaEstrangeira = converterUSDParaMoedaProcesso(fobUnitario, moedaProcesso);
+                    }
+                }
+            } else {
+                // Moeda é USD - usar valor direto
+                fobUnitario = MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val()) || 0;
+                fobUnitarioMoedaEstrangeira = fobUnitario; // Para USD, são iguais
+            }
+
+            if (isNaN(fobUnitario)) fobUnitario = 0;
+            if (isNaN(fobUnitarioMoedaEstrangeira)) fobUnitarioMoedaEstrangeira = 0;
+            if (isNaN(pesoTotal)) pesoTotal = 0;
+            if (isNaN(quantidade)) quantidade = 0;
+
             return {
-                pesoTotal: MoneyUtils.parseMoney($(`#peso_liquido_total-${rowId}`).val()),
-                fobUnitario: MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val()),
-                quantidade: MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0
+                pesoTotal: pesoTotal,
+                fobUnitario: fobUnitario,
+                fobUnitarioMoedaEstrangeira: fobUnitarioMoedaEstrangeira,
+                quantidade: quantidade
             };
         }
 
@@ -1202,7 +1405,86 @@
             });
             return total;
         }
+        $(document).on('keyup', '.fobUnitarioMoedaEstrangeira', function(e) {
+            const rowId = $(this).data('row');
+            const valor = $(this).val();
 
+            // Só calcular se o valor for válido e não estiver vazio
+            if (valor && valor.trim() !== '' && !isNaN(MoneyUtils.parseMoney(valor))) {
+                // Pequeno delay para garantir que o usuário terminou de digitar
+                clearTimeout(window.fobMoedaTimeout);
+                window.fobMoedaTimeout = setTimeout(() => {
+                    $(this).trigger('change');
+                }, 500);
+            }
+        });
+
+        // E também no fobUnitario normal
+        $(document).on('keyup', '.fobUnitario', function(e) {
+            const rowId = $(this).data('row');
+            const valor = $(this).val();
+
+            if (valor && valor.trim() !== '' && !isNaN(MoneyUtils.parseMoney(valor))) {
+                clearTimeout(window.fobUsdTimeout);
+                window.fobUsdTimeout = setTimeout(() => {
+                    $(this).trigger('change');
+                }, 500);
+            }
+        });
+
+        function getColunasFOBCondicionais(newIndex, moedaProcesso) {
+            if (moedaProcesso && moedaProcesso !== 'USD') {
+                return `
+            <td>
+                <input data-row="${newIndex}" type="text" 
+                    class="form-control fobUnitarioMoedaEstrangeira moneyReal7"
+                    name="produtos[${newIndex}][fob_unit_moeda_estrangeira]" 
+                    id="fob_unit_moeda_estrangeira-${newIndex}" value="">
+            </td>
+            <td>
+                <input data-row="${newIndex}" type="text" 
+                    class="form-control moneyReal7" readonly
+                    name="produtos[${newIndex}][fob_total_moeda_estrangeira]" 
+                    id="fob_total_moeda_estrangeira-${newIndex}" value="">
+            </td>
+        `;
+            } else {
+                return `
+            <td>
+                <input data-row="${newIndex}" type="text" 
+                    class="form-control fobUnitario moneyReal7"
+                    name="produtos[${newIndex}][fob_unit_usd]" 
+                    id="fob_unit_usd-${newIndex}" value="">
+            </td>
+        `;
+            }
+        }
+        $(document).on('change keyup', '.fobUnitarioMoedaEstrangeira, .fobUnitario', function(e) {
+            const rowId = $(this).data('row');
+            if (rowId != null) {
+                // Pequeno delay para garantir processamento
+                setTimeout(() => {
+                    const {
+                        pesoTotal,
+                        fobUnitario,
+                        quantidade,
+                        fobUnitarioMoedaEstrangeira
+                    } = obterValoresBase(rowId);
+                    const fobTotal = fobUnitario * quantidade;
+
+                    let cotacaoProcesso = getCotacaoesProcesso();
+
+                    // Usar a cotação específica do seguro, não do frete
+                    let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+                    atualizarCamposFOB(rowId, {
+                        fobUnitarioMoedaEstrangeira: fobUnitarioMoedaEstrangeira,
+                        fobUnitario: fobUnitario,
+                        fobTotal: fobTotal,
+                        dolar: cotacaoUSD
+                    });
+                }, 100);
+            }
+        });
 
         function recalcularFatorPeso(totalPeso, currentRowId) {
             let fator = 0;
@@ -1218,13 +1500,10 @@
 
         function calcularFobTotalGeral() {
             let total = 0;
-            $('.fobUnitario').each(function() {
-                const rowId = $(this).data('row');
-                const unit = MoneyUtils.parseMoney($(this).val());
-                const qtd = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val());
-                total += unit * qtd;
+            $('[id^="fob_total_usd-"]').each(function() {
+                total += MoneyUtils.parseMoney($(this).val()) || 0;
             });
-            return total;
+            return total || 0;
         }
 
         function atualizarTotaisGlobais(fobTotalGeral, dolar) {
@@ -1385,9 +1664,7 @@
 
         function atualizarCampos(rowId, valores) {
             $(`#peso_liquido_unitario-${rowId}`).val(valores.pesoLiqUnit);
-            $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal));
-            $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.fobTotal * valores.dolar));
-            // Atualizar colunas de moeda estrangeira quando necessário
+
             let moedaFrete = $('#frete_internacional_moeda').val();
             let moedaSeguro = $('#seguro_internacional_moeda').val();
             let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
@@ -1399,15 +1676,15 @@
 
                 $(`#frete_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorFreteMoedaEstrangeira));
             }
-
             $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt));
             $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt * valores.dolar));
 
-            // Seguro - valor na moeda estrangeira original  
             if (moedaSeguro && moedaSeguro !== 'USD') {
 
                 let valorSeguroMoedaEstrangeira = MoneyUtils.parseMoney($('#seguro_internacional').val()) * (valores
                     .fobTotal / valores.fobTotalGeral);
+
+
                 $(`#seguro_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorSeguroMoedaEstrangeira));
             }
 
@@ -1434,7 +1711,7 @@
                     let fobUnitMoedaEstrangeira = valores.fobUnitario * (cotacaoMoedaProcesso / cotacaoUSD);
                     let fobTotalMoedaEstrangeira = valores.fobTotal * (cotacaoMoedaProcesso / cotacaoUSD);
 
-                    $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobUnitMoedaEstrangeira));
+                    // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobUnitMoedaEstrangeira));
                     $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira));
                 }
             }
@@ -1517,20 +1794,14 @@
             const campos = getCamposExternos()
             const lengthTable = $('#productsBody tr').length
 
-            // Primeiro calcula o FOB total geral
-            let fobTotalGeral = 0
-            for (let i = 0; i < lengthTable; i++) {
-                const fobUnit = MoneyUtils.parseMoney($(`#fob_unit_usd-${i}`).val())
-                const qtd = parseInt($(`#quantidade-${i}`).val()) || 0
-                fobTotalGeral += fobUnit * qtd
-            }
+            // Usar a função centralizada em vez de calcular manualmente
+            let fobTotalGeral = calcularFobTotalGeral();
 
             // Para cada linha da tabela
             for (let i = 0; i < lengthTable; i++) {
-                const fobUnit = MoneyUtils.parseMoney($(`#fob_unit_usd-${i}`).val())
-                const qtd = parseInt($(`#quantidade-${i}`).val()) || 0
-                const fobTotal = fobUnit * qtd
-                const fatorVlrFob_AX = fobTotalGeral ? (fobTotal / fobTotalGeral) : 0
+                // Obter o fob_total_usd diretamente da coluna
+                const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
+                const fatorVlrFob_AX = fobTotalGeral ? (fobTotal / fobTotalGeral) : 0;
                 let desp_desenbaraco_parte_1 = 0
 
                 for (let campo of campos) {
@@ -1539,6 +1810,7 @@
                     desp_desenbaraco_parte_1 += valorDistribuido;
                     $(`#${campo}-${i}`).val(valorDistribuido)
                 }
+
                 let taxa_siscomex = $(`#taxa_siscomex-${i}`).val() ? MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) :
                     0
                 let multa = $(`#multa-${i}`).val() ? MoneyUtils.parseMoney($(`#multa-${i}`).val()) : 0
@@ -1552,7 +1824,6 @@
                 let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + i).val() ? parseFloat($('#frete_dta_sts_ana-' + i)
                     .val()) : 0
                 let honorarios_nix = $('#honorarios_nix-' + i).val() ? parseFloat($('#honorarios_nix-' + i).val()) : 0
-
 
                 let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + armazenagem_sts +
                     frete_dta_sts_ana + honorarios_nix
@@ -1663,8 +1934,6 @@
             let colunaFreteMoeda = '';
             let colunaSeguroMoeda = '';
             let colunaAcrescimoMoeda = '';
-            let colunaFobUnitMoeda = '';
-            let colunaFobTotalMoeda = '';
 
             if (moedaFrete && moedaFrete !== 'USD') {
                 colunaFreteMoeda =
@@ -1680,12 +1949,9 @@
                 colunaAcrescimoMoeda =
                     `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][acrescimo_moeda_estrangeira]" id="acrescimo_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
-            if (moedaProcesso && moedaProcesso !== 'USD') {
-                colunaFobUnitMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7 fobUnitarioMoedaEstrangeira" name="produtos[${newIndex}][fob_unit_moeda_estrangeira]" id="fob_unit_moeda_estrangeira-${newIndex}" value=""></td>`;
-                colunaFobTotalMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_moeda_estrangeira]" id="fob_total_moeda_estrangeira-${newIndex}" value=""></td>`;
-            }
+
+            // USAR A FUNÇÃO AQUI para as colunas FOB
+            let colunasFOB = getColunasFOBCondicionais(newIndex, moedaProcesso);
 
             let tr = `<tr id="row-${newIndex}">
         <!-- Coluna fixa de ações -->
@@ -1707,11 +1973,7 @@
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][peso_liquido_unitario]" id="peso_liquido_unitario-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal pesoLiqTotal" name="produtos[${newIndex}][peso_liquido_total]" id="peso_liquido_total-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fator_peso]" id="fator_peso-${newIndex}" value=""></td>
-               ${colunaFobUnitMoeda}
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal fobUnitario" name="produtos[${newIndex}][fob_unit_usd]" id="fob_unit_usd-${newIndex}" value=""></td>
-        ${colunaFobTotalMoeda}
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
+        ${colunasFOB}
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal fobUnitario" name="produtos[${newIndex}][fob_unit_usd]" id="fob_unit_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>

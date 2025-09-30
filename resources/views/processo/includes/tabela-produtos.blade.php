@@ -85,7 +85,22 @@
                         <th>PESO LIQ. UNIT</th>
                         <th>PESO LIQ TOTAL</th>
                         <th>FATOR PESO</th>
-                        <th>FOB UNIT USD</th>
+                        <!-- COLUNAS FOB CONDICIONAIS -->
+                        <!-- COLUNAS FOB CONDICIONAIS -->
+                        <!-- COLUNAS FOB - SEMPRE EXISTEM -->
+                        @php
+                            $moedaProcesso = $processo->moeda_processo ?? 'USD';
+                        @endphp
+
+                        @if ($moedaProcesso == 'USD')
+                            <th>FOB UNIT USD</th>
+                        @else
+                            <th>FOB UNIT {{ $moedaProcesso }}</th>
+                        @endif
+
+                        @if ($moedaProcesso != 'USD')
+                            <th>VLR TOTALFOB {{ $moedaProcesso }}</th>
+                        @endif
                         <th>VLR TOTALFOB USD</th>
                         <th>VLR TOTALFOB R$</th>
                         <!-- FRETE - Colunas condicionais -->
@@ -263,13 +278,34 @@
                                     value="{{ $processoProduto->fator_peso ? number_format($processoProduto->fator_peso, 5, ',', '.') : '' }}">
                             </td>
 
-                            <td>
-                                <input data-row="{{ $index }}" type="text"
-                                    class="form-control fobUnitario moneyReal7"
-                                    name="produtos[{{ $index }}][fob_unit_usd]"
-                                    id="fob_unit_usd-{{ $index }}"
-                                    value="{{ $processoProduto->fob_unit_usd ? number_format($processoProduto->fob_unit_usd, 7, ',', '.') : '' }}">
-                            </td>
+                            <!-- COLUNAS FOB - SEMPRE EXISTEM -->
+                            @if ($moedaProcesso == 'USD')
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control fobUnitario moneyReal7"
+                                        name="produtos[{{ $index }}][fob_unit_usd]"
+                                        id="fob_unit_usd-{{ $index }}"
+                                        value="{{ $processoProduto->fob_unit_usd ? number_format($processoProduto->fob_unit_usd, 7, ',', '.') : '' }}">
+                                </td>
+                            @else
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control fobUnitarioMoedaEstrangeira moneyReal7"
+                                        name="produtos[{{ $index }}][fob_unit_moeda_estrangeira]"
+                                        id="fob_unit_moeda_estrangeira-{{ $index }}"
+                                        value="{{ $processoProduto->fob_unit_moeda_estrangeira ? number_format($processoProduto->fob_unit_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                </td>
+                            @endif
+
+                            @if ($moedaProcesso != 'USD')
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][fob_total_moeda_estrangeira]"
+                                        id="fob_total_moeda_estrangeira-{{ $index }}"
+                                        value="{{ $processoProduto->fob_total_moeda_estrangeira ? number_format($processoProduto->fob_total_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                </td>
+                            @endif
 
                             <td>
                                 <input data-row="{{ $index }}" type="text" class="form-control moneyReal7"

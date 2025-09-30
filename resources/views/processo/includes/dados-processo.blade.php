@@ -337,7 +337,7 @@
                        </div>
 
                        <div id="visualizacaoMoedaDolar"
-                           class=" mt-3 {{ $processo->cotacao_moeda_processo == 'USD' || !$processo->cotacao_moeda_processo ? 'd-none ' : 'col-12' }}  ">
+                           class=" mt-3 {{ $processo->moeda_processo == 'USD' || !$processo->moeda_processo ? 'd-none ' : 'col-12' }}  ">
 
                            <label for="acrescimo_frete" class="form-label text-white">MOEDA EM USD</label>
                            <input class="form-control moneyReal"
