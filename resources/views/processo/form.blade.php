@@ -153,8 +153,7 @@
             font-weight: bold;
         }
     </style>
-    <form enctype="multipart/form-data"
-    id="formProcesso"
+    <form enctype="multipart/form-data" id="formProcesso"
         action="{{ isset($processo) ? route('processo.update', $processo->id) : route('processo.store') }}" method="POST">
         @csrf
         @if (isset($processo))
@@ -973,7 +972,7 @@
 
                 // ADICIONAR ESTA LINHA PARA ATUALIZAR A VISIBILIDADE DAS COLUNAS
                 setTimeout(atualizarVisibilidadeColunasMoeda, 100);
-                
+
                 // ADICIONAR ESTA LINHA PARA RECALCULAR A TABELA COM A NOVA MOEDA
                 setTimeout(recalcularTodaTabela, 200);
                 $('#formProcesso').submit();
@@ -983,7 +982,9 @@
 
             $('#display_cotacao').on('change', function() {
                 let cotacaoProcesso = getCotacaoesProcesso();
+                console.log(this.value);
                 let cotacaoMoedaFloat = MoneyUtils.parseMoney(this.value);
+                console.log(cotacaoMoedaFloat);
                 let moeda = $('#moeda_processo').val();
                 let data = $('#data_cotacao_processo').val();
 
@@ -1014,8 +1015,11 @@
                 // se não for USD, cria/atualiza versão moeda -> USD
                 if (moeda && moeda !== 'USD') {
                     let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+                    console.log({cotacaoMoedaFloat, cotacaoUSD})
                     let moedaEmUSD = cotacaoMoedaFloat / cotacaoUSD;
-
+              
+                    $('#moeda_processo_usd').val(MoneyUtils.formatMoney(moedaEmUSD, 4));
+                    $('#visualizacaoMoedaDolar').removeClass('d-none').addClass('col-12');
                     cotacaoProcesso[`${moeda}_USD`] = {
                         nome: `${cotacaoProcesso[moeda].nome} em USD`,
                         data: cotacaoProcesso[moeda].data,
@@ -1023,6 +1027,9 @@
                         compra: moedaEmUSD,
                         venda: moedaEmUSD
                     };
+                }else {
+                    $('#visualizacaoMoedaDolar').addClass('d-none').removeClass('col-12');
+                    $('#moeda_processo_usd').val('');
                 }
 
                 // persiste tudo no hidden
@@ -1140,6 +1147,10 @@
                 // Se já for número, retorna direto
                 if (typeof value === "number") {
                     return value;
+                }
+
+                if(value.toString().includes('.') && !value.toString().includes(',')){
+                    return parseFloat(value) || 0;
                 }
 
 

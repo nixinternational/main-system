@@ -318,7 +318,7 @@
                                    : '' }}"
                                class="form-control moneyReal" name="display_cotacao" id="display_cotacao">
                            <input type="hidden" id="cotacao_moeda_processo" name="cotacao_moeda_processo"
-                               value="{{ json_encode($processo->cotacao_moeda_processo) }}">
+                               value="{{ json_encode($processo->cotacao_moeda_processo ?? $dolar) }}">
                        </div>
                        <div class="col-6 ">
 
@@ -339,8 +339,9 @@
                        <div id="visualizacaoMoedaDolar"
                            class=" mt-3 {{ $processo->moeda_processo == 'USD' || !$processo->moeda_processo ? 'd-none ' : 'col-12' }}  ">
 
+                           
                            <label for="acrescimo_frete" class="form-label text-white">MOEDA EM USD</label>
-                           <input class="form-control moneyReal"
+                           <input disabled class="form-control moneyReal"
                                value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo . '_USD'])
                                    ? number_format($processo->cotacao_moeda_processo[$processo->moeda_processo . '_USD']['venda'], 4, ',', '.')
                                    : '' }}"

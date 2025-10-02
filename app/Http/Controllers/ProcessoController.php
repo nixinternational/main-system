@@ -172,6 +172,7 @@ class ProcessoController extends Controller
             $dolar = self::getBid();
 
             $moedasSuportadas = self::buscarMoedasSuportadas();
+            
             $produtos = [];
             foreach ($processo->processoProdutos as $produto) {
                 $produtos[] = $this->parseModelFieldsFromModel($produto);
@@ -249,6 +250,7 @@ class ProcessoController extends Controller
                 'data_cotacao_processo' => $request->data_cotacao_processo,
                 'moeda_processo' => $request->moeda_processo,
             ];
+            
             Processo::where('id', $id)->update($dadosProcesso);
             $pesoLiquidoTotal = 0;
             if ($request->produtos  && count($request->produtos) > 0) {
@@ -297,9 +299,9 @@ class ProcessoController extends Controller
                             'cofins_percent' => isset($produto['cofins_percent']) ? $this->safePercentage($produto['cofins_percent']) : null,
                             'icms_percent' => isset($produto['icms_percent']) ? $this->safePercentage($produto['icms_percent']) : null,
                             'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
-                            'frete_moeda_estrangeira' => $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) ?? null,
-                            'seguro_moeda_estrangeira' => $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) ?? null,
-                            'acrescimo_moeda_estrangeira' => $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) ?? null,
+                            'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
+                            'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
+                            'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
                             'frete_moeda' => $request->frete_internacional_moeda,
                             'seguro_moeda' => $request->seguro_internacional_moeda,
                             'acrescimo_moeda' => $request->acrescimo_frete_moeda,

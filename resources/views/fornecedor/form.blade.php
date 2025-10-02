@@ -121,6 +121,7 @@
                                     'Guiné-Bissau',
                                     'Haiti',
                                     'Honduras',
+                                    'Hong Kong',
                                     'Hungria',
                                     'Iémen',
                                     'Ilhas Marechal',
