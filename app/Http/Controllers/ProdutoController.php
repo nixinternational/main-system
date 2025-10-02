@@ -94,7 +94,7 @@ class ProdutoController extends Controller
             }
 
             // Caso contrário, só volta para edição normal
-            return redirect(route('catalogo.edit', $catalogo->id.'?page='.$request->page))
+            return redirect(route('catalogo.edit', $catalogo->id))
                 ->with('messages', ['success' => ['Produto criado com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível cadastrar o produto!']])
