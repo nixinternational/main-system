@@ -925,7 +925,11 @@
             });
 
 
-            $('#moeda_processo').on('change', function() {
+            $('#moeda_processo').on('change', function(e) {
+
+                if (!e.originalEvent) {
+                    return;
+                }
                 let cotacaoProcesso = getCotacaoesProcesso();
                 let moeda = this.value;
 
@@ -975,6 +979,7 @@
 
                 // ADICIONAR ESTA LINHA PARA RECALCULAR A TABELA COM A NOVA MOEDA
                 setTimeout(recalcularTodaTabela, 200);
+
                 $('#formProcesso').submit();
 
             });
@@ -1015,9 +1020,12 @@
                 // se não for USD, cria/atualiza versão moeda -> USD
                 if (moeda && moeda !== 'USD') {
                     let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
-                    console.log({cotacaoMoedaFloat, cotacaoUSD})
+                    console.log({
+                        cotacaoMoedaFloat,
+                        cotacaoUSD
+                    })
                     let moedaEmUSD = cotacaoMoedaFloat / cotacaoUSD;
-              
+
                     $('#moeda_processo_usd').val(MoneyUtils.formatMoney(moedaEmUSD, 4));
                     $('#visualizacaoMoedaDolar').removeClass('d-none').addClass('col-12');
                     cotacaoProcesso[`${moeda}_USD`] = {
@@ -1027,7 +1035,7 @@
                         compra: moedaEmUSD,
                         venda: moedaEmUSD
                     };
-                }else {
+                } else {
                     $('#visualizacaoMoedaDolar').addClass('d-none').removeClass('col-12');
                     $('#moeda_processo_usd').val('');
                 }
@@ -1149,7 +1157,7 @@
                     return value;
                 }
 
-                if(value.toString().includes('.') && !value.toString().includes(',')){
+                if (value.toString().includes('.') && !value.toString().includes(',')) {
                     return parseFloat(value) || 0;
                 }
 
@@ -1939,8 +1947,8 @@
             let moedaFrete = $('#frete_internacional_moeda').val();
             let moedaSeguro = $('#seguro_internacional_moeda').val();
             let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
-            let moedaProcesso = $('#moeda_processo').val(); // Nova variável
-
+            let moedaProcesso = 'USD'; // Nova variável
+            // let moedaProcesso = $('#moeda_processo').val(); // Nova variável
             // Gerar colunas condicionais
             let colunaFreteMoeda = '';
             let colunaSeguroMoeda = '';
@@ -1961,11 +1969,9 @@
                     `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][acrescimo_moeda_estrangeira]" id="acrescimo_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
-            // USAR A FUNÇÃO AQUI para as colunas FOB
             let colunasFOB = getColunasFOBCondicionais(newIndex, moedaProcesso);
 
             let tr = `<tr id="row-${newIndex}">
-        <!-- Coluna fixa de ações -->
         <td style="position: sticky; left: 0; z-index: 5; background-color: white;">
             <button type="button" class="btn btn-danger removeLine btn-sm btn-remove" data-id="${newIndex}">
                 <i class="fas fa-trash-alt"></i>
@@ -2065,12 +2071,13 @@
 
             $('#productsBody').append(tr);
 
-            $('.select2').select2({
+            $(`#produto_id-${newIndex}`).select2({
                 width: '100%'
             });
-            $('input[data-row="' + newIndex + '"], select[data-row="' + newIndex + '"]').trigger('change');
+            $('input[data-row="' + newIndex + '"]').trigger('change');
+
             $(`#row-${newIndex} input, #row-${newIndex} select, #row-${newIndex} textarea`).each(function() {
-                initialInputs.add(this); // Adiciona cada novo elemento ao Set
+                initialInputs.add(this);
             });
         });
 
@@ -2150,8 +2157,8 @@
 
             adicionarSeparadoresAdicao();
 
-            // Disparar eventos de mudança para recalcular valores, exceto para o campo de adição
-            $('input:not([name*="[adicao]"]), select').trigger('change');
+            $('#productsBody input:not([name*="[adicao]"])').trigger('change');
+            $('#productsBody select').trigger('change');
 
             reordenando = false;
         }

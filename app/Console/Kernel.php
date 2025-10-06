@@ -26,9 +26,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule){
 
-        $schedule->command('atualizar:moedas')
-        ->cron('0 3,5,8 * * *') 
-        ->withoutOverlapping() 
+        $schedule->command('atualizar:moedas')->cron('0 3,5,8 * * *') ->withoutOverlapping() 
         ->onFailure(function () {
             Log::error('Falha ao buscar cotações via atualizar:moedas');
         })
