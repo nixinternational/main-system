@@ -10,6 +10,7 @@ use App\Models\TipoDocumento;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\CotacaoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LancamentoController;
@@ -90,6 +91,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/fornecedor/{fornecedor_id}', [FornecedorController::class, 'ativar'])->name('fornecedor.ativar');
         Route::put('/motorista/{motorista_id}', [MotoristaController::class, 'ativar'])->name('motorista.ativar');
     });
-
+    Route::get('obterCotacao/{data_cotacao?}', [CotacaoController::class, 'obterCotacao'])->name('cotacao.obter');
     Route::any('currency-update',[ProcessoController::class, 'updatecurrencies'])->name('currency.update');
 });

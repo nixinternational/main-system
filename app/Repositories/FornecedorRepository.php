@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Http\Requests\FornecedorRequest;
 use App\Interfaces\FornecedorRepositoryInterface;
 use App\Models\Fornecedor;
+use App\Models\ProcessoProduto;
 use Illuminate\Http\Request;
 
 class FornecedorRepository 
@@ -43,8 +44,12 @@ class FornecedorRepository
 
     public function destroy(int $id)
     {
-
-        $this->fornecedor->findOrFail($id)->delete();
+        $fornecedor = $this->fornecedor->findOrFail($id);
+        foreach ($fornecedor->produtos as $produto) {
+            ProcessoProduto::where('produto_id', $produto->id)->delete();
+            $produto->delete();
+        }
+        return $fornecedor->delete();
     }
     public function ativar(int $fornecedor_id)
     {

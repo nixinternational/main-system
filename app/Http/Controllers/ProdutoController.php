@@ -81,6 +81,7 @@ class ProdutoController extends Controller
                 'ncm'         => $request->ncm,
                 'descricao'   => $request->descricao,
                 'catalogo_id' => $request->catalogo_id,
+                'fornecedor_id' => $request->fornecedor_id,
             ];
 
             $catalogo = Catalogo::findOrFail($request->catalogo_id);
@@ -88,7 +89,7 @@ class ProdutoController extends Controller
             Produto::create($data);
 
             if ($request->has('add_more') && $request->add_more == 1) {
-                return redirect(route('catalogo.edit', $catalogo->id).'?page='.$request->page)
+                return redirect(route('catalogo.edit', $catalogo->id) . '?page=' . $request->page)
                     ->with('messages', ['success' => ['Produto criado com sucesso!']])
                     ->with('open_modal', 'exampleModal');
             }
@@ -140,17 +141,19 @@ class ProdutoController extends Controller
                 'ncm' => $request->ncm_edit,
                 'codigo' => $request->codigo_edit,
                 'descricao' => $request->descricao_edit,
+                'fornecedor_id' => $request->fornecedor_id,
+
             ]);
 
 
             if ($request->has('add_more_edit') && $request->add_more_edit == 1) {
-                return redirect(route('catalogo.edit', $produto->catalogo_id).'?page='.$request->page)
+                return redirect(route('catalogo.edit', $produto->catalogo_id) . '?page=' . $request->page)
                     ->with('messages', ['success' => ['Produto atualizado com sucesso!']])
                     ->with('open_modal', 'exampleModal');
-            }   
+            }
 
-                
-            return redirect(route('catalogo.edit', $produto->catalogo_id).'?page='.$request->page)->with('messages', ['success' => ['Produto atualizado com sucesso!']]);
+
+            return redirect(route('catalogo.edit', $produto->catalogo_id) . '?page=' . $request->page)->with('messages', ['success' => ['Produto atualizado com sucesso!']]);
         } catch (Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível atualizar o produto!']])->withInput($request->all());
         }

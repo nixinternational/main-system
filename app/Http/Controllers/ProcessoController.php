@@ -172,7 +172,6 @@ class ProcessoController extends Controller
             $dolar = self::getBid();
 
             $moedasSuportadas = self::buscarMoedasSuportadas();
-            
             $produtos = [];
             foreach ($processo->processoProdutos as $produto) {
                 $produtos[] = $this->parseModelFieldsFromModel($produto);
@@ -206,6 +205,24 @@ class ProcessoController extends Controller
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
 
+            // Monta o JSON das cotações das moedas do processo
+            $cotacoesMoedaProcesso = [];
+            if ($request->has('cotacao_moeda_processo') && is_array($request->cotacao_moeda_processo)) {
+                foreach ($request->cotacao_moeda_processo as $codigo => $cotacao) {
+                    $nome = $cotacao['nome'] ?? null;
+                    $compra = isset($cotacao['compra']) ? $this->parseMoneyToFloat($cotacao['compra'], 6) : null;
+                    $venda = isset($cotacao['venda']) ? $this->parseMoneyToFloat($cotacao['venda'], 6) : null;
+                    $data = $request->data_cotacao ?? date('d-m-Y');
+                    $cotacoesMoedaProcesso[$codigo] = [
+                        'nome' => $nome,
+                        'data' => $data,
+                        'moeda' => $codigo,
+                        'compra' => $compra,
+                        'venda' => $venda,
+                        'erro' => null,
+                    ];
+                }
+            }
             $dadosProcesso = [
                 "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
                 "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
@@ -243,14 +260,13 @@ class ProcessoController extends Controller
                 'cotacao_frete_internacional' => $this->parseMoneyToFloat($request->cotacao_frete_internacional, 4),
                 'cotacao_seguro_internacional' => $this->parseMoneyToFloat($request->cotacao_seguro_internacional, 4),
                 'cotacao_acrescimo_frete' => $this->parseMoneyToFloat($request->cotacao_acrescimo_frete, 4),
-                'data_moeda_frete_internacional' => $request->data_moeda_frete_internacional,
-                'data_moeda_seguro_internacional' => $request->data_moeda_seguro_internacional,
-                'data_moeda_acrescimo_frete' => $request->data_moeda_acrescimo_frete,
-                'cotacao_moeda_processo' => json_encode($request->cotacao_moeda_processo),
-                'data_cotacao_processo' => $request->data_cotacao_processo,
+                'data_moeda_frete_internacional' => $request->data_cotacao,
+                'data_moeda_seguro_internacional' => $request->data_cotacao,
+                'data_moeda_acrescimo_frete' => $request->data_cotacao,
+                'cotacao_moeda_processo' => !empty($cotacoesMoedaProcesso) ? json_encode($cotacoesMoedaProcesso, JSON_UNESCAPED_UNICODE) : null,
+                'data_cotacao_processo' => $request->data_cotacao,
                 'moeda_processo' => $request->moeda_processo,
             ];
-            
             Processo::where('id', $id)->update($dadosProcesso);
             $pesoLiquidoTotal = 0;
             if ($request->produtos  && count($request->produtos) > 0) {
@@ -321,6 +337,8 @@ class ProcessoController extends Controller
                             'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
                             'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
                             'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
+                            'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
+                            
                             'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
                             'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
                             'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,

@@ -86,6 +86,11 @@
                                     href="#custom-tabs-three-settings" role="tab"
                                     aria-controls="custom-tabs-three-settings" aria-selected="false">Documentos</a>
                             </li>
+                               <li class="nav-item">
+                                <a class="nav-link" id="custom-tabs-four-settings-tab" data-toggle="pill"
+                                    href="#custom-tabs-four-settings" role="tab"
+                                    aria-controls="custom-tabs-four-settings" aria-selected="false">Documentos</a>
+                            </li>
                         @endif
                     </ul>
                 </div>

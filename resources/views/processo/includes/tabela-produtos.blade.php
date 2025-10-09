@@ -29,8 +29,51 @@
                         </th>
                     </tr>
                     <tr class="middleRow">
+                        @php
+
+                            $moedaProcesso = $processo->moeda_processo ?? 'USD';
+                            $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
+                            $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
+                            $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
+                            $colspanBeforeMiddleRow = 10; // Colunas fixas iniciais (Ações até FATOR PESO)
+
+                            // Colunas FOB
+                            if ($moedaProcesso == 'USD') {
+                                $colspanBeforeMiddleRow += 3; // FOB UNIT USD + TOTALFOB USD + TOTALFOB R$
+                            } else {
+                                $colspanBeforeMiddleRow += 4; // FOB UNIT MOEDA + TOTALFOB MOEDA + TOTALFOB USD + TOTALFOB R$
+                            }
+
+                            // Colunas FRETE
+                            if ($moedaFrete != 'USD') {
+                                $colspanBeforeMiddleRow += 3; // FRETE MOEDA + FRETE USD + FRETE R$
+                            } else {
+                                $colspanBeforeMiddleRow += 2; // FRETE USD + FRETE R$
+                            }
+
+                            // Colunas SEGURO
+                            if ($moedaSeguro != 'USD') {
+                                $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
+                            } else {
+                                $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
+                            }
+
+                            // Colunas ACRÉSCIMO
+                            if ($moedaAcrescimo != 'USD') {
+                                $colspanBeforeMiddleRow += 3; // ACRESC MOEDA + ACRESC USD + ACRESC R$
+                            } else {
+                                $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
+                            }
+
+                            // Colunas fixas após (THC até VLR TOTAL NF C/ICMS-ST)
+                            $colspanBeforeMiddleRow += 30; // THC USD até VLR TOTAL NF C/ICMS-ST
+
+                            // Colunas dos fatores (FATOR VLR FOB até TAXA SISCOMEX)
+                            $colspanBeforeMiddleRow += 5; // FATOR VLR FOB até TAXA SISCOMEX
+                        @endphp
+
                         <th style="background-color: #fff"> </th>
-                        <th colspan="54"></th>
+                        <th colspan="{{ $colspanBeforeMiddleRow }}"></th>
 
                         @php
                             $campos = [
@@ -56,22 +99,23 @@
                         @foreach ($campos as $campo)
                             <th class="middleRowInputTh">
                                 @if ($campo == 'capatazia')
-                                    <input type="text" class=" form-control moneyReal" name="{{ $campo }}"
+                                    <input type="text" class="form-control moneyReal" name="{{ $campo }}"
                                         id="{{ $campo }}" readonly
                                         value="{{ number_format($processo->thc_capatazia ?? 0, 5, ',', '.') }}">
                                 @else
-                                    <input type="text" class=" form-control moneyReal" name="{{ $campo }}"
+                                    <input type="text" class="form-control cabecalhoInputs moneyReal" name="{{ $campo }}"
                                         id="{{ $campo }}"
                                         value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
                                 @endif
                             </th>
                         @endforeach
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
 
+                        @php
+                            // Colunas restantes após os campos da middleRow
+                            $colspanAfterMiddleRow = 6; // DESP. DESEMBARAÇO até CUSTO TOTAL FINAL
+                        @endphp
+
+                        <th colspan="{{ $colspanAfterMiddleRow }}"></th>
                     </tr>
                     <tr>
                         <th style="background-color: #212529 !important">Ações</th>
@@ -361,8 +405,9 @@
                                     value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 7, ',', '.') : '' }}">
                             </td>
                             <td>
-                                <input data-row="{{ $index }}" type="text" class="form-control moneyReal7"
-                                    readonly name="produtos[{{ $index }}][seguro_brl]"
+                                <input data-row="{{ $index }}" type="text"
+                                    class="form-control moneyReal7" readonly
+                                    name="produtos[{{ $index }}][seguro_brl]"
                                     id="seguro_brl-{{ $index }}"
                                     value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 7, ',', '.') : '' }}">
                             </td>
@@ -429,7 +474,7 @@
                                     class=" form-control percentage2"
                                     name="produtos[{{ $index }}][ii_percent]"
                                     id="ii_percent-{{ $index }}"
-                                    value="{{ $processoProduto->ii_percent ? number_format($processoProduto->ii_percent, 7, ',', '.') : '' }}">
+                                    value="{{ $processoProduto->ii_percent ? number_format($processoProduto->ii_percent, 2, ',', '.') : '' }} %">
                             </td>
 
                             <td>
@@ -437,7 +482,7 @@
                                     class=" form-control percentage2"
                                     name="produtos[{{ $index }}][ipi_percent]"
                                     id="ipi_percent-{{ $index }}"
-                                    value="{{ $processoProduto->ipi_percent ? number_format($processoProduto->ipi_percent, 7, ',', '.') : '' }}">
+                                    value="{{ $processoProduto->ipi_percent ? number_format($processoProduto->ipi_percent, 2, ',', '.') : '' }} %">
                             </td>
 
                             <td>
@@ -445,7 +490,7 @@
                                     class=" form-control percentage2"
                                     name="produtos[{{ $index }}][pis_percent]"
                                     id="pis_percent-{{ $index }}"
-                                    value="{{ $processoProduto->pis_percent ? number_format($processoProduto->pis_percent, 7, ',', '.') : '' }}">
+                                    value="{{ $processoProduto->pis_percent ? number_format($processoProduto->pis_percent, 2, ',', '.') : '' }} %">
                             </td>
 
                             <td>
@@ -453,7 +498,7 @@
                                     class=" form-control percentage2"
                                     name="produtos[{{ $index }}][cofins_percent]"
                                     id="cofins_percent-{{ $index }}"
-                                    value="{{ $processoProduto->cofins_percent ? number_format($processoProduto->cofins_percent, 7, ',', '.') : '' }}">
+                                    value="{{ $processoProduto->cofins_percent ? number_format($processoProduto->cofins_percent, 2, ',', '.') : '' }} %">
                             </td>
 
                             <td>
@@ -461,7 +506,7 @@
                                     class=" form-control percentage2"
                                     name="produtos[{{ $index }}][icms_percent]"
                                     id="icms_percent-{{ $index }}"
-                                    value="{{ $processoProduto->icms_percent ? number_format($processoProduto->icms_percent, 7, ',', '.') : '' }}">
+                                    value="{{ $processoProduto->icms_percent ? number_format($processoProduto->icms_percent, 2, ',', '.') : '' }} %">
                             </td>
 
                             <td>
@@ -469,7 +514,7 @@
                                     class=" form-control percentage2" readonly
                                     name="produtos[{{ $index }}][icms_reduzido_percent]"
                                     id="icms_reduzido_percent-{{ $index }}"
-                                    value="{{ $processoProduto->icms_reduzido_percent ? number_format($processoProduto->icms_reduzido_percent, 7, ',', '.') : '' }}">
+                                    value="{{ $processoProduto->icms_reduzido_percent ? number_format($processoProduto->icms_reduzido_percent, 2, ',', '.') : '' }} %">
                             </td>
 
                             <td>
@@ -603,14 +648,14 @@
                                 <input type="text" data-row="{{ $index }}"
                                     class=" form-control percentage" name="produtos[{{ $index }}][mva]"
                                     id="mva-{{ $index }}"
-                                    value="{{ $processoProduto->mva ? number_format($processoProduto->mva, 7, ',', '.') : '' }}">
+                                    value="{{ $processoProduto->mva ? number_format($processoProduto->mva, 2, ',', '.') : '' }} %">
                             </td>
 
                             <td>
                                 <input type="text" data-row="{{ $index }}"
                                     class=" form-control percentage" name="produtos[{{ $index }}][icms_st]"
                                     id="icms_st-{{ $index }}"
-                                    value="{{ $processoProduto->icms_st ? number_format($processoProduto->icms_st, 7, ',', '.') : '' }}">
+                                    value="{{ $processoProduto->icms_st ? number_format($processoProduto->icms_st, 2, ',', '.') : '' }} %">
                             </td>
 
                             <td>

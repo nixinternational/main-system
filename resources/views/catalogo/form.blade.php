@@ -33,7 +33,8 @@
                             <div class="col-4">
                                 <label for="exampleInputEmail1" class="form-label">Cliente</label>
 
-                                <select {{isset($catalogo) ? 'disabled' : ''}} class="custom-select select2" name="cliente_id">
+                                <select {{ isset($catalogo) ? 'disabled' : '' }} class="custom-select select2"
+                                    name="cliente_id">
                                     <option selected disabled>Selecione uma opção</option>
                                     @foreach ($clientes as $cliente)
                                         <option
@@ -43,8 +44,8 @@
                                 </select>
                             </div>
                         </div>
-                        @if(!isset($catalogo))
-                        <button type="submit" class="btn btn-primary mt-3">Salvar</button>
+                        @if (!isset($catalogo))
+                            <button type="submit" class="btn btn-primary mt-3">Salvar</button>
                         @endif
                     </form>
                     @if (isset($catalogo))
@@ -82,6 +83,7 @@
                                             <th>Modelo</th>
                                             <th>Codigo</th>
                                             <th>NCM</th>
+                                            <th>Fornecedor</th>
                                             <th>Descrição</th>
                                             <th>Data de Criação</th>
                                             <th class="d-flex justify-content-center">Ações</th>
@@ -94,22 +96,19 @@
                                                 <td>{{ $produto->modelo }}</td>
                                                 <td>{{ $produto->codigo }}</td>
                                                 <td>{{ $produto->ncm }}</td>
+                                                <td>{{$produto->fornecedor->nome ?? '-'}}</td>
                                                 <td>{{ \Illuminate\Support\Str::limit($produto->descricao, 100) }}
                                                 </td>
                                                 <td>{{ \Carbon\Carbon::parse($produto->created_at)->format('d/m/Y H:i') }}
                                                 </td>
 
                                                 <td class="d-flex  justify-content-around">
-                                                    <button type="button" data-toggle="modal" data-target="#descricaoModal"
-                                                        data-nome="{{ $produto->nome }}"
-                                                        data-descricao="{{ $produto->descricao }}"
-                                                        class="btn btn-info descricaoModalButton">
-                                                        <i class="fas fa-info"></i>
-                                                    </button>
+                                       
                                                     <button type="button" data-modelo="{{ $produto->modelo }}"
                                                         data-ncm="{{ $produto->ncm }}"
                                                         data-codigo="{{ $produto->codigo }}"
                                                         data-descricao="{{ $produto->descricao }}"
+                                                        data-fornecedor="{{ $produto->fornecedor->id ?? '' }}"
                                                         data-id="{{ $produto->id }}" data-toggle="modal"
                                                         data-target="#editProductModal"
                                                         class="btn btn-warning mr-1 editModal"><i
@@ -198,9 +197,24 @@
                                     <input type="text" class="form-control" id="ncm" name="ncm"
                                         value="{{ old('ncm') }}">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-6">
+                                    <label for="fornecedor_id" class="font-weight-bold">Fornecedor</label>
+
+                                    <select name="fornecedor_id" class="form-control select2 w-100" id="paises">
+                                        <option value="" selected>Selecione um país</option>
+
+                                        @foreach ($catalogo->cliente->fornecedores as $fornecedor)
+                                            <option value="{{ $fornecedor->id }}">{{ $fornecedor->nome }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+
                                     <label for="descricao" class="font-weight-bold">Descrição</label>
                                     <textarea rows="3" class="form-control" id="descricao" name="descricao">{{ old('descricao') }}</textarea>
+
                                 </div>
                             </div>
                         </div>
@@ -259,7 +273,21 @@
                                     <input type="text" class="form-control" id="ncm_edit" name="ncm_edit"
                                         value="{{ old('ncm') }}">
                                 </div>
-                                <div class="col-md-6">
+                                 <div class="col-6">
+                                    <label for="fornecedor_id" class="font-weight-bold">Fornecedor</label>
+
+                                    <select name="fornecedor_id" class="form-control select2 w-100" id="fornecedor_id">
+                                        <option value="" selected>Selecione um país</option>
+
+                                        @foreach ($catalogo->cliente->fornecedores as $fornecedor)
+                                            <option value="{{ $fornecedor->id }}">{{ $fornecedor->nome }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                               
+                            </div>
+                            <div class="row">
+                                 <div class="col-md-12">
                                     <label for="descricao" class="font-weight-bold">Descrição</label>
                                     <textarea rows="3" class="form-control" id="descricao_edit" name="descricao_edit">{{ old('descricao') }}</textarea>
                                 </div>
@@ -294,10 +322,16 @@
                 $('#ncm_edit').val(this.dataset.ncm)
                 $('#descricao_edit').val(this.dataset.descricao)
                 $('#codigo_edit').val(this.dataset.codigo)
+                console.log(this.dataset)
+                $('#fornecedor_id').val(this.dataset.fornecedor).trigger('change')
             })
 
 
-
+            $('.select2').select2({
+                placeholder: 'Selecione um fornecedor',
+                allowClear: true,
+                width: '100%'
+            });
         })
 
         setTimeout(() => {

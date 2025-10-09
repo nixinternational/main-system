@@ -29,8 +29,7 @@
        @if (isset($processo))
 
            @php
-
-               $processo->cotacao_moeda_processo = json_decode($processo->cotacao_moeda_processo, true);
+    
 
            @endphp
            <div class="row mt-3">
@@ -128,87 +127,71 @@
                <div>
                    <button class="btn btn-success " style="margin-right: 10px" type="button"
                        id="atualizarCotacoes">Atualizar
-                       cotações
+                       cotações para hoje
                    </button>
 
-                   <a href="{{ route('currency.update') }}" class="btn btn-primary">
-                       Atualizar moedas
-                   </a>
                </div>
 
            </div>
-           <div class=" mt-3" style="display: flex; gap:10px">
+           <div class="my-3">
+               <div class="col-3">
+                   <span id="">Data de Cotação: </span>
 
-               <div class=" alert alert-secondary p-3">
+                   <input type="date" class="form-control" name="data_cotacao" id="data_cotacao"
+                       value="{{ isset($processo->data_moeda_frete_internacional) ? $processo->data_moeda_frete_internacional : '' }}"
+                       min="{{ date('Y-m-d', strtotime('-2 years')) }}" max="{{ date('Y-m-d') }}">
+               </div>
+           </div>
+           <div class="mt-3 cards-container">
+               <div class="alert  p-3 card-item">
                    <div class="row">
-                       <div class="col-sm-6 ">
-                           <label for="frete_internacional" class="form-label text-white">FRETE
-                               INTERNACIONAL
-                           </label>
+                       <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                           <label for="frete_internacional" class="form-label ">FRETE INTERNACIONAL</label>
                            <input
                                value="{{ isset($processo->frete_internacional) ? number_format($processo->frete_internacional, 2, ',', '.') : '' }}"
                                class="form-control moneyReal2" name="frete_internacional" id="frete_internacional">
                        </div>
-                       <div class="col-sm-6 ">
-
-                           <label class="text-white">MOEDA</label>
+                       <div class="col-12 col-sm-6">
+                           <label class="">MOEDA</label>
                            <select name="frete_internacional_moeda" id="frete_internacional_moeda"
                                class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
                                <option value="">Selecione um país...</option>
-
                                @foreach ($moedasSuportadas as $codigo => $nome)
                                    <option value="{{ $codigo }}"
                                        {{ isset($processo) && $processo->frete_internacional_moeda == $codigo ? 'selected' : '' }}>
                                        {{ $codigo }} - {{ $nome }}
                                    </option>
                                @endforeach
-
                            </select>
-
                        </div>
                    </div>
-                   <div class="row">
-                       <div class="col-sm-6 ">
-
+                   <div class="row mt-2">
+                       <div class="col-12 col-sm-6 mb-2 mb-sm-0">
                            <input readonly
                                value="{{ isset($processo) ? number_format($processo->frete_internacional * ($dolar[$processo->frete_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
                                class="form-control moneyReal" name="frete_internacional_visualizacao"
                                id="frete_internacional_visualizacao">
                        </div>
-                       <div class="col-sm-6 ">
-
+                       <div class="col-12 col-sm-6">
                            <input
                                value="{{ isset($processo->cotacao_frete_internacional) ? number_format($processo->cotacao_frete_internacional, 4, ',', '.') : '' }}"
                                class="form-control cotacao" id="cotacao_frete_internacional"
-                               name="cotacao_frete_internacional" style="margin: 0 auto">
-
-                       </div>
-
-                   </div>
-                   <div class="row mt-1">
-                       <div class="col-12">
-                           <span id="">Data de
-                               Cotação: </span>
-
-                           <input type="date" class=" form-control" name="data_moeda_frete_internacional"
-                               id="data_moeda_frete_internacional"
-                               value="{{ isset($processo->data_moeda_frete_internacional) ? $processo->data_moeda_frete_internacional : '' }}">
+                               name="cotacao_frete_internacional">
                        </div>
                    </div>
                </div>
 
-               <div class=" alert alert-secondary p-3">
+               <div class="alert  p-3 card-item">
                    <div class="row">
-                       <div class="col-lg-6  ">
-                           <label for="seguro_internacional" class="form-label text-white">SEGURO
-                               INTERNACIONAL
-                           </label>
+                       <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                           <label for="seguro_internacional" class="form-label ">SEGURO
+                               INTERNACIONAL</label>
                            <input
                                value="{{ isset($processo->seguro_internacional) ? number_format($processo->seguro_internacional, 2, ',', '.') : '' }}"
                                class="form-control moneyReal2" name="seguro_internacional" id="seguro_internacional">
                        </div>
-                       <div class="col-sm-6 ">
-                           <label class="text-white">MOEDA</label>
+                       <div class="col-12 col-sm-6">
+                           <label class="">MOEDA</label>
                            <select name="seguro_internacional_moeda" id="seguro_internacional_moeda"
                                class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
                                <option value="">Selecione um país...</option>
@@ -218,55 +201,38 @@
                                        {{ $codigo }} - {{ $nome }}
                                    </option>
                                @endforeach
-
-
                            </select>
-
                        </div>
                    </div>
-                   <div class="row">
-                       <div class="col-lg-6  ">
-
+                   <div class="row mt-2">
+                       <div class="col-12 col-sm-6 mb-2 mb-sm-0">
                            <input readonly
                                value="{{ isset($processo) ? number_format($processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
                                class="form-control moneyReal2" name="seguro_internacional_visualizacao"
                                id="seguro_internacional_visualizacao">
                        </div>
-                       <div class="col-sm-6 ">
+                       <div class="col-12 col-sm-6">
                            <input
                                value="{{ isset($processo->cotacao_seguro_internacional) ? number_format($processo->cotacao_seguro_internacional, 4, ',', '.') : '' }}"
                                class="form-control cotacao" id="cotacao_seguro_internacional"
-                               name="cotacao_seguro_internacional" style="margin: 0 auto">
-                       </div>
-                   </div>
-                   <div class="row mt-1">
-                       <div class="col-12">
-                           <span id="">Data de
-                               Cotação: </span>
-                           <input type="date" class=" form-control" name="data_moeda_seguro_internacional"
-                               id="data_moeda_seguro_internacional"
-                               value="{{ isset($processo->data_moeda_seguro_internacional) ? $processo->data_moeda_seguro_internacional : '' }}">
+                               name="cotacao_seguro_internacional">
                        </div>
                    </div>
                </div>
 
-               <div class=" alert alert-secondary p-3">
+               <div class="alert  p-3 card-item">
                    <div class="row">
-                       <div class="col-6 ">
-                           <label for="acrescimo_frete" class="form-label text-white">ACRESCIMO
-                               DO
-                               FRETE</label>
+                       <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                           <label for="acrescimo_frete" class="form-label ">ACRESCIMO DO FRETE</label>
                            <input
                                value="{{ isset($processo->acrescimo_frete) ? number_format($processo->acrescimo_frete, 2, ',', '.') : '' }}"
                                class="form-control moneyReal" name="acrescimo_frete" id="acrescimo_frete">
                        </div>
-                       <div class="col-6 ">
-
-                           <label class="form-label text-white">MOEDA</label>
+                       <div class="col-12 col-sm-6">
+                           <label class="form-label ">MOEDA</label>
                            <select name="acrescimo_frete_moeda" id="acrescimo_frete_moeda"
                                class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
                                <option value="">Selecione um país</option>
-
                                @foreach ($moedasSuportadas as $codigo => $nome)
                                    <option value="{{ $codigo }}"
                                        {{ isset($processo) && $processo->acrescimo_frete_moeda == $codigo ? 'selected' : '' }}>
@@ -276,57 +242,39 @@
                            </select>
                        </div>
                    </div>
-
-                   <div class="row ">
-
-                       <div class="col-sm-6 ">
+                   <div class="row mt-2">
+                       <div class="col-12 col-sm-6 mb-2 mb-sm-0">
                            <input readonly
                                value="{{ isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
                                class="form-control moneyReal" name="acrescimo_frete_visualizacao"
                                id="acrescimo_frete_visualizacao">
                        </div>
-                       <div class="col-sm-6 ">
+                       <div class="col-12 col-sm-6">
                            <input
                                value="{{ isset($processo->cotacao_acrescimo_frete) ? number_format($processo->cotacao_acrescimo_frete, 4, ',', '.') : '' }}"
-                               style="margin: 0 auto" class="form-control cotacao" id="cotacao_acrescimo_frete"
+                               class="form-control cotacao" id="cotacao_acrescimo_frete"
                                name="cotacao_acrescimo_frete">
                        </div>
                    </div>
-
-                   <div class="row mt-1">
-                       <div class="col-12">
-                           <span id="">Data de
-                               Cotação: </span>
-                           <input type="date" class=" form-control" name="data_moeda_acrescimo_frete"
-                               id="data_moeda_acrescimo_frete"
-                               value="{{ isset($processo->data_moeda_acrescimo_frete) ? $processo->data_moeda_acrescimo_frete : '' }}">
-                       </div>
-
-                   </div>
                </div>
 
-           </div>
-
-           <div class=" mt-3" style="display: flex; gap:10px">
-               <div class=" alert alert-secondary p-3">
+               <div style="" class="alert  p-3 card-item">
                    <div class="row">
-                       <div class="col-6 ">
-                           <label for="acrescimo_frete" class="form-label text-white">COTAÇÃO DO PROCESSO</label>
+                       <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                           <label for="display_cotacao" class="form-label ">COTAÇÃO DO PROCESSO</label>
                            <input
                                value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo])
                                    ? number_format($processo->cotacao_moeda_processo[$processo->moeda_processo]['venda'], 4, ',', '.')
                                    : '' }}"
-                               class="form-control moneyReal" name="display_cotacao" id="display_cotacao">
+                               class="form-control cotacao" name="display_cotacao" id="display_cotacao">
                            <input type="hidden" id="cotacao_moeda_processo" name="cotacao_moeda_processo"
                                value="{{ json_encode($processo->cotacao_moeda_processo ?? $dolar) }}">
                        </div>
-                       <div class="col-6 ">
-
-                           <label class="form-label text-white">MOEDA</label>
+                       <div class="col-12 col-sm-6">
+                           <label class="form-label ">MOEDA</label>
                            <select name="moeda_processo" id="moeda_processo" class="select2 w-100 moedas"
                                aria-label="Moedas BRICS, UE e G20">
                                <option value="">Selecione um país</option>
-
                                @foreach ($moedasSuportadas as $codigo => $nome)
                                    <option value="{{ $codigo }}"
                                        {{ isset($processo) && $processo->moeda_processo == $codigo ? 'selected' : '' }}>
@@ -335,39 +283,325 @@
                                @endforeach
                            </select>
                        </div>
-
-                       <div id="visualizacaoMoedaDolar"
-                           class=" mt-3 {{ $processo->moeda_processo == 'USD' || !$processo->moeda_processo ? 'd-none ' : 'col-12' }}  ">
-
-                           
-                           <label for="acrescimo_frete" class="form-label text-white">MOEDA EM USD</label>
-                           <input disabled class="form-control moneyReal"
+                   </div>
+                   <div id="visualizacaoMoedaDolar"
+                       class="row mt-2 {{ $processo->moeda_processo == 'USD' || !$processo->moeda_processo ? 'd-none' : '' }}">
+                       <div class="col-12">
+                           <label for="moeda_processo_usd" class="form-label ">MOEDA EM USD</label>
+                           <input disabled class="form-control cotacao"
                                value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo . '_USD'])
                                    ? number_format($processo->cotacao_moeda_processo[$processo->moeda_processo . '_USD']['venda'], 4, ',', '.')
                                    : '' }}"
                                name="moeda_processo_usd" id="moeda_processo_usd">
-
                        </div>
-      
-
-                   </div>
-
-                   <div class="row mt-3">
-                       <div class="col-12">
-                           <span id="">Data de
-                               Cotação: </span>
-
-                           <input type="date" class=" form-control" name="data_cotacao_processo"
-                               id="data_cotacao_processo"
-                               value="{{ isset($processo->data_cotacao_processo) ? $processo->data_cotacao_processo : '' }}">
-                       </div>
-
                    </div>
                </div>
            </div>
+           <div class="row">
+               @php
+                   $cotacoes = isset($processo->cotacao_moeda_processo)
+                       ? (is_array($processo->cotacao_moeda_processo)
+                           ? $processo->cotacao_moeda_processo
+                           : $processo->cotacao_moeda_processo)
+                       : [];
+               @endphp
+
+               @if (!empty($cotacoes))
+                   <div class="col-12">
+                       <h5>Editar valores de venda das moedas do dia
+                           <span id="cotacao-data-exibicao">
+                               {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
+                           </span>
+                       </h5>
+                       <div class="row" id="cotacoes-moedas-row">
+                           @foreach ($cotacoes as $codigo => $cotacao)
+                               <div class="col-md-3 mb-2">
+                                   <label class="form-label">{{ $cotacao['nome'] ?? $codigo }}
+                                       ({{ $codigo }})
+                                   </label>
+                                   <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
+                                       value="{{ $cotacao['nome'] ?? $codigo }}">
+                                   <input type="text" step="0.0001" min="0" class="form-control cotacao"
+                                       name="cotacao_moeda_processo[{{ $codigo }}][venda]"
+                                       value="{{number_format($cotacao['venda'], 4, ',', '.')  }}"
+                                       aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
+                               </div>
+                           @endforeach
+                       </div>
+                   </div>
+               @endif
+           </div>
+
+
+
+           <style>
+               .cards-container {
+                   display: flex;
+                   flex-wrap: wrap;
+                   gap: 15px;
+                   width: 100%;
+               }
+
+               .card-item {
+                   flex: 1 1 calc(25% - 15px);
+                   background-color: rgb(183, 170, 9, 0.1);
+                   min-width: 280px;
+                   box-sizing: border-box;
+                   display: flex;
+                   flex-direction: column;
+               }
+
+               /* Acima de 1814px - 4 colunas em uma linha */
+               @media (min-width: 1814px) {
+                   .card-item {
+                       flex: 1 1 calc(25% - 15px);
+                   }
+               }
+
+               /* Abaixo de 1814px - 2x2 (2 colunas) */
+               @media (max-width: 1813px) {
+                   .card-item {
+                       flex: 1 1 calc(50% - 15px);
+                   }
+               }
+
+               /* Para tablets */
+               @media (max-width: 1199px) {
+                   .card-item {
+                       flex: 1 1 calc(50% - 15px);
+                   }
+               }
+
+               /* Para tablets pequenos e mobile grande */
+               @media (max-width: 992px) {
+                   .card-item {
+                       flex: 1 1 calc(50% - 15px);
+                       min-width: 250px;
+                   }
+
+                   .cards-container {
+                       gap: 12px;
+                   }
+               }
+
+               /* Para mobile */
+               @media (max-width: 768px) {
+                   .card-item {
+                       flex: 1 1 100%;
+                       min-width: 100%;
+                   }
+
+                   .cards-container {
+                       gap: 10px;
+                   }
+               }
+
+               /* Para mobile pequeno */
+               @media (max-width: 576px) {
+                   .card-item {
+                       padding: 15px 12px !important;
+                   }
+
+                   .cards-container {
+                       gap: 8px;
+                   }
+
+                   .form-control,
+                   .select2 {
+                       font-size: 14px;
+                   }
+
+                   .form-label {
+                       font-size: 13px;
+                       margin-bottom: 4px;
+                   }
+               }
+
+               /* Melhorias para os selects em mobile */
+               @media (max-width: 576px) {
+                   .select2-container .select2-selection--single {
+                       height: 38px !important;
+                   }
+
+                   .select2-container--default .select2-selection--single .select2-selection__rendered {
+                       line-height: 38px !important;
+                       font-size: 14px;
+                   }
+
+                   .select2-container--default .select2-selection--single .select2-selection__arrow {
+                       height: 38px !important;
+                   }
+               }
+
+               /* Garantir que os cards tenham altura consistente */
+               .card-item .alert {
+                   flex: 1;
+                   display: flex;
+                   flex-direction: column;
+               }
+
+               .card-item .row {
+                   flex: 1;
+               }
+           </style>
 
        @endif
 
 
+       <script>
+           $(document).ready(function() {
+               var today = new Date().toISOString().split('T')[0];
+               $('#data_cotacao').attr('max', today);
 
+               $('#data_cotacao').on('change', function() {
+                   var selectedDate = $(this).val();
+                   if (selectedDate > today) {
+                       Swal.fire({
+                           icon: 'warning',
+                           title: 'Data inválida',
+                           text: 'Não é permitido selecionar datas futuras. A data foi ajustada para hoje.',
+                           timer: 3000
+                       });
+                       $(this).val(today);
+                   }
+               });
+           });
+
+           function formatarCampoPorClasse(container, classe, decimais) {
+               container.find(classe).each(function() {
+                   let val = $(this).val();
+                   if (val && val.trim() !== '') {
+                       val = val.trim().replace('%', '').trim();
+                       if (val.includes(',')) {
+                           val = val.replace(/\./g, '').replace(',', '.');
+                       } else {
+                           val = val.replace(',', '.');
+                       }
+                       let numero = parseFloat(val);
+                       if (!isNaN(numero)) {
+                           let formatado = numero.toLocaleString('pt-BR', {
+                               minimumFractionDigits: decimais,
+                               maximumFractionDigits: decimais
+                           });
+                           if (classe.includes('percentage')) {
+                               formatado += ' %';
+                           }
+                           $(this).val(formatado);
+                       }
+                   }
+               });
+           }
+
+           function forcarFormatacaoCamposCards() {
+
+               const container = $('.cards-container');
+
+               formatarCampoPorClasse(container, '.moneyReal', 5);
+               formatarCampoPorClasse(container, '.moneyReal2', 2);
+               formatarCampoPorClasse(container, '.cotacao', 4);
+               formatarCampoPorClasse(container, '.percentage', 7);
+               formatarCampoPorClasse(container, '.percentage2', 2);
+
+           }
+           $('#data_cotacao').on('change', function() {
+               const $input = $(this);
+               const dataCotacao = $input.val();
+               const url = "{{ route('cotacao.obter', ['data_cotacao' => ':data_cotacao']) }}".replace(
+                   ':data_cotacao', dataCotacao);
+
+               Swal.fire({
+                   title: 'Buscando cotações...',
+                   text: 'Aguarde enquanto as cotações são atualizadas.',
+                   allowOutsideClick: false,
+                   allowEscapeKey: false,
+                   didOpen: () => {
+                       Swal.showLoading();
+                   }
+               });
+
+               $.ajax({
+                   url: url,
+                   type: 'GET',
+                   dataType: 'json',
+                   success: function(response) {
+                       const data = response['data'];
+
+                       const moedaFrete = $('#frete_internacional_moeda').val();
+                       if (moedaFrete && data[moedaFrete]) {
+                           $('#cotacao_frete_internacional').val(MoneyUtils.formatMoney(data[moedaFrete]
+                               .venda, 4));
+                       }
+
+                       const moedaSeguro = $('#seguro_internacional_moeda').val();
+                       if (moedaSeguro && data[moedaSeguro]) {
+                           $('#cotacao_seguro_internacional').val(MoneyUtils.formatMoney(data[moedaSeguro]
+                               .venda, 4));
+                       }
+
+                       const moedaAcrescimo = $('#acrescimo_frete_moeda').val();
+                       if (moedaAcrescimo && data[moedaAcrescimo]) {
+                           $('#cotacao_acrescimo_frete').val(MoneyUtils.formatMoney(data[moedaAcrescimo]
+                               .venda, 4));
+                       }
+
+                       setTimeout(() => {
+                           forcarFormatacaoCamposCards();
+
+                           $('#cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete')
+                               .trigger('change');
+                       }, 100);
+                       const moedaProcesso = $('#moeda_processo').val();
+                       if (moedaProcesso && data[moedaProcesso]) {
+                           $('#cotacao_moeda_processo').val(JSON.stringify(data));
+                           $('#display_cotacao').val(MoneyUtils.formatMoney(data[moedaProcesso].venda, 4));
+                       }
+
+                       let dataPesquisa = $input.val();
+                       if (dataPesquisa) {
+                           let partes = dataPesquisa.split('-');
+                           if (partes.length === 3) {
+                               let exibicao = partes[2] + '/' + partes[1] + '/' + partes[0];
+                               $('#cotacao-data-exibicao').text(exibicao);
+                           }
+                       }
+
+                       let cotacoes = $('#cotacao_moeda_processo').val();
+                       if (cotacoes) {
+                           try {
+                               cotacoes = JSON.parse(cotacoes);
+                               let html = '';
+                               Object.keys(cotacoes).forEach(function(codigo) {
+                                   let cotacao = cotacoes[codigo];
+                                   console.log(cotacao);
+                                   html += `<div class="col-md-3 mb-2">
+                                <label class="form-label">${cotacao.nome ?? codigo} (${codigo})</label>
+                                <input type="hidden" name="cotacao_moeda_processo[${codigo}][nome]" 
+                                    value="${cotacao.nome ?? codigo}">
+                                <input type="text" step="0.0001" min="0" class="form-control cotacao"
+                                    name="cotacao_moeda_processo[${codigo}][venda]"
+                                    value="${cotacao.venda ?? ''}"
+                                    aria-label="Valor de venda para ${cotacao.nome ?? codigo}">
+                            </div>`;
+                               });
+                               $('#cotacoes-moedas-row').html(html);
+                           } catch (e) {}
+                       }
+                       Swal.close();
+
+                       Toast.fire({
+                           icon: 'success',
+                           title: 'Cotações atualizadas com sucesso!'
+                       });
+                   },
+                   error: function(xhr, status, error) {
+                       Swal.fire({
+                           icon: 'error',
+                           title: 'Erro ao obter cotações',
+                           text: error,
+                       });
+                       console.error('Erro ao obter cotações:', error);
+                   }
+               });
+           });
+       </script>
    </div>

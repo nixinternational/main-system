@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cliente;
 use App\Models\Fornecedor;
+use App\Repositories\ClienteRepository;
 use App\Repositories\FornecedorRepository;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -10,17 +12,22 @@ use Illuminate\Http\Request;
 
 class FornecedorController extends Controller
 {
+    private ClienteRepository $clienteRepository;
     private FornecedorRepository $fornecedorRepository;
 
-    public function __construct(FornecedorRepository $fornecedorRepository)
+    public function __construct(FornecedorRepository $fornecedorRepository, ClienteRepository $clienteRepository)
     {
         $this->fornecedorRepository = $fornecedorRepository;
+        $this->clienteRepository = $clienteRepository;
     }
+
+
 
     public function index(): View|RedirectResponse
     {
-        $fornecedores = $this->fornecedorRepository->getIndex();
-        return view('fornecedor.index', compact('fornecedores'));
+
+        $clientes = $this->clienteRepository->getAll();
+        return view('fornecedor.index', compact('clientes'));
     }
 
     public function create(): View
@@ -31,17 +38,17 @@ class FornecedorController extends Controller
     public function store(Request $request): RedirectResponse
     {
         try {
-         if (!empty($request->cnpj)) {
-            if (!validar_cnpj($request->cnpj)) {
-                return back()->with('messages', ['error' => ['CNPJ inválido!']])->withInput();
+            if (!empty($request->cnpj)) {
+                if (!validar_cnpj($request->cnpj)) {
+                    return back()->with('messages', ['error' => ['CNPJ inválido!']])->withInput();
+                }
             }
-        }
 
-        $this->fornecedorRepository->store($request); // <- mantém o FornecedorRequest
+            $this->fornecedorRepository->store($request);
 
-
-            return redirect()->route('fornecedor.index')->with('messages', ['success' => ['Fornecedor criado com sucesso!']]);
+            return back()->with('messages', ['success' => ['Fornecedor criado!']])->withInput();
         } catch (\Exception $e) {
+
             return back()->with('messages', ['error' => ['Não foi possível criar o fornecedor!']])->withInput();
         }
     }
@@ -54,8 +61,8 @@ class FornecedorController extends Controller
     public function edit(int $id): View|RedirectResponse
     {
         try {
-            $fornecedor = Fornecedor::findOrFail($id);
-            return view('fornecedor.form', compact('fornecedor'));
+            $cliente = Cliente::findOrFail($id);
+            return view('fornecedor.form', compact('cliente'));
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível encontrar o fornecedor!']]);
         }
@@ -64,20 +71,20 @@ class FornecedorController extends Controller
     public function update(Request $request, int $id): RedirectResponse
     {
         try {
-         if (!empty($request->cnpj)) {
-            if (!validar_cnpj($request->cnpj)) {
-                return back()->with('messages', ['error' => ['CNPJ inválido!']])->withInput();
+
+            if (!empty($request->cnpj)) {
+                if (!validar_cnpj($request->cnpj)) {
+                    return back()->with('messages', ['error' => ['CNPJ inválido!']])->withInput();
+                }
             }
-        }
-         if (empty($request->nome)) {
-             return back()->with('messages', ['error' => ['Nome é obrigatório!']])->withInput();
-            
-        }
+            if (empty($request->nome)) {
+                return back()->with('messages', ['error' => ['Nome é obrigatório!']])->withInput();
+            }
 
 
             $this->fornecedorRepository->update($request, $id);
 
-            return redirect()->route('fornecedor.index')->with('messages', ['success' => ['Fornecedor atualizado com sucesso!']]);
+            return back()->with('messages', ['success' => ['Fornecedor atualizado com sucesso']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível atualizar o fornecedor!']])->withInput();
         }

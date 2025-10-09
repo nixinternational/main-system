@@ -22,6 +22,7 @@ class Fornecedor extends Model
         'nome_contato',
         'email_contato',
         'telefone_contato',
+        'cliente_id'
     ];
 
     public function scopeIndex($query)
@@ -33,5 +34,15 @@ class Fornecedor extends Model
                 return $query->where('nome', 'like', '%' . $request['search'] . '%')
                     ->orWhere('cnpj', 'like', '%' . $cnpj . '%');
             })->paginate(request()->paginacao ?? 10);
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class);
+    }
+    
+    public function produtos()
+    {
+        return $this->hasMany(Produto::class);
     }
 }

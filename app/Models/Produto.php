@@ -10,4 +10,10 @@ class Produto extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function fornecedor()
+    {
+        return $this->belongsTo(Fornecedor::class);
+    }
 }
+    

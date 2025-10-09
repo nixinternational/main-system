@@ -51,6 +51,7 @@ class ProcessoProduto extends Model
         'valor_total_nf',
         'base_icms_st',
         'mva',
+        'icms_st',
         'valor_icms_st',
         'valor_total_nf_com_icms_st',
         'fator_valor_fob',

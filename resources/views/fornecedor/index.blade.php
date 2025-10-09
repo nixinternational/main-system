@@ -39,45 +39,43 @@
 
 
                 </select>
-                {{ $fornecedores->appends(['paginacao' => $_GET['paginacao'] ?? 10]) }}
+                {{ $clientes->appends(['paginacao' => $_GET['paginacao'] ?? 10]) }}
 
             </div>
         </div>
     </form>
-    @if (!$fornecedores->isEmpty())
+    @if (!$clientes->isEmpty())
         <table id="fornecedorTable" class="table shadow rounded table-striped table-hover">
             <thead class="bg-primary ">
                 <tr>
                     <th>Id</th>
                     <th>Nome</th>
-                    <th>CNPJ</th>
-                    <th>Ativo</th>
                     <th class="d-flex justify-content-center">Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($fornecedores as $fornecedor)
-                    <tr @if ($fornecedor->deleted_at != null) style="background-color:#ff8e8e" @endif>
-                        <td>{{ $fornecedor->id }}</td>
-                        <td>{{ $fornecedor->nome }}</td>
-                        <td>{{ formatCnpjCpf($fornecedor->cnpj) }}</td>
-                        <td>{{ $fornecedor->deleted_at == null ? 'Ativo' : 'Inativo' }}</td>
+                @foreach ($clientes as $cliente)
+                    <tr @if ($cliente->deleted_at != null) style="background-color:#ff8e8e" @endif>
+                        <td>{{ $cliente->id }}</td>
+                        <td>{{ $cliente->nome }}</td>
+                        
+                        
                         <td class="d-flex  justify-content-around">
-                            @if ($fornecedor->deleted_at == null)
-                                <a href="{{ route('fornecedor.edit', $fornecedor->id) }}" type="button"
+                            @if ($cliente->deleted_at == null)
+                                <a href="{{ route('fornecedor.edit', $cliente->id) }}" type="button"
                                     class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
                             @endif
                             <form method="POST"
-                                action="{{ route($fornecedor->deleted_at == null ? 'fornecedor.destroy' : 'fornecedor.ativar', $fornecedor->id) }}"
+                                action="{{ route($cliente->deleted_at == null ? 'fornecedor.destroy' : 'fornecedor.ativar', $cliente->id) }}"
                                 enctype="multipart/form-data">
-                                @if ($fornecedor->deleted_at == null)
+                                @if ($cliente->deleted_at == null)
                                     @method('DELETE')
                                 @else
                                     @method('PUT')
                                 @endif
                                 @csrf
                                 <button type="submit"
-                                    class="btn {{ $fornecedor->deleted_at == null ? 'btn-danger' : 'btn-success' }}"><i
+                                    class="btn {{ $cliente->deleted_at == null ? 'btn-danger' : 'btn-success' }}"><i
                                         class="fa fa-power-off"></i></button>
 
                             </form>

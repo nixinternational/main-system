@@ -60,9 +60,9 @@ class CatalogoController extends Controller
     public function edit($id)
     {
         $catalogo = Catalogo::find($id);
+        
         $clientes = Cliente::select(['id', 'nome'])->get();
         $search = request()->query('search');
-
         $produtos = Produto::where('catalogo_id', $id)
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -73,6 +73,7 @@ class CatalogoController extends Controller
                 });
             })
             ->paginate(10);
+            
         return view("catalogo.form", compact('id', "clientes", 'catalogo', 'produtos'));
     }
 

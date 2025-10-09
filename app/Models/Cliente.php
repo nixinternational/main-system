@@ -26,4 +26,8 @@ class Cliente extends Model
     public function documentos(){
         return $this->hasMany(ClienteDocumento::class);
     }
+
+    public function fornecedores(){
+        return $this->hasMany(Fornecedor::class);
+    }
 }
