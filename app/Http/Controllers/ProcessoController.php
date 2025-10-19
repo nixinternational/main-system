@@ -169,6 +169,9 @@ class ProcessoController extends Controller
             $clientes = Cliente::select(['id', 'nome'])->get();
             $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
             $productsClient = $catalogo->produtos;
+            if (!$productsClient) {
+                return redirect(route('processo.index'))->with('messages', ['error' => ['Não é possível acessar um processo com catálogo desde cliente vazio!']]);
+            }
             $dolar = self::getBid();
 
             $moedasSuportadas = self::buscarMoedasSuportadas();
@@ -339,7 +342,7 @@ class ProcessoController extends Controller
                             'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
                             'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
                             'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
-                            
+
                             'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
                             'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
                             'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
