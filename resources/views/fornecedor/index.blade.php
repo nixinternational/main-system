@@ -1,11 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Fornecedores')
 
-@section('actions')
-    <a href="{{ route('fornecedor.create') }}" class="btn btn-primary">
-        Cadastrar Fornecedor
-    </a>
-@endsection
 
 
 @section('content')

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', isset($cliente) ? "Fornecedores de $cliente->nome" : 'Cadastrar cliente')
+@section('title', isset($cliente) ? "Fornecedores de $cliente->nome" : 'Cadastrar  Fornecedor')
 
 @section('content')
     <div class="card">
