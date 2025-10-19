@@ -168,10 +168,10 @@ class ProcessoController extends Controller
             $processo =  $this->parseModelFieldsFromModel(Processo::findOrFail($id));
             $clientes = Cliente::select(['id', 'nome'])->get();
             $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
-            $productsClient = $catalogo->produtos;
-            if (!$productsClient) {
+            if (!$catalogo) {
                 return redirect(route('processo.index'))->with('messages', ['error' => ['Não é possível acessar um processo com catálogo desde cliente vazio!']]);
             }
+            $productsClient = $catalogo->produtos;
             $dolar = self::getBid();
 
             $moedasSuportadas = self::buscarMoedasSuportadas();
