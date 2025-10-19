@@ -262,6 +262,7 @@
                    <div class="row">
                        <div class="col-12 col-sm-6 mb-2 mb-sm-0">
                            <label for="display_cotacao" class="form-label ">COTAÇÃO DO PROCESSO</label>
+                           
                            <input
                                value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo])
                                    ? number_format($processo->cotacao_moeda_processo[$processo->moeda_processo]['venda'], 4, ',', '.')
@@ -289,6 +290,7 @@
                        <div class="col-12">
                            <label for="moeda_processo_usd" class="form-label ">MOEDA EM USD</label>
                            <input disabled class="form-control cotacao"
+                           
                                value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo . '_USD'])
                                    ? number_format($processo->cotacao_moeda_processo[$processo->moeda_processo . '_USD']['venda'], 4, ',', '.')
                                    : '' }}"

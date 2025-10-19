@@ -211,8 +211,12 @@ class ProcessoController extends Controller
 
             // Monta o JSON das cotações das moedas do processo
             $cotacoesMoedaProcesso = [];
-            if ($request->has('cotacao_moeda_processo') && is_array($request->cotacao_moeda_processo)) {
-                foreach ($request->cotacao_moeda_processo as $codigo => $cotacao) {
+            
+            if ($request->has('cotacao_moeda_processo') ) {
+                
+                $objeto = is_array($request->cotacao_moeda_processo) ? $request->cotacao_moeda_processo: json_decode($request->cotacao_moeda_processo,true);
+                
+                foreach ($objeto as $codigo => $cotacao) {
                     $nome = $cotacao['nome'] ?? null;
                     $compra = isset($cotacao['compra']) ? $this->parseMoneyToFloat($cotacao['compra'], 6) : null;
                     $venda = isset($cotacao['venda']) ? $this->parseMoneyToFloat($cotacao['venda'], 6) : null;
