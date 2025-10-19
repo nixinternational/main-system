@@ -9,7 +9,7 @@
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#fornecedorModal">Adicionar
                     fornecedor</button>
             </div>
-            @if (!$cliente->fornecedores->isEmpty())
+            @if ( isset($cliente) && !$cliente->fornecedores->isEmpty())
 
                 <table id="fornecedorTable" class="table shadow rounded table-striped table-hover">
                     <thead class="bg-primary ">
