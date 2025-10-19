@@ -179,6 +179,7 @@ class ProcessoController extends Controller
             $processoProdutos = $produtos;
             return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos', 'moedasSuportadas'));
         } catch (Exception $e) {
+            dd($e);
             return redirect(route('processo.index'))->with('messages', ['error' => ['Processo não encontrado!']]);
         }
     }
