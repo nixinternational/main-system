@@ -9,7 +9,7 @@
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#fornecedorModal">Adicionar
                     fornecedor</button>
             </div>
-            @if ( isset($cliente) && !$cliente->fornecedores->isEmpty())
+            @if (isset($cliente) && !$cliente->fornecedores->isEmpty())
 
                 <table id="fornecedorTable" class="table shadow rounded table-striped table-hover">
                     <thead class="bg-primary ">
@@ -34,9 +34,10 @@
                                         data-route="{{ route('fornecedor.update', $fornecedor->id) }}" type="button"
                                         data-nome="{{ $fornecedor->nome }}" data-cnpj="{{ $fornecedor->cnpj }}"
                                         data-pais_origem="{{ $fornecedor->pais_origem }}"
-                                        data-logradouro="{{ $fornecedor->logradouro }}" data-numero="{{ $fornecedor->numero }}"
-                                        data-complemento="{{ $fornecedor->complemento }}" data-cidade="{{ $fornecedor->cidade }}"
-                                        data-estado="{{ $fornecedor->estado }}"
+                                        data-logradouro="{{ $fornecedor->logradouro }}"
+                                        data-numero="{{ $fornecedor->numero }}"
+                                        data-complemento="{{ $fornecedor->complemento }}"
+                                        data-cidade="{{ $fornecedor->cidade }}" data-estado="{{ $fornecedor->estado }}"
                                         data-nome_contato="{{ $fornecedor->nome_contato }}"
                                         data-email_contato="{{ $fornecedor->email_contato }}"
                                         data-telefone_contato="{{ $fornecedor->telefone_contato }}"
@@ -82,7 +83,9 @@
                     <div class="modal-body">
 
                         @csrf
-                        <input type="hidden" name="cliente_id" value="{{ $cliente->id }}">
+                        @if (isset($client))
+                            <input type="hidden" name="cliente_id" value="{{ $cliente->id }}">
+                        @endif
                         <div class="row">
                             <div class="col-3 form-group">
                                 <label class="form-label">Nome</label>
@@ -439,7 +442,7 @@
                 modal.find('input[name="cnpj"]').val(cnpj);
             }
             modal.find('input[name="nome"]').val(button.data('nome'));
-            
+
             modal.find('select[name="pais_origem"]').val(button.data('pais_origem')).trigger('change');
             modal.find('input[name="logradouro"]').val(button.data('logradouro'));
             modal.find('input[name="numero"]').val(button.data('numero'));
@@ -449,7 +452,7 @@
             modal.find('input[name="nome_contato"]').val(button.data('nome_contato'));
             modal.find('input[name="email_contato"]').val(button.data('email_contato'));
             modal.find('input[name="telefone_contato"]').val(button.data('telefone_contato'));
-            
+
         });
     </script>
 @endsection
