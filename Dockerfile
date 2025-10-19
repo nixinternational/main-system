@@ -42,8 +42,12 @@ FROM node:18-alpine AS npm
 WORKDIR /app
 COPY --from=composer /build .
 
+# instalar git + dependências necessárias para yarn
+RUN apk add --no-cache git
+
 RUN yarn install
 RUN yarn build
+
 
 # Etapa 3: PHP-FPM + Nginx (runtime)
 FROM php:8.2-fpm AS run
