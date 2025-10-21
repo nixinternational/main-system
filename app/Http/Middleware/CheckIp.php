@@ -13,7 +13,8 @@ class CheckIp
      * Lista de IPs e redes permitidas
      */
     protected $whitelist = [
-        '177.200.46.206', // IP específico
+        '177.200.46.206', // IP específico,
+        '179.95.91.8 ',
         '127.0.0.1',      // localhost
         '::1',            // IPv6 localhost
         '192.168.0.0/16', // Rede local 192.168.x.x
