@@ -5,10 +5,8 @@
     <div class="card">
 
         <div class="card-text p-3">
-            <div class="w-100 d-flex justify-content-end mb-3">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#fornecedorModal">Adicionar
-                    fornecedor</button>
-            </div>
+         
+            @dd($cliente->Fornecedores)
             @if (isset($cliente) && !$cliente->fornecedores->isEmpty())
 
                 <table id="fornecedorTable" class="table shadow rounded table-striped table-hover">
@@ -83,7 +81,7 @@
                     <div class="modal-body">
 
                         @csrf
-                        @if (isset($client))
+                        @if (isset($cliente))
                             <input type="hidden" name="cliente_id" value="{{ $cliente->id }}">
                         @endif
                         <div class="row">

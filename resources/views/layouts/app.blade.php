@@ -41,7 +41,6 @@
 </head>
 
 <body class="hold-transition sidebar-mini sidebar-collapse w-100">
-
     <div class="wrapper">
 
         <nav class="main-header navbar navbar-expand navbar-light navbar-white d-flex justify-content-between">
@@ -50,6 +49,9 @@
                 <li class="nav-item">
                     <a class="nav-link" data-widget="pushmenu" href="#"><i class="fa fa-bars"></i></a>
                 </li>
+                @if (app()->environment('local'))
+                    <h5 style="background-color: red; color: white">AMBIENTE DE DESENVOLVIMENTO</h5>
+                @endif
             </ul>
             <div class="">
 
@@ -97,6 +99,7 @@
         <div class="content-wrapper">
             <div class="container-fluid">
                 @hasSection('title')
+
                     <div class="content-header">
                         <div class="container-fluid">
                             <div class="row mb-2 d-flex justify-content-between">
