@@ -19,7 +19,7 @@
 <div class="card rounded w-50">
     <div class="row">
         <div class="col-7 py-3 d-flex justify-content-center">
-            <img style="height: 50vh; margin:0 auto;" src="{{ asset('images/logo-nix2.png') }}" alt="">
+            <img style="max-width: 100%; margin:0 auto;" src="{{ asset('images/logo-nix2.png') }}" alt="">
 
         </div>
         <div class="col-5 py-3  d-flex align-items-center">
