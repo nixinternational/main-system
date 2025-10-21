@@ -42,10 +42,7 @@ Route::get('/', function () {
 });
 
 Auth::routes();
-
-
-
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth','check.ip'])->group(function () {
 
     Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:admin|root');;
     Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
