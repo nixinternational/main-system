@@ -1,4 +1,5 @@
-FROM nginx:latest
+FROM nginx:latest AS nginx
+WORKDIR /var/www/html
 
-# Apenas para desenvolvimento, não precisa copiar SSL
-WORKDIR /etc/nginx/conf.d
+# Copiar a configuração do Nginx
+COPY ./nginx-dev.conf /etc/nginx/conf.d/default.conf

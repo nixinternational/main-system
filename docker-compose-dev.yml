@@ -1,71 +1,71 @@
 version: "3"
 services:
-    db_nix:
-        image: postgis/postgis:latest
-        container_name: db_nix
-        networks:
-            - rede-aplicacao
-        environment:
-            POSTGRES_DB: nix_international
-            POSTGRES_USER: nix_international
-            POSTGRES_PASSWORD: nix_international_develop
-        ports:
-            - "54321:5432"
-        volumes:
-            - db_data:/var/lib/postgresql/data
-        healthcheck:
-            test: [ "CMD-SHELL", "pg_isready -d nix_international -U nix_international" ]
-            interval: 5s
-            timeout: 5s
-            retries: 5
+  db_nix:
+    image: postgis/postgis:latest
+    container_name: db_nix
+    networks:
+      - rede-aplicacao
+    environment:
+      POSTGRES_DB: nix_international
+      POSTGRES_USER: nix_international
+      POSTGRES_PASSWORD: nix_international_develop
+    ports:
+      - "54321:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d nix_international -U nix_international"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-    nginx_nix:
-        build:
-            dockerfile: './nginx.dockerfile'
-            context: .
-        container_name: nix-nginx-server
-        volumes:
-            - ./nginx.conf:/etc/nginx/conf.d/default.conf  # Monta a configuração Nginx
-            - ./:/var/www/html
-        ports:
-            - "80:80"  # Mapeia a porta 80
-        networks:
-            - rede-aplicacao
-        depends_on:
-            - app_nix
+  app_nix:
+    build:
+      dockerfile: './Dockerfile'
+      context: .
+    container_name: nix_app
+    ports:
+      - "9000:9000"
+    networks:
+      - rede-aplicacao
+    env_file:
+      - .env.example  # <- NÃO monte diretamente o .env do host
+    volumes:
+      - ./app:/var/www/html/app
+      - ./bootstrap:/var/www/html/bootstrap
+      - ./config:/var/www/html/config
+      - ./database:/var/www/html/database
+      - ./lang:/var/www/html/lang
+      - ./resources:/var/www/html/resources
+      - ./routes:/var/www/html/routes
+      - ./storage:/var/www/html/storage
+      - ./stubs:/var/www/html/stubs
+      - ./tests:/var/www/html/tests
+      - ./public:/var/www/html/public
+      - ./start.sh:/start.sh
+    depends_on:
+      db_nix:
+        condition: service_healthy
+    command: ["/bin/bash", "/start.sh"]
 
-
-    app_nix:
-        build:
-            dockerfile: './Dockerfile'
-            context: .
-        container_name: nix_app
-        ports:
-            - "9000:9000"
-        networks:
-            - rede-aplicacao
-        env_file:
-            - ./.env
-        volumes:
-            - ./app:/var/www/html/app
-            - ./bootstrap:/var/www/html/bootstrap
-            - ./config:/var/www/html/config
-            - ./database:/var/www/html/database
-            - ./lang:/var/www/html/lang
-            - ./resources:/var/www/html/resources
-            - ./routes:/var/www/html/routes
-            - ./storage:/var/www/html/storage
-            - ./stubs:/var/www/html/stubs
-            - ./tests:/var/www/html/tests
-            - ./start.sh:/var/www/html/start.sh
-            - ./public:/var/www/html/public # Monta a pasta pública
-        depends_on:
-            db_nix:
-                condition: service_healthy
+  nginx_nix:
+    build:
+      dockerfile: './nginx-dev.dockerfile'
+      context: .
+    container_name: nix-nginx-server
+    volumes:
+      - ./nginx-dev.conf:/etc/nginx/conf.d/default.conf
+      - ./public:/var/www/html/public  # Apenas a pasta pública precisa estar montada
+    ports:
+      - "80:80"
+    networks:
+      - rede-aplicacao
+    depends_on:
+      - app_nix
 
 networks:
-    rede-aplicacao:
-        driver: bridge
-        
+  rede-aplicacao:
+    driver: bridge
+
 volumes:
   db_data:
