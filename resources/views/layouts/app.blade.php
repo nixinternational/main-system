@@ -30,7 +30,7 @@
     </script>
 
 
-    <link rel="shortcut icon" href="http://nixinternational.com.br/wp-content/uploads/2015/02/icone.png">
+    <link rel="shortcut icon"  href="{{ asset('icone.png') }}">
 
     <link
         rel="stylesheet"href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
