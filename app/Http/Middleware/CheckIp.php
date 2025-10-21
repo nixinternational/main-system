@@ -14,7 +14,6 @@ class CheckIp
      */
     protected $whitelist = [
         '177.200.46.206', // IP específico,
-        '179.95.91.8',
         '127.0.0.1',      // localhost
         '::1',            // IPv6 localhost
         '192.168.0.0/16', // Rede local 192.168.x.x
@@ -35,11 +34,10 @@ class CheckIp
         $clientIp = $request->ip();
         
         // Verifica se o IP está na whitelist
-        // if (!$this->isIpAllowed($clientIp)) {
-        //     Log::warning("Tentativa de acesso não autorizado do IP: " . $clientIp);
-        //     abort(403, 'Acesso negado. IP não autorizado: ' . $clientIp);
-        // }
-        // Log::warning("Tentativa de acesso não autorizado do IP: " . $clientIp);
+        if (!$this->isIpAllowed($clientIp)) {
+            Log::warning("Tentativa de acesso não autorizado do IP: " . $clientIp);
+            abort(403, 'Acesso negado. IP não autorizado: ' . $clientIp);
+        }
 
         return $next($request);
     }
