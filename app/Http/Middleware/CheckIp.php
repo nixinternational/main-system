@@ -35,10 +35,11 @@ class CheckIp
         $clientIp = $request->ip();
         
         // Verifica se o IP está na whitelist
-        if (!$this->isIpAllowed($clientIp)) {
-            Log::warning("Tentativa de acesso não autorizado do IP: " . $clientIp);
-            abort(403, 'Acesso negado. IP não autorizado: ' . $clientIp);
-        }
+        // if (!$this->isIpAllowed($clientIp)) {
+        //     Log::warning("Tentativa de acesso não autorizado do IP: " . $clientIp);
+        //     abort(403, 'Acesso negado. IP não autorizado: ' . $clientIp);
+        // }
+        // Log::warning("Tentativa de acesso não autorizado do IP: " . $clientIp);
 
         return $next($request);
     }
