@@ -8,14 +8,15 @@ use Exception;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::whereNot('id',1)->paginate();
-        
+        $users = User::whereNot('id', 1)->paginate();
+
         return view('users.index', compact('users'));
     }
 
@@ -28,7 +29,6 @@ class UserController extends Controller
     {
         $grupos = Grupo::get();
         return view('users.form', compact('grupos'));
-
     }
 
 
@@ -42,7 +42,7 @@ class UserController extends Controller
     {
         try {
             DB::beginTransaction();
-           $user =  User::create([
+            $user =  User::create([
                 'name' => $request->nome,
                 'email' => $request->email,
                 'email_verified_at' => Carbon::now(),
@@ -50,11 +50,12 @@ class UserController extends Controller
                 'grupo_id' => $request->grupo
             ]);
 
-            if($request->motorista != null){
-                foreach($request->motorista as $motorista_id){
+            if ($request->motorista != null) {
+                foreach ($request->motorista as $motorista_id) {
                     MotoristaUser::create(
-                        ['user_id' => $user->id,
-                        'motorista_id' => $motorista_id
+                        [
+                            'user_id' => $user->id,
+                            'motorista_id' => $motorista_id
                         ]
                     );
                 }
@@ -63,8 +64,7 @@ class UserController extends Controller
             return redirect(route('user.index'))->with('messages', ['success' => ['Usuário criada com sucesso!']]);
         } catch (Exception $e) {
             DB::rollback();
-            return back()->with('messages', ['error' => ['Não foi possível criar o usuário!']])->withInput($request->all());
-            ;
+            return back()->with('messages', ['error' => ['Não foi possível criar o usuário!']])->withInput($request->all());;
         }
     }
 
@@ -74,11 +74,7 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
-    {
-
-
-    }
+    public function show($id) {}
 
     /**
      * Show the form for editing the specified resource.
@@ -88,10 +84,9 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $grupos = Grupo::whereNot('id',1)->get();
+        $grupos = Grupo::whereNot('id', 1)->get();
         $user = User::findOrFail($id);
-        return view('users.form', compact('grupos','user'));
-
+        return view('users.form', compact('grupos', 'user'));
     }
 
     /**
@@ -111,17 +106,16 @@ class UserController extends Controller
                 'email_verified_at' => Carbon::now(),
                 'grupo_id' => $request->grupo
             ]);
-            if($request->senha != '' && $request->senha != null){
+            if ($request->senha != '' && $request->senha != null) {
                 $user->update([
                     'password' => Hash::make(trim($request->senha)),
                 ]);
             }
-      
-             return redirect(route('user.index'))->with('messages', ['success' => ['Usuário atualizado com sucesso!']]);
-         } catch (Exception $e) {
-             return back()->with('messages', ['error' => ['Não foi possível criar o usuário!']])->withInput($request->all());
-             ;
-         }
+
+            return redirect(route('user.index'))->with('messages', ['success' => ['Usuário atualizado com sucesso!']]);
+        } catch (Exception $e) {
+            return back()->with('messages', ['error' => ['Não foi possível criar o usuário!']])->withInput($request->all());;
+        }
     }
 
     /**
@@ -130,10 +124,23 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id) {}
+
+    public function toggleIpProtection()
     {
+        // Nome da chave no cache
+        $key = 'ip_protection_enabled';
 
+        // Busca o valor atual; se não existir inicializa com false
+        $current = Cache::rememberForever($key, fn() => false);
+
+        // Inverte o valor
+        $new = !$current;
+
+        // Atualiza no cache
+        Cache::forever($key, $new);
+
+        return redirect('/home')
+            ->with('success', $new ? 'Proteção de IP habilitada' : 'Proteção de IP desabilitada');
     }
-
-
 }
