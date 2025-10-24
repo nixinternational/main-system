@@ -30,7 +30,7 @@
     </script>
 
 
-    <link rel="shortcut icon"  href="{{ asset('icone.png') }}">
+    <link rel="shortcut icon" href="{{ asset('icone.png') }}">
 
     <link
         rel="stylesheet"href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -44,7 +44,7 @@
     <div class="wrapper">
 
         <nav class="main-header navbar navbar-expand navbar-light navbar-white d-flex justify-content-between">
-            <ul class="navbar-nav">
+            <ul class="navbar-nav d-flex align-items-center">
 
                 <li class="nav-item">
                     <a class="nav-link" data-widget="pushmenu" href="#"><i class="fa fa-bars"></i></a>
@@ -52,6 +52,16 @@
                 @if (app()->environment('local'))
                     <h5 style="background-color: red; color: white">AMBIENTE DE DESENVOLVIMENTO</h5>
                 @endif
+                @if (!Cache::get('ip_protection_enabled', false))
+                    <h5 style="background-color: orange; color: black; margin-left: 10px;">
+                        PROTEÇÃO DE IP DESABILITADA
+                    </h5>
+                @else
+                    <h5 style="background-color: green; color: white; padding:10px; border-radius:8px; margin-left: 10px;">
+                        PROTEÇÃO DE IP DESABILITADA
+                    </h5>
+                @endif
+
             </ul>
             <div class="">
 

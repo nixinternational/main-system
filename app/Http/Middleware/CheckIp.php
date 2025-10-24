@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -31,9 +32,17 @@ class CheckIp
             return $next($request);
         }
 
+        // Lê o status do cache — se nao existir inicializa com false
+        $isIpProtectionEnabled = Cache::rememberForever('ip_protection_enabled', fn() => false);
+
+        // Se a proteção está desligada → libera tudo
+        if (!$isIpProtectionEnabled) {
+            return $next($request);
+        }
+
+        // Proteção ligada → validar IP
         $clientIp = $request->ip();
-        
-        // Verifica se o IP está na whitelist
+
         if (!$this->isIpAllowed($clientIp)) {
             Log::warning("Tentativa de acesso não autorizado do IP: " . $clientIp);
             abort(403, 'Acesso negado. IP não autorizado: ' . $clientIp);
@@ -41,6 +50,7 @@ class CheckIp
 
         return $next($request);
     }
+
 
     /**
      * Verifica se o IP está na lista de permitidos
@@ -73,7 +83,7 @@ class CheckIp
             $subnet = ip2long($subnet);
             $mask = -1 << (32 - $bits);
             $subnet &= $mask;
-            
+
             return ($ip & $mask) == $subnet;
         }
 
