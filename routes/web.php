@@ -70,6 +70,8 @@ Route::middleware(['auth','check.ip'])->group(function () {
     Route::post('update-client-documentos/{id}', action: [ClienteController::class, 'updateClientDocument'])->name('cliente.update.documents');
     Route::get('/processo/{id}/esboco-pdf', [ProcessoController::class, 'esbocoPdf'])->name('processo.esboco.pdf');
 
+
+    Route::put('updateProcesso/{id}',[ProcessoController::class,'updateProcesso'])->name('update.processo');
     //  Route::get('settings/bid', [ProdutoController::class, 'getBid'])->withoutMiddleware('auth:sanctum');
 
     Route::delete('destroy-bank/{id}', action: [ClienteController::class, 'destroyBancoCliente'])->name('banco.cliente.destroy');

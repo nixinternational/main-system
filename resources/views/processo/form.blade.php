@@ -153,84 +153,58 @@
             font-weight: bold;
         }
     </style>
-    <form enctype="multipart/form-data" id="formProcesso"
-        action="{{ isset($processo) ? route('processo.update', $processo->id) : route('processo.store') }}" method="POST">
-        @csrf
-        @if (isset($processo))
-            @method('PUT')
-        @endif
-        @php
-            if (isset($processo)) {
-                $moedasSuportadas += [
-                    'ARS' => 'Peso argentino',
-                    'CNY' => 'Yuan chinês',
-                    'HKD' => 'Dólar de Hong Kong',
-                    'MXN' => 'Peso mexicano',
-                    'NZD' => 'Dólar neozelandês',
-                    'SGD' => 'Dólar de Singapura',
-                    'ZAR' => 'Rand sul-africano',
-                    'AED' => 'Dirham dos Emirados Árabes',
-                    'INR' => 'Rúpia indiana',
-                    'RUB' => 'Rublo russo',
-                    'TRY' => 'Lira turca',
-                    'KRW' => 'Won sul-coreano',
-                ];
-            }
-        @endphp
-        <div class="row">
-            <div class="col-12 shadow-lg px-0">
-                <div class="card w-100 card-primary card-tabs">
-                    <div class="card-header p-0 pt-1">
-                        <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
-                            <li class="pt-2 px-3">
-                                <h3 class="card-title text-dark font-weight-bold" style="">
-                                    {{ $processo->codigo_interno ?? 'Novo Processo' }}</h3>
+
+    <div class="row">
+        <div class="col-12 shadow-lg px-0">
+            <div class="card w-100 card-primary card-tabs">
+                <div class="card-header p-0 pt-1">
+                    <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
+                        <li class="pt-2 px-3">
+                            <h3 class="card-title text-dark font-weight-bold" style="">
+                                {{ $processo->codigo_interno ?? 'Novo Processo' }}</h3>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill"
+                                href="#custom-tabs-two-home" role="tab" aria-controls="custom-tabs-two-home"
+                                aria-selected="false">Dados Processo</a>
+                        </li>
+                        @if (isset($processo))
+                            <li class="nav-item">
+                                <a class="nav-link " id="custom-tabs-three-home-tab" data-toggle="pill"
+                                    href="#custom-tabs-three-home" role="tab" aria-controls="custom-tabs-three-home"
+                                    aria-selected="false">Produtos</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill"
-                                    href="#custom-tabs-two-home" role="tab" aria-controls="custom-tabs-two-home"
-                                    aria-selected="false">Dados Processo</a>
+                                <a class="nav-link " id="custom-tabs-four-home-tab" data-toggle="pill"
+                                    href="#custom-tabs-four-home" role="tab" aria-controls="custom-tabs-four-home"
+                                    aria-selected="false">Esboço da NF</a>
                             </li>
-                            @if (isset($processo))
-                                <li class="nav-item">
-                                    <a class="nav-link " id="custom-tabs-three-home-tab" data-toggle="pill"
-                                        href="#custom-tabs-three-home" role="tab" aria-controls="custom-tabs-three-home"
-                                        aria-selected="false">Produtos</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link " id="custom-tabs-four-home-tab" data-toggle="pill"
-                                        href="#custom-tabs-four-home" role="tab" aria-controls="custom-tabs-four-home"
-                                        aria-selected="false">Esboço da NF</a>
-                                </li>
-                            @endif
-                        </ul>
+                        @endif
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="custom-tabs-two-tabContent">
+                        <div id="avisoProcessoAlterado" class="alert d-none alert-warning" role="alert">
+                            Processo alterado, pressione o botão salvar para persistir as alterações</div>
+
+                        @include('processo.includes.dados-processo')
+
+                        @if (isset($processo))
+                            @include('processo.includes.tabela-produtos')
+                            <div class="tab-pane fade" id="custom-tabs-four-home"
+                                aria-labelledby="custom-tabs-four-home-tab" role="tabpanel">
+                                <iframe src="{{ route('processo.esboco.pdf', $processo->id) }}" width="100%"
+                                    height="800px" frameborder="0"></iframe>
+                            </div>
+                        @endif
                     </div>
-                    <div class="card-body">
-                        <div class="tab-content" id="custom-tabs-two-tabContent">
-                            <div id="avisoProcessoAlterado" class="alert d-none alert-warning" role="alert">
-                                Processo alterado, pressione o botão salvar para persistir as alterações</div>
-
-                            @include('processo.includes.dados-processo')
-
-                            @if (isset($processo))
-                                @include('processo.includes.tabela-produtos')
-                                <div class="tab-pane fade" id="custom-tabs-four-home"
-                                    ari{a-labelledby="custom-tabs-four-home-tab" role="tabpanel">
-                                    <iframe src="{{ route('processo.esboco.pdf', $processo->id) }}" width="100%"
-                                        height="800px" frameborder="0"></iframe>
-                                </div>
-                            @endif
-                        </div>
 
 
-                        <div class="col-1">
-                            <button type="submit" class="btn btn-primary mt-3">Salvar</button>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>
-    </form>
+    </div>
     @if (isset($productsClient))
         <input type="hidden" name="productsClient" id="productsClient" value="{{ $productsClient }}">
         <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ json_encode($dolar) }}">
@@ -244,6 +218,229 @@
     <script>
         let reordenando = false;
         let products = JSON.parse($('#productsClient').val());
+
+        function atualizarTotalizadores() {
+
+            const rows = $('#productsBody tr:not(.separador-adicao)');
+            console.log('oi')
+            if (rows.length === 0) return;
+
+            let totais = {
+                quantidade: 0,
+                peso_liquido_total: 0,
+                fob_total_usd: 0,
+                fob_total_brl: 0,
+                frete_usd: 0,
+                frete_brl: 0,
+                seguro_usd: 0,
+                seguro_brl: 0,
+                acresc_frete_usd: 0,
+                acresc_frete_brl: 0,
+                thc_usd: 0,
+                thc_brl: 0,
+                valor_aduaneiro_usd: 0,
+                valor_aduaneiro_brl: 0,
+                valor_ii: 0,
+                base_ipi: 0,
+                valor_ipi: 0,
+                base_pis_cofins: 0,
+                valor_pis: 0,
+                valor_cofins: 0,
+                despesa_aduaneira: 0,
+                base_icms_sem_reducao: 0,
+                valor_icms_sem_reducao: 0,
+                base_icms_reduzido: 0,
+                valor_icms_reduzido: 0,
+                valor_total_nf: 0,
+                valor_total_nf_sem_icms_st: 0,
+                base_icms_st: 0,
+                valor_icms_st: 0,
+                valor_total_nf_com_icms_st: 0,
+                multa: 0,
+                tx_def_li: 0,
+                taxa_siscomex: 0,
+                outras_taxas_agente: 0,
+                liberacao_bl: 0,
+                desconsolidacao: 0,
+                isps_code: 0,
+                handling: 0,
+                capatazia: 0,
+                afrmm: 0,
+                armazenagem_sts: 0,
+                frete_dta_sts_ana: 0,
+                sda: 0,
+                rep_sts: 0,
+                armaz_ana: 0,
+                lavagem_container: 0,
+                rep_anapolis: 0,
+                li_dta_honor_nix: 0,
+                honorarios_nix: 0,
+                desp_desenbaraco: 0,
+                diferenca_cambial_frete: 0,
+                diferenca_cambial_fob: 0,
+                custo_total_final: 0
+            };
+
+            // Calcular médias para fatores
+            let fatorPesoSum = 0;
+            let fatorValorFobSum = 0;
+            let fatorTxSiscomexSum = 0;
+
+            rows.each(function() {
+                const rowId = this.id.replace('row-','')
+                console.log(rowId)
+                // Somar valores
+                Object.keys(totais).forEach(campo => {
+                    const valor = MoneyUtils.parseMoney($(`#${campo}-${rowId}`).val()) || 0;
+                    totais[campo] += valor;
+                });
+
+                // Acumular para médias
+                fatorPesoSum += MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
+                fatorValorFobSum += MoneyUtils.parseMoney($(`#fator_valor_fob-${rowId}`).val()) || 0;
+                fatorTxSiscomexSum += MoneyUtils.parseMoney($(`#fator_tx_siscomex-${rowId}`).val()) || 0;
+            });
+
+            // Atualizar o TFOOT
+            const tfoot = $('#resultado-totalizadores');
+
+            // Limpar e criar nova linha de totais
+            tfoot.empty();
+            let tr = '<tr><td colspan="7" style="text-align: right; font-weight: bold;">TOTAIS:</td>';
+
+            // QUANTIDADE
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.quantidade, 5)}</td>`;
+
+            // PESO LIQ. UNIT (vazio)
+            tr += '<td></td>';
+
+            // PESO LIQ TOTAL
+            tr +=
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liquido_total, 5)}</td>`;
+
+            // FATOR PESO (média)
+            tr +=
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorPesoSum, 5)}</td>`;
+
+            tr += '<td></td>';
+            const moedaProcesso = $('#moeda_processo').val();
+            if (moedaProcesso && moedaProcesso !== 'USD') {
+                let totalFobMoeda = 0;
+                rows.each(function() {
+                    const rowId = $(this).find('input').first().data('row');
+                    totalFobMoeda += MoneyUtils.parseMoney($(`#fob_total_moeda_estrangeira-${rowId}`).val()) || 0;
+                });
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFobMoeda, 7)}</td>`;
+            }
+
+            tr +=
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_usd, 7)}</td>`;
+            tr +=
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_brl, 7)}</td>`;
+
+            // COLUNAS FRETE
+            const moedaFrete = $('#frete_internacional_moeda').val();
+            if (moedaFrete && moedaFrete !== 'USD') {
+                let totalFreteMoeda = 0;
+                rows.each(function() {
+                    const rowId = $(this).find('input').first().data('row');
+                    totalFreteMoeda += MoneyUtils.parseMoney($(`#frete_moeda_estrangeira-${rowId}`).val()) || 0;
+                });
+                tr +=
+                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 7)}</td>`;
+            }
+
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 7)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 7)}</td>`;
+
+            // COLUNAS SEGURO
+            const moedaSeguro = $('#seguro_internacional_moeda').val();
+            if (moedaSeguro && moedaSeguro !== 'USD') {
+                let totalSeguroMoeda = 0;
+                rows.each(function() {
+                    const rowId = $(this).find('input').first().data('row');
+                    totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
+                });
+                tr +=
+                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 7)}</td>`;
+            }
+
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 7)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 7)}</td>`;
+
+            // COLUNAS ACRÉSCIMO
+            const moedaAcrescimo = $('#acrescimo_frete_moeda').val();
+            if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                let totalAcrescimoMoeda = 0;
+                rows.each(function() {
+                    const rowId = $(this).find('input').first().data('row');
+                    totalAcrescimoMoeda += MoneyUtils.parseMoney($(`#acrescimo_moeda_estrangeira-${rowId}`)
+                        .val()) || 0;
+                });
+                tr +=
+                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalAcrescimoMoeda, 7)}</td>`;
+            }
+
+            tr +=
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_usd, 7)}</td>`;
+            tr +=
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 7)}</td>`;
+
+            // Continuar com as demais colunas...
+            tr += `
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_usd, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_brl, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_usd, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_brl, 7)}</td>
+        <td></td> <td></td> <td></td> <td></td> <td></td> <td></td> <td></td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_ii, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_ipi, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_ipi, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_pis_cofins, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_pis, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_cofins, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.despesa_aduaneira, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_sem_reducao, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_sem_reducao, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_reduzido, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_reduzido, 7)}</td>
+        <td></td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf_sem_icms_st, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_st, 7)}</td>
+        <td></td><td></td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_st, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf_com_icms_st, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorValorFobSum , 5)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorTxSiscomexSum , 5)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.multa, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.tx_def_li, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.taxa_siscomex, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.liberacao_bl, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desconsolidacao, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.isps_code, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.capatazia, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.afrmm, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armazenagem_sts, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.sda, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_sts, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armaz_ana, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.lavagem_container, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_anapolis, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_frete, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 7)}</td>
+        <td></td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 7)}</td>
+    </tr>`;
+
+            tfoot.append(tr);
+        }
 
         function getCotacaoesProcesso() {
             let cotacaoProcesso = '';
@@ -677,6 +874,9 @@
                 }, 100);
             });
 
+            setTimeout(atualizarTotalizadores, 500);
+
+
         });
 
         function updateValorReal(inputId, spanId, automatic = true) {
@@ -893,6 +1093,8 @@
 
                                 atualizarCamposCabecalho();
                             }
+                            atualizarTotalizadores();
+
                         } catch (error) {
                             console.log(error);
                         }
@@ -1733,44 +1935,53 @@
             const dadosFob = [];
 
             if ($('#moeda_processo').val() != 'USD') {
-            $('input[id^="fob_total_usd-"]').each(function() {
-                const rowId = $(this).data('row');
-                const fobTotal = MoneyUtils.parseMoney($(this).val());
-                dadosFob.push({ rowId, fobTotal });
-            });
+                $('input[id^="fob_total_usd-"]').each(function() {
+                    const rowId = $(this).data('row');
+                    const fobTotal = MoneyUtils.parseMoney($(this).val());
+                    dadosFob.push({
+                        rowId,
+                        fobTotal
+                    });
+                });
             } else {
-            $('.fobUnitario').each(function() {
-                const rowId = $(this).data('row');
-                const fobUnit = MoneyUtils.parseMoney($(this).val());
-                const qtd = parseInt($(`#quantidade-${rowId}`).val()) || 0;
-                const fobTotal = fobUnit * qtd;
-                dadosFob.push({ rowId, fobTotal });
-            });
+                $('.fobUnitario').each(function() {
+                    const rowId = $(this).data('row');
+                    const fobUnit = MoneyUtils.parseMoney($(this).val());
+                    const qtd = parseInt($(`#quantidade-${rowId}`).val()) || 0;
+                    const fobTotal = fobUnit * qtd;
+                    dadosFob.push({
+                        rowId,
+                        fobTotal
+                    });
+                });
             }
 
             fobTotalGeral = dadosFob.reduce((acc, linha) => acc + linha.fobTotal, 0);
 
             for (const linha of dadosFob) {
-            const { rowId, fobTotal } = linha;
+                const {
+                    rowId,
+                    fobTotal
+                } = linha;
 
-            const fatorVlrFob_AX = fobTotal / (fobTotalGeral || 1);
-            const fatorTaxaSiscomex_AY = taxaSiscomex / ((fobTotal * dolar) || 1);
-            const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * fobTotal * dolar;
+                const fatorVlrFob_AX = fobTotal / (fobTotalGeral || 1);
+                const fatorTaxaSiscomex_AY = taxaSiscomex / ((fobTotal * dolar) || 1);
+                const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * fobTotal * dolar;
 
-            // Atualiza campos de fatores e taxa siscomex
-            $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
-            $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY));
-            $(`#taxa_siscomex-${rowId}`).val(MoneyUtils.formatMoney(taxaSisComexUnitaria_BB));
+                // Atualiza campos de fatores e taxa siscomex
+                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
+                $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY));
+                $(`#taxa_siscomex-${rowId}`).val(MoneyUtils.formatMoney(taxaSisComexUnitaria_BB));
 
-            // Atualiza campos de fator_vlr_fob e campos externos
-            $(`#fator_vlr_fob-${rowId}`).val(fatorVlrFob_AX.toFixed(6));
-            const camposExternos = getCamposExternos();
-            for (let campo of camposExternos) {
-                const campoEl = $(`#${campo}-${rowId}`);
-                const valorOriginal = MoneyUtils.parseMoney(campoEl.val());
-                const valorComFator = valorOriginal * fatorVlrFob_AX;
-                campoEl.val(valorComFator.toFixed(6));
-            }
+                // Atualiza campos de fator_vlr_fob e campos externos
+                $(`#fator_vlr_fob-${rowId}`).val(fatorVlrFob_AX.toFixed(6));
+                const camposExternos = getCamposExternos();
+                for (let campo of camposExternos) {
+                    const campoEl = $(`#${campo}-${rowId}`);
+                    const valorOriginal = MoneyUtils.parseMoney(campoEl.val());
+                    const valorComFator = valorOriginal * fatorVlrFob_AX;
+                    campoEl.val(valorComFator.toFixed(6));
+                }
             }
 
             $('#fobTotalProcesso').text(MoneyUtils.formatMoney(fobTotalGeral));
@@ -1832,6 +2043,8 @@
                 $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final))
                 $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final))
             }
+            atualizarTotalizadores();
+
         }
         $(document).on('click', '.removeLine', function() {
             Swal.fire({
@@ -1849,6 +2062,8 @@
                 if (result.isConfirmed) {
                     const id = this.dataset.id
                     $(`#row-${id}`).remove();
+                    setTimeout(atualizarTotalizadores, 100);
+
                 } else {
                     Toast.fire({
                         icon: 'info',
@@ -2053,6 +2268,8 @@
             $(`#row-${newIndex} input, #row-${newIndex} select, #row-${newIndex} textarea`).each(function() {
                 initialInputs.add(this);
             });
+            setTimeout(atualizarTotalizadores, 100);
+
         });
 
         $(document).ready(function($) {

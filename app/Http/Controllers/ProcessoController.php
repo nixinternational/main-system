@@ -13,7 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ProcessoController extends Controller
 {
@@ -201,99 +203,36 @@ class ProcessoController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            DB::beginTransaction();
+
             $validator = Validator::make($request->all(), [], []);
 
             if ($validator->fails()) {
                 $errors = $validator->errors();
                 $message = $errors->unique();
-                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+                return response()->json(['error' => [implode('<br> ', $message)]]);
             }
 
-            // Monta o JSON das cotações das moedas do processo
-            $cotacoesMoedaProcesso = [];
-            
-            if ($request->has('cotacao_moeda_processo') ) {
-                
-                $objeto = is_array($request->cotacao_moeda_processo) ? $request->cotacao_moeda_processo: json_decode($request->cotacao_moeda_processo,true);
-                
-                foreach ($objeto as $codigo => $cotacao) {
-                    $nome = $cotacao['nome'] ?? null;
-                    $compra = isset($cotacao['compra']) ? $this->parseMoneyToFloat($cotacao['compra'], 6) : null;
-                    $venda = isset($cotacao['venda']) ? $this->parseMoneyToFloat($cotacao['venda'], 6) : null;
-                    $data = $request->data_cotacao ?? date('d-m-Y');
-                    $cotacoesMoedaProcesso[$codigo] = [
-                        'nome' => $nome,
-                        'data' => $data,
-                        'moeda' => $codigo,
-                        'compra' => $compra,
-                        'venda' => $venda,
-                        'erro' => null,
-                    ];
-                }
-            }
-            $dadosProcesso = [
-                "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
-                "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
-                "acrescimo_frete" => $this->parseMoneyToFloat($request->acrescimo_frete),
-                "thc_capatazia" => $this->parseMoneyToFloat($request->thc_capatazia),
-                "peso_bruto" => $this->parseMoneyToFloat($request->peso_bruto),
-                'frete_internacional_moeda' => $request->frete_internacional_moeda,
-                'seguro_internacional_moeda' => $request->seguro_internacional_moeda,
-                'acrescimo_frete_moeda' => $request->acrescimo_frete_moeda,
-                "codigo_interno" => $request->codigo_interno ?? $id,
-                "descricao" => $request->descricao,
-                "canal" => $request->canal,
-                'multa' => isset($request->multa) ? $this->parseMoneyToFloat($request->multa) : null,
-                "status" => $request->status,
-                "data_desembaraco_inicio" => $request->data_desembaraco_inicio,
-                "data_desembaraco_fim" => $request->data_desembaraco_fim,
-                'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
-                'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
-                'desconsolidacao' => $this->parseMoneyToFloat($request->desconsolidacao),
-                'isps_code' => $this->parseMoneyToFloat($request->isps_code),
-                'handling' => $this->parseMoneyToFloat($request->handling),
-                'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
-                'afrmm' => $this->parseMoneyToFloat($request->afrmm),
-                'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
-                'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
-                'sda' => $this->parseMoneyToFloat($request->sda),
-                'rep_sts' => $this->parseMoneyToFloat($request->rep_sts),
-                'armaz_ana' => $this->parseMoneyToFloat($request->armaz_ana),
-                'lavagem_container' => $this->parseMoneyToFloat($request->lavagem_container),
-                'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
-                'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
-                'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
-                'quantidade' => $this->parseMoneyToFloat($request->quantidade),
-                'especie' => $request->especie,
-                'cotacao_frete_internacional' => $this->parseMoneyToFloat($request->cotacao_frete_internacional, 4),
-                'cotacao_seguro_internacional' => $this->parseMoneyToFloat($request->cotacao_seguro_internacional, 4),
-                'cotacao_acrescimo_frete' => $this->parseMoneyToFloat($request->cotacao_acrescimo_frete, 4),
-                'data_moeda_frete_internacional' => $request->data_cotacao,
-                'data_moeda_seguro_internacional' => $request->data_cotacao,
-                'data_moeda_acrescimo_frete' => $request->data_cotacao,
-                'cotacao_moeda_processo' => !empty($cotacoesMoedaProcesso) ? json_encode($cotacoesMoedaProcesso, JSON_UNESCAPED_UNICODE) : null,
-                'data_cotacao_processo' => $request->data_cotacao,
-                'moeda_processo' => $request->moeda_processo,
-            ];
-            Processo::where('id', $id)->update($dadosProcesso);
             $pesoLiquidoTotal = 0;
-            if ($request->produtos  && count($request->produtos) > 0) {
+            $produtosProcessados = 0;
+
+            if ($request->produtos && count($request->produtos) > 0) {
                 foreach ($request->produtos as $key => $produto) {
                     if (!isset($produto['produto_id']) || empty($produto['produto_id'])) {
-                        return back()->with('messages', ['error' => ['Todos as linhas devem ter um produto selecionado!']])
-                            ->withInput($request->all());
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Todos as linhas devem ter um produto selecionado!'
+                        ]);
                     }
                 }
 
                 foreach ($request->produtos as $key => $produto) {
-
-
-                    $pesoLiquidoTotal +=  isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
-
-
-                    $processoProduto =   ProcessoProduto::updateOrCreate(
+                    $pesoLiquidoTotal += isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
+                    
+                    $processoProduto = ProcessoProduto::updateOrCreate(
                         [
-                            'id' => $produto['processo_produto_id'],
+                            'id' => $produto['processo_produto_id'] ?? null,
                             'processo_id' => $id ?? 0,
                         ],
                         [
@@ -346,7 +285,6 @@ class ProcessoController extends Controller
                             'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
                             'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
                             'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
-
                             'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
                             'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
                             'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
@@ -375,22 +313,133 @@ class ProcessoController extends Controller
                             'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
                             'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
                             "descricao" => $produto['descricao'],
-                            // ADICIONE AQUI OS DOIS NOVOS CAMPOS
                             'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
                             'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
-
                         ]
                     );
+
+                    $produtosProcessados++;
                 }
             }
+
             Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
 
+            DB::commit();
 
-            return back()->with('messages', ['success' => ['Processo atualizado com sucesso!']]);
+            // Retorno para requisições AJAX (salvamento por blocos)
+            if ($request->ajax() || $request->has('salvar_apenas_produtos')) {
+                return response()->json([
+                    'success' => true,
+                    'produtos_processados' => $produtosProcessados,
+                    'peso_liquido_total' => $pesoLiquidoTotal,
+                    'bloco' => $request->bloco_indice ?? 1,
+                    'total_blocos' => $request->total_blocos ?? 1
+                ]);
+            }
+
+            // Retorno para requisições normais
+            return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            dd($e);
-            return back()->with('messages', ['error' => ['Não foi possível cadastrar o tipo de documento!']])->withInput($request->all());
+            DB::rollBack();
+
+            Log::error('Erro ao salvar processo ' . $id . ': ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            // Retorno para requisições AJAX
+            if ($request->ajax() || $request->has('salvar_apenas_produtos')) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Erro interno do servidor: ' . $e->getMessage()
+                ]);
+            }
+
+            // Retorno para requisições normais
+            return response()->json([
+                'success' => false,
+                'error' => 'Erro ao salvar: ' . $e->getMessage()
+            ]);
         }
+    }
+
+    public function updateProcesso(Request $request, $id)
+    {
+
+        $validator = Validator::make($request->all(), [], []);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors();
+            $message = $errors->unique();
+            return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+        }
+
+        // Monta o JSON das cotações das moedas do processo
+        $cotacoesMoedaProcesso = [];
+
+        if ($request->has('cotacao_moeda_processo')) {
+
+            $objeto = is_array($request->cotacao_moeda_processo) ? $request->cotacao_moeda_processo : json_decode($request->cotacao_moeda_processo, true);
+
+            foreach ($objeto as $codigo => $cotacao) {
+                $nome = $cotacao['nome'] ?? null;
+                $compra = isset($cotacao['compra']) ? $this->parseMoneyToFloat($cotacao['compra'], 6) : null;
+                $venda = isset($cotacao['venda']) ? $this->parseMoneyToFloat($cotacao['venda'], 6) : null;
+                $data = $request->data_cotacao ?? date('d-m-Y');
+                $cotacoesMoedaProcesso[$codigo] = [
+                    'nome' => $nome,
+                    'data' => $data,
+                    'moeda' => $codigo,
+                    'compra' => $compra,
+                    'venda' => $venda,
+                    'erro' => null,
+                ];
+            }
+        }
+        $dadosProcesso = [
+            "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
+            "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
+            "acrescimo_frete" => $this->parseMoneyToFloat($request->acrescimo_frete),
+            "thc_capatazia" => $this->parseMoneyToFloat($request->thc_capatazia),
+            "peso_bruto" => $this->parseMoneyToFloat($request->peso_bruto),
+            'frete_internacional_moeda' => $request->frete_internacional_moeda,
+            'seguro_internacional_moeda' => $request->seguro_internacional_moeda,
+            'acrescimo_frete_moeda' => $request->acrescimo_frete_moeda,
+            "codigo_interno" => $request->codigo_interno ?? $id,
+            "descricao" => $request->descricao,
+            "canal" => $request->canal,
+            'multa' => isset($request->multa) ? $this->parseMoneyToFloat($request->multa) : null,
+            "status" => $request->status,
+            "data_desembaraco_inicio" => $request->data_desembaraco_inicio,
+            "data_desembaraco_fim" => $request->data_desembaraco_fim,
+            'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
+            'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
+            'desconsolidacao' => $this->parseMoneyToFloat($request->desconsolidacao),
+            'isps_code' => $this->parseMoneyToFloat($request->isps_code),
+            'handling' => $this->parseMoneyToFloat($request->handling),
+            'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
+            'afrmm' => $this->parseMoneyToFloat($request->afrmm),
+            'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
+            'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
+            'sda' => $this->parseMoneyToFloat($request->sda),
+            'rep_sts' => $this->parseMoneyToFloat($request->rep_sts),
+            'armaz_ana' => $this->parseMoneyToFloat($request->armaz_ana),
+            'lavagem_container' => $this->parseMoneyToFloat($request->lavagem_container),
+            'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
+            'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
+            'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
+            'quantidade' => $this->parseMoneyToFloat($request->quantidade),
+            'especie' => $request->especie,
+            'cotacao_frete_internacional' => $this->parseMoneyToFloat($request->cotacao_frete_internacional, 4),
+            'cotacao_seguro_internacional' => $this->parseMoneyToFloat($request->cotacao_seguro_internacional, 4),
+            'cotacao_acrescimo_frete' => $this->parseMoneyToFloat($request->cotacao_acrescimo_frete, 4),
+            'data_moeda_frete_internacional' => $request->data_cotacao,
+            'data_moeda_seguro_internacional' => $request->data_cotacao,
+            'data_moeda_acrescimo_frete' => $request->data_cotacao,
+            'cotacao_moeda_processo' => !empty($cotacoesMoedaProcesso) ? json_encode($cotacoesMoedaProcesso, JSON_UNESCAPED_UNICODE) : null,
+            'data_cotacao_processo' => $request->data_cotacao,
+            'moeda_processo' => $request->moeda_processo,
+        ];
+        Processo::where('id', $id)->update($dadosProcesso);
+        return back()->with('messages', ['success' => ['Dados do processo atualizado com sucesso!']]);
     }
 
     public function destroy(int $id)
