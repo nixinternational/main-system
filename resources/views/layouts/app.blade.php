@@ -50,10 +50,10 @@
                     <a class="nav-link" data-widget="pushmenu" href="#"><i class="fa fa-bars"></i></a>
                 </li>
                 @if (app()->environment('local'))
-                    <h5 style="background-color: red; color: white">AMBIENTE DE DESENVOLVIMENTO</h5>
+                    <h5 style="background-color: red; color: white;padding:10px; border-radius:8px;">AMBIENTE DE DESENVOLVIMENTO</h5>
                 @endif
                 @if (!Cache::get('ip_protection_enabled', false))
-                    <h5 style="background-color: orange; color: black; margin-left: 10px;">
+                    <h5 style="background-color: orange; color: black;padding:10px; border-radius:8px; margin-left: 10px;">
                         PROTEÇÃO DE IP DESABILITADA
                     </h5>
                 @else
