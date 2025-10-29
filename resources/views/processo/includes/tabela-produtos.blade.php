@@ -4,8 +4,10 @@
             action="POST">
             @csrf
             @method('PUT')
-            <button type="button" class="btn btn-primary mb-2 addProduct ">Adicionar
+            <button type="button" class="btn btn-primary mb-2 addProduct "> <i class="fas fa-plus"></i> Adicionar
                 Produto</button>
+            <button id="btnDeleteSelectedProdutos" class="btn btn-danger mb-2" type="button"> <i
+                    class="fas fa-trash"></i> Excluir Selecionados</button>
             <button type="button" class="btn btn-info mb-2" id="recalcularTabela">
                 <i class="fas fa-calculator"></i> Recalcular Toda a Tabela
             </button>
@@ -122,7 +124,9 @@
                             <th colspan="{{ $colspanAfterMiddleRow }}"></th>
                         </tr>
                         <tr>
-                            <th style="background-color: #212529 !important">Ações</th>
+                            <th class="d-flex align-items-center justify-content-center"
+                                style="background-color: #212529 !important; ">Ações <input type="checkbox"
+                                    style="margin-left: 10px" id="select-all-produtos" title="Selecionar todos"></th>
                             <th style="min-width: 300px !important;">PRODUTO</th>
                             <th style="min-width: 500px !important;">DESCRIÇÃO</th>
                             <th>ADIÇÃO</th>
@@ -240,12 +244,14 @@
                     </thead>
                     <tbody id="productsBody">
                         @foreach ($processoProdutos as $index => $processoProduto)
-                            <tr id="row-{{ $index }}">
-                                <td>
+                            <tr class="linhas-input" id="row-{{ $index }}">
+                                <td class="d-flex align-items-center justify-content-center">
                                     <button type="button" onclick="showDeleteConfirmation({{ $processoProduto->id }})"
                                         class="btn btn-danger btn-sm btn-remove" data-id="{{ $processoProduto->id }}">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
+                                    <input type="checkbox" style="margin-left: 10px" class="select-produto"
+                                        value="{{ $processoProduto->id }}">
                                 </td>
 
                                 <input type="hidden" name="produtos[{{ $index }}][processo_produto_id]"
@@ -525,7 +531,7 @@
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control percentage2" readonly
+                                        class=" form-control percentage2"
                                         name="produtos[{{ $index }}][icms_reduzido_percent]"
                                         id="icms_reduzido_percent-{{ $index }}"
                                         value="{{ $processoProduto->icms_reduzido_percent ? number_format($processoProduto->icms_reduzido_percent, 2, ',', '.') : '' }} %">
@@ -897,9 +903,9 @@
                             </tr>
                         @endforeach
                     </tbody>
-<tfoot id="resultado-totalizadores">
+                    <tfoot id="resultado-totalizadores">
 
-</tfoot>
+                    </tfoot>
                 </table>
             </div>
         </form>
@@ -1123,6 +1129,29 @@
                         formData.append('total_blocos', this.blocos.length);
                         formData.append('salvar_apenas_produtos', 'true');
 
+                        let campos = [
+                                    'outras_taxas_agente',
+                                    'liberacao_bl',
+                                    'desconsolidacao',
+                                    'isps_code',
+                                    'handling',
+                                    'capatazia',
+                                    'afrmm',
+                                    'armazenagem_sts',
+                                    'frete_dta_sts_ana',
+                                    'sda',
+                                    'rep_sts',
+                                    'armaz_ana',
+                                    'lavagem_container',
+                                    'rep_anapolis',
+                                    'li_dta_honor_nix',
+                                    'honorarios_nix',
+                                ];
+
+                                for(let campo of campos){
+                                    formData.append(campo,MoneyUtils.parseMoney($(`#${campo}`).val()))
+                                }
+
                         // Adicionar produtos do bloco
                         blocoProdutos.forEach((produto, index) => {
                             Object.keys(produto).forEach(campo => {
@@ -1259,5 +1288,155 @@
                 inicializarSalvamentoFases();
             });
         </script>
+        <script>
+            (function() {
+                // URL gerada pelo blade; certifique-se de ter a rota nomeada 'processo.produtos.batchDelete'
+                const deleteUrl = "{{ route('processo.produtos.batchDelete') }}";
+                const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+                const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+
+                function selectAllToggle(checked) {
+                    document.querySelectorAll('.select-produto').forEach(cb => cb.checked = checked);
+                }
+
+                // Event: selecionar todos
+                const selectAll = document.getElementById('select-all-produtos');
+                if (selectAll) {
+                    selectAll.addEventListener('change', function(e) {
+                        selectAllToggle(e.target.checked);
+                    });
+                }
+
+                // Coleta ids numéricos de checkboxes marcados (só produtos já salvos no DB)
+                function collectSelectedSavedIds() {
+                    return Array.from(document.querySelectorAll('.select-produto:checked'))
+                        .map(i => i.value)
+                        .filter(v => /^[0-9]+$/.test(v))
+                        .map(Number);
+                }
+
+                async function batchDeleteSelected() {
+                    const ids = collectSelectedSavedIds();
+                    if (!ids.length) {
+                        await Swal.fire({
+                            icon: 'warning',
+                            title: 'Nada selecionado',
+                            text: 'Nenhum produto salvo selecionado. Para remover linhas não salvas, apague-as manualmente antes de salvar.',
+                        });
+                        return;
+                    }
+
+                    const result = await Swal.fire({
+                        title: `Excluir ${ids.length} produto(s)?`,
+                        text: "Esta ação não pode ser desfeita.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sim, excluir',
+                        cancelButtonText: 'Cancelar',
+                        reverseButtons: true
+                    });
+
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch(deleteUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: JSON.stringify({
+                                ids: ids
+                            })
+                        });
+
+                        const data = await res.json();
+                        if (!res.ok || !data.success) {
+                            console.error(data);
+                            await Swal.fire({
+                                icon: 'error',
+                                title: 'Erro',
+                                text: data.message || 'Erro ao excluir produtos. Veja o console.',
+                            });
+                            return;
+                        }
+
+                        // Remove do DOM as linhas excluídas
+                        (data.deleted_ids || ids).forEach(id => {
+                            const row = document.querySelector(`tr[data-id="${id}"]`);
+                            if (row) row.remove();
+                        });
+
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Excluídos',
+                            text: `Excluídos: ${data.deleted_count ?? (data.deleted_ids || ids).length} item(s).`
+                        });
+
+                        location.reload();
+                    } catch (err) {
+                        console.error(err);
+                        await Swal.fire({
+                            icon: 'error',
+                            title: 'Erro de rede',
+                            text: 'Erro de rede ao excluir produtos.',
+                        });
+                    }
+                }
+
+                const btnDelete = document.getElementById('btnDeleteSelectedProdutos');
+                if (btnDelete) {
+                    btnDelete.addEventListener('click', batchDeleteSelected);
+                }
+
+                // === Suporte para inserção dinâmica de novas linhas ===
+                // Se sua UI cria linhas via JS, essa função garante que toda linha nova tenha o checkbox
+                function ensureCheckboxesForRows() {
+                    document.querySelectorAll('#produtos-body tr').forEach(tr => {
+                        if (!tr.querySelector('.select-produto')) {
+                            // tenta extrair data-id se existir
+                            const id = tr.getAttribute('data-id') || '';
+                            const tdFirst = tr.querySelector('td');
+                            if (tdFirst) {
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.className = 'select-produto';
+                                checkbox.value = id; // se não tiver id, será string vazia
+                                // insere no início da primeira célula ou cria uma célula nova
+                                const firstCell = tr.querySelector('td');
+                                if (firstCell) {
+                                    firstCell.parentNode.insertBefore(document.createElement('td'), firstCell);
+                                    // move conteúdo para a segunda célula
+                                    const newFirst = tr.querySelector('td');
+                                    newFirst.appendChild(checkbox);
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Observador de mutação para capturar linhas adicionadas dinamicamente
+                const tbody = document.getElementById('produtos-body');
+                if (tbody) {
+                    const mo = new MutationObserver((mutations) => {
+                        ensureCheckboxesForRows();
+                    });
+                    mo.observe(tbody, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+
+                // Chamada inicial para garantir checkboxes nas linhas existentes
+                document.addEventListener('DOMContentLoaded', ensureCheckboxesForRows);
+                // Também chamar logo agora caso esse script seja injetado após DOMContentLoaded
+                ensureCheckboxesForRows();
+
+            })();
+        </script>
+
     @endif
 </div>

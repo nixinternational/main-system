@@ -14,6 +14,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MotoristaController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ProcessoController;
+use App\Http\Controllers\ProcessoProdutoController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -48,6 +49,11 @@ Route::middleware(['auth'])->group(function(){
 });
 Route::middleware(['auth','check.ip'])->group(function () {
 
+Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class, 'batchDelete'])
+    ->name('processo.produtos.batchDelete');
+    Route::get('/processo-criar/{cliente_id}', [ProcessoController::class, 'create'])
+    ->name('processo.criar');
+
     Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:admin|root');;
     Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -73,6 +79,7 @@ Route::middleware(['auth','check.ip'])->group(function () {
     Route::post('update-client-especificidades/{id}', action: [ClienteController::class, 'updateClientEspecificidades'])->name('cliente.update.especificidades');
     Route::post('update-client-documentos/{id}', action: [ClienteController::class, 'updateClientDocument'])->name('cliente.update.documents');
     Route::get('/processo/{id}/esboco-pdf', [ProcessoController::class, 'esbocoPdf'])->name('processo.esboco.pdf');
+    Route::post('/atualizar-campos-cabecalho/{id}', [ProcessoController::class, 'camposCabecalho'])->name('cabecalho.atualizar');
 
 
     Route::put('updateProcesso/{id}',[ProcessoController::class,'updateProcesso'])->name('update.processo');

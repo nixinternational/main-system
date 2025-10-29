@@ -18,7 +18,7 @@
                     </ul>
                 </div>
                 <div class="card-body">
-                    <a href="{{ route('processo.create') }}" class="btn btn-primary my-3">Criar Processo</a>
+                    <a href="{{ route('processo.criar',['cliente_id' => $cliente->id]) }}" class="btn btn-primary my-3">Criar Processo</a>
                     <div class="tab-content" id="custom-tabs-two-tabContent">
                         <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
                             aria-labelledby="custom-tabs-two-home-tab">

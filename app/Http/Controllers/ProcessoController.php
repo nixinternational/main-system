@@ -88,12 +88,25 @@ class ProcessoController extends Controller
     }
 
 
-    public function create()
+    public function create($cliente_id)
     {
-        $clientes = Cliente::select(['id', 'nome'])->get();
-        $dolar = self::getBid();
+        try {
 
-        return view('processo.form', compact('clientes', 'dolar'));
+
+            if ($cliente_id == null) {
+                return back()->with('messages', ['error' => ['Não foi possível cadastrar o processo!']]);
+            }
+            $processo = Processo::create([
+                'codigo_interno' => '-',
+                'numero_processo' => '-',
+                'cliente_id' => $cliente_id
+            ]);
+
+            return redirect(route('processo.edit', $processo->id))->with('messages', ['success' => ['Processo criado com sucesso!']]);
+        } catch (\Exception $e) {
+            dd($e);
+            return back()->with('messages', ['error' => ['Não foi possível cadastrar o tipo de documento!']])->withInput($request->all());
+        }
     }
 
     public function store(Request $request)
@@ -113,8 +126,8 @@ class ProcessoController extends Controller
             }
             $cliente_id = $request->cliente_id;
             $processo = Processo::create([
-                'codigo_interno' => 'Processo',
-                'numero_processo' => '45',
+                'codigo_interno' => '-',
+                'numero_processo' => '-',
                 'cliente_id' => $cliente_id
             ]);
 
@@ -229,7 +242,7 @@ class ProcessoController extends Controller
 
                 foreach ($request->produtos as $key => $produto) {
                     $pesoLiquidoTotal += isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
-                    
+
                     $processoProduto = ProcessoProduto::updateOrCreate(
                         [
                             'id' => $produto['processo_produto_id'] ?? null,
@@ -323,7 +336,26 @@ class ProcessoController extends Controller
             }
 
             Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
-
+            $dadosProcesso = [
+                'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
+                'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
+                'desconsolidacao' => $this->parseMoneyToFloat($request->desconsolidacao),
+                'isps_code' => $this->parseMoneyToFloat($request->isps_code),
+                'handling' => $this->parseMoneyToFloat($request->handling),
+                'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
+                'afrmm' => $this->parseMoneyToFloat($request->afrmm),
+                'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
+                'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
+                'sda' => $this->parseMoneyToFloat($request->sda),
+                'rep_sts' => $this->parseMoneyToFloat($request->rep_sts),
+                'armaz_ana' => $this->parseMoneyToFloat($request->armaz_ana),
+                'lavagem_container' => $this->parseMoneyToFloat($request->lavagem_container),
+                'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
+                'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
+                'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
+            ];
+            
+            Processo::where('id', $id)->update($dadosProcesso);
             DB::commit();
 
             // Retorno para requisições AJAX (salvamento por blocos)
@@ -410,22 +442,6 @@ class ProcessoController extends Controller
             "status" => $request->status,
             "data_desembaraco_inicio" => $request->data_desembaraco_inicio,
             "data_desembaraco_fim" => $request->data_desembaraco_fim,
-            'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
-            'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
-            'desconsolidacao' => $this->parseMoneyToFloat($request->desconsolidacao),
-            'isps_code' => $this->parseMoneyToFloat($request->isps_code),
-            'handling' => $this->parseMoneyToFloat($request->handling),
-            'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
-            'afrmm' => $this->parseMoneyToFloat($request->afrmm),
-            'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
-            'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
-            'sda' => $this->parseMoneyToFloat($request->sda),
-            'rep_sts' => $this->parseMoneyToFloat($request->rep_sts),
-            'armaz_ana' => $this->parseMoneyToFloat($request->armaz_ana),
-            'lavagem_container' => $this->parseMoneyToFloat($request->lavagem_container),
-            'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
-            'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
-            'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
             'quantidade' => $this->parseMoneyToFloat($request->quantidade),
             'especie' => $request->especie,
             'cotacao_frete_internacional' => $this->parseMoneyToFloat($request->cotacao_frete_internacional, 4),
@@ -442,13 +458,37 @@ class ProcessoController extends Controller
         return back()->with('messages', ['success' => ['Dados do processo atualizado com sucesso!']]);
     }
 
+    public function camposCabecalho(Request $request, $id)
+    {
+        $dadosProcesso = [
+            'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
+            'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
+            'desconsolidacao' => $this->parseMoneyToFloat($request->desconsolidacao),
+            'isps_code' => $this->parseMoneyToFloat($request->isps_code),
+            'handling' => $this->parseMoneyToFloat($request->handling),
+            'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
+            'afrmm' => $this->parseMoneyToFloat($request->afrmm),
+            'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
+            'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
+            'sda' => $this->parseMoneyToFloat($request->sda),
+            'rep_sts' => $this->parseMoneyToFloat($request->rep_sts),
+            'armaz_ana' => $this->parseMoneyToFloat($request->armaz_ana),
+            'lavagem_container' => $this->parseMoneyToFloat($request->lavagem_container),
+            'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
+            'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
+            'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
+        ];
+        Processo::where('id', $id)->update($dadosProcesso);
+        return back()->with('messages', ['success' => ['Cabeçalho do processo atualizado com sucesso!']]);
+    }
     public function destroy(int $id)
     {
         try {
-
-            return back()->with('messages', ['success' => ['Tipo de documento desativado com sucesso!']]);
+            ProcessoProduto::where('processo_id', $id)->delete();
+            Processo::findOrFail($id)->delete();
+            return back()->with('messages', ['success' => ['Processo excluído com sucesso!']]);
         } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível excluír o tipo de documento!']]);
+            return back()->with('messages', ['error' => ['Não foi possível excluír o processo!']]);
         }
     }
     public function destroyProduto(int $id)

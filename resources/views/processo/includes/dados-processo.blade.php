@@ -28,13 +28,7 @@
            <div class="row">
                <div class="col-4">
                    <label for="exampleInputEmail1" class="form-label">Cliente</label>
-                   <select {{ isset($processo) ? 'readonly' : '' }} class="custom-select select2" name="cliente_id">
-                       <option selected disabled>Selecione uma opção</option>
-                       @foreach ($clientes as $cliente)
-                           <option {{ isset($processo) && $processo->cliente_id == $cliente->id ? 'selected' : '' }}
-                               value="{{ $cliente->id }}">{{ $cliente->nome }}</option>
-                       @endforeach
-                   </select>
+                   <p>{{$processo->cliente->nome}}</p>
                </div>
                @if (isset($processo))
                    <div class="col-md-4">
@@ -163,7 +157,7 @@
 
                        <input type="date" class="form-control" name="data_cotacao" id="data_cotacao"
                            value="{{ isset($processo->data_moeda_frete_internacional) ? $processo->data_moeda_frete_internacional : '' }}"
-                           min="{{ date('Y-m-d', strtotime('-2 years')) }}" max="{{ date('Y-m-d') }}">
+                           max="{{ date('Y-m-d') }}">
                    </div>
                </div>
                <div class="mt-3 cards-container">
@@ -501,6 +495,7 @@
            function formatarCampoPorClasse(container, classe, decimais) {
                container.find(classe).each(function() {
                    let val = $(this).val();
+
                    if (val && val.trim() !== '') {
                        val = val.trim().replace('%', '').trim();
                        if (val.includes(',')) {
@@ -523,6 +518,41 @@
                });
            }
 
+           // Monitoramento específico para o campo thc_capatazia
+           function monitorarTHCCapatazia() {
+               const campo = $('#thc_capatazia');
+
+               // Monitora mudanças de valor
+               campo.on('input change', function(e) {
+                   console.log('🚨 THC Capatazia alterado por EVENTO:', e.type);
+                   console.log('Valor atual:', this.value);
+                   console.trace('Stack trace do evento');
+               });
+
+               // Monkey patch do método val()
+               const originalVal = $.fn.val;
+               $.fn.val = function(value) {
+                   if (value !== undefined && this.is('#thc_capatazia')) {
+                       console.log('🚨 THC Capatazia alterado via .val()');
+                       console.log('Novo valor:', value);
+                       console.trace('Stack trace do .val()');
+                   }
+                   return originalVal.apply(this, arguments);
+               };
+
+               // Monitora focos e blurs para debug
+               campo.on('focus', function() {
+                   console.log('THC Capatazia em foco, valor:', this.value);
+               });
+
+               campo.on('blur', function() {
+                   console.log('THC Capatazia perdeu foco, valor:', this.value);
+               });
+           }
+
+           // Executar o monitoramento
+           monitorarTHCCapatazia();
+
            function forcarFormatacaoCamposCards() {
 
                const container = $('.cards-container');
@@ -534,7 +564,7 @@
                formatarCampoPorClasse(container, '.percentage2', 2);
 
            }
-           $('#data_cotacao').on('change', function() {
+           $('#data_cotacao').on('blur', function() {
                const $input = $(this);
                const dataCotacao = $input.val();
                const url = "{{ route('cotacao.obter', ['data_cotacao' => ':data_cotacao']) }}".replace(
