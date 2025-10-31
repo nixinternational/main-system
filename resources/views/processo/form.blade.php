@@ -47,6 +47,7 @@
 
         tr {
             min-height: 300px;
+            
 
         }
 
@@ -155,7 +156,7 @@
     </style>
 
     <div class="row">
-        <div class="col-12 shadow-lg px-0">
+        <div class="col-12 dd a shadow-lg px-0">
             <div class="card w-100 card-primary card-tabs">
                 <div class="card-header p-0 pt-1">
                     <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
