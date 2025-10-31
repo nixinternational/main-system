@@ -100,7 +100,10 @@
                                     'li_dta_honor_nix',
                                     'honorarios_nix',
                                 ];
+                                $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
+
+
 
                             @foreach ($campos as $campo)
                                 <th class="middleRowInputTh">
@@ -118,10 +121,19 @@
 
                             @php
                                 // Colunas restantes após os campos da middleRow
-                                $colspanAfterMiddleRow = 6; // DESP. DESEMBARAÇO até CUSTO TOTAL FINAL
+                                $colspanAfterMiddleRow = 1; // DESP. DESEMBARAÇO até CUSTO TOTAL FINAL
                             @endphp
 
                             <th colspan="{{ $colspanAfterMiddleRow }}"></th>
+
+                            @foreach ($camposCambiais as $campoCambial)
+                                <th class="middleRowInputTh">
+                                    <input type="text" class="form-control difCambial moneyReal"
+                                        name="{{ $campoCambial }}" id="{{ $campoCambial }}"
+                                        value="{{ number_format($processo->$campoCambial ?? 0, 5, ',', '.') }}">
+                                </th>
+                            @endforeach
+                            <th colspan="3"></th>
                         </tr>
                         <tr>
                             <th class="d-flex align-items-center justify-content-center"
@@ -531,7 +543,7 @@
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control percentage2"
+                                        class=" form-control percentage2 icms_reduzido_percent"
                                         name="produtos[{{ $index }}][icms_reduzido_percent]"
                                         id="icms_reduzido_percent-{{ $index }}"
                                         value="{{ $processoProduto->icms_reduzido_percent ? number_format($processoProduto->icms_reduzido_percent, 2, ',', '.') : '' }} %">
@@ -1130,27 +1142,29 @@
                         formData.append('salvar_apenas_produtos', 'true');
 
                         let campos = [
-                                    'outras_taxas_agente',
-                                    'liberacao_bl',
-                                    'desconsolidacao',
-                                    'isps_code',
-                                    'handling',
-                                    'capatazia',
-                                    'afrmm',
-                                    'armazenagem_sts',
-                                    'frete_dta_sts_ana',
-                                    'sda',
-                                    'rep_sts',
-                                    'armaz_ana',
-                                    'lavagem_container',
-                                    'rep_anapolis',
-                                    'li_dta_honor_nix',
-                                    'honorarios_nix',
-                                ];
+                            'outras_taxas_agente',
+                            'liberacao_bl',
+                            'desconsolidacao',
+                            'isps_code',
+                            'handling',
+                            'capatazia',
+                            'afrmm',
+                            'armazenagem_sts',
+                            'frete_dta_sts_ana',
+                            'sda',
+                            'rep_sts',
+                            'armaz_ana',
+                            'lavagem_container',
+                            'rep_anapolis',
+                            'li_dta_honor_nix',
+                            'honorarios_nix',
+                            'diferenca_cambial_frete',
+                            'diferenca_cambial_fob'
+                        ];
 
-                                for(let campo of campos){
-                                    formData.append(campo,MoneyUtils.parseMoney($(`#${campo}`).val()))
-                                }
+                        for (let campo of campos) {
+                            formData.append(campo, MoneyUtils.parseMoney($(`#${campo}`).val()))
+                        }
 
                         // Adicionar produtos do bloco
                         blocoProdutos.forEach((produto, index) => {

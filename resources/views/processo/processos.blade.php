@@ -18,7 +18,8 @@
                     </ul>
                 </div>
                 <div class="card-body">
-                    <a href="{{ route('processo.criar',['cliente_id' => $cliente->id]) }}" class="btn btn-primary my-3">Criar Processo</a>
+                    <a href="{{ route('processo.criar', ['cliente_id' => $cliente->id]) }}"
+                        class="btn btn-primary my-3">Criar Processo</a>
                     <div class="tab-content" id="custom-tabs-two-tabContent">
                         <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
                             aria-labelledby="custom-tabs-two-home-tab">
@@ -36,43 +37,53 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($processos as $processo)
-                                        <tr>
-                                                      <td>{{ $processo->codigo_interno }}</td>
-                                            <td>{{ $processo->descricao ?? 'Sem Descrição' }}</td>
-                                            <td>
+                                            <tr>
+                                                <td>{{ $processo->codigo_interno }}</td>
+                                                <td>{{ $processo->descricao ?? 'Sem Descrição' }}</td>
+                                                <td>
 
-                                                @php
-                                                    $cores = [
-                                                        'vermelho' => 'bg-danger',
-                                                        'verde' => 'bg-success',
-                                                        'amarelo' => 'bg-warning',
-                                                    ];
+                                                    @php
+                                                        $cores = [
+                                                            'vermelho' => 'bg-danger',
+                                                            'verde' => 'bg-success',
+                                                            'amarelo' => 'bg-warning',
+                                                        ];
 
-                                                    $corClasse = $cores[$processo->canal] ?? 'bg-gray-400';
-                                                @endphp
+                                                        $corClasse = $cores[$processo->canal] ?? 'bg-gray-400';
+                                                    @endphp
 
-                                                <span class="d-inline-block rounded-circle {{ $corClasse }}"
-                                                    style="width: 30px; height: 30px;"></span>
-                                            </td>
-                                            <td>
-                                                @php
-                                                    $statusMap = [
-                                                        'andamento' => 'Em Andamento',
-                                                        'finalizado' => 'Finalizado',
-                                                        'prestacao_contas' => 'Prestação de Contas',
-                                                    ];
+                                                    <span class="d-inline-block rounded-circle {{ $corClasse }}"
+                                                        style="width: 30px; height: 30px;"></span>
+                                                </td>
+                                                <td>
+                                                    @php
+                                                        $statusMap = [
+                                                            'andamento' => 'Em Andamento',
+                                                            'finalizado' => 'Finalizado',
+                                                            'prestacao_contas' => 'Prestação de Contas',
+                                                        ];
 
-                                                    $statusTexto =
-                                                        $statusMap[$processo->status] ??
-                                                        ucfirst(str_replace('_', ' ', $processo->status));
-                                                @endphp
-                                                {{ $statusTexto }}
-                                            </td>
-                                            <td class="d-flex  justify-content-around">
-                                                <a href="{{ route('processo.edit', $processo->id) }}" type="button"
-                                                    class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
-                                            </td>
-                                        </tr>
+                                                        $statusTexto =
+                                                            $statusMap[$processo->status] ??
+                                                            ucfirst(str_replace('_', ' ', $processo->status));
+                                                    @endphp
+                                                    {{ $statusTexto }}
+                                                </td>
+                                                <td class="d-flex  justify-content-around">
+                                                    <a href="{{ route('processo.edit', $processo->id) }}" type="button"
+                                                        class="btn btn-warning mr-1 editModal"><i
+                                                            class="fas fa-edit"></i></a>
+                                                    <form method="POST" class="form-delete-processo"
+                                                        action="{{ route('processo.destroy', $processo->id) }}"
+                                                        enctype="multipart/form-data">
+                                                        @method('DELETE')
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-danger"><i
+                                                                class="fa fa-trash"></i></button>
+
+                                                    </form>
+                                                </td>
+                                            </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
@@ -86,3 +97,32 @@
 
 
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            $('.form-delete-processo').on('submit', function(e) {
+                e.preventDefault();
+                
+
+                Swal.fire({
+                    title: 'Tem certeza?',
+                    text: "Você realmente deseja excluir este processo? Esta ação não pode ser desfeita!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sim, excluir!',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit();
+                    }
+                });
+            })
+
+
+        });
+    </script>
+@endpush

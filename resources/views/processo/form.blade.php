@@ -20,7 +20,7 @@
 
         .modal-body {
             height: 100%;
-            overflow-y: auto;
+            overflow-y: auto
         }
 
         #pdf-iframe {
@@ -307,134 +307,137 @@
             let tr = '<tr><td colspan="7" style="text-align: right; font-weight: bold;">TOTAIS:</td>';
 
             // QUANTIDADE
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.quantidade, 5)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.quantidade, 2)}</td>`;
 
             // PESO LIQ. UNIT (vazio)
             tr += '<td></td>';
 
             // PESO LIQ TOTAL
             tr +=
-                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liquido_total, 5)}</td>`;
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liquido_total, 2)}</td>`;
 
             // FATOR PESO (média)
             tr +=
-                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorPesoSum, 5)}</td>`;
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorPesoSum, 2)}</td>`;
 
             tr += '<td></td>';
             const moedaProcesso = $('#moeda_processo').val();
             if (moedaProcesso && moedaProcesso !== 'USD') {
                 let totalFobMoeda = 0;
                 rows.each(function() {
-                    const rowId = $(this).find('input').first().data('row');
+                    const rowId = this.id.replace('row-', '')
+
                     totalFobMoeda += MoneyUtils.parseMoney($(`#fob_total_moeda_estrangeira-${rowId}`).val()) || 0;
                 });
-                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFobMoeda, 7)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFobMoeda, 2)}</td>`;
             }
 
             tr +=
-                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_usd, 7)}</td>`;
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_usd, 2)}</td>`;
             tr +=
-                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_brl, 7)}</td>`;
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_brl, 2)}</td>`;
 
             // COLUNAS FRETE
             const moedaFrete = $('#frete_internacional_moeda').val();
             if (moedaFrete && moedaFrete !== 'USD') {
                 let totalFreteMoeda = 0;
                 rows.each(function() {
-                    const rowId = $(this).find('input').first().data('row');
+                    const rowId = this.id.replace('row-', '')
+
+
                     totalFreteMoeda += MoneyUtils.parseMoney($(`#frete_moeda_estrangeira-${rowId}`).val()) || 0;
                 });
                 tr +=
-                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 7)}</td>`;
+                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 2)}</td>`;
             }
 
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 7)}</td>`;
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 7)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
 
             // COLUNAS SEGURO
             const moedaSeguro = $('#seguro_internacional_moeda').val();
             if (moedaSeguro && moedaSeguro !== 'USD') {
                 let totalSeguroMoeda = 0;
                 rows.each(function() {
-                    const rowId = $(this).find('input').first().data('row');
+                    const rowId = this.id.replace('row-', '')
                     totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
                 });
                 tr +=
-                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 7)}</td>`;
+                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 2)}</td>`;
             }
 
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 7)}</td>`;
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 7)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
 
             // COLUNAS ACRÉSCIMO
             const moedaAcrescimo = $('#acrescimo_frete_moeda').val();
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 let totalAcrescimoMoeda = 0;
                 rows.each(function() {
-                    const rowId = $(this).find('input').first().data('row');
+                    const rowId = this.id.replace('row-', '')
                     totalAcrescimoMoeda += MoneyUtils.parseMoney($(`#acrescimo_moeda_estrangeira-${rowId}`)
                         .val()) || 0;
                 });
                 tr +=
-                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalAcrescimoMoeda, 7)}</td>`;
+                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalAcrescimoMoeda, 2)}</td>`;
             }
 
             tr +=
-                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_usd, 7)}</td>`;
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_usd, 2)}</td>`;
             tr +=
-                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 7)}</td>`;
+                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 2)}</td>`;
 
             // Continuar com as demais colunas...
             tr += `
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_usd, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_brl, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_usd, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_brl, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_usd, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_brl, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_usd, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_brl, 2)}</td>
         <td></td> <td></td> <td></td> <td></td> <td></td> <td></td> <td></td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_ii, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_ipi, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_ipi, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_pis_cofins, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_pis, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_cofins, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.despesa_aduaneira, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_sem_reducao, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_sem_reducao, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_reduzido, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_reduzido, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_ii, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_ipi, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_ipi, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_pis_cofins, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_pis, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_cofins, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.despesa_aduaneira, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_sem_reducao, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_sem_reducao, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_reduzido, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_reduzido, 2)}</td>
         <td></td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf_sem_icms_st, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_st, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf_sem_icms_st, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_st, 2)}</td>
         <td></td><td></td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_st, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf_com_icms_st, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorValorFobSum , 5)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorTxSiscomexSum , 5)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.multa, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.tx_def_li, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.taxa_siscomex, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.liberacao_bl, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desconsolidacao, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.isps_code, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.capatazia, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.afrmm, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armazenagem_sts, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.sda, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_sts, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armaz_ana, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.lavagem_container, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_anapolis, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_frete, 7)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_st, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_total_nf_com_icms_st, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorValorFobSum , 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorTxSiscomexSum , 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.multa, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.tx_def_li, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.taxa_siscomex, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.liberacao_bl, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desconsolidacao, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.isps_code, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.capatazia, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.afrmm, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armazenagem_sts, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_dta_sts_ana,2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.sda, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_sts, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armaz_ana, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.lavagem_container, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_anapolis, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_frete, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>
         <td></td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 7)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 2)}</td>
     </tr>`;
 
             tfoot.append(tr);
@@ -806,21 +809,6 @@
             });
 
             $('form').on('submit', function(e) {
-                // Remover máscaras de todos os campos com moneyReal
-                // $('.moneyReal').each(function() {
-                //     // Salvar o valor original sem formatação
-                //     let originalValue = $(this).val();
-
-                //     // Remover pontos de milhar e substituir vírgula por ponto
-                //     let unformattedValue = originalValue
-                //         .replace(/\./g, '')
-                //         .replace(',', '.');
-
-                //     // Atualizar o valor do campo sem formatação
-                //     $(this).val(unformattedValue);
-                // });
-
-                // Opcional: fazer o mesmo para campos de porcentagem se necessário
                 $('.percentage').each(function() {
                     let originalValue = $(this).val();
                     let unformattedValue = originalValue
@@ -858,6 +846,7 @@
                 }, 100);
             });
 
+            recalcularTodaTabela()
             setTimeout(atualizarTotalizadores, 500);
 
 
@@ -1014,39 +1003,35 @@
                                 const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
                                 const taxaSisComex = calcularTaxaSiscomex();
                                 const fatorTaxaSiscomex_AY = taxaSisComex / ((fobTotalGeral) * dolar);
-                                console.log(fatorTaxaSiscomex_AY)
-                                const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobTotalGeral * dolar);
+                                const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobTotal * dolar);
+
                                 const fatorVlrFob_AX = fobTotal / fobTotalGeral;
 
-                                const despesas = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY,
-                                    (taxaSisComexUnitaria_BB ?? 0));
+                                const despesas = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY, (
+                                    taxaSisComexUnitaria_BB ?? 0));
                                 const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos,
                                     despesas);
                                 const vlrIcmsSReducao = bcIcmsSReducao * impostos.icms;
                                 const bcImcsReduzido = calcularBcIcmsReduzido(rowId, vlrAduaneiroBrl, impostos,
                                     despesas);
-                                const vlrIcmsReduzido = bcIcmsSReducao * impostos.icms;
+                                const vlrIcmsReduzido = bcImcsReduzido * impostos.icms;
                                 const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade,
-                                    vlrIcmsReduzido,
-                                    rowId);
-
-                                const diferenca_cambial_frete = 0;
-                                const diferenca_cambial_fob = 0;
+                                    vlrIcmsReduzido, rowId);
+                                const dif_cambial_frete_processo = MoneyUtils.parseMoney($(
+                                    '#diferenca_cambial_frete').val());
+                                const dif_cambial_fob_processo = MoneyUtils.parseMoney($(
+                                    '#diferenca_cambial_fob').val());
+                                const diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (
+                                    freteUsdInt * dolar);
+                                const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (
+                                    fobTotal * dolar);
                                 const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(
                                     `#mva-${rowId}`).val()) : 0;
-                                let base_icms_st = 0;
-                                let vlrIcmsSt = 0;
-                                if (mva) {
-                                    base_icms_st = totais.vlrTotalNfSemIcms * (1 + mva)
-                                    const icms_st = $(`#icms_st-${rowId}`).val() ? MoneyUtils
-                                        .parsePercentage($(
-                                            `#icms_st-${rowId}`).val()) : 0;
 
-                                    if (icms_st) {
+                                let base_icms_st = MoneyUtils.parseMoney($(`#base_icms_st-${rowId}`).val());
+                                let icms_st_percent = MoneyUtils.parsePercentage($(`#icms_st-${rowId}`).val());
+                                let vlrIcmsSt = (base_icms_st * icms_st_percent) - vlrIcmsReduzido;
 
-                                        vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
-                                    }
-                                }
 
                                 atualizarCampos(rowId, {
                                     pesoLiqUnit,
@@ -1072,7 +1057,9 @@
                                     base_icms_st,
                                     fatorPesoRow,
                                     fobTotalGeral,
-                                    fobUnitario
+                                    fobUnitario,
+                                    diferenca_cambial_frete,
+                                    diferenca_cambial_fob
                                 });
 
                                 atualizarCamposCabecalho();
@@ -1443,27 +1430,26 @@
                     const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
                     const fatorTaxaSiscomex_AY = taxaSisComex / ((fobTotalGeralAtualizado) * dolar);
                     const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * (fobTotal * dolar);
-   
+
                     const despesas = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY,
                         (taxaSisComexUnitaria_BB ?? 0));
+
                     const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas);
                     const vlrIcmsSReducao = bcIcmsSReducao * impostos.icms;
                     const bcImcsReduzido = calcularBcIcmsReduzido(rowId, vlrAduaneiroBrl, impostos, despesas);
-                    const vlrIcmsReduzido = bcIcmsSReducao * impostos.icms;
+                    const vlrIcmsReduzido = bcImcsReduzido * impostos.icms;
                     const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
                         rowId);
 
                     const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#mva-${rowId}`).val()) : 0;
-                    let base_icms_st = 0;
-                    let vlrIcmsSt = 0;
-                    if (mva) {
-                        base_icms_st = totais.vlrTotalNfSemIcms * (1 + mva);
-                        const icms_st = $(`#icms_st_percent-${rowId}`).val() ? MoneyUtils.parsePercentage($(
-                            `#icms_st_percent-${rowId}`).val()) : 0;
-                        if (icms_st) {
-                            vlrIcmsSt = (base_icms_st * icms_st) - vlrIcmsReduzido;
-                        }
-                    }
+                    let base_icms_st = MoneyUtils.parseMoney($(`#base_icms_st-${rowId}`).val());
+                    let icms_st_percent = MoneyUtils.parsePercentage($(`#icms_st-${rowId}`).val());
+                    let vlrIcmsSt = (base_icms_st * icms_st_percent) - vlrIcmsReduzido;
+                    const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val());
+                    const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val());
+                    const diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
+                        dolar);
+                    const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
 
                     atualizarCampos(rowId, {
                         pesoLiqUnit: MoneyUtils.parseMoney($(`#peso_liquido_unitario-${rowId}`).val()),
@@ -1489,7 +1475,9 @@
                         base_icms_st,
                         fatorPesoRow,
                         fobTotalGeral: fobTotalGeralAtualizado, // Usar o valor atualizado
-                        fobUnitario
+                        fobUnitario,
+                        diferenca_cambial_frete,
+                        diferenca_cambial_fob
                     });
                 }
             });
@@ -1500,6 +1488,55 @@
             atualizarTotalizadores()
         }
 
+        function atualizarCamposCambial() {
+            const campos = getCamposDiferencaCambial()
+            const lengthTable = $('.linhas-input').length
+            const totalPesoLiq = calcularPesoTotal();
+            const fobTotalGeral = calcularFobTotalGeral();
+            const moedasOBject = $('#cotacao_moeda_processo').val() ? JSON.parse($(
+                '#cotacao_moeda_processo').val()) : JSON.parse($('#dolarHoje').val())
+            const moedaDolar = moedasOBject['USD'].venda
+            const dolar = MoneyUtils.parseMoney(moedaDolar);
+            let valorFreteInternacionalDolar = 0;
+            let valorFreteInternacional = MoneyUtils.parseMoney($('#frete_internacional').val());
+            const moedaFrete = $('#frete_internacional_moeda').val();
+
+            if (moedaFrete != 'USD') {
+                let cotacaoProcesso = getCotacaoesProcesso();
+                let cotacaoMoedaFloat = MoneyUtils.parseMoney($('#cotacao_frete_internacional').val());
+                let moeda = $('#moeda_processo').val();
+                let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+                let moedaEmUSD = cotacaoMoedaFloat / cotacaoUSD;
+                valorFreteInternacionalDolar = valorFreteInternacional * moedaEmUSD;
+            } else {
+                valorFreteInternacionalDolar = valorFreteInternacional;
+            }
+
+            for (let rowId = 0; rowId < lengthTable; rowId++) {
+                const {
+                    pesoTotal,
+                    fobUnitario,
+                    quantidade
+                } = obterValoresBase(rowId);
+                const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
+                const freteUsdInt = valorFreteInternacionalDolar * fatorPesoRow;
+
+                const fobTotal = fobUnitario * quantidade;
+
+                const fatorVlrFob_AX = fobTotal / fobTotalGeral;
+                const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val());
+                const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val());
+                const diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
+                    dolar);
+                const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
+
+                $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_frete));
+                $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob));
+
+
+            }
+        }
+
         function getCamposExternos() {
             return [
                 'outras_taxas_agente', 'liberacao_bl', 'desconsolidacao', 'isps_code', 'handling', 'capatazia',
@@ -1508,6 +1545,11 @@
             ];
         }
 
+        function getCamposDiferencaCambial() {
+            return [
+                'diferenca_cambial_frete', 'diferenca_cambial_fob'
+            ];
+        }
         // Função para obter valores base com a nova lógica
         function obterValoresBase(rowId) {
             let moedaProcesso = $('#moeda_processo').val();
@@ -1770,36 +1812,42 @@
             const txDefLi = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parseMoney($(`#tx_def_li-${rowId}`).val()) : 0;
             const capatazia = $(`#capatazia-${rowId}`).val() ? MoneyUtils.parseMoney($(`#capatazia-${rowId}`).val()) : 0
             const afrmm = $('#afrmm-' + rowId).val() ? MoneyUtils.parseMoney($('#afrmm-' + rowId).val()) : 0
-            let armazenagem_sts = $('#armazenagem_sts-' + rowId).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' + rowId).val()) :
+            let armazenagem_sts = $('#armazenagem_sts-' + rowId).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' +
+                    rowId).val()) :
                 0
-            let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + rowId).val() ? MoneyUtils.parseMoney($('#frete_dta_sts_ana-' + rowId)
+            let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + rowId).val() ? MoneyUtils.parseMoney($('#frete_dta_sts_ana-' +
+                        rowId)
                     .val()) :
                 0
-            let honorarios_nix = $('#honorarios_nix-' + rowId).val() ? MoneyUtils.parseMoney($('#honorarios_nix-' + rowId).val()) : 0
-            console.log({
-                multa,
-                txDefLi,
-                capatazia,
-                taxaSiscomexUnit,
-                afrmm,
-                armazenagem_sts,
-                frete_dta_sts_ana,
-                honorarios_nix
-            })
+            let honorarios_nix = $('#honorarios_nix-' + rowId).val() ? MoneyUtils.parseMoney($('#honorarios_nix-' + rowId)
+                .val()) : 0
+
             return multa + txDefLi + capatazia + taxaSiscomexUnit +
                 afrmm + honorarios_nix;
         }
 
         function calcularBcIcmsSemReducao(base, impostos, despesas) {
-            return (base + base * impostos.ii + base * impostos.ipi + base * impostos.pis + base * impostos.cofins +
+            const bcIpi = base + (base * impostos.ii);
+            const vlrIpi = bcIpi * impostos.ipi;
+
+            const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
                 despesas) / (1 - impostos.icms);
+            return resultado;
         }
 
-        function calcularBcIcmsReduzido(rowId, vlrAduaneiroBrl, impostos, despesas) {
-            const reducao = $(`#reducao-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) : 1;
-            return (vlrAduaneiroBrl + (vlrAduaneiroBrl * impostos.ii) + (vlrAduaneiroBrl * impostos.ipi) + (
-                    vlrAduaneiroBrl * impostos.pis) + (vlrAduaneiroBrl * impostos.cofins) +
-                despesas) / ((1 - MoneyUtils.parsePercentage($(`#icms_percent-${rowId}`).val())) * reducao);
+        function calcularBcIcmsReduzido(rowId, base, impostos, despesas) {
+            atualizarReducao(rowId);
+            const bcIpi = base + (base * impostos.ii);
+            const vlrIpi = bcIpi * impostos.ipi;
+            let reducao = 1;
+
+            if ($(`#reducao-${rowId}`).val() && MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) > 0) {
+                reducao = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+            }
+            const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
+                despesas) / ((1 - impostos.icms));
+
+            return resultado * reducao;
         }
 
         function calcularTotais(base, impostos, despesas, quantidade, vlrIcmsReduzido, rowId) {
@@ -1903,6 +1951,9 @@
             $(`#base_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.base_icms_st));
             $(`#valor_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSt));
 
+            $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_frete));
+            $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob));
+
 
 
             atualizarFatoresFob()
@@ -1977,10 +2028,28 @@
             atualizarFatoresFob();
             atualizarCamposCabecalho();
         });
+        $(document).on('change', '.icms_reduzido_percent', function() {
+            const rowId = $(this).data('row');
+            atualizarReducao(rowId);
+        });
+
+        function atualizarReducao(rowId) {
+            const valor = MoneyUtils.parsePercentage($(`#icms_reduzido_percent-${rowId}`).val());
+            const icmsPercent = MoneyUtils.parsePercentage($(`#icms_percent-${rowId}`).val())
+            const novoReducao = valor / icmsPercent
+            $(`#reducao-${rowId}`).val(MoneyUtils.formatPercentage(novoReducao));
+        }
+
+        $(document).on('change keyup', '.difCambial', function() {
+            atualizarFatoresFob();
+            atualizarCamposCambial();
+        });
+
+
 
         function atualizarCamposCabecalho() {
             const campos = getCamposExternos()
-            const lengthTable = $('#productsBody tr').length
+            const lengthTable = $('.linhas-input').length
 
             // Usar a função centralizada em vez de calcular manualmente
             let fobTotalGeral = calcularFobTotalGeral();
@@ -1995,7 +2064,7 @@
                 for (let campo of campos) {
                     const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0
                     const valorDistribuido = MoneyUtils.formatMoney(valorCampo * fatorVlrFob_AX)
-                    desp_desenbaraco_parte_1 += valorDistribuido;
+                    desp_desenbaraco_parte_1 += valorCampo * fatorVlrFob_AX;
                     $(`#${campo}-${i}`).val(valorDistribuido)
                 }
 
@@ -2006,21 +2075,26 @@
 
                 desp_desenbaraco_parte_1 += multa + taxa_def + taxa_siscomex;
 
-                let capatazia = $('#capatazia-' + i).val() ? parseFloat($('#capatazia-' + i).val()) : 0
-                let afrmm = $('#afrmm-' + i).val() ? parseFloat($('#afrmm-' + i).val()) : 0
-                let armazenagem_sts = $('#armazenagem_sts-' + i).val() ? parseFloat($('#armazenagem_sts-' + i).val()) : 0
-                let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + i).val() ? parseFloat($('#frete_dta_sts_ana-' + i)
+                let capatazia = $('#capatazia-' + i).val() ? MoneyUtils.parseMoney($('#capatazia-' + i).val()) : 0
+                let afrmm = $('#afrmm-' + i).val() ? MoneyUtils.parseMoney($('#afrmm-' + i).val()) : 0
+                let armazenagem_sts = $('#armazenagem_sts-' + i).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' + i)
                     .val()) : 0
-                let honorarios_nix = $('#honorarios_nix-' + i).val() ? parseFloat($('#honorarios_nix-' + i).val()) : 0
+                let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + i).val() ? MoneyUtils.parseMoney($('#frete_dta_sts_ana-' +
+                        i)
+                    .val()) : 0
+                let honorarios_nix = $('#honorarios_nix-' + i).val() ? MoneyUtils.parseMoney($('#honorarios_nix-' + i)
+                    .val()) : 0
 
-                let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + armazenagem_sts +
-                    frete_dta_sts_ana + honorarios_nix
+                let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + honorarios_nix
 
                 let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2
                 const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
                 let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0
                 const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val())
-                const custo_unitario_final = ((vlrTotalNfComIcms + despesa_desembaraco + 0 + 0) - vlrIcmsReduzido) /
+                const diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val());
+                const diferenca_cambial_fob = MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val());
+                const custo_unitario_final = ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob +
+                        diferenca_cambial_frete)) /
                     qquantidade
                 const custo_total_final = custo_unitario_final * qquantidade
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco))
@@ -2255,7 +2329,7 @@
         <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][pis_percent]" id="pis_percent-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][cofins_percent]" id="cofins_percent-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][icms_percent]" id="icms_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][icms_reduzido_percent]" id="icms_reduzido_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2 icms_reduzido_percent" name="produtos[${newIndex}][icms_reduzido_percent]" id="icms_reduzido_percent-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][reducao]" id="reducao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_ii]" id="valor_ii-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][base_ipi]" id="base_ipi-${newIndex}" value=""></td>

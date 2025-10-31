@@ -46,6 +46,8 @@ class Processo extends Model
         'cotacao_moeda_processo',
         'data_cotacao_processo',
         'moeda_processo',
+        'diferenca_cambial_frete',
+        'diferenca_cambial_fob'
     ];
 
     protected $casts = [

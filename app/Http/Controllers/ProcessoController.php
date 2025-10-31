@@ -47,7 +47,6 @@ class ProcessoController extends Controller
         try {
             $resposta = Http::timeout(10)->get('https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas?$format=json');
             $dados = $resposta->json()['value'] ?? [];
-
             return collect($dados)
                 ->pluck('nomeFormatado', 'simbolo')
                 ->toArray();
@@ -353,8 +352,10 @@ class ProcessoController extends Controller
                 'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
                 'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
                 'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
+                'diferenca_cambial_frete' => $this->parseMoneyToFloat($request->diferenca_cambial_frete),
+                'diferenca_cambial_fob' => $this->parseMoneyToFloat($request->diferenca_cambial_fob),
             ];
-            
+
             Processo::where('id', $id)->update($dadosProcesso);
             DB::commit();
 

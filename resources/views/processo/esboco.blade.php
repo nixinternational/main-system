@@ -128,7 +128,7 @@
                 SHANDONG MESSI POWER CO LTD
             </td>
             <td colspan="2">CNPJ / CPF:</td>
-            <td colspan="1">DATA EMISSÃO:</td>
+            <td colspan="1">DATA EMISSÃO: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</td>
 
         </tr>
         <tr>
