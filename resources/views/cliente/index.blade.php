@@ -47,7 +47,7 @@
                     <table id="clienteTable" class="table table-striped table-hover mb-0">
                         <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
                             <tr>
-                                <th>{!! sortable('name', 'Nome') !!}</th>
+                                <th>{!! sortable('nome', 'Nome') !!}</th>
                                 <th>{!! sortable('cnpj', 'CNPJ') !!}</th>
                                 <th class="text-white">Resp. Legal</th>
                                 <th class="text-white">Data Venc. Procuração</th>

@@ -121,11 +121,11 @@ class ClienteController extends Controller
 
                 return response()->json(['success' => true, 'data' => []], 200);
             }
-            $resultados = Cliente::where(DB::raw('LOWER(name)'), 'LIKE', '%' . strtolower($name) . '%')
+            $resultados = Cliente::where(DB::raw('LOWER(nome)'), 'LIKE', '%' . strtolower($name) . '%')
                 ->where('tipo_cliente', '!=', null)
                 ->where('logradouro', '!=', null)
                 ->where('cidade', '!=', null)
-                ->select(['name', 'id', 'tipo_cliente'])->get();
+                ->select(['nome', 'id', 'tipo_cliente'])->get();
             return response()->json(['success' => true, 'data' => $resultados], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => true, 'data' => null, 'message' => 'Erro ao processar requisição. Tente novamente mais tarde.' . $e->getMessage()], 400);

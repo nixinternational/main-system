@@ -36,7 +36,7 @@ class PedidoController extends Controller
             })
             ->when(request()->cliente != '', function ($query) {
                 $query->whereHas('cliente', function ($queryCliente) {
-                    $queryCliente->where(DB::raw('lower(name)'), 'like', '%' . strtolower(request()->cliente) . '%');
+                    $queryCliente->where(DB::raw('lower(nome)'), 'like', '%' . strtolower(request()->cliente) . '%');
                 });
             })
 
@@ -290,7 +290,7 @@ class PedidoController extends Controller
             })
             ->when(request()->cliente != '', function ($query) {
                 $query->whereHas('cliente', function ($queryCliente) {
-                    $queryCliente->where(DB::raw('lower(name)'), 'like', '%' . strtolower(request()->cliente) . '%');
+                    $queryCliente->where(DB::raw('lower(nome)'), 'like', '%' . strtolower(request()->cliente) . '%');
                 });
             })
 
