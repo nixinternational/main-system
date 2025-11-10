@@ -18,9 +18,21 @@ class GrupoController extends Controller
      */
     public function index()
     {
-        $grupos = Grupo::whereNot('id',1)->when(request()->search != '', function ($query) {
-            $query->where(DB::raw('lower(nome)'), 'like', '%' . strtolower(request()->cliente) . '%');
-        })->paginate(request()->paginacao ?? 30);
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'nome', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $grupos = Grupo::whereNot('id',1)
+            ->when(request()->search != '', function ($query) {
+                $query->where(DB::raw('lower(nome)'), 'like', '%' . strtolower(request()->search) . '%');
+            })
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 30)
+            ->appends(request()->except('page'));
 
         return view("grupo.index", compact("grupos"));
     }

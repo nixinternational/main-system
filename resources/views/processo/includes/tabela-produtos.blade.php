@@ -4,18 +4,28 @@
             action="POST">
             @csrf
             @method('PUT')
-            <button type="button" class="btn btn-primary mb-2 addProduct "> <i class="fas fa-plus"></i> Adicionar
-                Produto</button>
-            <button id="btnDeleteSelectedProdutos" class="btn btn-danger mb-2" type="button"> <i
-                    class="fas fa-trash"></i> Excluir Selecionados</button>
-            <button type="button" class="btn btn-info mb-2" id="recalcularTabela">
-                <i class="fas fa-calculator"></i> Recalcular Toda a Tabela
-            </button>
-            <button type="button" class="btn btn-secondary mb-2 btn-reordenar">
-                <i class="fas fa-sort"></i> Reordenar por Adição/Item
-            </button>
-            <div style="overflow-x: auto; width: 100%;">
-                <table class="table table-bordered table-striped table-products" style="min-width: 3000px;">
+            <div class="d-flex flex-wrap mb-3" style="gap: 10px;">
+                <button type="button" class="btn btn-primary addProduct">
+                    <i class="fas fa-plus me-2"></i>Adicionar Produto
+                </button>
+                <button id="btnDeleteSelectedProdutos" class="btn btn-danger" type="button">
+                    <i class="fas fa-trash me-2"></i>Excluir Selecionados
+                </button>
+                <button type="button" class="btn btn-info" id="recalcularTabela">
+                    <i class="fas fa-calculator me-2"></i>Recalcular Toda a Tabela
+                </button>
+                <button type="button" class="btn btn-secondary btn-reordenar">
+                    <i class="fas fa-sort me-2"></i>Reordenar por Adição/Item
+                </button>
+            </div>
+            <div class="table-products-wrapper">
+                <!-- Barra de scroll horizontal extra acima do cabeçalho -->
+                <div class="table-products-scrollbar" id="tableProductsScrollbar">
+                    <div class="table-products-scrollbar-content"></div>
+                </div>
+                <!-- Container da tabela com scroll -->
+                <div class="table-products-container" id="tableProductsContainer" style="overflow-x: auto; overflow-y: auto; max-height: 80vh; width: 100%;">
+                    <table class="table table-bordered table-striped table-products" style="min-width: 3000px;">
                     <thead class=" text-center">
                         <tr>
                             <th style="background-color: #fff"></th>
@@ -726,17 +736,17 @@
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal7"
                                         name="produtos[{{ $index }}][multa]" id="multa-{{ $index }}"
                                         value="{{ $processoProduto->multa ? number_format($processoProduto->multa, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control percentage2"
                                         name="produtos[{{ $index }}][tx_def_li]"
                                         id="tx_def_li-{{ $index }}"
-                                        value="{{ $processoProduto->tx_def_li ? number_format($processoProduto->tx_def_li, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->tx_def_li ? number_format($processoProduto->tx_def_li, 2, ',', '.') : '' }} %">
                                 </td>
 
                                 <td>
@@ -918,7 +928,8 @@
                     <tfoot id="resultado-totalizadores">
 
                     </tfoot>
-                </table>
+                    </table>
+                </div>
             </div>
         </form>
 
@@ -1275,7 +1286,7 @@
                 // Adicionar botão de salvamento em fases se não existir
                 if (!$('#btnSalvarFases').length) {
                     const botaoHTML = `
-            <button type="button" class="btn btn-success mb-2" id="btnSalvarFases">
+            <button type="button" class="btn btn-success" id="btnSalvarFases">
                 <i class="fas fa-layer-group mr-1"></i>
                 Salvar Produtos em Fases
             </button>
@@ -1451,6 +1462,252 @@
 
             })();
         </script>
+        <script>
+            // Sincronização da barra de scroll horizontal extra com o container da tabela
+            (function() {
+                let isScrolling = false;
+
+                function initScrollbarSync() {
+                    const scrollbar = document.getElementById('tableProductsScrollbar');
+                    const container = document.getElementById('tableProductsContainer');
+
+                    if (!scrollbar || !container) {
+                        // Tenta novamente após um pequeno delay se os elementos ainda não existirem
+                        setTimeout(initScrollbarSync, 100);
+                        return;
+                    }
+
+                    // Sincroniza o scroll da barra extra com o container
+                    scrollbar.addEventListener('scroll', function() {
+                        if (!isScrolling) {
+                            isScrolling = true;
+                            container.scrollLeft = scrollbar.scrollLeft;
+                            setTimeout(() => {
+                                isScrolling = false;
+                            }, 10);
+                        }
+                    });
+
+                    // Sincroniza o scroll do container com a barra extra
+                    container.addEventListener('scroll', function() {
+                        if (!isScrolling) {
+                            isScrolling = true;
+                            scrollbar.scrollLeft = container.scrollLeft;
+                            setTimeout(() => {
+                                isScrolling = false;
+                            }, 10);
+                        }
+                    });
+
+                    // Atualiza a largura da barra de scroll quando a tabela muda de tamanho
+                    function updateScrollbarWidth() {
+                        const table = container.querySelector('.table-products');
+                        if (table && scrollbar) {
+                            const scrollbarContent = scrollbar.querySelector('.table-products-scrollbar-content');
+                            if (scrollbarContent) {
+                                // Usa scrollWidth para pegar a largura total incluindo conteúdo oculto
+                                const tableWidth = Math.max(table.scrollWidth, table.offsetWidth);
+                                scrollbarContent.style.minWidth = tableWidth + 'px';
+                            }
+                        }
+                    }
+
+                    // Observa mudanças na tabela
+                    const observer = new MutationObserver(function() {
+                        setTimeout(updateScrollbarWidth, 50);
+                    });
+                    
+                    const table = container.querySelector('.table-products');
+                    if (table) {
+                        observer.observe(table, {
+                            childList: true,
+                            subtree: true,
+                            attributes: true,
+                            attributeFilter: ['style', 'class']
+                        });
+                        
+                        // Observa também o container para mudanças de tamanho
+                        observer.observe(container, {
+                            attributes: true,
+                            attributeFilter: ['style']
+                        });
+                        
+                        // Inicializa a largura
+                        setTimeout(updateScrollbarWidth, 100);
+                    }
+
+                    // Atualiza quando a janela é redimensionada
+                    let resizeTimeout;
+                    window.addEventListener('resize', function() {
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(updateScrollbarWidth, 100);
+                    });
+
+                    // Atualiza quando a tabela é modificada dinamicamente
+                    $(document).on('DOMNodeInserted DOMNodeRemoved', '.table-products', function() {
+                        setTimeout(updateScrollbarWidth, 100);
+                    });
+                }
+
+                // Inicializa quando o DOM estiver pronto
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initScrollbarSync);
+                } else {
+                    // Se já estiver carregado, tenta inicializar imediatamente
+                    setTimeout(initScrollbarSync, 100);
+                }
+            })();
+        </script>
 
     @endif
+
+    <style>
+        /* Estilos para a área de produtos - melhorias sutis */
+        #custom-tabs-three-home {
+            padding: 20px;
+        }
+
+        /* Botões melhorados */
+        #custom-tabs-three-home .btn {
+            transition: all 0.2s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 8px 16px;
+        }
+
+        #custom-tabs-three-home .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        #custom-tabs-three-home .btn-primary {
+            background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+            border: none;
+        }
+
+        #custom-tabs-three-home .btn-primary:hover {
+            background: linear-gradient(135deg, #9a8e08 0%, #7d7307 100%);
+        }
+
+        /* Espaçamento de ícones nos botões */
+        #custom-tabs-three-home .btn i {
+            margin-right: 6px;
+        }
+
+        /* Barra de scroll melhorada */
+        .table-products-scrollbar {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .table-products-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+            border-radius: 4px;
+        }
+
+        .table-products-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #9a8e08 0%, #7d7307 100%);
+        }
+
+        /* Container da tabela */
+        .table-products-container {
+            border: 1px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Tabela melhorada */
+        .table-products {
+            margin-bottom: 0;
+        }
+
+        .table-products thead th {
+            font-weight: 600;
+            font-size: 13px;
+            padding: 10px 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .table-products tbody td {
+            padding: 8px;
+            border: 1px solid #e9ecef;
+            font-size: 13px;
+        }
+
+        .table-products tbody tr:hover {
+            background-color: rgba(183, 170, 9, 0.03);
+        }
+
+        /* Inputs na tabela */
+        .table-products .form-control {
+            border: 1px solid #ced4da;
+            transition: all 0.2s ease;
+            font-size: 16px;
+        }
+
+        .table-products .form-control:focus {
+            border-color: #b7aa09;
+            box-shadow: 0 0 0 0.15rem rgba(183, 170, 9, 0.15);
+        }
+
+        /* Botão de remover */
+        .table-products .btn-remove {
+            transition: all 0.2s ease;
+        }
+
+        .table-products .btn-remove:hover {
+            transform: scale(1.1);
+        }
+
+        /* Checkbox */
+        .table-products .select-produto {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Select2 melhorado */
+        .table-products .select2-container--default .select2-selection--single {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            height: 32px;
+        }
+
+        .table-products .select2-container--default .select2-selection--single:focus {
+            border-color: #b7aa09;
+        }
+
+        /* MiddleRow inputs */
+        .table-products .middleRowInputTh {
+            background-color: #fff9cc !important;
+        }
+
+        .table-products .middleRowInputTh input {
+            background-color: #fff9cc !important;
+            border: 1px solid #b7aa09;
+        }
+
+        /* Separador de adição */
+        .separador-adicao td {
+            background-color: #b7aa09 !important;
+            border: none !important;
+            height: 5px;
+            padding: 0 !important;
+        }
+
+        /* Responsividade dos botões */
+        @media (max-width: 768px) {
+            #custom-tabs-three-home .d-flex.flex-wrap {
+                flex-direction: column;
+            }
+
+            #custom-tabs-three-home .d-flex.flex-wrap .btn {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+        }
+    </style>
 </div>

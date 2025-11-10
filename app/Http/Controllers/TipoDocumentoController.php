@@ -15,7 +15,23 @@ class TipoDocumentoController extends Controller
      */
     public function index()
     {
-        $tipoDocumentos = TipoDocumento::withTrashed()->paginate(10);
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'nome', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $tipoDocumentos = TipoDocumento::withTrashed()
+            ->when(request()->search != '', function($query){
+                $query->where('nome','like','%'.request()->search.'%')
+                    ->orWhere('descricao','like','%'.request()->search.'%');
+            })
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 10)
+            ->appends(request()->except('page'));
+            
         return view('tipoDocumento.index',compact('tipoDocumentos'));
     }
 

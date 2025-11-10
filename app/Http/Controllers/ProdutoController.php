@@ -39,11 +39,21 @@ class ProdutoController extends Controller
     public function index(): View|RedirectResponse
     {
 
-        $produtos = Produto::withTrashed()->when(request()->search != '', function ($query) {
-            $query->where(DB::raw('lower(nome)'), 'like', '%' . request()->search . '%');
-        })
-            ->orderBy('id', 'asc')
-            ->paginate(request()->paginacao ?? 10);
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'nome', 'unidade', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $produtos = Produto::withTrashed()
+            ->when(request()->search != '', function ($query) {
+                $query->where(DB::raw('lower(nome)'), 'like', '%' . request()->search . '%');
+            })
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 10)
+            ->appends(request()->except('page'));
         return view('produto.index', compact('produtos'));
     }
 

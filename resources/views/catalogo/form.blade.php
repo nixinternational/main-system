@@ -4,24 +4,13 @@
 
 @section('content')
 
-    <div class="row">
-        <div class="col-12 shadow-lg px-0">
-            <div class="card w-100 card-primary card-tabs">
-                <div class="card-header p-0 pt-1">
-                    <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
-                        <li class="pt-2 px-3">
-                            <h3 class="card-title text-dark font-weight-bold" style="">
-                                {{ isset($catalogo) ? '' : 'Novo Catálogo' }}</h3>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill"
-                                href="#custom-tabs-two-home" role="tab" aria-controls="custom-tabs-two-home"
-                                aria-selected="false">Geral</a>
-                        </li>
-
-                    </ul>
-                </div>
-                <div class="card-body">
+    <div class="card shadow-sm">
+        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+            <h3 class="card-title mb-0 text-white">
+                <i class="fas fa-book me-2"></i>{{ isset($catalogo) ? 'Editar Catálogo' : 'Novo Catálogo' }}
+            </h3>
+        </div>
+        <div class="card-body">
 
                     <form enctype="multipart/form-data" method="POST" action="{{ route('catalogo.store') }}">
                         @csrf
@@ -78,15 +67,15 @@
                             @if (!$produtos->isEmpty())
                                 {{ $produtos->appends([]) }}
                                 <table id="produtosTable" class="table shadow rounded table-striped table-hover">
-                                    <thead class="bg-primary ">
+                                    <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
                                         <tr>
-                                            <th>Modelo</th>
-                                            <th>Codigo</th>
-                                            <th>NCM</th>
-                                            <th>Fornecedor</th>
-                                            <th>Descrição</th>
-                                            <th>Data de Criação</th>
-                                            <th class="d-flex justify-content-center">Ações</th>
+                                            <th>{!! sortable('modelo', 'Modelo', 'catalogo.edit') !!}</th>
+                                            <th>{!! sortable('codigo', 'Codigo', 'catalogo.edit') !!}</th>
+                                            <th>{!! sortable('ncm', 'NCM', 'catalogo.edit') !!}</th>
+                                            <th class="text-white">Fornecedor</th>
+                                            <th>{!! sortable('descricao', 'Descrição', 'catalogo.edit') !!}</th>
+                                            <th>{!! sortable('created_at', 'Data de Criação', 'catalogo.edit') !!}</th>
+                                            <th class="text-center text-white">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -102,27 +91,28 @@
                                                 <td>{{ \Carbon\Carbon::parse($produto->created_at)->format('d/m/Y H:i') }}
                                                 </td>
 
-                                                <td class="d-flex  justify-content-around">
-                                       
-                                                    <button type="button" data-modelo="{{ $produto->modelo }}"
-                                                        data-ncm="{{ $produto->ncm }}"
-                                                        data-codigo="{{ $produto->codigo }}"
-                                                        data-descricao="{{ $produto->descricao }}"
-                                                        data-fornecedor="{{ $produto->fornecedor->id ?? '' }}"
-                                                        data-id="{{ $produto->id }}" data-toggle="modal"
-                                                        data-target="#editProductModal"
-                                                        class="btn btn-warning mr-1 editModal"><i
-                                                            class="fas fa-edit"></i></button>
-                                                    <form method="POST"
-                                                        action="{{ route('produto.destroy', $produto->id) }}"
-                                                        enctype="multipart/form-data">
-                                                        @method('DELETE')
-
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-danger"><i
-                                                                class="fa fa-trash"></i></button>
-                                                    </form>
-
+                                                <td>
+                                                    <div class="d-flex justify-content-center" style="gap: 8px;">
+                                                        <button type="button" data-modelo="{{ $produto->modelo }}"
+                                                            data-ncm="{{ $produto->ncm }}"
+                                                            data-codigo="{{ $produto->codigo }}"
+                                                            data-descricao="{{ $produto->descricao }}"
+                                                            data-fornecedor="{{ $produto->fornecedor->id ?? '' }}"
+                                                            data-id="{{ $produto->id }}" data-toggle="modal"
+                                                            data-target="#editProductModal"
+                                                            class="btn btn-sm btn-warning" title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <form method="POST"
+                                                            action="{{ route('produto.destroy', $produto->id) }}"
+                                                            enctype="multipart/form-data" class="d-inline">
+                                                            @method('DELETE')
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -135,11 +125,7 @@
 
                         </div>
                     @endif
-                </div>
-                <!-- /.card -->
-            </div>
         </div>
-
     </div>
 
     <div class="modal fade" id="descricaoModal" tabindex="-1" aria-labelledby="" aria-hidden="true">

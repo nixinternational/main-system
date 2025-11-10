@@ -11,9 +11,20 @@ class PermissaoController extends Controller
 {
     public function index()
     {
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'nome', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
         $permissoes = Permissao::when(request()->search != '', function ($query) {
-            $query->where(DB::raw('lower(nome)'), 'like', '%' . strtolower(request()->cliente) . '%');
-        })->paginate(request()->paginacao ?? 30);
+            $query->where(DB::raw('lower(nome)'), 'like', '%' . strtolower(request()->search) . '%');
+        })
+        ->orderBy($sortColumn, $sortDirection)
+        ->paginate(request()->paginacao ?? 30)
+        ->appends(request()->except('page'));
 
         return view("permissao.index", compact("permissoes"));
     }

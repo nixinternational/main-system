@@ -7,48 +7,44 @@
     </a>
 @endsection
 @section('content')
-
-    <!-- /.content-header -->
-
-    <!-- Main content -->
-    <div class="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-12">
-
-                    <div class="card">
-                        <div class="card-body p-0">
-
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Nome</th>
-                                        <th>Email</th>
-                                        <th>Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($users as $user)
-                                    <tr>
-                                        <td>{{ $user->name }}</td>
-                                        <td>{{ $user->email }}</td>
-                                        <td>        <a  type="button" href="{{ route('user.edit', $user->id) }}"
-                                            class="btn btn-warning mr-1 editModal"><i class="fas fa-edit"></i></a>
-                           </td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <!-- /.card-body -->
-
-                       
-                    </div>
-
+    <div class="card shadow-sm">
+        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+            <h3 class="card-title mb-0 text-white">
+                <i class="fas fa-users me-2"></i>Listagem de Usuários
+            </h3>
+        </div>
+        <div class="card-body">
+            @if (!$users->isEmpty())
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                            <tr>
+                                <th>{!! sortable('name', 'Nome') !!}</th>
+                                <th>{!! sortable('email', 'Email') !!}</th>
+                                <th class="text-center text-white">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($users as $user)
+                                <tr>
+                                    <td>{{ $user->name }}</td>
+                                    <td>{{ $user->email }}</td>
+                                    <td>
+                                        <div class="d-flex justify-content-center" style="gap: 8px;">
+                                            <a href="{{ route('user.edit', $user->id) }}" 
+                                                class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-            <!-- /.row -->
-        </div><!-- /.container-fluid -->
+            @else
+                <x-not-found />
+            @endif
+        </div>
     </div>
-    <!-- /.content -->
 @endsection

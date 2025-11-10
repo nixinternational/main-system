@@ -5,19 +5,18 @@
     <div class="card">
 
         <div class="card-text p-3">
-         
-            @dd($cliente->Fornecedores)
             @if (isset($cliente) && !$cliente->fornecedores->isEmpty())
 
-                <table id="fornecedorTable" class="table shadow rounded table-striped table-hover">
-                    <thead class="bg-primary ">
-                        <tr>
-                            <th>Nome</th>
-                            <th>CNPJ</th>
-                            <th>País</th>
-                            <th class="d-flex justify-content-center">Ações</th>
-                        </tr>
-                    </thead>
+                <div class="table-responsive">
+                    <table id="fornecedorTable" class="table table-striped table-hover mb-0">
+                        <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                            <tr>
+                                <th class="text-white">Nome</th>
+                                <th class="text-white">CNPJ</th>
+                                <th class="text-white">País</th>
+                                <th class="text-center text-white">Ações</th>
+                            </tr>
+                        </thead>
                     <tbody>
                         @foreach ($cliente->fornecedores as $fornecedor)
                             <tr @if ($fornecedor->deleted_at != null) style="background-color:#ff8e8e" @endif>
@@ -26,40 +25,40 @@
                                 </td>
                                 <td>{{ $fornecedor->pais_origem }}</td>
 
-                                <td class="d-flex  justify-content-around">
-
-                                    <button data-toggle="modal" data-target="#fornecedorModal"
-                                        data-route="{{ route('fornecedor.update', $fornecedor->id) }}" type="button"
-                                        data-nome="{{ $fornecedor->nome }}" data-cnpj="{{ $fornecedor->cnpj }}"
-                                        data-pais_origem="{{ $fornecedor->pais_origem }}"
-                                        data-logradouro="{{ $fornecedor->logradouro }}"
-                                        data-numero="{{ $fornecedor->numero }}"
-                                        data-complemento="{{ $fornecedor->complemento }}"
-                                        data-cidade="{{ $fornecedor->cidade }}" data-estado="{{ $fornecedor->estado }}"
-                                        data-nome_contato="{{ $fornecedor->nome_contato }}"
-                                        data-email_contato="{{ $fornecedor->email_contato }}"
-                                        data-telefone_contato="{{ $fornecedor->telefone_contato }}"
-                                        class="btn btn-warning mr-1 editModal">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                <td>
+                                    <div class="d-flex justify-content-center" style="gap: 8px;">
+                                        <button data-toggle="modal" data-target="#fornecedorModal"
+                                            data-route="{{ route('fornecedor.update', $fornecedor->id) }}" type="button"
+                                            data-nome="{{ $fornecedor->nome }}" data-cnpj="{{ $fornecedor->cnpj }}"
+                                            data-pais_origem="{{ $fornecedor->pais_origem }}"
+                                            data-logradouro="{{ $fornecedor->logradouro }}"
+                                            data-numero="{{ $fornecedor->numero }}"
+                                            data-complemento="{{ $fornecedor->complemento }}"
+                                            data-cidade="{{ $fornecedor->cidade }}" data-estado="{{ $fornecedor->estado }}"
+                                            data-nome_contato="{{ $fornecedor->nome_contato }}"
+                                            data-email_contato="{{ $fornecedor->email_contato }}"
+                                            data-telefone_contato="{{ $fornecedor->telefone_contato }}"
+                                            class="btn btn-warning btn-sm editModal" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
 
                                     <form method="POST"
                                         action="{{ route($cliente->deleted_at == null ? 'fornecedor.destroy' : 'fornecedor.ativar', $cliente->id) }}"
-                                        id="delete-form" enctype="multipart/form-data">
+                                        class="delete-form-fornecedor" enctype="multipart/form-data">
                                         @method('DELETE')
                                         @csrf
                                         <button type="button" data-id="{{ $fornecedor->id }}"
-                                            class="btn btn-danger removeFornecedor"><i class="fa fa-power-off"></i></button>
-
+                                            class="btn btn-danger btn-sm removeFornecedor" title="Excluir">
+                                            <i class="fa fa-power-off"></i>
+                                        </button>
                                     </form>
-
-
-
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
+            </div>
             @else
                 <x-not-found />
             @endif
@@ -68,13 +67,15 @@
     <div class="modal fade" id="fornecedorModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel"><span>Adicionar</span> fornecedor</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <div class="modal-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                    <h5 class="modal-title text-white" id="exampleModalLabel">
+                        <i class="fas fa-truck me-2"></i><span>Adicionar</span> fornecedor
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <form id="fornecedorModal" action="{{ route('fornecedor.store') }}" method="POST"
+                <form id="fornecedorForm" action="{{ route('fornecedor.store') }}" method="POST"
                     enctype="multipart/form-data">
                     @csrf
 
@@ -385,13 +386,116 @@
         </div>
     </div>
 
+    <style>
+        /* Garantir que o campo de busca do Select2 não esteja bloqueado */
+        .select2-search__field {
+            pointer-events: auto !important;
+            cursor: text !important;
+            opacity: 1 !important;
+        }
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border: 1px solid #aaa !important;
+            padding: 5px !important;
+        }
+        .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+            outline: none !important;
+            border-color: #5897fb !important;
+        }
+    </style>
+    
     <script>
         $(document).ready(function() {
             $('input[name=cnpj]').mask('99.999.999/9999-99');
-            $('.select2').select2({
-                placeholder: 'Selecione um país',
-                allowClear: true,
-                width: '100%'
+            
+            // Inicializar Select2 quando o modal for aberto
+            $('#fornecedorModal').on('shown.bs.modal', function() {
+                var $select = $('#paises');
+                
+                // Verificar se o elemento existe
+                if ($select.length === 0) {
+                    console.error('Elemento #paises não encontrado');
+                    return;
+                }
+                
+                // Destruir qualquer instância anterior do Select2
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    try {
+                        $select.select2('destroy');
+                    } catch(e) {
+                        console.log('Erro ao destruir Select2:', e);
+                    }
+                }
+                
+                // Remover classes do Select2 se existirem
+                $select.removeClass('select2-hidden-accessible');
+                $select.attr('data-select2-id', null);
+                
+                // Limpar qualquer wrapper do Select2
+                $select.siblings('.select2-container').remove();
+                
+                // Aguardar um pouco para garantir que o DOM está pronto
+                setTimeout(function() {
+                    try {
+                        $select.select2({
+                            placeholder: 'Selecione um país',
+                            allowClear: true,
+                            width: '100%',
+                            dropdownAutoWidth: true,
+                            language: {
+                                noResults: function() {
+                                    return "Nenhum resultado encontrado";
+                                },
+                                searching: function() {
+                                    return "Buscando...";
+                                },
+                                inputTooShort: function() {
+                                    return "Digite para buscar";
+                                }
+                            },
+                            minimumResultsForSearch: 0,
+                            minimumInputLength: 0
+                        });
+                        
+                        // Quando o dropdown abrir, garantir que o campo de busca esteja habilitado
+                        $select.on('select2:open', function() {
+                            setTimeout(function() {
+                                var $searchField = $('.select2-search__field');
+                                if ($searchField.length) {
+                                    $searchField.prop('disabled', false)
+                                               .prop('readonly', false)
+                                               .css('pointer-events', 'auto')
+                                               .focus();
+                                }
+                            }, 50);
+                        });
+                    } catch(e) {
+                        console.error('Erro ao inicializar Select2:', e);
+                    }
+                }, 200);
+            });
+            
+            // Limpar Select2 e todos os inputs quando o modal for fechado
+            $('#fornecedorModal').on('hidden.bs.modal', function() {
+                // Destruir Select2 se existir
+                if ($('#paises').hasClass('select2-hidden-accessible')) {
+                    $('#paises').select2('destroy');
+                }
+                
+                // Limpar todos os inputs do formulário
+                var form = $('#fornecedorForm')[0];
+                if (form) {
+                    form.reset();
+                    // Limpar também o Select2 manualmente
+                    $('#paises').val('').trigger('change');
+                    // Limpar todos os inputs de texto
+                    $('#fornecedorModal input[type="text"]').val('');
+                    $('#fornecedorModal input[type="email"]').val('');
+                    $('#fornecedorModal textarea').val('');
+                    // Remover método PUT se existir
+                    $('#fornecedorModal input[name="_method"]').remove();
+                    // Atualizar título do modal
+                    $('#fornecedorModal .modal-title span').text('Adicionar');
+                }
             });
         });
         $(document).on('click', '.removeFornecedor', function() {
@@ -410,9 +514,9 @@
                 if (result.isConfirmed) {
                     const id = this.dataset.id;
                     const deleteUrl = `/fornecedor/${id}`;
-                    $('#delete-form').attr('action', deleteUrl);
-
-                    $('#delete-form').submit();
+                    const form = $(this).closest('.delete-form-fornecedor');
+                    form.attr('action', deleteUrl);
+                    form.submit();
                 } else {
                     Toast.fire({
                         icon: 'info',
@@ -426,10 +530,10 @@
             var button = $(event.currentTarget)
             var route = button.data('route')
             var modal = $('#fornecedorModal')
-            modal.find('form').attr('action', route)
+            modal.find('#fornecedorForm').attr('action', route)
             modal.find('.modal-title span').text('Editar')
             if (modal.find('input[name="_method"]').length === 0) {
-                modal.find('form').prepend('<input type="hidden" name="_method" value="put">');
+                modal.find('#fornecedorForm').prepend('<input type="hidden" name="_method" value="put">');
             } else {
                 modal.find('input[name="_method"]').val('put');
             }

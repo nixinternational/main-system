@@ -56,12 +56,10 @@ class ClienteController extends Controller
                 'name' => 'required',
                 'cnpj' => 'required',
                 'nome_responsavel_legal' => 'required',
-                'cpf_responsavel_legal' => 'required',
             ], [
                 'name.required' => 'O campo Nome da empresa é obrigatório!',
                 'cnpj.required' => 'O campo Cnpj da empresa é obrigatório!',
                 'nome_responsavel_legal.required' => 'O campo Nome - responsável legal é obrigatório!',
-                'cpf_responsavel_legal.required' => 'O campo CPF - responsável legal é obrigatório!',
             ]);
 
             if ($validator->fails()) {
@@ -84,6 +82,8 @@ class ClienteController extends Controller
                 'cpf_responsavel_legal' => $request->cpf_responsavel_legal,
                 'email_responsavel_legal' => $request->email_responsavel_legal,
                 'telefone_responsavel_legal' => $request->telefone_responsavel_legal,
+                'telefone_fixo_responsavel_legal' => $request->telefone_fixo_responsavel_legal,
+                'telefone_celular_responsavel_legal' => $request->telefone_celular_responsavel_legal,
             ];
             $newCliente = Cliente::create($clientData);
             return redirect(route('cliente.edit', $newCliente->id))->with('messages', ['success' => ['Cliente criado com sucesso!']]);
@@ -148,12 +148,10 @@ class ClienteController extends Controller
                 'name' => 'required',
                 'cnpj' => 'required',
                 'nome_responsavel_legal' => 'required',
-                'cpf_responsavel_legal' => 'required',
             ], [
                 'name.required' => 'O campo Nome da empresa é obrigatório!',
                 'cnpj.required' => 'O campo Cnpj da empresa é obrigatório!',
                 'nome_responsavel_legal.required' => 'O campo Nome - responsável legal é obrigatório!',
-                'cpf_responsavel_legal.required' => 'O campo CPF - responsável legal é obrigatório!',
             ]);
 
             if ($validator->fails()) {
@@ -177,6 +175,8 @@ class ClienteController extends Controller
                 'cpf_responsavel_legal' => $request->cpf_responsavel_legal,
                 'email_responsavel_legal' => $request->email_responsavel_legal,
                 'telefone_responsavel_legal' => $request->telefone_responsavel_legal,
+                'telefone_fixo_responsavel_legal' => $request->telefone_fixo_responsavel_legal,
+                'telefone_celular_responsavel_legal' => $request->telefone_celular_responsavel_legal,
             ];
             $cliente->update($clientData);
             return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Cliente atualizado com sucesso!']]);

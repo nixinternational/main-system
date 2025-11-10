@@ -19,12 +19,26 @@ class ProducaoController extends Controller
      */
     public function index()
     {
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'quantidade', 'dt_inicio', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $producaosPendentes = Producao::where('status',false)
+            ->with(['produto'])
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 30)
+            ->appends(request()->except('page'));
 
-        $producaosPendentes = Producao::where('status',false)->with(['produto'])
-            ->paginate(request()->paginacao ?? 30);
-
-            $producaosConcluidas = Producao::where('status',true)->with(['produto'])
-            ->paginate(request()->paginacao ?? 30);
+        $producaosConcluidas = Producao::where('status',true)
+            ->with(['produto'])
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 30)
+            ->appends(request()->except('page'));
+            
         return view('producao.index', compact('producaosPendentes','producaosConcluidas'));
     }
 

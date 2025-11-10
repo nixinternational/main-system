@@ -138,37 +138,49 @@
 
                </div>
 
-               <div class="" style="margin: 1.5% 0; height:1px; background-color:black; width: 100%"></div>
+               <div class="divider-section my-4"></div>
 
-               <div class="d-flex align-center flex-column">
-                   <h4 class="mr-2">Cotações</h4>
-                   <div>
-                       <button class="btn btn-success " style="margin-right: 10px" type="button"
-                           id="atualizarCotacoes">Atualizar
-                           cotações para hoje
+               <div class="section-header mb-4">
+                   <div class="d-flex align-items-center justify-content-between flex-wrap">
+                       <div class="d-flex align-items-center mb-3 mb-md-0 " >
+                           <div class="icon-wrapper mr-3" >
+                               <i class="fas fa-exchange-alt" style="margin:0"></i>
+                           </div>
+                           <h4 class="mb-0" style="color: #b7aa09;">Cotações de Moedas</h4>
+                       </div>
+                       <button class="btn btn-custom-primary" type="button" id="atualizarCotacoes">
+                           <i class="fas fa-sync-alt me-3"></i>Atualizar cotações para hoje
                        </button>
-
                    </div>
-
                </div>
-               <div class="my-3">
-                   <div class="col-3">
-                       <span id="">Data de Cotação: </span>
-
-                       <input type="date" class="form-control" name="data_cotacao" id="data_cotacao"
+               
+               <div class="row mb-4">
+                   <div class="col-md-4 col-lg-3">
+                       <label for="data_cotacao" class="form-label fw-bold">
+                           <i class="fas fa-calendar-alt me-3" style="color: #b7aa09;"></i>Data de Cotação
+                       </label>
+                       <input type="date" class="form-control shadow-sm" name="data_cotacao" id="data_cotacao"
                            value="{{ isset($processo->data_moeda_frete_internacional) ? $processo->data_moeda_frete_internacional : '' }}"
                            max="{{ date('Y-m-d') }}">
                    </div>
                </div>
                <div class="mt-3 cards-container">
-                   <div class="alert  p-3 card-item">
-                       <div class="row">
-                           <div class="col-12 col-sm-6 mb-2 mb-sm-0">
-                               <label for="frete_internacional" class="form-label ">FRETE INTERNACIONAL</label>
-                               <input
-                                   value="{{ isset($processo->frete_internacional) ? number_format($processo->frete_internacional, 2, ',', '.') : '' }}"
-                                   class="form-control moneyReal2" name="frete_internacional"
-                                   id="frete_internacional">
+                   <div class="card-item shadow-sm">
+                       <div class="card-header-primary">
+                           <i class="fas fa-shipping-fast me-2"></i>
+                           <span>Frete Internacional</span>
+                       </div>
+                       <div class="card-body p-3">
+                           <div class="row">
+                               <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                                   <label for="frete_internacional" class="form-label fw-bold">FRETE INTERNACIONAL</label>
+                               <div class="input-group">
+                                   <span class="input-group-text" id="frete_internacional_symbol">-</span>
+                                   <input
+                                       value="{{ isset($processo->frete_internacional) ? number_format($processo->frete_internacional, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal2" name="frete_internacional"
+                                       id="frete_internacional" aria-describedby="frete_internacional_symbol">
+                               </div>
                            </div>
                            <div class="col-12 col-sm-6">
                                <label class="">MOEDA</label>
@@ -185,30 +197,53 @@
                            </div>
                        </div>
                        <div class="row mt-2">
-                           <div class="col-12 col-sm-6 mb-2 mb-sm-0">
-                               <input readonly
-                                   value="{{ isset($processo) ? number_format($processo->frete_internacional * ($dolar[$processo->frete_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
-                                   class="form-control moneyReal" name="frete_internacional_visualizacao"
-                                   id="frete_internacional_visualizacao">
+                           <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                               <label for="frete_internacional_usd" class="form-label small">EM USD</label>
+                               <div class="input-group">
+                                   <span class="input-group-text">USD</span>
+                                   <input readonly
+                                       value="{{ isset($processo->frete_internacional_usd) ? number_format($processo->frete_internacional_usd, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal" name="frete_internacional_usd"
+                                       id="frete_internacional_usd">
+                               </div>
                            </div>
-                           <div class="col-12 col-sm-6">
+                           <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                               <label for="frete_internacional_brl" class="form-label small">EM BRL</label>
+                               <div class="input-group">
+                                   <span class="input-group-text">R$</span>
+                                   <input readonly
+                                       value="{{ isset($processo->frete_internacional_brl) ? number_format($processo->frete_internacional_brl, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal" name="frete_internacional_brl"
+                                       id="frete_internacional_brl">
+                               </div>
+                           </div>
+                           <div class="col-12 col-sm-4">
+                               <label for="cotacao_frete_internacional" class="form-label small">COTAÇÃO</label>
                                <input
                                    value="{{ isset($processo->cotacao_frete_internacional) ? number_format($processo->cotacao_frete_internacional, 4, ',', '.') : '' }}"
                                    class="form-control cotacao" id="cotacao_frete_internacional"
                                    name="cotacao_frete_internacional">
                            </div>
                        </div>
+                       </div>
                    </div>
 
-                   <div class="alert  p-3 card-item">
-                       <div class="row">
-                           <div class="col-12 col-sm-6 mb-2 mb-sm-0">
-                               <label for="seguro_internacional" class="form-label ">SEGURO
-                                   INTERNACIONAL</label>
-                               <input
-                                   value="{{ isset($processo->seguro_internacional) ? number_format($processo->seguro_internacional, 2, ',', '.') : '' }}"
-                                   class="form-control moneyReal2" name="seguro_internacional"
-                                   id="seguro_internacional">
+                   <div class="card-item shadow-sm">
+                       <div class="card-header-primary">
+                           <i class="fas fa-shield-alt me-2"></i>
+                           <span>Seguro Internacional</span>
+                       </div>
+                       <div class="card-body p-3">
+                           <div class="row">
+                               <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                                   <label for="seguro_internacional" class="form-label fw-bold">SEGURO INTERNACIONAL</label>
+                               <div class="input-group">
+                                   <span class="input-group-text" id="seguro_internacional_symbol">-</span>
+                                   <input
+                                       value="{{ isset($processo->seguro_internacional) ? number_format($processo->seguro_internacional, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal2" name="seguro_internacional"
+                                       id="seguro_internacional" aria-describedby="seguro_internacional_symbol">
+                               </div>
                            </div>
                            <div class="col-12 col-sm-6">
                                <label class="">MOEDA</label>
@@ -225,28 +260,52 @@
                            </div>
                        </div>
                        <div class="row mt-2">
-                           <div class="col-12 col-sm-6 mb-2 mb-sm-0">
-                               <input readonly
-                                   value="{{ isset($processo) ? number_format($processo->seguro_internacional * ($dolar[$processo->seguro_internacional_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
-                                   class="form-control moneyReal2" name="seguro_internacional_visualizacao"
-                                   id="seguro_internacional_visualizacao">
+                           <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                               <label for="seguro_internacional_usd" class="form-label small">EM USD</label>
+                               <div class="input-group">
+                                   <span class="input-group-text">USD</span>
+                                   <input readonly
+                                       value="{{ isset($processo->seguro_internacional_usd) ? number_format($processo->seguro_internacional_usd, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal2" name="seguro_internacional_usd"
+                                       id="seguro_internacional_usd">
+                               </div>
                            </div>
-                           <div class="col-12 col-sm-6">
+                           <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                               <label for="seguro_internacional_brl" class="form-label small">EM BRL</label>
+                               <div class="input-group">
+                                   <span class="input-group-text">R$</span>
+                                   <input readonly
+                                       value="{{ isset($processo->seguro_internacional_brl) ? number_format($processo->seguro_internacional_brl, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal2" name="seguro_internacional_brl"
+                                       id="seguro_internacional_brl">
+                               </div>
+                           </div>
+                           <div class="col-12 col-sm-4">
+                               <label for="cotacao_seguro_internacional" class="form-label small">COTAÇÃO</label>
                                <input
                                    value="{{ isset($processo->cotacao_seguro_internacional) ? number_format($processo->cotacao_seguro_internacional, 4, ',', '.') : '' }}"
                                    class="form-control cotacao" id="cotacao_seguro_internacional"
                                    name="cotacao_seguro_internacional">
                            </div>
                        </div>
+                       </div>
                    </div>
 
-                   <div class="alert  p-3 card-item">
-                       <div class="row">
-                           <div class="col-12 col-sm-6 mb-2 mb-sm-0">
-                               <label for="acrescimo_frete" class="form-label ">ACRESCIMO DO FRETE</label>
-                               <input
-                                   value="{{ isset($processo->acrescimo_frete) ? number_format($processo->acrescimo_frete, 2, ',', '.') : '' }}"
-                                   class="form-control moneyReal" name="acrescimo_frete" id="acrescimo_frete">
+                   <div class="card-item shadow-sm">
+                       <div class="card-header-primary">
+                           <i class="fas fa-plus-circle me-2"></i>
+                           <span>Acréscimo do Frete</span>
+                       </div>
+                       <div class="card-body p-3">
+                           <div class="row">
+                               <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                                   <label for="acrescimo_frete" class="form-label fw-bold">ACRESCIMO DO FRETE</label>
+                               <div class="input-group">
+                                   <span class="input-group-text" id="acrescimo_frete_symbol">-</span>
+                                   <input
+                                       value="{{ isset($processo->acrescimo_frete) ? number_format($processo->acrescimo_frete, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal" name="acrescimo_frete" id="acrescimo_frete" aria-describedby="acrescimo_frete_symbol">
+                               </div>
                            </div>
                            <div class="col-12 col-sm-6">
                                <label class="form-label ">MOEDA</label>
@@ -263,25 +322,46 @@
                            </div>
                        </div>
                        <div class="row mt-2">
-                           <div class="col-12 col-sm-6 mb-2 mb-sm-0">
-                               <input readonly
-                                   value="{{ isset($processo) ? number_format($processo->acrescimo_frete * ($dolar[$processo->acrescimo_frete_moeda]['compra'] ?? 0), 2, ',', '.') : '' }}"
-                                   class="form-control moneyReal" name="acrescimo_frete_visualizacao"
-                                   id="acrescimo_frete_visualizacao">
+                           <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                               <label for="acrescimo_frete_usd" class="form-label small">EM USD</label>
+                               <div class="input-group">
+                                   <span class="input-group-text">USD</span>
+                                   <input readonly
+                                       value="{{ isset($processo->acrescimo_frete_usd) ? number_format($processo->acrescimo_frete_usd, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal" name="acrescimo_frete_usd"
+                                       id="acrescimo_frete_usd">
+                               </div>
                            </div>
-                           <div class="col-12 col-sm-6">
+                           <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                               <label for="acrescimo_frete_brl" class="form-label small">EM BRL</label>
+                               <div class="input-group">
+                                   <span class="input-group-text">R$</span>
+                                   <input readonly
+                                       value="{{ isset($processo->acrescimo_frete_brl) ? number_format($processo->acrescimo_frete_brl, 2, ',', '.') : '' }}"
+                                       class="form-control moneyReal" name="acrescimo_frete_brl"
+                                       id="acrescimo_frete_brl">
+                               </div>
+                           </div>
+                           <div class="col-12 col-sm-4">
+                               <label for="cotacao_acrescimo_frete" class="form-label small">COTAÇÃO</label>
                                <input
                                    value="{{ isset($processo->cotacao_acrescimo_frete) ? number_format($processo->cotacao_acrescimo_frete, 4, ',', '.') : '' }}"
                                    class="form-control cotacao" id="cotacao_acrescimo_frete"
                                    name="cotacao_acrescimo_frete">
                            </div>
                        </div>
+                       </div>
                    </div>
 
-                   <div style="" class="alert  p-3 card-item">
-                       <div class="row">
-                           <div class="col-12 col-sm-6 mb-2 mb-sm-0">
-                               <label for="display_cotacao" class="form-label ">COTAÇÃO DO PROCESSO</label>
+                   <div class="card-item shadow-sm">
+                       <div class="card-header-primary">
+                           <i class="fas fa-dollar-sign me-2"></i>
+                           <span>Moeda do Processo</span>
+                       </div>
+                       <div class="card-body p-3">
+                           <div class="row">
+                               <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                                   <label for="display_cotacao" class="form-label fw-bold">COTAÇÃO DO PROCESSO</label>
 
                                <input
                                    value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo])
@@ -316,6 +396,7 @@
                                    name="moeda_processo_usd" id="moeda_processo_usd">
                            </div>
                        </div>
+                       </div>
                    </div>
                </div>
                <div class="row">
@@ -328,27 +409,33 @@
                    @endphp
 
                    @if (!empty($cotacoes))
-                       <div class="col-12">
-                           <h5>Editar valores de venda das moedas do dia
-                               <span id="cotacao-data-exibicao">
-                                   {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
-                               </span>
-                           </h5>
-                           <div class="row" id="cotacoes-moedas-row">
-                               @foreach ($cotacoes as $codigo => $cotacao)
-                                   <div class="col-md-3 mb-2">
-                                       <label class="form-label">{{ $cotacao['nome'] ?? $codigo }}
-                                           ({{ $codigo }})
-                                       </label>
-                                       <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
-                                           value="{{ $cotacao['nome'] ?? $codigo }}">
-                                       <input type="text" step="0.0001" min="0"
-                                           class="form-control cotacao"
-                                           name="cotacao_moeda_processo[{{ $codigo }}][venda]"
-                                           value="{{ number_format($cotacao['venda'], 4, ',', '.') }}"
-                                           aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
+                       <div class="col-12 mt-4">
+                           <div class="card-item shadow-sm" style="flex: 1 1 100%;">
+                               <div class="card-header-primary">
+                                   <i class="fas fa-edit me-3"></i>
+                                   <span>Editar valores de venda das moedas do dia</span>
+                                   <span class="badge-custom ms-3" id="cotacao-data-exibicao">
+                                       {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
+                                   </span>
+                               </div>
+                               <div class="card-body p-3">
+                                   <div class="row" id="cotacoes-moedas-row">
+                                       @foreach ($cotacoes as $codigo => $cotacao)
+                                           <div class="col-md-3 mb-3">
+                                               <label class="form-label fw-bold small text-muted">
+                                                   {{ $cotacao['nome'] ?? $codigo }} ({{ $codigo }})
+                                               </label>
+                                               <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
+                                                   value="{{ $cotacao['nome'] ?? $codigo }}">
+                                               <input type="text" step="0.0001" min="0"
+                                                   class="form-control cotacao shadow-sm"
+                                                   name="cotacao_moeda_processo[{{ $codigo }}][venda]"
+                                                   value="{{ number_format($cotacao['venda'], 4, ',', '.') }}"
+                                                   aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
+                                           </div>
+                                       @endforeach
                                    </div>
-                               @endforeach
+                               </div>
                            </div>
                        </div>
                    @endif
@@ -357,52 +444,126 @@
 
 
                <style>
+                   /* Cor primária customizada */
+                   :root {
+                       --primary-color: #b7aa09;
+                       --primary-dark: #9a8e08;
+                       --primary-light: #d4c50a;
+                   }
+
+                   /* Seção de Divisor */
+                   .divider-section {
+                       height: 2px;
+                       background: linear-gradient(to right, transparent, #b7aa09, transparent);
+                       border-radius: 2px;
+                   }
+
+                   /* Cabeçalho da Seção */
+                   .section-header {
+                       background: linear-gradient(135deg, rgba(183, 170, 9, 0.1) 0%, rgba(183, 170, 9, 0.05) 100%);
+                       padding: 20px;
+                       border-radius: 10px;
+                       border-left: 4px solid #b7aa09;
+                   }
+
+                   .icon-wrapper {
+                       width: 45px;
+                       height: 45px;
+                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       border-radius: 10px;
+                       display: flex;
+                       align-items: center;
+                       justify-content: center;
+                       color: white;
+                       font-size: 20px;
+                       box-shadow: 0 4px 6px rgba(183, 170, 9, 0.4);
+                   }
+
+                   /* Container de Cards */
                    .cards-container {
                        display: flex;
                        flex-wrap: wrap;
-                       gap: 15px;
+                       gap: 20px;
                        width: 100%;
                    }
 
+                   /* Card Item */
                    .card-item {
-                       flex: 1 1 calc(25% - 15px);
-                       background-color: rgb(183, 170, 9, 0.1);
+                       flex: 1 1 calc(25% - 20px);
+                       background: #ffffff;
+                       border: 1px solid #e0e0e0;
+                       border-radius: 12px;
                        min-width: 280px;
                        box-sizing: border-box;
                        display: flex;
                        flex-direction: column;
+                       transition: all 0.3s ease;
+                       overflow: hidden;
+                   }
+
+                   .card-item:hover {
+                       transform: translateY(-5px);
+                       box-shadow: 0 8px 20px rgba(183, 170, 9, 0.2) !important;
+                       border-color: #b7aa09;
+                   }
+
+                   /* Cabeçalho do Card */
+                   .card-header-primary {
+                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       color: white;
+                       padding: 15px 20px;
+                       font-weight: 600;
+                       font-size: 16px;
+                       display: flex;
+                       align-items: center;
+                       border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+                   }
+
+                   .card-header-primary i {
+                       font-size: 18px;
+                       margin-right: 10px !important;
+                   }
+
+                   .card-header-primary span:not(.badge-custom) {
+                       margin-right: 10px;
+                   }
+
+                   /* Corpo do Card */
+                   .card-body {
+                       background: #ffffff;
+                       flex: 1;
                    }
 
                    /* Acima de 1814px - 4 colunas em uma linha */
                    @media (min-width: 1814px) {
                        .card-item {
-                           flex: 1 1 calc(25% - 15px);
+                           flex: 1 1 calc(25% - 20px);
                        }
                    }
 
                    /* Abaixo de 1814px - 2x2 (2 colunas) */
                    @media (max-width: 1813px) {
                        .card-item {
-                           flex: 1 1 calc(50% - 15px);
+                           flex: 1 1 calc(50% - 20px);
                        }
                    }
 
                    /* Para tablets */
                    @media (max-width: 1199px) {
                        .card-item {
-                           flex: 1 1 calc(50% - 15px);
+                           flex: 1 1 calc(50% - 20px);
                        }
                    }
 
                    /* Para tablets pequenos e mobile grande */
                    @media (max-width: 992px) {
                        .card-item {
-                           flex: 1 1 calc(50% - 15px);
+                           flex: 1 1 calc(50% - 20px);
                            min-width: 250px;
                        }
 
                        .cards-container {
-                           gap: 12px;
+                           gap: 15px;
                        }
                    }
 
@@ -455,15 +616,94 @@
                        }
                    }
 
-                   /* Garantir que os cards tenham altura consistente */
-                   .card-item .alert {
-                       flex: 1;
-                       display: flex;
-                       flex-direction: column;
+                   /* Input Groups melhorados */
+                   .input-group-text {
+                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       color: white;
+                       border: none;
+                       font-weight: 600;
+                       min-width: 50px;
+                       justify-content: center;
                    }
 
-                   .card-item .row {
-                       flex: 1;
+                   .form-control:focus {
+                       border-color: #b7aa09;
+                       box-shadow: 0 0 0 0.2rem rgba(183, 170, 9, 0.25);
+                   }
+
+                   /* Labels melhorados */
+                   .form-label.fw-bold {
+                       color: #495057;
+                       font-size: 14px;
+                       margin-bottom: 8px;
+                   }
+
+                   .form-label.small {
+                       color: #6c757d;
+                       font-size: 12px;
+                       font-weight: 600;
+                       text-transform: uppercase;
+                       letter-spacing: 0.5px;
+                   }
+
+                   /* Botão Customizado */
+                   .btn-custom-primary {
+                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       border: none;
+                       padding: 12px 30px;
+                       font-weight: 600;
+                       color: white;
+                       box-shadow: 0 4px 6px rgba(183, 170, 9, 0.4);
+                       transition: all 0.3s ease;
+                   }
+
+                   .btn-custom-primary:hover {
+                       background: linear-gradient(135deg, #9a8e08 0%, #7d7307 100%);
+                       transform: translateY(-2px);
+                       box-shadow: 0 6px 12px rgba(183, 170, 9, 0.5);
+                       color: white;
+                   }
+
+                   /* Botão Salvar */
+                   .btn-primary {
+                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       border: none;
+                       padding: 12px 30px;
+                       font-weight: 600;
+                       box-shadow: 0 4px 6px rgba(183, 170, 9, 0.4);
+                       transition: all 0.3s ease;
+                   }
+
+                   .btn-primary:hover {
+                       background: linear-gradient(135deg, #9a8e08 0%, #7d7307 100%);
+                       transform: translateY(-2px);
+                       box-shadow: 0 6px 12px rgba(183, 170, 9, 0.5);
+                   }
+
+                   /* Badge customizado */
+                   .badge-custom {
+                       background-color: rgba(255, 255, 255, 0.9) !important;
+                       color: #b7aa09 !important;
+                       padding: 6px 12px;
+                       font-size: 14px;
+                       border-radius: 6px;
+                       font-weight: 600;
+                       margin-left: auto;
+                   }
+
+                   /* Espaçamento geral para ícones */
+                   i.fas, i.far, i.fal {
+                       margin-right: 8px;
+                   }
+
+                   /* Ajuste específico para botões */
+                   .btn i {
+                       margin-right: 8px !important;
+                   }
+
+                   /* Ajuste para labels com ícones */
+                   .form-label i {
+                       margin-right: 8px !important;
                    }
                </style>
 
@@ -608,6 +848,13 @@
                        setTimeout(() => {
                            forcarFormatacaoCamposCards();
 
+                           // Atualizar conversões após atualizar cotações
+                           if (typeof convertToUSDAndBRL === 'function') {
+                               convertToUSDAndBRL('frete_internacional');
+                               convertToUSDAndBRL('seguro_internacional');
+                               convertToUSDAndBRL('acrescimo_frete');
+                           }
+                           
                            $('#cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete')
                                .trigger('change');
                        }, 100);

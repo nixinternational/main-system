@@ -15,7 +15,18 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::whereNot('id', 1)->paginate();
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'name', 'email', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $users = User::whereNot('id', 1)
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 10)
+            ->appends(request()->except('page'));
 
         return view('users.index', compact('users'));
     }

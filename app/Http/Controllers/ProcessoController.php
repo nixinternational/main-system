@@ -71,17 +71,40 @@ class ProcessoController extends Controller
 
     public function index()
     {
-        $processos =    Cliente::when(request()->search != '', function ($query) {
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'nome'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $processos = Cliente::when(request()->search != '', function ($query) {
             // $query->where('name','like','%'.request()->search.'%');
-        })->paginate(request()->paginacao ?? 10);;
+        })
+        ->orderBy($sortColumn, $sortDirection)
+        ->paginate(request()->paginacao ?? 10)
+        ->appends(request()->except('page'));
+        
         return view('processo.index', compact('processos'));
     }
 
     public function processoCliente($cliente_id)
     {
-
-        $processos =    Processo::when(request()->search != '', function ($query) {})->where('cliente_id', $cliente_id)
-            ->paginate(request()->paginacao ?? 10);;
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'codigo_interno', 'descricao', 'status', 'canal', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $processos = Processo::when(request()->search != '', function ($query) {})
+            ->where('cliente_id', $cliente_id)
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 10)
+            ->appends(request()->except('page'));
+            
         $cliente = Cliente::find($cliente_id);
         return view('processo.processos', compact('processos', 'cliente'));
     }
@@ -301,7 +324,7 @@ class ProcessoController extends Controller
                             'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
                             'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
                             'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
-                            'tx_def_li' => isset($produto['tx_def_li']) ? $this->parseMoneyToFloat($produto['tx_def_li']) : null,
+                            'tx_def_li' => isset($produto['tx_def_li']) ? $this->safePercentage($produto['tx_def_li']) : null,
                             'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
                             'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
                             'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
@@ -429,8 +452,14 @@ class ProcessoController extends Controller
         }
         $dadosProcesso = [
             "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
+            "frete_internacional_usd" => $this->parseMoneyToFloat($request->frete_internacional_usd),
+            "frete_internacional_brl" => $this->parseMoneyToFloat($request->frete_internacional_brl),
             "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
+            "seguro_internacional_usd" => $this->parseMoneyToFloat($request->seguro_internacional_usd),
+            "seguro_internacional_brl" => $this->parseMoneyToFloat($request->seguro_internacional_brl),
             "acrescimo_frete" => $this->parseMoneyToFloat($request->acrescimo_frete),
+            "acrescimo_frete_usd" => $this->parseMoneyToFloat($request->acrescimo_frete_usd),
+            "acrescimo_frete_brl" => $this->parseMoneyToFloat($request->acrescimo_frete_brl),
             "thc_capatazia" => $this->parseMoneyToFloat($request->thc_capatazia),
             "peso_bruto" => $this->parseMoneyToFloat($request->peso_bruto),
             'frete_internacional_moeda' => $request->frete_internacional_moeda,

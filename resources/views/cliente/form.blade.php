@@ -17,6 +17,44 @@
             height: 100%;
             /* Garante que o conteúdo ocupe toda a altura do modal */
         }
+        
+        /* Garantir que o Select2 funcione corretamente no modal */
+        .select2-container--open {
+            z-index: 9999 !important;
+        }
+        .select2-dropdown {
+            z-index: 9999 !important;
+        }
+        
+        /* Corrigir posicionamento do dropdown */
+        .select2-container--default .select2-selection--single {
+            height: 38px !important;
+            padding: 6px 12px !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+        
+        /* Garantir que o campo de busca funcione */
+        .select2-search--dropdown .select2-search__field {
+            padding: 8px !important;
+            border: 1px solid #ccc !important;
+            border-radius: 4px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            pointer-events: auto !important;
+            cursor: text !important;
+            opacity: 1 !important;
+        }
+        .select2-search--dropdown .select2-search__field:focus {
+            outline: none !important;
+            border-color: #007bff !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        }
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border: 1px solid #aaa !important;
+            padding: 5px !important;
+        }
 
         .modal-body {
             height: 100%;
@@ -217,7 +255,7 @@
                                     <div class="col-12">
                                         <h4>Responsável Legal</h4>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-3">
                                         <label for="exampleInputEmail1" class="form-label">Nome</label>
                                         <input value="{{ isset($cliente) ? $cliente->nome_responsavel_legal : '' }}"
                                             class="form-control" name="nome_responsavel_legal"
@@ -247,12 +285,25 @@
                                     </div>
                                     <div class="col-2">
                                         <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Telefone</label>
+                                            <label for="exampleInputEmail1" class="form-label">Telefone Fixo</label>
                                             <input
-                                                value="{{ isset($cliente) ? $cliente->telefone_responsavel_legal : old('telefone_responsavel_legal') ?? '' }}"
-                                                class="form-control" name="telefone_responsavel_legal"
-                                                id="telefone_responsavel_legal">
-                                            @error('telefone_responsavel_legal')
+                                                value="{{ isset($cliente) ? $cliente->telefone_fixo_responsavel_legal : old('telefone_fixo_responsavel_legal') ?? '' }}"
+                                                class="form-control" name="telefone_fixo_responsavel_legal"
+                                                id="telefone_fixo_responsavel_legal">
+                                            @error('telefone_fixo_responsavel_legal')
+                                                <span
+                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="form-group">
+                                            <label for="exampleInputEmail1" class="form-label">Telefone Celular</label>
+                                            <input
+                                                value="{{ isset($cliente) ? $cliente->telefone_celular_responsavel_legal : old('telefone_celular_responsavel_legal') ?? '' }}"
+                                                class="form-control" name="telefone_celular_responsavel_legal"
+                                                id="telefone_celular_responsavel_legal">
+                                            @error('telefone_celular_responsavel_legal')
                                                 <span
                                                     class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
                                             @enderror
@@ -726,16 +777,16 @@
                                         fornecedor</button>
                                 </div>
                                 @if (isset($cliente) && !$cliente->fornecedores->isEmpty())
-
-                                    <table id="fornecedorTable" class="table shadow rounded table-striped table-hover">
-                                        <thead class="bg-primary ">
-                                            <tr>
-                                                <th>Nome</th>
-                                                <th>CNPJ</th>
-                                                <th>País</th>
-                                                <th class="d-flex justify-content-center">Ações</th>
-                                            </tr>
-                                        </thead>
+                                    <div class="table-responsive">
+                                        <table id="fornecedorTable" class="table table-striped table-hover mb-0">
+                                            <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                                                <tr>
+                                                    <th class="text-white">Nome</th>
+                                                    <th class="text-white">CNPJ</th>
+                                                    <th class="text-white">País</th>
+                                                    <th class="text-center text-white">Ações</th>
+                                                </tr>
+                                            </thead>
                                         <tbody>
                                             @foreach ($cliente->fornecedores as $fornecedor)
                                                 <tr
@@ -745,43 +796,42 @@
                                                     </td>
                                                     <td>{{ $fornecedor->pais_origem }}</td>
 
-                                                    <td class="d-flex  justify-content-around">
+                                                    <td>
+                                                        <div class="d-flex justify-content-center" style="gap: 8px;">
+                                                            <button data-toggle="modal" data-target="#fornecedorModal"
+                                                                data-route="{{ route('fornecedor.update', $fornecedor->id) }}"
+                                                                type="button" data-nome="{{ $fornecedor->nome }}"
+                                                                data-cnpj="{{ $fornecedor->cnpj }}"
+                                                                data-pais_origem="{{ $fornecedor->pais_origem }}"
+                                                                data-logradouro="{{ $fornecedor->logradouro }}"
+                                                                data-numero="{{ $fornecedor->numero }}"
+                                                                data-complemento="{{ $fornecedor->complemento }}"
+                                                                data-cidade="{{ $fornecedor->cidade }}"
+                                                                data-estado="{{ $fornecedor->estado }}"
+                                                                data-nome_contato="{{ $fornecedor->nome_contato }}"
+                                                                data-email_contato="{{ $fornecedor->email_contato }}"
+                                                                data-telefone_contato="{{ $fornecedor->telefone_contato }}"
+                                                                class="btn btn-warning btn-sm editModal" title="Editar">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
 
-                                                        <button data-toggle="modal" data-target="#fornecedorModal"
-                                                            data-route="{{ route('fornecedor.update', $fornecedor->id) }}"
-                                                            type="button" data-nome="{{ $fornecedor->nome }}"
-                                                            data-cnpj="{{ $fornecedor->cnpj }}"
-                                                            data-pais_origem="{{ $fornecedor->pais_origem }}"
-                                                            data-logradouro="{{ $fornecedor->logradouro }}"
-                                                            data-numero="{{ $fornecedor->numero }}"
-                                                            data-complemento="{{ $fornecedor->complemento }}"
-                                                            data-cidade="{{ $fornecedor->cidade }}"
-                                                            data-estado="{{ $fornecedor->estado }}"
-                                                            data-nome_contato="{{ $fornecedor->nome_contato }}"
-                                                            data-email_contato="{{ $fornecedor->email_contato }}"
-                                                            data-telefone_contato="{{ $fornecedor->telefone_contato }}"
-                                                            class="btn btn-warning mr-1 editModal">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-
-                                                        <form method="POST"
-                                                            action="{{ route($cliente->deleted_at == null ? 'fornecedor.destroy' : 'fornecedor.ativar', $cliente->id) }}"
-                                                            id="delete-form" enctype="multipart/form-data">
-                                                            @method('DELETE')
-                                                            @csrf
-                                                            <button type="button" data-id="{{ $fornecedor->id }}"
-                                                                class="btn btn-danger removeFornecedor"><i
-                                                                    class="fa fa-power-off"></i></button>
-
-                                                        </form>
-
-
-
+                                                            <form method="POST"
+                                                                action="{{ route($cliente->deleted_at == null ? 'fornecedor.destroy' : 'fornecedor.ativar', $cliente->id) }}"
+                                                                class="delete-form-fornecedor" enctype="multipart/form-data">
+                                                                @method('DELETE')
+                                                                @csrf
+                                                                <button type="button" data-id="{{ $fornecedor->id }}"
+                                                                    class="btn btn-danger btn-sm removeFornecedor" title="Excluir">
+                                                                    <i class="fa fa-power-off"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
+                                </div>
                                 @else
                                     <x-not-found />
                                 @endif
@@ -819,16 +869,18 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="fornecedorModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="fornecedorModal" tabindex="-1" aria-labelledby="" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel"><span>Adicionar</span> fornecedor</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <div class="modal-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                    <h5 class="modal-title text-white" id="exampleModalLabel">
+                        <i class="fas fa-truck mr-2"></i><span>Adicionar</span> fornecedor
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <form id="fornecedorModal" action="{{ route('fornecedor.store') }}" method="POST"
+                <form id="fornecedorForm" action="{{ route('fornecedor.store') }}" method="POST"
                     enctype="multipart/form-data">
                     @csrf
 
@@ -858,7 +910,7 @@
 
                             <div class="col-3 form-group">
                                 <label class="form-label">País de Origem</label>
-                                <select name="pais_origem" class="form-control select2 w-100" id="paises">
+                                <select name="pais_origem" class="form-control select2 w-100" id="paises" style="width: 100%">
                                     <option value="" selected>Selecione um país</option>
                                     @php
                                         $paises = [
@@ -1195,19 +1247,51 @@
                 }
             });
         }
-        $(document).ready(function($) {
+    </script>
+    
+    <script>
+        // Inicializar Select2 quando a página estiver pronta
+        $(document).ready(function() {
+            // Máscaras de input
             $('input[name=cnpj]').mask('99.999.999/9999-99')
             $('input[name=cpf_responsavel_legal]').mask('999.999.999-99')
+            
+            // Restaurar tab ativa
             var activeTab = localStorage.getItem('activeTab');
             if (activeTab) {
                 $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
             }
-            $('.select2').select2({
-                placeholder: 'Selecione um país',
-                allowClear: true,
-                width: '100%'
+            
+            // Inicializar Select2 do campo de países assim que a página estiver pronta
+            var $selectPaises = $('#paises');
+            if ($selectPaises.length > 0) {
+                $selectPaises.select2({
+                    placeholder: 'Selecione um país',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#fornecedorModal'),
+                    language: {
+                        noResults: function() {
+                            return "Nenhum resultado encontrado";
+                        },
+                        searching: function() {
+                            return "Buscando...";
+                        }
+                    },
+                    minimumResultsForSearch: 1,
+                    minimumInputLength: 0
+                });
+            }
+            
+            // Limpar formulário quando o modal for fechado (evento simples)
+            $('#fornecedorModal').on('hidden.bs.modal', function() {
+                $('#fornecedorForm')[0].reset();
+                $('#paises').val('').trigger('change');
+                $('#fornecedorModal .modal-title span').text('Adicionar');
+                $('#fornecedorModal input[name="_method"]').remove();
+                $('#fornecedorModal #fornecedorForm').attr('action', '{{ route('fornecedor.store') }}');
             });
-        })
+        });
         $(document).on('click', '.removeFornecedor', function() {
             Swal.fire({
                 title: 'Você tem certeza que deseja excluir este registro?',
@@ -1224,9 +1308,9 @@
                 if (result.isConfirmed) {
                     const id = this.dataset.id;
                     const deleteUrl = `/fornecedor/${id}`;
-                    $('#delete-form').attr('action', deleteUrl);
-
-                    $('#delete-form').submit();
+                    const form = $(this).closest('.delete-form-fornecedor');
+                    form.attr('action', deleteUrl);
+                    form.submit();
                 } else {
                     Toast.fire({
                         icon: 'info',
@@ -1236,17 +1320,22 @@
             });
         });
 
-        $('.editModal').on('click', function(event) {
+        // Evento quando o botão de editar fornecedor é clicado
+        $(document).on('click', '.editModal', function(event) {
             var button = $(event.currentTarget)
             var route = button.data('route')
             var modal = $('#fornecedorModal')
-            modal.find('form').attr('action', route)
+            
+            // Configurar formulário
+            modal.find('#fornecedorForm').attr('action', route)
             modal.find('.modal-title span').text('Editar')
             if (modal.find('input[name="_method"]').length === 0) {
-                modal.find('form').prepend('<input type="hidden" name="_method" value="put">');
+                modal.find('#fornecedorForm').prepend('<input type="hidden" name="_method" value="put">');
             } else {
                 modal.find('input[name="_method"]').val('put');
             }
+            
+            // Preencher campos
             var cnpj = button.data('cnpj');
             if (cnpj) {
                 cnpj = String(cnpj);
@@ -1254,8 +1343,6 @@
                 modal.find('input[name="cnpj"]').val(cnpj);
             }
             modal.find('input[name="nome"]').val(button.data('nome'));
-
-            modal.find('select[name="pais_origem"]').val(button.data('pais_origem')).trigger('change');
             modal.find('input[name="logradouro"]').val(button.data('logradouro'));
             modal.find('input[name="numero"]').val(button.data('numero'));
             modal.find('input[name="complemento"]').val(button.data('complemento'));
@@ -1264,8 +1351,14 @@
             modal.find('input[name="nome_contato"]').val(button.data('nome_contato'));
             modal.find('input[name="email_contato"]').val(button.data('email_contato'));
             modal.find('input[name="telefone_contato"]').val(button.data('telefone_contato'));
-
+            
+            // Atualizar Select2 com o país de origem
+            var paisOrigem = button.data('pais_origem');
+            if (paisOrigem) {
+                $('#paises').val(paisOrigem).trigger('change');
+            }
         });
+
         $('.nav-link').on('click', function(e) {
             var currentTab = $(e.target).attr('href');
             localStorage.setItem('activeTab', currentTab);
@@ -1469,31 +1562,51 @@
 
         })
 
-        $('.previewModalButton').on('click', function() {
+        // Evento quando o modal de preview é exibido
+        $(document).on('show.bs.modal', '#previewModal', function(event) {
+            // Buscar dados do botão que acionou o modal
+            const button = $(event.relatedTarget);
+            if (button.length && button.hasClass('previewModalButton')) {
+                const fileUrl = button.data('url');
+                const fileType = fileUrl ? fileUrl.split('.').pop().toLowerCase() : '';
+                const nome = button.data('nome') || '';
+                const descricao = button.data('descricao') || '';
 
-            const fileUrl = this.dataset.url; // Substitua pelo caminho do arquivo
-            const fileType = fileUrl.split('.').pop().toLowerCase();
+                // Definir o nome do documento
+                $('#tipoDocumentoName').text(nome);
+                $('#tipoDocumentoDescription').text(descricao);
 
-            if (fileType === 'pdf') {
-                $('#pdf-iframe').attr('src', fileUrl).show(); // Exibe o iframe
-                $('#imagePreview').hide(); // Esconde a imagem
-                $('#doc-text').hide(); // Esconde o texto de descrição
-            } else if (fileType === 'docx') {
-                $('#doc-text').text('Descrição: Documento indisponível').show();
-                $('#imagePreview').hide(); // Esconde a imagem
-                $('#pdf-iframe').hide(); // Esconde o iframe
-            } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(fileType)) {
-                $('#imagePreview').attr('src', fileUrl).show(); // Exibe a imagem
-                $('#pdf-iframe').hide(); // Esconde o iframe
-                $('#doc-text').hide(); // Esconde o texto de descrição
-            } else {
-                $('#doc-text').text('Tipo de arquivo não suportado').show();
-                $('#imagePreview').hide(); // Esconde a imagem
-                $('#pdf-iframe').hide(); // Esconde o iframe
+                // Limpar conteúdo anterior
+                $('#pdf-iframe').attr('src', '').hide();
+                $('#imagePreview').attr('src', '').hide();
+                $('#doc-text').hide();
+
+                // Configurar conteúdo baseado no tipo de arquivo
+                if (fileUrl) {
+                    if (fileType === 'pdf') {
+                        $('#pdf-iframe').attr('src', fileUrl).show();
+                        $('#imagePreview').hide();
+                        $('#doc-text').hide();
+                    } else if (fileType === 'docx') {
+                        $('#doc-text').text('Descrição: Documento indisponível').show();
+                        $('#imagePreview').hide();
+                        $('#pdf-iframe').hide();
+                    } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(fileType)) {
+                        $('#imagePreview').attr('src', fileUrl).show();
+                        $('#pdf-iframe').hide();
+                        $('#doc-text').hide();
+                    } else {
+                        $('#doc-text').text('Tipo de arquivo não suportado').show();
+                        $('#imagePreview').hide();
+                        $('#pdf-iframe').hide();
+                    }
+                } else {
+                    $('#doc-text').text('URL do documento não disponível').show();
+                    $('#imagePreview').hide();
+                    $('#pdf-iframe').hide();
+                }
             }
-            $('#tipoDocumentoName').text(this.dataset.nome)
-            $('#tipoDocumentoDescription').text(this.dataset.descricao)
-        })
+        });
     </script>
 
 

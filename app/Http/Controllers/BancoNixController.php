@@ -10,9 +10,21 @@ class BancoNixController extends Controller
 {
     public function index()
     {
-        $bancos = BancoNix::when(request()->search != '',function($query){
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'nome', 'agencia', 'conta_corrente', 'numero_banco', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $bancos = BancoNix::when(request()->search != '', function($query){
             $query->where('nome','like','%'.request()->search.'%');
-        })->paginate(request()->paginacao ?? 10);;
+        })
+        ->orderBy($sortColumn, $sortDirection)
+        ->paginate(request()->paginacao ?? 10)
+        ->appends(request()->except('page'));
+        
         return view('bancos.index', compact('bancos'));
     }
 

@@ -25,8 +25,22 @@ class FornecedorController extends Controller
 
     public function index(): View|RedirectResponse
     {
-
-        $clientes = $this->clienteRepository->getAll();
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'nome', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $clientes = Fornecedor::withTrashed()
+            ->when(request()->search != '', function($query){
+                $query->where('nome','like','%'.request()->search.'%');
+            })
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 10)
+            ->appends(request()->except('page'));
+            
         return view('fornecedor.index', compact('clientes'));
     }
 

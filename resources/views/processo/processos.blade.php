@@ -2,96 +2,87 @@
 @section('title', isset($cliente) ? 'Processos - ' . $cliente->nome : 'Cadastrar Processo')
 
 @section('content')
-    <div class="row">
-        <div class="col-12 shadow-lg px-0">
-            <div class="card w-100 card-primary card-tabs">
-                <div class="card-header p-0 pt-1">
-                    <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
-                        <li class="pt-2 px-3">
-                            <h3 class="card-title text-dark font-weight-bold" style=""></h3>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill"
-                                href="#custom-tabs-two-home" role="tab" aria-controls="custom-tabs-two-home"
-                                aria-selected="false">Processos</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <a href="{{ route('processo.criar', ['cliente_id' => $cliente->id]) }}"
-                        class="btn btn-primary my-3">Criar Processo</a>
-                    <div class="tab-content" id="custom-tabs-two-tabContent">
-                        <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
-                            aria-labelledby="custom-tabs-two-home-tab">
-                            <div class="table-responsive">
-                                {{ $processos->appends([]) }}
-                                <table id="clienteTable" class="table  shadow rounded table-striped table-hover">
-                                    <thead class="bg-primary ">
-                                        <tr>
-                                            <th>Processo</th>
-                                            <th>Descrição</th>
-                                            <th>Canal</th>
-                                            <th>Status</th>
-                                            <th class="d-flex justify-content-center">AÇÕES</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($processos as $processo)
-                                            <tr>
-                                                <td>{{ $processo->codigo_interno }}</td>
-                                                <td>{{ $processo->descricao ?? 'Sem Descrição' }}</td>
-                                                <td>
-
-                                                    @php
-                                                        $cores = [
-                                                            'vermelho' => 'bg-danger',
-                                                            'verde' => 'bg-success',
-                                                            'amarelo' => 'bg-warning',
-                                                        ];
-
-                                                        $corClasse = $cores[$processo->canal] ?? 'bg-gray-400';
-                                                    @endphp
-
-                                                    <span class="d-inline-block rounded-circle {{ $corClasse }}"
-                                                        style="width: 30px; height: 30px;"></span>
-                                                </td>
-                                                <td>
-                                                    @php
-                                                        $statusMap = [
-                                                            'andamento' => 'Em Andamento',
-                                                            'finalizado' => 'Finalizado',
-                                                            'prestacao_contas' => 'Prestação de Contas',
-                                                        ];
-
-                                                        $statusTexto =
-                                                            $statusMap[$processo->status] ??
-                                                            ucfirst(str_replace('_', ' ', $processo->status));
-                                                    @endphp
-                                                    {{ $statusTexto }}
-                                                </td>
-                                                <td class="d-flex  justify-content-around">
-                                                    <a href="{{ route('processo.edit', $processo->id) }}" type="button"
-                                                        class="btn btn-warning mr-1 editModal"><i
-                                                            class="fas fa-edit"></i></a>
-                                                    <form method="POST" class="form-delete-processo"
-                                                        action="{{ route('processo.destroy', $processo->id) }}"
-                                                        enctype="multipart/form-data">
-                                                        @method('DELETE')
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-danger"><i
-                                                                class="fa fa-trash"></i></button>
-
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="card shadow-sm">
+        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0 text-white">
+                    <i class="fas fa-file-alt me-2"></i>Processos - {{ $cliente->nome ?? 'Cliente' }}
+                </h3>
+                <a href="{{ route('processo.criar', ['cliente_id' => $cliente->id]) }}"
+                    class="btn btn-light btn-sm">
+                    <i class="fas fa-plus me-1"></i>Criar Processo
+                </a>
             </div>
+        </div>
+        <div class="card-body">
+            @if (!$processos->isEmpty())
+                <div class="table-responsive">
+                    <table id="clienteTable" class="table table-striped table-hover mb-0">
+                        <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                            <tr>
+                                <th>{!! sortable('codigo_interno', 'Processo', 'processo-cliente') !!}</th>
+                                <th>{!! sortable('descricao', 'Descrição', 'processo-cliente') !!}</th>
+                                <th>{!! sortable('canal', 'Canal', 'processo-cliente') !!}</th>
+                                <th>{!! sortable('status', 'Status', 'processo-cliente') !!}</th>
+                                <th class="text-center text-white">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($processos as $processo)
+                                <tr>
+                                    <td>{{ $processo->codigo_interno ?? '-' }}</td>
+                                    <td>{{ $processo->descricao ?? 'Sem Descrição' }}</td>
+                                    <td>
+                                        @php
+                                            $cores = [
+                                                'vermelho' => 'bg-danger',
+                                                'verde' => 'bg-success',
+                                                'amarelo' => 'bg-warning',
+                                            ];
+                                            $corClasse = $cores[$processo->canal] ?? 'bg-secondary';
+                                        @endphp
+                                        <span class="d-inline-block rounded-circle {{ $corClasse }}"
+                                            style="width: 30px; height: 30px;"></span>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $statusMap = [
+                                                'andamento' => 'Em Andamento',
+                                                'finalizado' => 'Finalizado',
+                                                'prestacao_contas' => 'Prestação de Contas',
+                                            ];
+                                            $statusTexto = $statusMap[$processo->status] ?? ucfirst(str_replace('_', ' ', $processo->status));
+                                        @endphp
+                                        {{ $statusTexto }}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-center" style="gap: 8px;">
+                                            <a href="{{ route('processo.edit', $processo->id) }}" 
+                                                class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" class="form-delete-processo d-inline"
+                                                action="{{ route('processo.destroy', $processo->id) }}"
+                                                enctype="multipart/form-data">
+                                                @method('DELETE')
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    {{ $processos->appends([])->links() }}
+                </div>
+            @else
+                <x-not-found />
+            @endif
         </div>
     </div>
 

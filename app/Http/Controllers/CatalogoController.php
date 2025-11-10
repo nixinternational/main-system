@@ -13,7 +13,23 @@ class CatalogoController extends Controller
 
     public function index()
     {
-        $catalogos = Catalogo::paginate(request()->paginacao ?? 10);
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
+        $catalogos = Catalogo::with('cliente')
+            ->when(request()->search != '', function($query){
+                $query->whereHas('cliente', function($q){
+                    $q->where('nome','like','%'.request()->search.'%');
+                });
+            })
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(request()->paginacao ?? 10)
+            ->appends(request()->except('page'));
 
         return view("catalogo.index", compact('catalogos'));
     }
@@ -63,6 +79,14 @@ class CatalogoController extends Controller
         
         $clientes = Cliente::select(['id', 'nome'])->get();
         $search = request()->query('search');
+        $sortColumn = request()->get('sort', 'id');
+        $sortDirection = request()->get('direction', 'asc');
+        
+        $allowedColumns = ['id', 'modelo', 'codigo', 'ncm', 'descricao', 'created_at'];
+        if (!in_array($sortColumn, $allowedColumns)) {
+            $sortColumn = 'id';
+        }
+        
         $produtos = Produto::where('catalogo_id', $id)
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -72,7 +96,9 @@ class CatalogoController extends Controller
                         ->orWhere('descricao', 'ILIKE', "%{$search}%");
                 });
             })
-            ->paginate(10);
+            ->orderBy($sortColumn, $sortDirection)
+            ->paginate(10)
+            ->appends(request()->except('page'));
             
         return view("catalogo.form", compact('id', "clientes", 'catalogo', 'produtos'));
     }

@@ -82,17 +82,23 @@
 
     <br>
     <br>
-    <h3>Produções Pendentes</h3>
-    <div class="table-responsive">
-        <table id="pedidoTable" class="table shadow rounded table-striped table-hover">
-            <thead class="bg-primary ">
-                <tr>
-                    <th>id</th>
-                    <th>Produto</th>
-                    <th>Quantidade</th>
-                    <th>Data de Início</th>
-                </tr>
-            </thead>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+            <h3 class="card-title mb-0 text-white">
+                <i class="fas fa-clock me-2"></i>Produções Pendentes
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="pedidoTable" class="table table-striped table-hover mb-0">
+                    <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                        <tr>
+                            <th>{!! sortable('id', 'ID') !!}</th>
+                            <th class="text-white">Produto</th>
+                            <th>{!! sortable('quantidade', 'Quantidade') !!}</th>
+                            <th>{!! sortable('dt_inicio', 'Data de Início') !!}</th>
+                        </tr>
+                    </thead>
             <tbody>
                 @if (!$producaosPendentes->isEmpty())
                     @foreach ($producaosPendentes as $producao)
@@ -110,27 +116,29 @@
                         <td class="text-center" colspan="5">Nenhuma produção pendente</td>
                     </tr>
                 @endif
-            </tbody>
-
-        </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <br>
-    <br>
-    <br>
-    <h3>Produções Concluídas</h3>
-    <div class="table-responsive">
-
-        <table id="pedidoTable" class="table shadow rounded table-striped table-hover">
-            <thead class="bg-primary ">
-                <tr>
-                    <th>#</th>
-                    <th>Produto</th>
-                    <th>Quantidade</th>
-                    <th>Data de Início</th>
-
-                </tr>
-            </thead>
+    <div class="card shadow-sm">
+        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+            <h3 class="card-title mb-0 text-white">
+                <i class="fas fa-check-circle me-2"></i>Produções Concluídas
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="pedidoTable" class="table table-striped table-hover mb-0">
+                    <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                        <tr>
+                            <th>{!! sortable('id', '#') !!}</th>
+                            <th class="text-white">Produto</th>
+                            <th>{!! sortable('quantidade', 'Quantidade') !!}</th>
+                            <th>{!! sortable('dt_inicio', 'Data de Início') !!}</th>
+                        </tr>
+                    </thead>
             <tbody>
                 @if (!$producaosConcluidas->isEmpty())
 
@@ -147,10 +155,10 @@
                         <td class="text-center" colspan="4">Nenhuma produção Concluída</td>
                     </tr>
                 @endif
-            </tbody>
-
-        </table>
-    </div>
+                </tbody>
+            </table>
+        </div>
+        </div>
     </div>
 
 @endsection
