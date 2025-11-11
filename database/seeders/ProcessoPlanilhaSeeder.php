@@ -85,6 +85,7 @@ class ProcessoPlanilhaSeeder extends Seeder
                 'cotacao_moeda_processo' => $cotacaoMoedaProcesso,
                 'status' => 'andamento',
                 'canal' => 'verde',
+                'tipo_processo' => 'maritimo', // Processos da seeder são sempre marítimos
             ]);
             
             // Adicionando campos do cabeçalho (campos únicos do processo)

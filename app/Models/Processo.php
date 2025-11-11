@@ -29,6 +29,7 @@ class Processo extends Model
         'quantidade',
         'especie',
         'cliente_id',
+        'tipo_processo',
         'frete_internacional_moeda',
         'seguro_internacional_moeda',
         'acrescimo_frete_moeda',

@@ -110,24 +110,31 @@ class ProcessoController extends Controller
     }
 
 
-    public function create($cliente_id)
+    public function create(Request $request, $cliente_id)
     {
         try {
-
-
             if ($cliente_id == null) {
                 return back()->with('messages', ['error' => ['Não foi possível cadastrar o processo!']]);
             }
+            
+            $tipo_processo = $request->input('tipo_processo', 'maritimo');
+            
+            // Validar tipo_processo
+            if (!in_array($tipo_processo, ['maritimo', 'aereo', 'rodoviario'])) {
+                return back()->with('messages', ['error' => ['Tipo de processo inválido!']]);
+            }
+            
             $processo = Processo::create([
                 'codigo_interno' => '-',
                 'numero_processo' => '-',
-                'cliente_id' => $cliente_id
+                'cliente_id' => $cliente_id,
+                'tipo_processo' => $tipo_processo
             ]);
 
             return redirect(route('processo.edit', $processo->id))->with('messages', ['success' => ['Processo criado com sucesso!']]);
         } catch (\Exception $e) {
             dd($e);
-            return back()->with('messages', ['error' => ['Não foi possível cadastrar o tipo de documento!']])->withInput($request->all());
+            return back()->with('messages', ['error' => ['Não foi possível cadastrar o processo!']])->withInput($request->all());
         }
     }
 
@@ -147,10 +154,18 @@ class ProcessoController extends Controller
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
             $cliente_id = $request->cliente_id;
+            $tipo_processo = $request->input('tipo_processo', 'maritimo');
+            
+            // Validar tipo_processo
+            if (!in_array($tipo_processo, ['maritimo', 'aereo', 'rodoviario'])) {
+                $tipo_processo = 'maritimo';
+            }
+            
             $processo = Processo::create([
                 'codigo_interno' => '-',
                 'numero_processo' => '-',
-                'cliente_id' => $cliente_id
+                'cliente_id' => $cliente_id,
+                'tipo_processo' => $tipo_processo
             ]);
 
             return redirect(route('processo.edit', $processo->id))->with('messages', ['success' => ['Processo criado com sucesso!']]);
@@ -217,7 +232,17 @@ class ProcessoController extends Controller
                 $produtos[] = $this->parseModelFieldsFromModel($produto);
             }
             $processoProdutos = $produtos;
-            return view('processo.form', compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos', 'moedasSuportadas'));
+            
+            // Determinar a view baseada no tipo_processo
+            $tipo_processo = $processo->tipo_processo ?? 'maritimo';
+            $viewName = 'processo.form-' . $tipo_processo;
+            
+            // Se a view específica não existir, usar a view marítimo como fallback
+            if (!view()->exists($viewName)) {
+                $viewName = 'processo.form-maritimo';
+            }
+            
+            return view($viewName, compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos', 'moedasSuportadas'));
         } catch (Exception $e) {
             dd($e);
             return redirect(route('processo.index'))->with('messages', ['error' => ['Processo não encontrado!']]);
