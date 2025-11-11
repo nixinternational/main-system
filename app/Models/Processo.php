@@ -47,7 +47,23 @@ class Processo extends Model
         'data_cotacao_processo',
         'moeda_processo',
         'diferenca_cambial_frete',
-        'diferenca_cambial_fob'
+        'diferenca_cambial_fob',
+        'outras_taxas_agente',
+        'liberacao_bl',
+        'desconsolidacao',
+        'isps_code',
+        'handling',
+        'capatazia',
+        'afrmm',
+        'armazenagem_sts',
+        'frete_dta_sts_ana',
+        'sda',
+        'rep_sts',
+        'armaz_ana',
+        'lavagem_container',
+        'rep_anapolis',
+        'li_dta_honor_nix',
+        'honorarios_nix',
     ];
 
     protected $casts = [

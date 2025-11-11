@@ -1129,7 +1129,19 @@
                                 const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(
                                     `#mva-${rowId}`).val()) : 0;
 
-                                let base_icms_st = MoneyUtils.parseMoney($(`#base_icms_st-${rowId}`).val());
+                                // Calcular base_icms_st usando a fórmula: valor_total_nf_sem_icms * (1 + MVA)
+                                // NOTA: parsePercentage já retorna a fração (ex: 45.5% vira 0.455)
+                                const valorTotalNfSemIcms = totais.vlrTotalNfSemIcms || 0;
+                                let base_icms_st = 0;
+                                
+                                if (mva > 0 && valorTotalNfSemIcms > 0) {
+                                    // MVA já vem como fração de parsePercentage (ex: 0.455 para 45,5%)
+                                    base_icms_st = valorTotalNfSemIcms * (1 + mva);
+                                } else {
+                                    // Se não há MVA, base_icms_st é igual ao valor_total_nf_sem_icms
+                                    base_icms_st = valorTotalNfSemIcms;
+                                }
+                                
                                 let icms_st_percent = MoneyUtils.parsePercentage($(`#icms_st-${rowId}`).val());
                                 let vlrIcmsSt = (base_icms_st * icms_st_percent) - vlrIcmsReduzido;
 
@@ -1168,7 +1180,6 @@
                             }
 
                         } catch (error) {
-                            console.log(error);
                         }
                     }
 
@@ -1574,14 +1585,27 @@
                         rowId);
 
                     const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#mva-${rowId}`).val()) : 0;
-                    let base_icms_st = MoneyUtils.parseMoney($(`#base_icms_st-${rowId}`).val());
+                    
+                    // Calcular base_icms_st usando a fórmula: valor_total_nf_sem_icms * (1 + MVA)
+                    // NOTA: parsePercentage já retorna a fração (ex: 45.5% vira 0.455)
+                    const valorTotalNfSemIcms = totais.vlrTotalNfSemIcms || 0;
+                    let base_icms_st = 0;
+                    
+                    if (mva > 0 && valorTotalNfSemIcms > 0) {
+                        // MVA já vem como fração de parsePercentage (ex: 0.455 para 45,5%)
+                        base_icms_st = valorTotalNfSemIcms * (1 + mva);
+                    } else {
+                        // Se não há MVA, base_icms_st é igual ao valor_total_nf_sem_icms
+                        base_icms_st = valorTotalNfSemIcms;
+                    }
+                    
                     let icms_st_percent = MoneyUtils.parsePercentage($(`#icms_st-${rowId}`).val());
-                    let vlrIcmsSt = (base_icms_st * icms_st_percent) - vlrIcmsReduzido;
+                    let vlrIcmsSt = icms_st_percent > 0 ? (base_icms_st * icms_st_percent) - vlrIcmsReduzido : 0;
                     const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val());
-                    const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val());
+                    const dif_cambial_fob_processo =  MoneyUtils.parseMoney($('#diferenca_cambial_fob').val());
                     const diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
                         dolar);
-                    const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
+                    const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar) : 0;
 
                     atualizarCampos(rowId, {
                         pesoLiqUnit: MoneyUtils.parseMoney($(`#peso_liquido_unitario-${rowId}`).val()),
@@ -2007,6 +2031,7 @@
             const vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesas + vlrIcmsReduzido;
             const vlrTotalNfComIcms = vlrTotalNfSemIcms + ($(`#valor_icms_st-${rowId}`).val() ? MoneyUtils.parseMoney($(
                 `#valor_icms_st-${rowId}`).val()) : 0);
+            
             return {
                 vlrTotalProdutoNf: vlrTotalProdutoNf ?? 0,
                 vlrUnitProdutNf: vlrUnitProdutNf ?? 0,
@@ -2090,11 +2115,14 @@
             $(`#valor_unit_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrUnitProdutNf));
             $(`#valor_total_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalProdutoNf));
             $(`#valor_total_nf_sem_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalNfSemIcms));
-            $(`#valor_icms_st--${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrIcmsSt));
-            $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalNfComIcms));
-
+            // NOTA: valor_total_nf_com_icms_st será atualizado após calcular o vlrIcmsSt (veja mais abaixo)
+            
             $(`#base_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.base_icms_st));
             $(`#valor_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSt));
+            
+            // Recalcular valor_total_nf_com_icms_st com o vlrIcmsSt calculado
+            const valorTotalNfComIcmsStRecalculado = valores.totais.vlrTotalNfSemIcms + (valores.vlrIcmsSt || 0);
+            $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado));
 
             $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_frete));
             $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob));
@@ -2281,8 +2309,8 @@
                 const diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val());
                 const diferenca_cambial_fob = MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val());
                 const custo_unitario_final = ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob +
-                        diferenca_cambial_frete)) /
-                    qquantidade
+                        diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade
+
                 const custo_total_final = custo_unitario_final * qquantidade
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco))
                 $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final))
