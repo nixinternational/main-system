@@ -276,6 +276,18 @@ class ProcessoController extends Controller
             $pesoLiquidoTotal = 0;
             $produtosProcessados = 0;
 
+            // Carregar produtos existentes para preservar valores de service_charges
+            $produtosExistentes = [];
+            if ($request->produtos && count($request->produtos) > 0) {
+                $idsProdutos = array_filter(array_column($request->produtos, 'processo_produto_id'));
+                if (!empty($idsProdutos)) {
+                    $produtosExistentes = ProcessoProduto::whereIn('id', $idsProdutos)
+                        ->get()
+                        ->keyBy('id')
+                        ->toArray();
+                }
+            }
+
             if ($request->produtos && count($request->produtos) > 0) {
                 foreach ($request->produtos as $key => $produto) {
                     if (!isset($produto['produto_id']) || empty($produto['produto_id'])) {
@@ -379,9 +391,10 @@ class ProcessoController extends Controller
                             'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
                             'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
                             'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
-                            'service_charges' => isset($produto['service_charges']) ? $this->parseMoneyToFloat($produto['service_charges']) : null,
-                            'service_charges_brl' => isset($produto['service_charges_brl']) ? $this->parseMoneyToFloat($produto['service_charges_brl']) : null,
-                            'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : null,
+                            // Preservar valores existentes de service_charges se não foram enviados ou estão vazios
+                            'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
+                            'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
+                            'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
                         ]
                     );
 
@@ -390,6 +403,10 @@ class ProcessoController extends Controller
             }
 
             Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
+            
+            // Carregar processo existente para preservar valores quando salvar apenas produtos
+            $processoExistente = Processo::find($id);
+            
             $dadosProcesso = [
                 'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
                 'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
@@ -397,7 +414,8 @@ class ProcessoController extends Controller
                 'isps_code' => $this->parseMoneyToFloat($request->isps_code),
                 'handling' => $this->parseMoneyToFloat($request->handling),
                 'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
-                'service_charges' => $this->parseMoneyToFloat($request->service_charges),
+                // Preservar service_charges do processo se não foi enviado ou está vazio
+                'service_charges' => ($request->has('service_charges') && $request->service_charges !== '' && $request->service_charges !== null) ? $this->parseMoneyToFloat($request->service_charges) : ($processoExistente->service_charges ?? null),
                 'afrmm' => $this->parseMoneyToFloat($request->afrmm),
                 'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
                 'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
@@ -413,6 +431,31 @@ class ProcessoController extends Controller
                 'diferenca_cambial_frete' => $this->parseMoneyToFloat($request->diferenca_cambial_frete),
                 'diferenca_cambial_fob' => $this->parseMoneyToFloat($request->diferenca_cambial_fob),
             ];
+            
+            // Preservar campos de service_charges do processo se não foram enviados
+            if ($request->has('service_charges_moeda') && $request->service_charges_moeda !== '' && $request->service_charges_moeda !== null) {
+                $dadosProcesso['service_charges_moeda'] = $request->service_charges_moeda;
+            } else {
+                $dadosProcesso['service_charges_moeda'] = $processoExistente->service_charges_moeda ?? null;
+            }
+            
+            if ($request->has('service_charges_usd') && $request->service_charges_usd !== '' && $request->service_charges_usd !== null) {
+                $dadosProcesso['service_charges_usd'] = $this->parseMoneyToFloat($request->service_charges_usd);
+            } else {
+                $dadosProcesso['service_charges_usd'] = $processoExistente->service_charges_usd ?? null;
+            }
+            
+            if ($request->has('service_charges_brl') && $request->service_charges_brl !== '' && $request->service_charges_brl !== null) {
+                $dadosProcesso['service_charges_brl'] = $this->parseMoneyToFloat($request->service_charges_brl);
+            } else {
+                $dadosProcesso['service_charges_brl'] = $processoExistente->service_charges_brl ?? null;
+            }
+            
+            if ($request->has('cotacao_service_charges') && $request->cotacao_service_charges !== '' && $request->cotacao_service_charges !== null) {
+                $dadosProcesso['cotacao_service_charges'] = $this->parseMoneyToFloat($request->cotacao_service_charges, 4);
+            } else {
+                $dadosProcesso['cotacao_service_charges'] = $processoExistente->cotacao_service_charges ?? null;
+            }
 
             Processo::where('id', $id)->update($dadosProcesso);
             DB::commit();

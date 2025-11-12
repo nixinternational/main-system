@@ -1096,9 +1096,14 @@
                                 if (start !== -1 && end !== -1) {
                                     let value = $(this).val();
 
-                                    // Tratar campos vazios
+                                    // Tratar campos vazios - preservar campos de service_charges mesmo vazios
                                     if (value === '' || value === null || value === undefined) {
-                                        value = '';
+                                        // Para campos de service_charges, preservar string vazia para não zerar no banco
+                                        if (fieldName === 'service_charges' || fieldName === 'service_charges_brl' || fieldName === 'service_charges_moeda_estrangeira') {
+                                            value = '';
+                                        } else {
+                                            value = '';
+                                        }
                                     }
 
                                     // Tratar campos percentuais
@@ -1182,8 +1187,12 @@
                         blocoProdutos.forEach((produto, index) => {
                             Object.keys(produto).forEach(campo => {
                                 // Verificar se o valor não é undefined ou null
+                                // Preservar campos de service_charges mesmo se vazios
                                 if (produto[campo] !== undefined && produto[campo] !== null) {
                                     formData.append(`produtos[${index}][${campo}]`, produto[campo]);
+                                } else if (campo === 'service_charges' || campo === 'service_charges_brl' || campo === 'service_charges_moeda_estrangeira') {
+                                    // Preservar campos de service_charges mesmo se vazios para não zerar no banco
+                                    formData.append(`produtos[${index}][${campo}]`, '');
                                 }
                             });
                         });

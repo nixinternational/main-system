@@ -2229,17 +2229,27 @@
             const txDefLiPercent = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) : 0;
             const txDefLi = vlrAduaneiroBrl * txDefLiPercent;
             
-            // Removidos do cálculo: taxa_siscomex, capatazia, afrmm e honorarios_nix
-            // (são somados em outro lugar: desp_desenbaraco_parte_2)
+            // Taxa SISCOMEX da linha (já vem como parâmetro taxaSiscomexUnit)
+            const taxaSiscomex = taxaSiscomexUnit || 0;
+            
+            // AFrmm
+            const afrmm = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
+            
+            // Armazenagem STS
             let armazenagem_sts = $('#armazenagem_sts-' + rowId).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' +
                     rowId).val()) :
-                0
+                0;
+            
+            // Frete DTA STS/GYN
             let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + rowId).val() ? MoneyUtils.parseMoney($('#frete_dta_sts_ana-' +
                         rowId)
                     .val()) :
-                0
+                0;
+            
+            // Honorários NIX
+            const honorarios_nix = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0;
 
-            return multa + txDefLi + frete_dta_sts_ana + armazenagem_sts;
+            return multa + txDefLi + taxaSiscomex + afrmm + armazenagem_sts + frete_dta_sts_ana + honorarios_nix;
         }
 
         function calcularBcIcmsSemReducao(base, impostos, despesas) {
