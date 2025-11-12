@@ -393,7 +393,7 @@
                                             class="form-control fobUnitario moneyReal7"
                                             name="produtos[{{ $index }}][fob_unit_usd]"
                                             id="fob_unit_usd-{{ $index }}"
-                                            value="{{ $processoProduto->fob_unit_usd ? number_format($processoProduto->fob_unit_usd, 7, ',', '.') : '' }}">
+                                            value="{{ $processoProduto->fob_unit_usd ? number_format($processoProduto->fob_unit_usd, 2, ',' , '.') : '' }}">
                                     </td>
                                 @else
                                     <td>
@@ -401,76 +401,76 @@
                                             class="form-control fobUnitarioMoedaEstrangeira moneyReal7"
                                             name="produtos[{{ $index }}][fob_unit_moeda_estrangeira]"
                                             id="fob_unit_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->fob_unit_moeda_estrangeira ? number_format($processoProduto->fob_unit_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                            value="{{ $processoProduto->fob_unit_moeda_estrangeira ? number_format($processoProduto->fob_unit_moeda_estrangeira, 2, ',' , '.') : '' }}">
                                     </td>
                                 @endif
 
                                 @if ($moedaProcesso != 'USD')
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
-                                            class="form-control moneyReal7" readonly
+                                            class="form-control moneyReal" readonly
                                             name="produtos[{{ $index }}][fob_total_moeda_estrangeira]"
                                             id="fob_total_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->fob_total_moeda_estrangeira ? number_format($processoProduto->fob_total_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                            value="{{ $processoProduto->fob_total_moeda_estrangeira ? number_format($processoProduto->fob_total_moeda_estrangeira, 2, ',', '.') : '' }}">
                                     </td>
                                 @endif
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][fob_total_usd]"
                                         id="fob_total_usd-{{ $index }}"
-                                        value="{{ $processoProduto->fob_total_usd ? number_format($processoProduto->fob_total_usd, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->fob_total_usd ? number_format($processoProduto->fob_total_usd, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][fob_total_brl]"
                                         id="fob_total_brl-{{ $index }}"
-                                        value="{{ $processoProduto->fob_total_brl ? number_format($processoProduto->fob_total_brl, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->fob_total_brl ? number_format($processoProduto->fob_total_brl, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <!-- FRETE - Colunas condicionais -->
                                 @if ($moedaFrete != 'USD')
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
-                                            class="form-control moneyReal7" readonly
+                                            class="form-control moneyReal" readonly
                                             name="produtos[{{ $index }}][frete_moeda_estrangeira]"
                                             id="frete_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->frete_moeda_estrangeira ? number_format($processoProduto->frete_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                            value="{{ $processoProduto->frete_moeda_estrangeira ? number_format($processoProduto->frete_moeda_estrangeira, 2, ',' , '.') : '' }}">
                                     </td>
                                 @endif
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][frete_usd]"
                                         id="frete_usd-{{ $index }}"
-                                        value="{{ $processoProduto->frete_usd ? number_format($processoProduto->frete_usd, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->frete_usd ? number_format($processoProduto->frete_usd, 2, ',' , '.') : '' }}">
                                 </td>
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][frete_brl]"
                                         id="frete_brl-{{ $index }}"
-                                        value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <!-- CFR - Após FRETE -->
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][vlr_crf_unit]"
                                         id="vlr_crf_unit-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_crf_unit ? number_format($processoProduto->vlr_crf_unit, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->vlr_crf_unit ? number_format($processoProduto->vlr_crf_unit, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][vlr_crf_total]"
                                         id="vlr_crf_total-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_crf_total ? number_format($processoProduto->vlr_crf_total, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->vlr_crf_total ? number_format($processoProduto->vlr_crf_total, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
@@ -480,110 +480,110 @@
                                 @if ($moedaServiceCharges != 'USD')
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
-                                            class="form-control moneyReal7" readonly
+                                            class="form-control moneyReal" readonly
                                             name="produtos[{{ $index }}][service_charges_moeda_estrangeira]"
                                             id="service_charges_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->service_charges_moeda_estrangeira ? number_format($processoProduto->service_charges_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                            value="{{ $processoProduto->service_charges_moeda_estrangeira ? number_format($processoProduto->service_charges_moeda_estrangeira, 2, ',' , '.') : '' }}">
                                     </td>
                                 @endif
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][service_charges]"
                                         id="service_charges-{{ $index }}"
-                                        value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][service_charges_brl]"
                                         id="service_charges_brl-{{ $index }}"
-                                        value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <!-- ACRÉSCIMO - Colunas condicionais (após SERVICE CHARGES) -->
                                 @if ($moedaAcrescimo != 'USD')
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
-                                            class="form-control moneyReal7" readonly
+                                            class="form-control moneyReal" readonly
                                             name="produtos[{{ $index }}][acrescimo_moeda_estrangeira]"
                                             id="acrescimo_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->acrescimo_moeda_estrangeira ? number_format($processoProduto->acrescimo_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                            value="{{ $processoProduto->acrescimo_moeda_estrangeira ? number_format($processoProduto->acrescimo_moeda_estrangeira, 2, ',' , '.') : '' }}">
                                     </td>
                                 @endif
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][acresc_frete_usd]"
                                         id="acresc_frete_usd-{{ $index }}"
-                                        value="{{ $processoProduto->acresc_frete_usd ? number_format($processoProduto->acresc_frete_usd, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->acresc_frete_usd ? number_format($processoProduto->acresc_frete_usd, 2, ',' , '.') : '' }}">
                                 </td>
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][acresc_frete_brl]"
                                         id="acresc_frete_brl-{{ $index }}"
-                                        value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <!-- SEGURO - Colunas condicionais (após ACRÉSCIMO) -->
                                 @if ($moedaSeguro != 'USD')
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
-                                            class="form-control moneyReal7" readonly
+                                            class="form-control moneyReal" readonly
                                             name="produtos[{{ $index }}][seguro_moeda_estrangeira]"
                                             id="seguro_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                            value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 2, ',' , '.') : '' }}">
                                     </td>
                                 @endif
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][seguro_usd]"
                                         id="seguro_usd-{{ $index }}"
-                                        value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 2, ',' , '.') : '' }}">
                                 </td>
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][seguro_brl]"
                                         id="seguro_brl-{{ $index }}"
-                                        value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <!-- Resto das colunas permanecem iguais -->
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][thc_usd]"
                                         id="thc_usd-{{ $index }}"
-                                        value="{{ $processoProduto->thc_usd ? number_format($processoProduto->thc_usd, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->thc_usd ? number_format($processoProduto->thc_usd, 2, ',' , '.') : '' }}">
                                 </td>
 
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][thc_brl]"
                                         id="thc_brl-{{ $index }}"
-                                        value="{{ $processoProduto->thc_brl ? number_format($processoProduto->thc_brl, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->thc_brl ? number_format($processoProduto->thc_brl, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_aduaneiro_usd]"
                                         id="valor_aduaneiro_usd-{{ $index }}"
-                                        value="{{ $processoProduto->valor_aduaneiro_usd ? number_format($processoProduto->valor_aduaneiro_usd, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_aduaneiro_usd ? number_format($processoProduto->valor_aduaneiro_usd, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_aduaneiro_brl]"
                                         id="valor_aduaneiro_brl-{{ $index }}"
-                                        value="{{ $processoProduto->valor_aduaneiro_brl ? number_format($processoProduto->valor_aduaneiro_brl, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_aduaneiro_brl ? number_format($processoProduto->valor_aduaneiro_brl, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -636,130 +636,130 @@
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][reducao]"
                                         id="reducao-{{ $index }}"
-                                        value="{{ $processoProduto->reducao ? number_format($processoProduto->reducao, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->reducao ? number_format($processoProduto->reducao, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_ii]"
                                         id="valor_ii-{{ $index }}"
-                                        value="{{ $processoProduto->valor_ii ? number_format($processoProduto->valor_ii, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_ii ? number_format($processoProduto->valor_ii, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][base_ipi]"
                                         id="base_ipi-{{ $index }}"
-                                        value="{{ $processoProduto->base_ipi ? number_format($processoProduto->base_ipi, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->base_ipi ? number_format($processoProduto->base_ipi, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_ipi]"
                                         id="valor_ipi-{{ $index }}"
-                                        value="{{ $processoProduto->valor_ipi ? number_format($processoProduto->valor_ipi, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_ipi ? number_format($processoProduto->valor_ipi, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][base_pis_cofins]"
                                         id="base_pis_cofins-{{ $index }}"
-                                        value="{{ $processoProduto->base_pis_cofins ? number_format($processoProduto->base_pis_cofins, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->base_pis_cofins ? number_format($processoProduto->base_pis_cofins, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_pis]"
                                         id="valor_pis-{{ $index }}"
-                                        value="{{ $processoProduto->valor_pis ? number_format($processoProduto->valor_pis, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_pis ? number_format($processoProduto->valor_pis, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
+                                        class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_cofins]"
                                         id="valor_cofins-{{ $index }}"
-                                        value="{{ $processoProduto->valor_cofins ? number_format($processoProduto->valor_cofins, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_cofins ? number_format($processoProduto->valor_cofins, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][despesa_aduaneira]"
                                         id="despesa_aduaneira-{{ $index }}"
-                                        value="{{ $processoProduto->despesa_aduaneira ? number_format($processoProduto->despesa_aduaneira, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->despesa_aduaneira ? number_format($processoProduto->despesa_aduaneira, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][base_icms_sem_reducao]"
                                         id="base_icms_sem_reducao-{{ $index }}"
-                                        value="{{ $processoProduto->base_icms_sem_reducao ? number_format($processoProduto->base_icms_sem_reducao, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->base_icms_sem_reducao ? number_format($processoProduto->base_icms_sem_reducao, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_icms_sem_reducao]"
                                         id="valor_icms_sem_reducao-{{ $index }}"
-                                        value="{{ $processoProduto->valor_icms_sem_reducao ? number_format($processoProduto->valor_icms_sem_reducao, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_icms_sem_reducao ? number_format($processoProduto->valor_icms_sem_reducao, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][base_icms_reduzido]"
                                         id="base_icms_reduzido-{{ $index }}"
-                                        value="{{ $processoProduto->base_icms_reduzido ? number_format($processoProduto->base_icms_reduzido, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->base_icms_reduzido ? number_format($processoProduto->base_icms_reduzido, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_icms_reduzido]"
                                         id="valor_icms_reduzido-{{ $index }}"
-                                        value="{{ $processoProduto->valor_icms_reduzido ? number_format($processoProduto->valor_icms_reduzido, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_icms_reduzido ? number_format($processoProduto->valor_icms_reduzido, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_unit_nf]"
                                         id="valor_unit_nf-{{ $index }}"
-                                        value="{{ $processoProduto->valor_unit_nf ? number_format($processoProduto->valor_unit_nf, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_unit_nf ? number_format($processoProduto->valor_unit_nf, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_total_nf]"
                                         id="valor_total_nf-{{ $index }}"
-                                        value="{{ $processoProduto->valor_total_nf ? number_format($processoProduto->valor_total_nf, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_total_nf ? number_format($processoProduto->valor_total_nf, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_total_nf_sem_icms_st]"
                                         id="valor_total_nf_sem_icms_st-{{ $index }}"
-                                        value="{{ $processoProduto->valor_total_nf_sem_icms_st ? number_format($processoProduto->valor_total_nf_sem_icms_st, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_total_nf_sem_icms_st ? number_format($processoProduto->valor_total_nf_sem_icms_st, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][base_icms_st]"
                                         id="base_icms_st-{{ $index }}"
-                                        value="{{ $processoProduto->base_icms_st ? number_format($processoProduto->base_icms_st, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->base_icms_st ? number_format($processoProduto->base_icms_st, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -779,18 +779,18 @@
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_icms_st]"
                                         id="valor_icms_st-{{ $index }}"
-                                        value="{{ $processoProduto->valor_icms_st ? number_format($processoProduto->valor_icms_st, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_icms_st ? number_format($processoProduto->valor_icms_st, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][valor_total_nf_com_icms_st]"
                                         id="valor_total_nf_com_icms_st-{{ $index }}"
-                                        value="{{ $processoProduto->valor_total_nf_com_icms_st ? number_format($processoProduto->valor_total_nf_com_icms_st, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->valor_total_nf_com_icms_st ? number_format($processoProduto->valor_total_nf_com_icms_st, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -813,7 +813,7 @@
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7"
                                         name="produtos[{{ $index }}][multa]" id="multa-{{ $index }}"
-                                        value="{{ $processoProduto->multa ? number_format($processoProduto->multa, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->multa ? number_format($processoProduto->multa, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -826,192 +826,192 @@
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][taxa_siscomex]"
                                         id="taxa_siscomex-{{ $index }}"
-                                        value="{{ $processoProduto->taxa_siscomex ? number_format($processoProduto->taxa_siscomex, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->taxa_siscomex ? number_format($processoProduto->taxa_siscomex, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][outras_taxas_agente]"
                                         id="outras_taxas_agente-{{ $index }}"
-                                        value="{{ $processoProduto->outras_taxas_agente ? number_format($processoProduto->outras_taxas_agente, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->outras_taxas_agente ? number_format($processoProduto->outras_taxas_agente, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][liberacao_bl]"
                                         id="liberacao_bl-{{ $index }}"
-                                        value="{{ $processoProduto->liberacao_bl ? number_format($processoProduto->liberacao_bl, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->liberacao_bl ? number_format($processoProduto->liberacao_bl, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][desconsolidacao]"
                                         id="desconsolidacao-{{ $index }}"
-                                        value="{{ $processoProduto->desconsolidacao ? number_format($processoProduto->desconsolidacao, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->desconsolidacao ? number_format($processoProduto->desconsolidacao, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][isps_code]"
                                         id="isps_code-{{ $index }}"
-                                        value="{{ $processoProduto->isps_code ? number_format($processoProduto->isps_code, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->isps_code ? number_format($processoProduto->isps_code, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][handling]"
                                         id="handling-{{ $index }}"
-                                        value="{{ $processoProduto->handling ? number_format($processoProduto->handling, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->handling ? number_format($processoProduto->handling, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][capatazia]"
                                         id="capatazia-{{ $index }}"
-                                        value="{{ $processoProduto->capatazia ? number_format($processoProduto->capatazia, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->capatazia ? number_format($processoProduto->capatazia, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][afrmm]" id="afrmm-{{ $index }}"
-                                        value="{{ $processoProduto->afrmm ? number_format($processoProduto->afrmm, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->afrmm ? number_format($processoProduto->afrmm, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][armazenagem_sts]"
                                         id="armazenagem_sts-{{ $index }}"
-                                        value="{{ $processoProduto->armazenagem_sts ? number_format($processoProduto->armazenagem_sts, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->armazenagem_sts ? number_format($processoProduto->armazenagem_sts, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][frete_dta_sts_ana]"
                                         id="frete_dta_sts_ana-{{ $index }}"
-                                        value="{{ $processoProduto->frete_dta_sts_ana ? number_format($processoProduto->frete_dta_sts_ana, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->frete_dta_sts_ana ? number_format($processoProduto->frete_dta_sts_ana, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][sda]" id="sda-{{ $index }}"
-                                        value="{{ $processoProduto->sda ? number_format($processoProduto->sda, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->sda ? number_format($processoProduto->sda, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][rep_sts]"
                                         id="rep_sts-{{ $index }}"
-                                        value="{{ $processoProduto->rep_sts ? number_format($processoProduto->rep_sts, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->rep_sts ? number_format($processoProduto->rep_sts, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][armaz_ana]"
                                         id="armaz_ana-{{ $index }}"
-                                        value="{{ $processoProduto->armaz_ana ? number_format($processoProduto->armaz_ana, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->armaz_ana ? number_format($processoProduto->armaz_ana, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][lavagem_container]"
                                         id="lavagem_container-{{ $index }}"
-                                        value="{{ $processoProduto->lavagem_container ? number_format($processoProduto->lavagem_container, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->lavagem_container ? number_format($processoProduto->lavagem_container, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][rep_anapolis]"
                                         id="rep_anapolis-{{ $index }}"
-                                        value="{{ $processoProduto->rep_anapolis ? number_format($processoProduto->rep_anapolis, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->rep_anapolis ? number_format($processoProduto->rep_anapolis, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][desp_anapolis]"
                                         id="desp_anapolis-{{ $index }}"
-                                        value="{{ $processoProduto->desp_anapolis ? number_format($processoProduto->desp_anapolis, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->desp_anapolis ? number_format($processoProduto->desp_anapolis, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][correios]"
                                         id="correios-{{ $index }}"
-                                        value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][li_dta_honor_nix]"
                                         id="li_dta_honor_nix-{{ $index }}"
-                                        value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][honorarios_nix]"
                                         id="honorarios_nix-{{ $index }}"
-                                        value="{{ $processoProduto->honorarios_nix ? number_format($processoProduto->honorarios_nix, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->honorarios_nix ? number_format($processoProduto->honorarios_nix, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][desp_desenbaraco]"
                                         id="desp_desenbaraco-{{ $index }}"
-                                        value="{{ $processoProduto->desp_desenbaraco ? number_format($processoProduto->desp_desenbaraco, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->desp_desenbaraco ? number_format($processoProduto->desp_desenbaraco, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][diferenca_cambial_frete]"
                                         id="diferenca_cambial_frete-{{ $index }}"
-                                        value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][diferenca_cambial_fob]"
                                         id="diferenca_cambial_fob-{{ $index }}"
-                                        value="{{ $processoProduto->diferenca_cambial_fob ? number_format($processoProduto->diferenca_cambial_fob, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->diferenca_cambial_fob ? number_format($processoProduto->diferenca_cambial_fob, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][custo_unitario_final]"
                                         id="custo_unitario_final-{{ $index }}"
-                                        value="{{ $processoProduto->custo_unitario_final ? number_format($processoProduto->custo_unitario_final, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->custo_unitario_final ? number_format($processoProduto->custo_unitario_final, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][custo_total_final]"
                                         id="custo_total_final-{{ $index }}"
-                                        value="{{ $processoProduto->custo_total_final ? number_format($processoProduto->custo_total_final, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->custo_total_final ? number_format($processoProduto->custo_total_final, 2, ',' , '.') : '' }}">
                                 </td>
                             </tr>
                         @endforeach

@@ -427,7 +427,7 @@
             
             // COLUNAS SERVICE CHARGES (após CFR)
             if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
-                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 7)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 2)}</td>`;
             }
             
             // Para service_charges USD, precisamos somar o campo service_charges (que é USD) quando a moeda não for USD
@@ -441,8 +441,8 @@
                 totalServiceChargesUSD = totais.service_charges;
             }
             
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalServiceChargesUSD, 7)}</td>`;
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 7)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalServiceChargesUSD, 2)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 2)}</td>`;
 
             // COLUNAS ACRÉSCIMO (após SERVICE CHARGES)
             const moedaAcrescimo = $('#acrescimo_frete_moeda').val();
@@ -515,7 +515,7 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.capatazia, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.afrmm, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armazenagem_sts, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_dta_sts_ana,2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.sda, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_sts, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armaz_ana, 2)}</td>
@@ -703,17 +703,17 @@
 
                 // Atualizar campos da moeda estrangeira
                 // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitarioMoedaEstrangeira));
-                $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira));
+                $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira, 2));
 
                 // Para moeda diferente de USD, o fobTotalUSD já está convertido na função obterValoresBase
             } else {
                 // Moeda é USD - atualizar campo USD diretamente
-                $(`#fob_unit_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitario));
+                $(`#fob_unit_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitario, 2));
             }
 
             // Valores totais (sempre em USD e BRL)
-            $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotalUSD));
-            $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotalBRL));
+            $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotalUSD, 2));
+            $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotalBRL, 2));
         }
         // Função para atualizar títulos
         function atualizarTitulosColunas(moedaFrete, moedaSeguro, moedaAcrescimo, moedaProcesso) {
@@ -1056,12 +1056,13 @@
             const usdField = $(`#${inputId}_usd`);
             const brlField = $(`#${inputId}_brl`);
             
+            // Atualizar campos com máxima precisão (7 casas decimais)
             if (usdField.length) {
-                usdField.val(MoneyUtils.formatMoney(valorUSD, 7));
+                usdField.val(MoneyUtils.formatMoney(valorUSD, 2));
             }
             
             if (brlField.length) {
-                brlField.val(MoneyUtils.formatMoney(valorBRL, 7));
+                brlField.val(MoneyUtils.formatMoney(valorBRL, 2));
             }
         }
 
@@ -1171,7 +1172,7 @@
                                 let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
 
                                 // Atualizar campos FOB da linha
-                                $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
+                                $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal, 2));
 
                                 // TERCEIRO: AGORA calcular o FOB total geral (com os valores atualizados)
                                 const fobTotalGeral = calcularFobTotalGeral();
@@ -1179,11 +1180,17 @@
                                 // QUARTO: Obter cotação do dólar e prosseguir com outros cálculos
                                 const moedasOBject = $('#cotacao_moeda_processo').val() ? JSON.parse($(
                                     '#cotacao_moeda_processo').val()) : JSON.parse($('#dolarHoje').val())
-                                const moedaDolar = moedasOBject['USD'].venda
-                                const dolar = MoneyUtils.parseMoney(moedaDolar);
+                                // Garantir máxima precisão na obtenção do dólar
+                                let moedaDolar = moedasOBject['USD']?.venda;
+                                if (!moedaDolar || moedaDolar === null || moedaDolar === undefined) {
+                                    const cotacaoFrete = $(`#cotacao_frete_internacional`).val();
+                                    moedaDolar = cotacaoFrete ? cotacaoFrete.replace(',', '.') : 1;
+                                }
+                                // Se já for número, usar direto; senão, parsear com máxima precisão
+                                const dolar = typeof moedaDolar === 'number' ? moedaDolar : MoneyUtils.parseMoney(moedaDolar);
 
                                 // Atualizar FOB total em BRL
-                                $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
+                                $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar, 2));
 
                                 // QUINTO: Continuar com os outros cálculos...
                                 const totalPesoLiq = calcularPesoTotal();
@@ -1645,11 +1652,38 @@
                 let num = typeof value === 'string' ?
                     parseFloat(value.replace(',', '.')) : value;
 
-                // Formatar com 6 casas decimais para exibição
-                return num.toLocaleString('pt-BR', {
-                    minimumFractionDigits: decimals,
-                    maximumFractionDigits: decimals
-                });
+                // TRUNCAR sem arredondar para preservar exatidão máxima nos cálculos
+                // Usar método mais preciso para evitar problemas de ponto flutuante
+                const factor = Math.pow(10, decimals);
+                // Multiplicar, truncar com Math.floor (não arredonda), e dividir
+                // Usar Math.abs para lidar com negativos corretamente
+                const sign = num < 0 ? -1 : 1;
+                const absNum = Math.abs(num);
+                // Truncar multiplicando por factor, usando floor, e dividindo
+                // Adicionar pequeno epsilon (1e-10) para evitar erros de precisão de ponto flutuante
+                const truncated = Math.floor(absNum * factor + 1e-10) / factor * sign;
+                
+                // Formatar manualmente para evitar problemas de toFixed com precisão
+                const truncatedAbs = Math.abs(truncated);
+                const integerPartNum = Math.floor(truncatedAbs);
+                const decimalPartNum = truncatedAbs - integerPartNum;
+                
+                // Converter parte decimal para string com número exato de dígitos
+                // Multiplicar por factor e usar floor para obter os dígitos decimais
+                const decimalInt = Math.floor(decimalPartNum * factor + 1e-10);
+                const decimalStr = decimalInt.toString().padStart(decimals, '0').substring(0, decimals);
+                
+                // Converter parte inteira para string
+                let integerPart = integerPartNum.toString();
+                if (sign < 0) {
+                    integerPart = '-' + integerPart;
+                }
+                
+                // Adicionar separadores de milhar apenas na parte inteira
+                integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                
+                // Juntar com vírgula como separador decimal
+                return integerPart + ',' + decimalStr;
             }
         };
 
@@ -1664,8 +1698,14 @@
             
             const rows = $('.linhas-input');
             const moedasOBject = getCotacaoesProcesso();
-            const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.');
-            const dolar = MoneyUtils.parseMoney(moedaDolar);
+            // Garantir máxima precisão na obtenção do dólar
+            let moedaDolar = moedasOBject['USD']?.venda;
+            if (!moedaDolar || moedaDolar === null || moedaDolar === undefined) {
+                const cotacaoFrete = $(`#cotacao_frete_internacional`).val();
+                moedaDolar = cotacaoFrete ? cotacaoFrete.replace(',', '.') : 1;
+            }
+            // Se já for número, usar direto; senão, parsear com máxima precisão
+            const dolar = typeof moedaDolar === 'number' ? moedaDolar : MoneyUtils.parseMoney(moedaDolar);
             const totalPesoLiq = calcularPesoTotal();
             const taxaSisComex = calcularTaxaSiscomex();
             // PRIMEIRA PASSADA: Atualizar FOBs e calcular novo FOB Total Geral
@@ -1697,8 +1737,8 @@
 
                     // Atualiza campos básicos
                     $(`#peso_liquido_unitario-${rowId}`).val(pesoTotal / (quantidade || 1));
-                    $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
-                    $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
+                    $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal, 2));
+                    $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar, 2));
                 }
             });
 
@@ -1719,7 +1759,7 @@
 
                     // AGORA calcula o fator com o FOB Total Geral atualizado
                     const fatorVlrFob_AX = fobTotal / (fobTotalGeralAtualizado || 1);
-                    $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
+                    $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX, 2));
 
                     // Resto dos cálculos usando o FOB Total Geral ATUALIZADO
                     const moedaFrete = $('#frete_internacional_moeda').val();
@@ -1741,36 +1781,9 @@
                     const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
                     const thcRow = thc_capataziaBase * fatorPesoRow;
                     
-                    // Calcular SERVICE_CHARGES rateado por fator peso (do processo) com conversão de moeda
-                    const serviceChargesBase = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
-                    const moedaServiceCharges = $('#service_charges_moeda').val();
-                    let serviceChargesBaseUSD = 0;
-                    let serviceChargesMoedaEstrangeira = 0;
-                    
-                    if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
-                        let cotacaoProcesso = getCotacaoesProcesso();
-                        let cotacaoMoedaServiceCharges = MoneyUtils.parseMoney($('#cotacao_service_charges').val());
-                        let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
-                        
-                        // Se não tem cotação específica, usar a cotação padrão da moeda
-                        if (!cotacaoMoedaServiceCharges && cotacaoProcesso[moedaServiceCharges]) {
-                            cotacaoMoedaServiceCharges = cotacaoProcesso[moedaServiceCharges].venda;
-                        }
-                        
-                        if (cotacaoMoedaServiceCharges) {
-                            let moedaEmUSD = cotacaoMoedaServiceCharges / cotacaoUSD;
-                            serviceChargesBaseUSD = serviceChargesBase * moedaEmUSD;
-                            serviceChargesMoedaEstrangeira = serviceChargesBase * fatorPesoRow;
-                        } else {
-                            // Fallback 1:1
-                            serviceChargesBaseUSD = serviceChargesBase;
-                        }
-                    } else {
-                        serviceChargesBaseUSD = serviceChargesBase;
-                    }
-                    
-                    const serviceChargesRow = serviceChargesBaseUSD * fatorPesoRow;
-                    const serviceChargesBrl = serviceChargesRow * dolar;
+                    // Calcular SERVICE_CHARGES seguindo a mesma lógica do cálculo por linha
+                    const serviceChargesBaseRow = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
+                    const serviceChargesRowAtual = serviceChargesBaseRow * fatorPesoRow;
 
                     // Calcular VLR_CRF_TOTAL = FOB_TOTAL_USD + FRETE_INT_USD
                     const vlrCrfTotal = fobTotal + freteUsdInt;
@@ -1783,7 +1796,8 @@
 
                     const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeralAtualizado, dolar);
                     const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
-                        seguroIntUsdRow, thcRow, dolar, vlrCrfTotal, serviceChargesRow);
+                        seguroIntUsdRow, thcRow, dolar, vlrCrfTotal, serviceChargesRowAtual);
+                    // Multiplicação exata sem arredondamento - manter precisão máxima
                     const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
 
                     const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
@@ -1850,13 +1864,7 @@
                         fobTotalGeral: fobTotalGeralAtualizado, // Usar o valor atualizado
                         fobUnitario,
                         diferenca_cambial_frete,
-                        diferenca_cambial_fob,
-                        vlrCrfTotal,
-                        vlrCrfUnit,
-                        quantidade: quantidadeAtual,
-                        serviceChargesRow,
-                        serviceChargesBrl,
-                        serviceChargesMoedaEstrangeira
+                        diferenca_cambial_fob
                     });
                 }
             });
@@ -1919,9 +1927,9 @@
                 if (diferenca_cambial_frete === 0 || isNaN(diferenca_cambial_frete) || !isFinite(diferenca_cambial_frete) || diferenca_cambial_frete < 0) {
                     $(`#diferenca_cambial_frete-${rowId}`).val('');
                 } else {
-                    $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_frete));
+                    $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_frete, 2));
                 }
-                $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob));
+                $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob, 2));
 
 
             }
@@ -2028,7 +2036,7 @@
             </td>
             <td>
                 <input data-row="${newIndex}" type="text" 
-                    class="form-control moneyReal7" readonly
+                    class="form-control moneyReal" readonly
                     name="produtos[${newIndex}][fob_total_moeda_estrangeira]" 
                     id="fob_total_moeda_estrangeira-${newIndex}" value="">
             </td>
@@ -2176,14 +2184,20 @@
 
 
         function calcularValorAduaneiro(fob, frete, acrescimo, seguro, thc, dolar, vlrCrfTotal = 0, serviceCharges = 0) {
-            // Função para validar e converter valores
+            // Função para validar e converter valores com máxima precisão
             const parseSafe = (value, defaultValue = 0) => {
                 if (value === null || value === undefined) return defaultValue;
-                const num = Number(value);
-                return isNaN(num) ? defaultValue : num;
+                // Se já for número, usar direto para manter precisão
+                if (typeof value === 'number') {
+                    return isNaN(value) || !isFinite(value) ? defaultValue : value;
+                }
+                // Se for string, parsear com máxima precisão
+                const num = parseFloat(value);
+                return isNaN(num) || !isFinite(num) ? defaultValue : num;
             };
 
             // Valor aduaneiro considera apenas: vlr_crf_total, service_charges_usd, acresc_frete_usd, seguro_usd e thc_usd
+            // Usar valores exatos sem arredondamento durante cálculos
             const safeAcrescimo = parseSafe(acrescimo); // acresc_frete_usd
             const safeSeguro = parseSafe(seguro); // seguro_usd
             const safeThc = parseSafe(thc); // thc em BRL
@@ -2192,8 +2206,10 @@
             const safeServiceCharges = parseSafe(serviceCharges); // service_charges_usd
 
             // THC precisa ser convertido de BRL para USD
-            const thcUsd = safeThc / (safeDolar || 1);
+            // Usar divisão exata sem arredondamento
+            const thcUsd = safeDolar > 0 ? safeThc / safeDolar : 0;
 
+            // Soma exata sem arredondamento - manter precisão máxima
             return safeVlrCrfTotal + safeServiceCharges + safeAcrescimo + safeSeguro + thcUsd;
         }
 
@@ -2310,10 +2326,10 @@
                 let valorFreteMoedaEstrangeira = MoneyUtils.parseMoney($('#frete_internacional').val()) * valores
                     .fatorPesoRow;
 
-                $(`#frete_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorFreteMoedaEstrangeira));
+                $(`#frete_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorFreteMoedaEstrangeira, 2));
             }
-            $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt));
-            $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt * valores.dolar));
+            $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt, 2));
+            $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt * valores.dolar, 2));
 
             if (moedaSeguro && moedaSeguro !== 'USD') {
 
@@ -2321,17 +2337,17 @@
                     .fobTotal / valores.fobTotalGeral);
 
 
-                $(`#seguro_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorSeguroMoedaEstrangeira));
+                $(`#seguro_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorSeguroMoedaEstrangeira, 2));
             }
 
-            $(`#seguro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow));
-            $(`#seguro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow * valores.dolar));
+            $(`#seguro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow, 2));
+            $(`#seguro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow * valores.dolar, 2));
 
             // Acréscimo - valor na moeda estrangeira original
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 let valorAcrescimoMoedaEstrangeira = MoneyUtils.parseMoney($('#acrescimo_frete').val()) * valores
                     .fatorVlrFob_AX;
-                $(`#acrescimo_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorAcrescimoMoedaEstrangeira));
+                $(`#acrescimo_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorAcrescimoMoedaEstrangeira, 2));
             }
 
             let cotacaoProcesso = getCotacaoesProcesso();
@@ -2347,103 +2363,103 @@
                     let fobUnitMoedaEstrangeira = valores.fobUnitario * (cotacaoMoedaProcesso / cotacaoUSD);
                     let fobTotalMoedaEstrangeira = valores.fobTotal * (cotacaoMoedaProcesso / cotacaoUSD);
                     // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobUnitMoedaEstrangeira));
-                    $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira));
+                    $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira, 2));
                 }
             }
-            $(`#acresc_frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow));
-            $(`#acresc_frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow * valores.dolar));
+            $(`#acresc_frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow, 2));
+            $(`#acresc_frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow * valores.dolar, 2));
             
             // Calcular e atualizar VLR_CRF_TOTAL e VLR_CRF_UNIT
             if (valores.vlrCrfTotal !== undefined) {
-                $(`#vlr_crf_total-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfTotal));
+                $(`#vlr_crf_total-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfTotal, 2));
             } else {
                 // Fallback: calcular se não foi passado
                 const fobTotal = valores.fobTotal || MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
                 const freteUsd = valores.freteUsdInt || MoneyUtils.parseMoney($(`#frete_usd-${rowId}`).val()) || 0;
                 const vlrCrfTotal = fobTotal + freteUsd;
-                $(`#vlr_crf_total-${rowId}`).val(MoneyUtils.formatMoney(vlrCrfTotal));
+                $(`#vlr_crf_total-${rowId}`).val(MoneyUtils.formatMoney(vlrCrfTotal, 2));
             }
             
             if (valores.vlrCrfUnit !== undefined) {
-                $(`#vlr_crf_unit-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfUnit));
+                $(`#vlr_crf_unit-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfUnit, 2));
             } else {
                 // Fallback: calcular se não foi passado
                 const vlrCrfTotal = MoneyUtils.parseMoney($(`#vlr_crf_total-${rowId}`).val()) || 0;
                 const quantidade = valores.quantidade || MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
                 const vlrCrfUnit = quantidade > 0 ? vlrCrfTotal / quantidade : 0;
-                $(`#vlr_crf_unit-${rowId}`).val(MoneyUtils.formatMoney(vlrCrfUnit));
+                $(`#vlr_crf_unit-${rowId}`).val(MoneyUtils.formatMoney(vlrCrfUnit, 2));
             }
             
             // Calcular SERVICE_CHARGES rateado do processo (não mais editável por produto)
             let moedaServiceCharges = $('#service_charges_moeda').val();
             if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
                 if (valores.serviceChargesMoedaEstrangeira !== undefined) {
-                    $(`#service_charges_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesMoedaEstrangeira));
+                    $(`#service_charges_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesMoedaEstrangeira, 2));
                 } else {
                     // Fallback: calcular se não foi passado
                     const serviceChargesBase = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
                     const fatorPesoRow = valores.fatorPesoRow || MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
                     const serviceChargesMoedaEstrangeira = serviceChargesBase * fatorPesoRow;
-                    $(`#service_charges_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesMoedaEstrangeira));
+                    $(`#service_charges_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesMoedaEstrangeira, 2));
                 }
             }
             
             if (valores.serviceChargesRow !== undefined) {
-                $(`#service_charges-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesRow));
+                $(`#service_charges-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesRow, 2));
             } else {
                 // Fallback: calcular se não foi passado
                 const serviceChargesBase = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
                 const fatorPesoRow = valores.fatorPesoRow || MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
                 const serviceChargesRow = serviceChargesBase * fatorPesoRow;
-                $(`#service_charges-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesRow));
+                $(`#service_charges-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesRow, 2));
             }
             
             if (valores.serviceChargesBrl !== undefined) {
-                $(`#service_charges_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesBrl));
+                $(`#service_charges_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesBrl, 2));
             } else {
                 // Fallback: calcular se não foi passado
                 const serviceChargesRow = MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
                 const serviceChargesBrl = serviceChargesRow * valores.dolar;
-                $(`#service_charges_brl-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesBrl));
+                $(`#service_charges_brl-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesBrl, 2));
             }
             
-            $(`#thc_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow / valores.dolar));
-            $(`#thc_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow));
-            $(`#valor_aduaneiro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroUsd));
-            $(`#valor_aduaneiro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl));
-            $(`#valor_ii-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.ii));
+            $(`#thc_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow / valores.dolar, 2));
+            $(`#thc_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow, 2));
+            $(`#valor_aduaneiro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroUsd, 2));
+            $(`#valor_aduaneiro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl, 2));
+            $(`#valor_ii-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.ii, 2));
             $(`#base_ipi-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl + valores.vlrAduaneiroBrl * valores
-                .impostos.ii));
+                .impostos.ii, 2));
             $(`#valor_ipi-${rowId}`).val(MoneyUtils.formatMoney((valores.vlrAduaneiroBrl + valores.vlrAduaneiroBrl * valores
-                .impostos.ii) * valores.impostos.ipi));
-            $(`#base_pis_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl));
-            $(`#valor_pis-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.pis));
-            $(`#valor_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.cofins));
-            $(`#despesa_aduaneira-${rowId}`).val(MoneyUtils.formatMoney(valores.despesas));
-            $(`#base_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.bcIcmsSReducao));
-            $(`#valor_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSReducao));
-            $(`#base_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.bcImcsReduzido));
-            $(`#valor_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsReduzido));
-            $(`#valor_unit_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrUnitProdutNf));
-            $(`#valor_total_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalProdutoNf));
-            $(`#valor_total_nf_sem_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalNfSemIcms));
+                .impostos.ii) * valores.impostos.ipi, 2));
+            $(`#base_pis_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl, 2));
+            $(`#valor_pis-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.pis, 2));
+            $(`#valor_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.cofins, 2));
+            $(`#despesa_aduaneira-${rowId}`).val(MoneyUtils.formatMoney(valores.despesas, 2));
+            $(`#base_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.bcIcmsSReducao, 2));
+            $(`#valor_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSReducao, 2));
+            $(`#base_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.bcImcsReduzido, 2));
+            $(`#valor_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsReduzido, 2));
+            $(`#valor_unit_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrUnitProdutNf, 2));
+            $(`#valor_total_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalProdutoNf, 2));
+            $(`#valor_total_nf_sem_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalNfSemIcms, 2));
             // NOTA: valor_total_nf_com_icms_st será atualizado após calcular o vlrIcmsSt (veja mais abaixo)
             
-            $(`#base_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.base_icms_st));
-            $(`#valor_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSt));
+            $(`#base_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.base_icms_st, 2));
+            $(`#valor_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSt, 2));
             
             // Recalcular valor_total_nf_com_icms_st com o vlrIcmsSt calculado
             const valorTotalNfComIcmsStRecalculado = valores.totais.vlrTotalNfSemIcms + (valores.vlrIcmsSt || 0);
-            $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado));
+            $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado, 2));
 
             // Validar e tratar diferenca_cambial_frete antes de exibir
             const diferencaCambialFreteValidada = validarDiferencaCambialFrete(valores.diferenca_cambial_frete);
             if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
                 $(`#diferenca_cambial_frete-${rowId}`).val('');
             } else {
-                $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferencaCambialFreteValidada));
+                $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferencaCambialFreteValidada, 2));
             }
-            $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob));
+            $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob, 2));
 
 
 
@@ -2494,19 +2510,21 @@
                 const taxaSisComexUnitaria_BB = fatorTaxaSiscomex_AY * fobTotal * dolar;
 
                 // Atualiza campos de fatores e taxa siscomex
-                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX));
-                $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY));
-                $(`#taxa_siscomex-${rowId}`).val(MoneyUtils.formatMoney(taxaSisComexUnitaria_BB));
+                $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX, 2));
+                $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY, 2));
+                $(`#taxa_siscomex-${rowId}`).val(MoneyUtils.formatMoney(taxaSisComexUnitaria_BB, 2));
 
 
                 // Atualiza campos de fator_vlr_fob e campos externos
-                $(`#fator_vlr_fob-${rowId}`).val(fatorVlrFob_AX.toFixed(6));
+                // Usar formatMoney para truncar sem arredondar
+                $(`#fator_vlr_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX, 6));
                 const camposExternos = getCamposExternos();
                 for (let campo of camposExternos) {
                     const campoEl = $(`#${campo}-${rowId}`);
                     const valorOriginal = MoneyUtils.parseMoney(campoEl.val());
                     const valorComFator = valorOriginal * fatorVlrFob_AX;
-                    campoEl.val(valorComFator.toFixed(6));
+                    // Usar formatMoney para truncar sem arredondar
+                    campoEl.val(MoneyUtils.formatMoney(valorComFator, 6));
                 }
             }
 
@@ -2594,7 +2612,7 @@
 
                 for (let campo of campos) {
                     const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0
-                    const valorDistribuido = MoneyUtils.formatMoney(valorCampo * fatorVlrFob_AX)
+                    const valorDistribuido = MoneyUtils.formatMoney(valorCampo * fatorVlrFob_AX, 2)
                     desp_desenbaraco_parte_1 += valorCampo * fatorVlrFob_AX;
                     $(`#${campo}-${i}`).val(valorDistribuido)
                 }
@@ -2632,14 +2650,15 @@
                         diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade
 
                 const custo_total_final = custo_unitario_final * qquantidade
-                $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco))
-                $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final))
-                $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final))
+                $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2))
+                $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2))
+                $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2))
             }
 
             // Atualizar totalizadores após recalcular campos externos
             atualizarTotalizadores();
         }
+
         $(document).on('click', '.removeLine', function() {
             Swal.fire({
                 title: 'Você tem certeza que deseja excluir este registro?',
@@ -2766,14 +2785,14 @@
             const faixa = faixas.find(f => quantidade >= f.min && quantidade <= f.max);
             if (!faixa) return valorRegistroDI;
 
-            // Se a tabela já tiver total -> usa ele
+            // Se a tabela já tiver total -> usa ele (sem arredondar, manter precisão máxima)
             if (faixa.total !== null) {
-                return parseFloat(faixa.total.toFixed(2));
+                return faixa.total; // Retornar valor exato sem arredondar
             }
 
-            // Se não tiver total na tabela -> aplica fórmula B
+            // Se não tiver total na tabela -> aplica fórmula B (sem arredondar)
             const total = valorRegistroDI + (quantidade * faixa.adicional);
-            return parseFloat(total.toFixed(2));
+            return total; // Retornar valor exato sem arredondar
         }
 
 
@@ -2802,17 +2821,17 @@
 
             if (moedaFrete && moedaFrete !== 'USD') {
                 colunaFreteMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][frete_moeda_estrangeira]" id="frete_moeda_estrangeira-${newIndex}" value=""></td>`;
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_moeda_estrangeira]" id="frete_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
             if (moedaSeguro && moedaSeguro !== 'USD') {
                 colunaSeguroMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][seguro_moeda_estrangeira]" id="seguro_moeda_estrangeira-${newIndex}" value=""></td>`;
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_moeda_estrangeira]" id="seguro_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 colunaAcrescimoMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][acrescimo_moeda_estrangeira]" id="acrescimo_moeda_estrangeira-${newIndex}" value=""></td>`;
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acrescimo_moeda_estrangeira]" id="acrescimo_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
             let colunasFOB = getColunasFOBCondicionais(newIndex, moedaProcesso);
@@ -2858,10 +2877,10 @@
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
         
         <!-- VLR CFR e SERVICE CHARGES -->
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][vlr_crf_total]" id="vlr_crf_total-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][vlr_crf_unit]" id="vlr_crf_unit-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][service_charges]" id="service_charges-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][service_charges_brl]" id="service_charges_brl-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_total]" id="vlr_crf_total-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_unit]" id="vlr_crf_unit-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges]" id="service_charges-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges_brl]" id="service_charges_brl-${newIndex}" value=""></td>
         
         <!-- Resto das colunas permanecem iguais -->
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][thc_usd]" id="thc_usd-${newIndex}" value=""></td>
@@ -2913,8 +2932,8 @@
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][armaz_ana]" id="armaz_ana-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][lavagem_container]" id="lavagem_container-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_anapolis]" id="rep_anapolis-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal7" readonly name="produtos[${newIndex}][desp_anapolis]" id="desp_anapolis-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal7" readonly name="produtos[${newIndex}][correios]" id="correios-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_anapolis]" id="desp_anapolis-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][correios]" id="correios-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][li_dta_honor_nix]" id="li_dta_honor_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][honorarios_nix]" id="honorarios_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
