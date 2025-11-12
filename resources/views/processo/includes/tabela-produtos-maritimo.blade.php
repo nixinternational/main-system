@@ -81,6 +81,9 @@
                                     $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
                                 }
 
+                                // Colunas VLR CFR e SERVICE CHARGES (adicionadas após ACRESC. FRETE R$)
+                                $colspanBeforeMiddleRow += 4; // VLR CFR TOTAL + VLR CFR UNIT + SERVICE CHARGES + SERVICE CHARGES R$
+                                
                                 // Colunas fixas após (THC até VLR TOTAL NF C/ICMS-ST)
                                 $colspanBeforeMiddleRow += 30; // THC USD até VLR TOTAL NF C/ICMS-ST
 
@@ -107,6 +110,8 @@
                                     'armaz_ana',
                                     'lavagem_container',
                                     'rep_anapolis',
+                                    'desp_anapolis',
+                                    'correios',
                                     'li_dta_honor_nix',
                                     'honorarios_nix',
                                 ];
@@ -203,6 +208,10 @@
                             @endif
                             <th>ACRESC. FRETE USD</th>
                             <th>ACRESC. FRETE R$</th>
+                            <th>VLR CFR TOTAL</th>
+                            <th>VLR CFR UNIT</th>
+                            <th>SERVICE CHARGES</th>
+                            <th>SERVICE CHARGES R$</th>
 
                             <th>THC USD</th>
                             <th>THC R$</th>
@@ -255,6 +264,8 @@
                             <th>ARMAZ. ANA</th>
                             <th>LAVAGEM CONT</th>
                             <th>REP. ANAPOLIS</th>
+                            <th>DESP. ANÁPOLIS</th>
+                            <th>CORREIOS</th>
                             <th>LI+DTA+HONOR.NIX</th>
                             <th>HONORÁRIOS NIX</th>
                             <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
@@ -475,6 +486,38 @@
                                         name="produtos[{{ $index }}][acresc_frete_brl]"
                                         id="acresc_frete_brl-{{ $index }}"
                                         value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][vlr_crf_total]"
+                                        id="vlr_crf_total-{{ $index }}"
+                                        value="{{ $processoProduto->vlr_crf_total ? number_format($processoProduto->vlr_crf_total, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][vlr_crf_unit]"
+                                        id="vlr_crf_unit-{{ $index }}"
+                                        value="{{ $processoProduto->vlr_crf_unit ? number_format($processoProduto->vlr_crf_unit, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][service_charges]"
+                                        id="service_charges-{{ $index }}"
+                                        value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][service_charges_brl]"
+                                        id="service_charges_brl-{{ $index }}"
+                                        value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <!-- Resto das colunas permanecem iguais -->
@@ -865,6 +908,22 @@
                                         name="produtos[{{ $index }}][rep_anapolis]"
                                         id="rep_anapolis-{{ $index }}"
                                         value="{{ $processoProduto->rep_anapolis ? number_format($processoProduto->rep_anapolis, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][desp_anapolis]"
+                                        id="desp_anapolis-{{ $index }}"
+                                        value="{{ $processoProduto->desp_anapolis ? number_format($processoProduto->desp_anapolis, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][correios]"
+                                        id="correios-{{ $index }}"
+                                        value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>

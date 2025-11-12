@@ -365,6 +365,8 @@ class ProcessoController extends Controller
                             'armaz_ana' => isset($produto['armaz_ana']) ? $this->parseMoneyToFloat($produto['armaz_ana']) : null,
                             'lavagem_container' => isset($produto['lavagem_container']) ? $this->parseMoneyToFloat($produto['lavagem_container']) : null,
                             'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
+                            'desp_anapolis' => isset($produto['desp_anapolis']) ? $this->parseMoneyToFloat($produto['desp_anapolis']) : null,
+                            'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
                             'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
                             'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
                             'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
@@ -375,6 +377,10 @@ class ProcessoController extends Controller
                             "descricao" => $produto['descricao'],
                             'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
                             'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
+                            'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
+                            'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
+                            'service_charges' => isset($produto['service_charges']) ? $this->parseMoneyToFloat($produto['service_charges']) : null,
+                            'service_charges_brl' => isset($produto['service_charges_brl']) ? $this->parseMoneyToFloat($produto['service_charges_brl']) : null,
                         ]
                     );
 
@@ -390,6 +396,7 @@ class ProcessoController extends Controller
                 'isps_code' => $this->parseMoneyToFloat($request->isps_code),
                 'handling' => $this->parseMoneyToFloat($request->handling),
                 'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
+                'service_charges' => $this->parseMoneyToFloat($request->service_charges),
                 'afrmm' => $this->parseMoneyToFloat($request->afrmm),
                 'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
                 'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
@@ -398,6 +405,8 @@ class ProcessoController extends Controller
                 'armaz_ana' => $this->parseMoneyToFloat($request->armaz_ana),
                 'lavagem_container' => $this->parseMoneyToFloat($request->lavagem_container),
                 'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
+                'desp_anapolis' => $this->parseMoneyToFloat($request->desp_anapolis),
+                'correios' => $this->parseMoneyToFloat($request->correios),
                 'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
                 'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
                 'diferenca_cambial_frete' => $this->parseMoneyToFloat($request->diferenca_cambial_frete),
@@ -486,7 +495,9 @@ class ProcessoController extends Controller
             "acrescimo_frete_usd" => $this->parseMoneyToFloat($request->acrescimo_frete_usd),
             "acrescimo_frete_brl" => $this->parseMoneyToFloat($request->acrescimo_frete_brl),
             "thc_capatazia" => $this->parseMoneyToFloat($request->thc_capatazia),
+            "service_charges" => $this->parseMoneyToFloat($request->service_charges),
             "peso_bruto" => $this->parseMoneyToFloat($request->peso_bruto),
+            "peso_liquido" => $this->parseMoneyToFloat($request->peso_liquido),
             'frete_internacional_moeda' => $request->frete_internacional_moeda,
             'seguro_internacional_moeda' => $request->seguro_internacional_moeda,
             'acrescimo_frete_moeda' => $request->acrescimo_frete_moeda,
@@ -522,6 +533,7 @@ class ProcessoController extends Controller
             'isps_code' => $this->parseMoneyToFloat($request->isps_code),
             'handling' => $this->parseMoneyToFloat($request->handling),
             'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
+            'service_charges' => $this->parseMoneyToFloat($request->service_charges),
             'afrmm' => $this->parseMoneyToFloat($request->afrmm),
             'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
             'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
@@ -530,8 +542,11 @@ class ProcessoController extends Controller
             'armaz_ana' => $this->parseMoneyToFloat($request->armaz_ana),
             'lavagem_container' => $this->parseMoneyToFloat($request->lavagem_container),
             'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
+            'desp_anapolis' => $this->parseMoneyToFloat($request->desp_anapolis),
+            'correios' => $this->parseMoneyToFloat($request->correios),
             'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
             'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
+            'peso_liquido' => $this->parseMoneyToFloat($request->peso_liquido),
         ];
         Processo::where('id', $id)->update($dadosProcesso);
         return back()->with('messages', ['success' => ['Cabeçalho do processo atualizado com sucesso!']]);

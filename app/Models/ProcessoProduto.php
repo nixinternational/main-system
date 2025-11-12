@@ -73,6 +73,8 @@ class ProcessoProduto extends Model
         'armaz_ana',
         'lavagem_container',
         'rep_anapolis',
+        'desp_anapolis',
+        'correios',
         'li_dta_honor_nix',
         'honorarios_nix',
         'desp_desenbaraco',
@@ -89,6 +91,10 @@ class ProcessoProduto extends Model
         'acrescimo_moeda',
             'fob_unit_moeda_estrangeira',
     'fob_total_moeda_estrangeira',
+        'vlr_crf_total',
+        'vlr_crf_unit',
+        'service_charges',
+        'service_charges_brl',
 
     ];
     protected $casts = [

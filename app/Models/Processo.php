@@ -19,6 +19,7 @@ class Processo extends Model
         'valor_cif',
         'taxa_dolar',
         'thc_capatazia',
+        'service_charges',
         'peso_bruto',
         'peso_liquido',
         'ii',
@@ -63,6 +64,8 @@ class Processo extends Model
         'armaz_ana',
         'lavagem_container',
         'rep_anapolis',
+        'desp_anapolis',
+        'correios',
         'li_dta_honor_nix',
         'honorarios_nix',
     ];

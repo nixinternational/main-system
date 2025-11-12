@@ -149,16 +149,23 @@
                    </div>
 
                    <div class="col-md-2">
+                       <label for="service_charges" class="form-label">SERVICE CHARGES (USD)</label>
+                       <input
+                           value="{{ isset($processo->service_charges) ? number_format($processo->service_charges, 7, ',', '.') : '' }}"
+                           class="form-control moneyReal7" name="service_charges" id="service_charges">
+                   </div>
+
+                   <div class="col-md-2">
                        <label for="peso_bruto" class="form-label">PESO BRUTO</label>
                        <input type="text"
                            value="{{ isset($processo->peso_bruto) ? number_format($processo->peso_bruto, 4, ',', '.') : '' }}"
                            class="form-control moneyReal" name="peso_bruto" id="peso_bruto">
                    </div>
                    <div class="col-md-2">
-                       <label for="peso_bruto" class="form-label">PESO LÍQUIDO</label>
+                       <label for="peso_liquido" class="form-label">PESO LÍQUIDO</label>
                        <input type="text"
                            value="{{ isset($processo->peso_liquido) ? number_format($processo->peso_liquido, 4, ',', '.') : '' }}"
-                           class="form-control moneyReal" readonly>
+                           class="form-control moneyReal" readonly name="peso_liquido" id="peso_liquido">
                    </div>
                    <div class="col-md-2">
                        <label for="multa" class="form-label">MULTA</label>
