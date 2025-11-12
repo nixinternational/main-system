@@ -95,6 +95,7 @@ class ProcessoProduto extends Model
         'vlr_crf_unit',
         'service_charges',
         'service_charges_brl',
+        'service_charges_moeda_estrangeira',
 
     ];
     protected $casts = [

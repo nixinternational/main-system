@@ -381,6 +381,7 @@ class ProcessoController extends Controller
                             'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
                             'service_charges' => isset($produto['service_charges']) ? $this->parseMoneyToFloat($produto['service_charges']) : null,
                             'service_charges_brl' => isset($produto['service_charges_brl']) ? $this->parseMoneyToFloat($produto['service_charges_brl']) : null,
+                            'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : null,
                         ]
                     );
 
@@ -496,6 +497,10 @@ class ProcessoController extends Controller
             "acrescimo_frete_brl" => $this->parseMoneyToFloat($request->acrescimo_frete_brl),
             "thc_capatazia" => $this->parseMoneyToFloat($request->thc_capatazia),
             "service_charges" => $this->parseMoneyToFloat($request->service_charges),
+            "service_charges_moeda" => $request->service_charges_moeda,
+            "service_charges_usd" => $this->parseMoneyToFloat($request->service_charges_usd),
+            "service_charges_brl" => $this->parseMoneyToFloat($request->service_charges_brl),
+            "cotacao_service_charges" => $this->parseMoneyToFloat($request->cotacao_service_charges, 4),
             "peso_bruto" => $this->parseMoneyToFloat($request->peso_bruto),
             "peso_liquido" => $this->parseMoneyToFloat($request->peso_liquido),
             'frete_internacional_moeda' => $request->frete_internacional_moeda,
@@ -534,6 +539,10 @@ class ProcessoController extends Controller
             'handling' => $this->parseMoneyToFloat($request->handling),
             'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
             'service_charges' => $this->parseMoneyToFloat($request->service_charges),
+            'service_charges_moeda' => $request->service_charges_moeda,
+            'service_charges_usd' => $this->parseMoneyToFloat($request->service_charges_usd),
+            'service_charges_brl' => $this->parseMoneyToFloat($request->service_charges_brl),
+            'cotacao_service_charges' => $this->parseMoneyToFloat($request->cotacao_service_charges, 4),
             'afrmm' => $this->parseMoneyToFloat($request->afrmm),
             'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
             'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),

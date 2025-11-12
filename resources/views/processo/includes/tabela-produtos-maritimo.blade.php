@@ -67,22 +67,30 @@
                                     $colspanBeforeMiddleRow += 2; // FRETE USD + FRETE R$
                                 }
 
-                                // Colunas SEGURO
-                                if ($moedaSeguro != 'USD') {
-                                    $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
+                                // Colunas VLR CFR (após FRETE)
+                                $colspanBeforeMiddleRow += 2; // VLR CFR UNIT + VLR CFR TOTAL
+
+                                // Colunas SERVICE CHARGES (após CFR)
+                                $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
+                                if ($moedaServiceCharges != 'USD') {
+                                    $colspanBeforeMiddleRow += 3; // SERVICE CHARGES MOEDA + SERVICE CHARGES USD + SERVICE CHARGES R$
                                 } else {
-                                    $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
+                                    $colspanBeforeMiddleRow += 2; // SERVICE CHARGES USD + SERVICE CHARGES R$
                                 }
 
-                                // Colunas ACRÉSCIMO
+                                // Colunas ACRÉSCIMO (após SERVICE CHARGES)
                                 if ($moedaAcrescimo != 'USD') {
                                     $colspanBeforeMiddleRow += 3; // ACRESC MOEDA + ACRESC USD + ACRESC R$
                                 } else {
                                     $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
                                 }
 
-                                // Colunas VLR CFR e SERVICE CHARGES (adicionadas após ACRESC. FRETE R$)
-                                $colspanBeforeMiddleRow += 4; // VLR CFR TOTAL + VLR CFR UNIT + SERVICE CHARGES + SERVICE CHARGES R$
+                                // Colunas SEGURO (após ACRÉSCIMO)
+                                if ($moedaSeguro != 'USD') {
+                                    $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
+                                } else {
+                                    $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
+                                }
                                 
                                 // Colunas fixas após (THC até VLR TOTAL NF C/ICMS-ST)
                                 $colspanBeforeMiddleRow += 30; // THC USD até VLR TOTAL NF C/ICMS-ST
@@ -195,23 +203,33 @@
                             <th>FRETE INT.USD</th>
                             <th>FRETE INT.R$</th>
 
-                            <!-- SEGURO - Colunas condicionais -->
-                            @if ($moedaSeguro != 'USD')
-                                <th>SEGURO INT.{{ $moedaSeguro }}</th>
-                            @endif
-                            <th>SEGURO INT.USD</th>
-                            <th>SEGURO INT.R$</th>
+                            <!-- CFR - Após FRETE -->
+                            <th>VLR CFR UNIT</th>
+                            <th>VLR CFR TOTAL</th>
 
-                            <!-- ACRÉSCIMO - Colunas condicionais -->
+                            <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
+                            @php
+                                $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
+                            @endphp
+                            @if ($moedaServiceCharges != 'USD')
+                                <th>SERVICE CHARGES {{ $moedaServiceCharges }}</th>
+                            @endif
+                            <th>SERVICE CHARGES USD</th>
+                            <th>SERVICE CHARGES R$</th>
+
+                            <!-- ACRÉSCIMO - Colunas condicionais (após SERVICE CHARGES) -->
                             @if ($moedaAcrescimo != 'USD')
                                 <th>ACRESC. FRETE {{ $moedaAcrescimo }}</th>
                             @endif
                             <th>ACRESC. FRETE USD</th>
                             <th>ACRESC. FRETE R$</th>
-                            <th>VLR CFR TOTAL</th>
-                            <th>VLR CFR UNIT</th>
-                            <th>SERVICE CHARGES</th>
-                            <th>SERVICE CHARGES R$</th>
+
+                            <!-- SEGURO - Colunas condicionais (após ACRÉSCIMO) -->
+                            @if ($moedaSeguro != 'USD')
+                                <th>SEGURO INT.{{ $moedaSeguro }}</th>
+                            @endif
+                            <th>SEGURO INT.USD</th>
+                            <th>SEGURO INT.R$</th>
 
                             <th>THC USD</th>
                             <th>THC R$</th>
@@ -438,32 +456,53 @@
                                         value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 7, ',', '.') : '' }}">
                                 </td>
 
-                                <!-- SEGURO - Colunas condicionais -->
-                                @if ($moedaSeguro != 'USD')
+                                <!-- CFR - Após FRETE -->
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][vlr_crf_unit]"
+                                        id="vlr_crf_unit-{{ $index }}"
+                                        value="{{ $processoProduto->vlr_crf_unit ? number_format($processoProduto->vlr_crf_unit, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][vlr_crf_total]"
+                                        id="vlr_crf_total-{{ $index }}"
+                                        value="{{ $processoProduto->vlr_crf_total ? number_format($processoProduto->vlr_crf_total, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
+                                @php
+                                    $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
+                                @endphp
+                                @if ($moedaServiceCharges != 'USD')
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
                                             class="form-control moneyReal7" readonly
-                                            name="produtos[{{ $index }}][seguro_moeda_estrangeira]"
-                                            id="seguro_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                            name="produtos[{{ $index }}][service_charges_moeda_estrangeira]"
+                                            id="service_charges_moeda_estrangeira-{{ $index }}"
+                                            value="{{ $processoProduto->service_charges_moeda_estrangeira ? number_format($processoProduto->service_charges_moeda_estrangeira, 7, ',', '.') : '' }}">
                                     </td>
                                 @endif
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
                                         class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][seguro_usd]"
-                                        id="seguro_usd-{{ $index }}"
-                                        value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][service_charges]"
+                                        id="service_charges-{{ $index }}"
+                                        value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 7, ',', '.') : '' }}">
                                 </td>
+
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
                                         class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][seguro_brl]"
-                                        id="seguro_brl-{{ $index }}"
-                                        value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][service_charges_brl]"
+                                        id="service_charges_brl-{{ $index }}"
+                                        value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 7, ',', '.') : '' }}">
                                 </td>
 
-                                <!-- ACRÉSCIMO - Colunas condicionais -->
+                                <!-- ACRÉSCIMO - Colunas condicionais (após SERVICE CHARGES) -->
                                 @if ($moedaAcrescimo != 'USD')
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
@@ -488,36 +527,29 @@
                                         value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 7, ',', '.') : '' }}">
                                 </td>
 
+                                <!-- SEGURO - Colunas condicionais (após ACRÉSCIMO) -->
+                                @if ($moedaSeguro != 'USD')
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal7" readonly
+                                            name="produtos[{{ $index }}][seguro_moeda_estrangeira]"
+                                            id="seguro_moeda_estrangeira-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 7, ',', '.') : '' }}">
+                                    </td>
+                                @endif
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
                                         class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][vlr_crf_total]"
-                                        id="vlr_crf_total-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_crf_total ? number_format($processoProduto->vlr_crf_total, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][seguro_usd]"
+                                        id="seguro_usd-{{ $index }}"
+                                        value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 7, ',', '.') : '' }}">
                                 </td>
-
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
                                         class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][vlr_crf_unit]"
-                                        id="vlr_crf_unit-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_crf_unit ? number_format($processoProduto->vlr_crf_unit, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][service_charges]"
-                                        id="service_charges-{{ $index }}"
-                                        value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][service_charges_brl]"
-                                        id="service_charges_brl-{{ $index }}"
-                                        value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][seguro_brl]"
+                                        id="seguro_brl-{{ $index }}"
+                                        value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <!-- Resto das colunas permanecem iguais -->

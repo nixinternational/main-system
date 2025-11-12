@@ -331,14 +331,25 @@
             let fatorValorFobSum = 0;
             let fatorTxSiscomexSum = 0;
 
+            const moedaServiceCharges = $('#service_charges_moeda').val();
+            
             rows.each(function() {
                 const rowId = this.id.replace('row-', '')
                 // Somar valores
                 Object.keys(totais).forEach(campo => {
-                    const elemento = $(`#${campo}-${rowId}`);
-                    if (elemento.length > 0) {
-                        const valor = MoneyUtils.parseMoney(elemento.val()) || 0;
-                        totais[campo] += valor;
+                    // Para service_charges, se a moeda não for USD, usar service_charges_moeda_estrangeira
+                    if (campo === 'service_charges' && moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                        const elemento = $(`#service_charges_moeda_estrangeira-${rowId}`);
+                        if (elemento.length > 0) {
+                            const valor = MoneyUtils.parseMoney(elemento.val()) || 0;
+                            totais[campo] += valor;
+                        }
+                    } else {
+                        const elemento = $(`#${campo}-${rowId}`);
+                        if (elemento.length > 0) {
+                            const valor = MoneyUtils.parseMoney(elemento.val()) || 0;
+                            totais[campo] += valor;
+                        }
                     }
                 });
 
@@ -406,22 +417,30 @@
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
 
-            // COLUNAS SEGURO
-            const moedaSeguro = $('#seguro_internacional_moeda').val();
-            if (moedaSeguro && moedaSeguro !== 'USD') {
-                let totalSeguroMoeda = 0;
-                rows.each(function() {
-                    const rowId = this.id.replace('row-', '')
-                    totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
-                });
-                tr +=
-                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 2)}</td>`;
+            // COLUNAS CFR (após FRETE)
+            tr += `<td></td>`; // VLR CFR UNIT não é somado (é unitário)
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
+            
+            // COLUNAS SERVICE CHARGES (após CFR)
+            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 7)}</td>`;
             }
+            
+            // Para service_charges USD, precisamos somar o campo service_charges (que é USD) quando a moeda não for USD
+            let totalServiceChargesUSD = 0;
+            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                rows.each(function() {
+                    const rowId = this.id.replace('row-', '');
+                    totalServiceChargesUSD += MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
+                });
+            } else {
+                totalServiceChargesUSD = totais.service_charges;
+            }
+            
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalServiceChargesUSD, 7)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 7)}</td>`;
 
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
-
-            // COLUNAS ACRÉSCIMO
+            // COLUNAS ACRÉSCIMO (após SERVICE CHARGES)
             const moedaAcrescimo = $('#acrescimo_frete_moeda').val();
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 let totalAcrescimoMoeda = 0;
@@ -439,11 +458,20 @@
             tr +=
                 `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 2)}</td>`;
 
-            // NOVAS COLUNAS: VLR CFR e SERVICE CHARGES
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
-            tr += `<td></td>`; // VLR CFR UNIT não é somado (é unitário)
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 2)}</td>`;
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 2)}</td>`;
+            // COLUNAS SEGURO (após ACRÉSCIMO)
+            const moedaSeguro = $('#seguro_internacional_moeda').val();
+            if (moedaSeguro && moedaSeguro !== 'USD') {
+                let totalSeguroMoeda = 0;
+                rows.each(function() {
+                    const rowId = this.id.replace('row-', '')
+                    totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
+                });
+                tr +=
+                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 2)}</td>`;
+            }
+
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
 
             // Continuar com as demais colunas...
             tr += `
@@ -601,6 +629,20 @@
             } else {
                 $('[id*="acrescimo_moeda_estrangeira-"]').closest('td').hide();
             }
+            
+            // Mostrar/ocultar colunas de service_charges
+            const moedaServiceCharges = $('#service_charges_moeda').val();
+            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                $('[id*="service_charges_moeda_estrangeira-"]').closest('td').show();
+                $('th').each(function() {
+                    let texto = $(this).text();
+                    if (texto.includes('SERVICE CHARGES') && !texto.includes('USD') && !texto.includes('R$')) {
+                        $(this).text('SERVICE CHARGES ' + moedaServiceCharges).show();
+                    }
+                });
+            } else {
+                $('[id*="service_charges_moeda_estrangeira-"]').closest('td').hide();
+            }
         }
 
         function converterMoedaProcessoParaUSD(valor, moedaProcesso) {
@@ -717,7 +759,7 @@
         $(document).ready(function() {
             reordenarLinhas();
             // Chamar quando as moedas mudarem
-            $('#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda, #moeda_processo')
+            $('#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda, #service_charges_moeda, #moeda_processo')
                 .on('change', function() {
                     setTimeout(atualizarVisibilidadeColunasMoeda, 100);
                 });
@@ -869,7 +911,9 @@
             });
 
             // Listener para SERVICE_CHARGES do processo - recalcular todos os produtos
-            $('#service_charges').on('blur change', function() {
+            $('#service_charges').on('blur change input', function() {
+                // Converter imediatamente quando o valor mudar
+                convertToUSDAndBRL('service_charges');
                 // Recalcular toda a tabela quando service_charges do processo mudar
                 setTimeout(function() {
                     recalcularTodaTabela();
@@ -957,45 +1001,64 @@
         // Função para converter valor: moeda original -> USD -> BRL
         function convertToUSDAndBRL(inputId) {
             const cotacoes = getCotacaoesProcesso();
-            const valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
+            const valor = MoneyUtils.parseMoney($(`#${inputId}`).val()) || 0;
             const codigoMoeda = $(`#${inputId}_moeda`).val();
-            const cotacaoMoeda = MoneyUtils.parseMoney($(`#cotacao_${inputId}`).val());
+            
+            // Primeiro tentar pegar a cotação do campo, depois do objeto de cotações
+            let cotacaoMoeda = MoneyUtils.parseMoney($(`#cotacao_${inputId}`).val());
+            
+            if (!cotacaoMoeda || cotacaoMoeda === 0) {
+                cotacaoMoeda = (cotacoes && cotacoes[codigoMoeda]) ? cotacoes[codigoMoeda].venda : 0;
+            }
 
-            if (!codigoMoeda || !valor || valor === 0) {
+            if (!codigoMoeda) {
                 $(`#${inputId}_usd`).val('');
                 $(`#${inputId}_brl`).val('');
                 return;
             }
 
+            if (valor === 0 || !valor) {
+                $(`#${inputId}_usd`).val('0,0000000');
+                $(`#${inputId}_brl`).val('0,0000000');
+                return;
+            }
+
             let valorUSD = 0;
             let valorBRL = 0;
-            const cotacaoUSD = cotacoes['USD'] ? cotacoes['USD'].venda : 1;
+            const cotacaoUSD = (cotacoes && cotacoes['USD']) ? cotacoes['USD'].venda : 1;
 
             // Se a moeda já for USD
             if (codigoMoeda === 'USD') {
                 valorUSD = valor;
                 valorBRL = valor * cotacaoUSD;
             } else {
-                // Converter de moeda original para BRL primeiro
-                let cotacaoOriginal = cotacaoMoeda;
-                if (!cotacaoOriginal || cotacaoOriginal === 0) {
-                    cotacaoOriginal = cotacoes[codigoMoeda] ? cotacoes[codigoMoeda].venda : 0;
+                // Se não tem cotação, não pode converter
+                if (!cotacaoMoeda || cotacaoMoeda === 0) {
+                    $(`#${inputId}_usd`).val('');
+                    $(`#${inputId}_brl`).val('');
+                    return;
                 }
 
-                if (cotacaoOriginal > 0) {
-                    // Converter para BRL: valor original * cotação original
-                    valorBRL = valor * cotacaoOriginal;
-                    
-                    // Converter de BRL para USD: valor BRL / cotação USD
-                    if (cotacaoUSD > 0) {
-                        valorUSD = valorBRL / cotacaoUSD;
-                    }
+                // Converter de moeda original para BRL primeiro
+                valorBRL = valor * cotacaoMoeda;
+                
+                // Converter de BRL para USD: valor BRL / cotação USD
+                if (cotacaoUSD > 0) {
+                    valorUSD = valorBRL / cotacaoUSD;
                 }
             }
 
             // Atualizar campos
-            $(`#${inputId}_usd`).val(MoneyUtils.formatMoney(valorUSD, 2));
-            $(`#${inputId}_brl`).val(MoneyUtils.formatMoney(valorBRL, 2));
+            const usdField = $(`#${inputId}_usd`);
+            const brlField = $(`#${inputId}_brl`);
+            
+            if (usdField.length) {
+                usdField.val(MoneyUtils.formatMoney(valorUSD, 7));
+            }
+            
+            if (brlField.length) {
+                brlField.val(MoneyUtils.formatMoney(valorBRL, 7));
+            }
         }
 
         function updateValorReal(inputId, spanId, automatic = true) {
@@ -1007,25 +1070,50 @@
             let dolar = getCotacaoesProcesso();
 
             let valor = MoneyUtils.parseMoney($(`#${inputId}`).val());
-            let codigoMoeda = $(`#${inputId}_moeda`).val()
+            let codigoMoeda = $(`#${inputId}_moeda`).val();
             let nome = $(`#${inputId}_moeda option:selected`).text();
-            $(`#description_moeda_${inputId}`).text(`Taxa: ${nome}`)
+            console.log({
+                inputId,
+                spanId,
+                dolar,
+                codigoMoeda,
+                nome,
+                valor
+            })
+            // Atualizar símbolo da moeda se existir o elemento
+            if ($(`#description_moeda_${inputId}`).length) {
+                $(`#description_moeda_${inputId}`).text(`Taxa: ${nome}`);
+            }
 
-
-            if (codigoMoeda && dolar[codigoMoeda]) {
+            if (codigoMoeda && dolar && dolar[codigoMoeda]) {
                 let convertido = dolar[codigoMoeda].venda;
                 $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 4));
+                
+                // Log apenas para service_charges quando setar a cotação
+                if (inputId === 'service_charges') {
+                    console.log(`Cotação setada para service_charges: ${codigoMoeda} = ${convertido}`);
+                }
 
-                const data = new Date(dolar[codigoMoeda].data);
-
-                const formatada = data.getFullYear() + '-' +
-                    String(data.getMonth() + 1).padStart(2, '0') + '-' +
-                    String(data.getDate() + 1).padStart(2, '0');
-
-                $(`#data_moeda_${inputId}`).val(formatada);
-
+                // Tentar obter a data da cotação
+                if (dolar[codigoMoeda].data) {
+                    try {
+                        const data = new Date(dolar[codigoMoeda].data);
+                        if (!isNaN(data.getTime())) {
+                            const formatada = data.getFullYear() + '-' +
+                                String(data.getMonth() + 1).padStart(2, '0') + '-' +
+                                String(data.getDate()).padStart(2, '0');
+                            $(`#data_moeda_${inputId}`).val(formatada);
+                        }
+                    } catch (e) {
+                        // Erro silencioso
+                    }
+                }
             } else {
-                $(`#${spanId}`).val(0);
+                // Se não encontrou a cotação
+                if (inputId === 'service_charges') {
+                    console.log(`Cotação NÃO encontrada para service_charges. Moeda: ${codigoMoeda}, Cotações disponíveis:`, Object.keys(dolar || {}));
+                }
+                $(`#${spanId}`).val('');
                 $(`#data_moeda_${inputId}`).val('');
             }
         };
@@ -1226,12 +1314,45 @@
 
 
             $('.moedas').on('select2:select', function(e) {
+                const inputId = this.id.replace('_moeda', '');
                 updateValorReal('frete_internacional', 'frete_internacional_visualizacao');
                 updateValorReal('seguro_internacional', 'seguro_internacional_visualizacao');
                 updateValorReal('acrescimo_frete', 'acrescimo_frete_visualizacao');
+                updateValorReal('service_charges', 'service_charges_visualizacao');
                 updateValorCotacao('frete_internacional', 'cotacao_frete_internacional');
                 updateValorCotacao('seguro_internacional', 'cotacao_seguro_internacional');
                 updateValorCotacao('acrescimo_frete', 'cotacao_acrescimo_frete');
+                updateValorCotacao('service_charges', 'cotacao_service_charges');
+                
+                // Garantir que a conversão seja feita após atualizar a cotação
+                setTimeout(function() {
+                    convertToUSDAndBRL('frete_internacional');
+                    convertToUSDAndBRL('seguro_internacional');
+                    convertToUSDAndBRL('acrescimo_frete');
+                    convertToUSDAndBRL('service_charges');
+                }, 100);
+            });
+            
+            // Listener específico para service_charges_moeda - FORÇAR CONVERSÃO
+            $('#service_charges_moeda').on('select2:select', function(e) {
+                const moeda = $(this).val();
+                updateCurrencySymbol('service_charges');
+                // Forçar atualização da cotação
+                updateValorCotacao('service_charges', 'cotacao_service_charges');
+                // Aguardar e FORÇAR conversão
+                setTimeout(function() {
+                    convertToUSDAndBRL('service_charges');
+                    atualizarVisibilidadeColunasMoeda();
+                    recalcularTodaTabela();
+                }, 200);
+            });
+            
+            // Listener para cotacao_service_charges - FORÇAR CONVERSÃO quando cotação mudar
+            $('#cotacao_service_charges').on('blur change input', function() {
+                setTimeout(function() {
+                    convertToUSDAndBRL('service_charges');
+                    setTimeout(recalcularTodaTabela, 100);
+                }, 50);
             });
 
 
@@ -1347,21 +1468,25 @@
             });
 
             // Atualizar símbolos e conversões quando a moeda mudar
-            $(document).on('change', '#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda', function() {
+            $(document).on('change', '#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda, #service_charges_moeda', function() {
                 const inputId = this.id.replace('_moeda', '');
                 updateCurrencySymbol(inputId);
-                convertToUSDAndBRL(inputId);
+                updateValorCotacao(inputId, `cotacao_${inputId}`);
+                // Aguardar um pouco para garantir que a cotação foi atualizada
+                setTimeout(function() {
+                    convertToUSDAndBRL(inputId);
+                }, 150);
             });
 
             // Atualizar conversões quando o valor mudar
-            $('#frete_internacional, #seguro_internacional, #acrescimo_frete').trigger('change');
-            $(document).on('change', '#frete_internacional, #seguro_internacional, #acrescimo_frete', function() {
+            $('#frete_internacional, #seguro_internacional, #acrescimo_frete, #service_charges').trigger('change');
+            $(document).on('change', '#frete_internacional, #seguro_internacional, #acrescimo_frete, #service_charges', function() {
                 const inputId = this.id;
                 convertToUSDAndBRL(inputId);
             });
 
             // Atualizar conversões quando a cotação mudar
-            $(document).on('change', '#cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete', function() {
+            $(document).on('change', '#cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete, #cotacao_service_charges', function() {
                 let inputId = '';
                 if (this.id === 'cotacao_frete_internacional') {
                     inputId = 'frete_internacional';
@@ -1369,6 +1494,8 @@
                     inputId = 'seguro_internacional';
                 } else if (this.id === 'cotacao_acrescimo_frete') {
                     inputId = 'acrescimo_frete';
+                } else if (this.id === 'cotacao_service_charges') {
+                    inputId = 'service_charges';
                 }
                 if (inputId) {
                     convertToUSDAndBRL(inputId);
@@ -1380,9 +1507,15 @@
                 updateCurrencySymbol('frete_internacional');
                 updateCurrencySymbol('seguro_internacional');
                 updateCurrencySymbol('acrescimo_frete');
+                updateCurrencySymbol('service_charges');
+                updateValorCotacao('frete_internacional', 'cotacao_frete_internacional');
+                updateValorCotacao('seguro_internacional', 'cotacao_seguro_internacional');
+                updateValorCotacao('acrescimo_frete', 'cotacao_acrescimo_frete');
+                updateValorCotacao('service_charges', 'cotacao_service_charges');
                 convertToUSDAndBRL('frete_internacional');
                 convertToUSDAndBRL('seguro_internacional');
                 convertToUSDAndBRL('acrescimo_frete');
+                convertToUSDAndBRL('service_charges');
             }, 500);
 
         }, 1000);
@@ -1391,9 +1524,11 @@
             convertToUSDAndBRL('frete_internacional');
             convertToUSDAndBRL('seguro_internacional');
             convertToUSDAndBRL('acrescimo_frete');
+            convertToUSDAndBRL('service_charges');
             updateValorCotacao('frete_internacional', 'cotacao_frete_internacional');
             updateValorCotacao('seguro_internacional', 'cotacao_seguro_internacional');
             updateValorCotacao('acrescimo_frete', 'cotacao_acrescimo_frete');
+            updateValorCotacao('service_charges', 'cotacao_service_charges');
         })
 
         function showDeleteConfirmation(documentId) {
@@ -1601,9 +1736,35 @@
                     const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
                     const thcRow = thc_capataziaBase * fatorPesoRow;
                     
-                    // Calcular SERVICE_CHARGES rateado por fator peso (do processo)
+                    // Calcular SERVICE_CHARGES rateado por fator peso (do processo) com conversão de moeda
                     const serviceChargesBase = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
-                    const serviceChargesRow = serviceChargesBase * fatorPesoRow;
+                    const moedaServiceCharges = $('#service_charges_moeda').val();
+                    let serviceChargesBaseUSD = 0;
+                    let serviceChargesMoedaEstrangeira = 0;
+                    
+                    if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                        let cotacaoProcesso = getCotacaoesProcesso();
+                        let cotacaoMoedaServiceCharges = MoneyUtils.parseMoney($('#cotacao_service_charges').val());
+                        let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
+                        
+                        // Se não tem cotação específica, usar a cotação padrão da moeda
+                        if (!cotacaoMoedaServiceCharges && cotacaoProcesso[moedaServiceCharges]) {
+                            cotacaoMoedaServiceCharges = cotacaoProcesso[moedaServiceCharges].venda;
+                        }
+                        
+                        if (cotacaoMoedaServiceCharges) {
+                            let moedaEmUSD = cotacaoMoedaServiceCharges / cotacaoUSD;
+                            serviceChargesBaseUSD = serviceChargesBase * moedaEmUSD;
+                            serviceChargesMoedaEstrangeira = serviceChargesBase * fatorPesoRow;
+                        } else {
+                            // Fallback 1:1
+                            serviceChargesBaseUSD = serviceChargesBase;
+                        }
+                    } else {
+                        serviceChargesBaseUSD = serviceChargesBase;
+                    }
+                    
+                    const serviceChargesRow = serviceChargesBaseUSD * fatorPesoRow;
                     const serviceChargesBrl = serviceChargesRow * dolar;
 
                     // Calcular VLR_CRF_TOTAL = FOB_TOTAL_USD + FRETE_INT_USD
@@ -1688,7 +1849,8 @@
                         vlrCrfUnit,
                         quantidade: quantidadeAtual,
                         serviceChargesRow,
-                        serviceChargesBrl
+                        serviceChargesBrl,
+                        serviceChargesMoedaEstrangeira
                     });
                 }
             });
@@ -2184,6 +2346,19 @@
             }
             
             // Calcular SERVICE_CHARGES rateado do processo (não mais editável por produto)
+            let moedaServiceCharges = $('#service_charges_moeda').val();
+            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                if (valores.serviceChargesMoedaEstrangeira !== undefined) {
+                    $(`#service_charges_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesMoedaEstrangeira));
+                } else {
+                    // Fallback: calcular se não foi passado
+                    const serviceChargesBase = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
+                    const fatorPesoRow = valores.fatorPesoRow || MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
+                    const serviceChargesMoedaEstrangeira = serviceChargesBase * fatorPesoRow;
+                    $(`#service_charges_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesMoedaEstrangeira));
+                }
+            }
+            
             if (valores.serviceChargesRow !== undefined) {
                 $(`#service_charges-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesRow));
             } else {
@@ -2425,7 +2600,7 @@
                 $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final))
                 $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final))
             }
-            
+
             // Atualizar totalizadores após recalcular campos externos
             atualizarTotalizadores();
         }

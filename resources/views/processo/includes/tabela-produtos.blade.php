@@ -1159,6 +1159,7 @@
                             'isps_code',
                             'handling',
                             'capatazia',
+                            'service_charges',
                             'afrmm',
                             'armazenagem_sts',
                             'frete_dta_sts_ana',
