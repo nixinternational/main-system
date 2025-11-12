@@ -1102,7 +1102,7 @@
                                         if (fieldName === 'service_charges' || fieldName === 'service_charges_brl' || fieldName === 'service_charges_moeda_estrangeira') {
                                             value = '';
                                         } else {
-                                            value = '';
+                                        value = '';
                                         }
                                     }
 

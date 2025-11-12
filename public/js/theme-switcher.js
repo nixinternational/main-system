@@ -45,35 +45,10 @@
         document.dispatchEvent(event);
     }
 
-    // Criar seletor de tema
+    // Criar seletor de tema - DESABILITADO (agora está no perfil)
     function createThemeSelector() {
-        // Verificar se já existe
-        if (document.getElementById('themeSelector')) {
-            return;
-        }
-        
-        const selector = document.createElement('div');
-        selector.className = 'theme-selector';
-        selector.id = 'themeSelector';
-        
-        // Botões de tema - sempre visíveis
-        Object.keys(themes).forEach(themeKey => {
-            const theme = themes[themeKey];
-            const btn = document.createElement('div');
-            btn.className = `theme-selector-btn theme-${theme.class}`;
-            btn.title = theme.name;
-            btn.setAttribute('data-theme', themeKey);
-            
-            btn.addEventListener('click', function() {
-                applyTheme(themeKey);
-            });
-            
-            selector.appendChild(btn);
-        });
-        
-        document.body.appendChild(selector);
-        
-        // Inicializar com tema salvo do localStorage
+        // Seletor de tema foi movido para a página de perfil
+        // Apenas inicializar com tema salvo do localStorage
         const savedTheme = getSavedTheme();
         applyTheme(savedTheme);
     }
@@ -90,12 +65,7 @@
         });
     }
 
-    // Inicializar quando DOM estiver pronto
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', createThemeSelector);
-    } else {
-        createThemeSelector();
-    }
+
 
     // Exportar função para uso externo
     window.NixTheme = {

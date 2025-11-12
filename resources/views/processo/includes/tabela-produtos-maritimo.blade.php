@@ -91,7 +91,7 @@
                                 } else {
                                     $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
                                 }
-                                
+
                                 // Colunas fixas após (THC até VLR TOTAL NF C/ICMS-ST)
                                 $colspanBeforeMiddleRow += 30; // THC USD até VLR TOTAL NF C/ICMS-ST
 
@@ -457,8 +457,8 @@
                                 </td>
 
                                 <!-- CFR - Após FRETE -->
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
                                         class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][vlr_crf_unit]"
                                         id="vlr_crf_unit-{{ $index }}"
@@ -1193,7 +1193,7 @@
                                         if (fieldName === 'service_charges' || fieldName === 'service_charges_brl' || fieldName === 'service_charges_moeda_estrangeira') {
                                             value = '';
                                         } else {
-                                            value = '';
+                                        value = '';
                                         }
                                     }
 

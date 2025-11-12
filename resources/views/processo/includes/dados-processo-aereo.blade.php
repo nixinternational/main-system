@@ -191,7 +191,7 @@
                            <div class="icon-wrapper mr-3" >
                                <i class="fas fa-exchange-alt" style="margin:0"></i>
                            </div>
-                           <h4 class="mb-0" style="color: #b7aa09;">Cotações de Moedas</h4>
+                           <h4 class="mb-0">Cotações de Moedas</h4>
                        </div>
                        <button class="btn btn-custom-primary" type="button" id="atualizarCotacoes">
                            <i class="fas fa-sync-alt me-3"></i>Atualizar cotações para hoje
@@ -511,13 +511,11 @@
                        border-radius: 2px;
                    }
 
-                   /* Cabeçalho da Seção */
-                   .section-header {
-                       background: linear-gradient(135deg, rgba(183, 170, 9, 0.1) 0%, rgba(183, 170, 9, 0.05) 100%);
-                       padding: 20px;
-                       border-radius: 10px;
-                       border-left: 4px solid #b7aa09;
-                   }
+                  /* Cabeçalho da Seção */
+                  .section-header {
+                      padding: 20px;
+                      border-radius: 10px;
+                  }
 
                    .icon-wrapper {
                        width: 45px;
@@ -533,10 +531,10 @@
                    }
 
                    /* Card Item */
-                   .card-item {
-                       background: #ffffff;
-                       border: 1px solid #e0e0e0;
-                       border-radius: 12px;
+                  .card-item {
+                      background: #ffffff;
+                      border: none;
+                      border-radius: 12px;
                        box-sizing: border-box;
                        display: flex;
                        flex-direction: column;
@@ -544,10 +542,9 @@
                        overflow: hidden;
                    }
 
-                   .card-item:hover {
-                       transform: translateY(-5px);
-                       box-shadow: 0 8px 20px rgba(183, 170, 9, 0.2) !important;
-                       border-color: #b7aa09;
+                  .card-item:hover {
+                      transform: translateY(-5px);
+                      box-shadow: 0 8px 20px rgba(183, 170, 9, 0.2) !important;
                    }
 
                    /* Cabeçalho do Card */

@@ -33,9 +33,12 @@
         (function() {
             try {
                 var theme = localStorage.getItem('nix-theme') || 'yellow';
+                var background = localStorage.getItem('nix-background') || 'white';
                 document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-background', background);
             } catch(e) {
                 document.documentElement.setAttribute('data-theme', 'yellow');
+                document.documentElement.setAttribute('data-background', 'white');
             }
         })();
     </script>
@@ -62,15 +65,24 @@
                 @if (app()->environment('local'))
                     <h5 style="background-color: red; color: white;padding:10px; border-radius:8px;">AMBIENTE DE DESENVOLVIMENTO</h5>
                 @endif
-                @if (!Cache::get('ip_protection_enabled', false))
-                    <h5 style="background-color: orange; color: black;padding:10px; border-radius:8px; margin-left: 10px;">
-                        PROTEÇÃO DE IP DESABILITADA
-                    </h5>
-                @else
-                    <h5 style="background-color: green; color: white; padding:10px; border-radius:8px; margin-left: 10px;">
-                        PROTEÇÃO DE IP DESABILITADA
-                    </h5>
-                @endif
+                @php
+                    $ipProtectionEnabled = Cache::get('ip_protection_enabled', false);
+                @endphp
+                <div class="ip-protection-status" data-enabled="{{ $ipProtectionEnabled ? 'true' : 'false' }}">
+                    <span class="ip-protection-indicator">
+                        <i class="fas {{ $ipProtectionEnabled ? 'fa-shield-alt' : 'fa-shield' }}"></i>
+                        <span class="ip-protection-text">
+                            {{ $ipProtectionEnabled ? 'PROTEÇÃO DE IP HABILITADA' : 'PROTEÇÃO DE IP DESABILITADA' }}
+                        </span>
+                    </span>
+                    <form action="{{ route('toogle-ip-protection') }}" method="POST" class="ip-protection-toggle-form">
+                        @csrf
+                        <button type="submit" class="ip-protection-toggle-btn" title="{{ $ipProtectionEnabled ? 'Desabilitar proteção de IP' : 'Habilitar proteção de IP' }}">
+                            <i class="fas {{ $ipProtectionEnabled ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
+                            <span class="ip-protection-btn-text">{{ $ipProtectionEnabled ? 'ATIVO' : 'INATIVO' }}</span>
+                        </button>
+                    </form>
+                </div>
 
             </ul>
             <div class="">
@@ -173,8 +185,10 @@
     @endif
 
     <script src="{{ asset('js/adminlte.min.js') }}" defer></script>
-    <!-- Theme Switcher -->
-    <script src="{{ asset('js/theme-switcher.js') }}"></script>
+    <!-- Theme Switcher - Apenas se não estiver na página de profile -->
+    @if (!request()->routeIs('profile.show'))
+        <script src="{{ asset('js/theme-switcher.js') }}"></script>
+    @endif
 
     @vite('resources/js/app.js')
 

@@ -59,7 +59,12 @@
         /* Removido sticky da primeira coluna - agora o cabeçalho inteiro será fixo */
         .table-dados-complementares td:first-child,
         .table-dados-basicos td:first-child {
-            color: black !important;
+            color: var(--theme-text) !important;
+        }
+        
+        [data-background="black"] .table-dados-complementares td:first-child,
+        [data-background="black"] .table-dados-basicos td:first-child {
+            color: var(--theme-primary) !important;
         }
 
         .table-products th {

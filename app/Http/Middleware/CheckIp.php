@@ -79,12 +79,31 @@ class CheckIp
         // Se for uma rede no formato CIDR (ex: 192.168.0.0/16)
         if (strpos($range, '/') !== false) {
             list($subnet, $bits) = explode('/', $range);
-            $ip = ip2long($ip);
-            $subnet = ip2long($subnet);
+            
+            // Validar se o IP e subnet são válidos
+            $ipLong = ip2long($ip);
+            $subnetLong = ip2long($subnet);
+            
+            // Se ip2long retornar false, o IP é inválido
+            if ($ipLong === false || $subnetLong === false) {
+                return false;
+            }
+            
+            // Para IPv6, usar uma abordagem diferente
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+                // IPv6 não suportado completamente aqui, retornar false por segurança
+                return false;
+            }
+            
+            $bits = (int) $bits;
+            if ($bits < 0 || $bits > 32) {
+                return false;
+            }
+            
             $mask = -1 << (32 - $bits);
-            $subnet &= $mask;
+            $subnetLong &= $mask;
 
-            return ($ip & $mask) == $subnet;
+            return ($ipLong & $mask) == $subnetLong;
         }
 
         return false;

@@ -45,7 +45,7 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::middleware(['auth'])->group(function(){
-    Route::any('toogle-ip-protection',[UserController::class, 'toggleIpProtection']);
+    Route::any('toogle-ip-protection',[UserController::class, 'toggleIpProtection'])->name('toogle-ip-protection');
 });
 Route::middleware(['auth','check.ip'])->group(function () {
 

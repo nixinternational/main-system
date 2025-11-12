@@ -19,18 +19,19 @@
             <form class="mb-4" id="formSearch" action="{{ route('cliente.index') }}" method="GET">
                 <div class="row mb-3">
                     <div class="col-md-8 col-sm-12 mb-2 mb-md-0">
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text bg-light">
-                                    <i class="fas fa-search"></i>
-                                </span>
+                        <div class="d-flex gap-2 align-items-stretch">
+                            <div class="input-group flex-grow-1">
+                                <input value="{{ $_GET['search'] ?? '' }}" type="text" id="search" name="search" 
+                                    class="form-control" placeholder="Buscar por nome, CNPJ, cidade..." 
+                                    aria-label="Buscar">
                             </div>
-                            <input value="{{ $_GET['search'] ?? '' }}" type="text" id="search" name="search" 
-                                class="form-control" placeholder="Buscar por nome, CNPJ, cidade..." 
-                                aria-label="Buscar" aria-describedby="basic-addon1">
-                            <button type="button" onclick="window.location.href='{{ route('cliente.index') }}'" 
-                                class="btn btn-outline-secondary">
-                                <i class="fas fa-times me-1"></i>Limpar
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                                <span>Buscar</span>
+                            </button>
+                            <button type="button" id="btnLimpar" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                                <span>Limpar</span>
                             </button>
                         </div>
                     </div>
@@ -107,11 +108,30 @@
 
 @push('scripts')
     <script>
-        document.getElementById('search').addEventListener('change', function() {
-            document.getElementById('formSearch').submit()
-        })
-        document.getElementById('paginacao').addEventListener('change', function() {
-            document.getElementById('formSearch').submit()
-        })
+        document.addEventListener('DOMContentLoaded', function() {
+            const formSearch = document.getElementById('formSearch');
+            const searchInput = document.getElementById('search');
+            const btnLimpar = document.getElementById('btnLimpar');
+            const paginacao = document.getElementById('paginacao');
+            
+            // Botão limpar
+            if (btnLimpar) {
+                btnLimpar.addEventListener('click', function() {
+                    searchInput.value = '';
+                    // Remove o parâmetro search da URL e mantém apenas paginacao se existir
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('search');
+                    url.searchParams.delete('page');
+                    window.location.href = url.toString();
+                });
+            }
+            
+            // Paginação
+            if (paginacao) {
+                paginacao.addEventListener('change', function() {
+                    formSearch.submit();
+                });
+            }
+        });
     </script>
 @endpush
