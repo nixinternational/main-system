@@ -1581,12 +1581,12 @@
         }
 
         #custom-tabs-three-home .btn-primary {
-            background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+            background: var(--theme-gradient-primary);
             border: none;
         }
 
         #custom-tabs-three-home .btn-primary:hover {
-            background: linear-gradient(135deg, #9a8e08 0%, #7d7307 100%);
+            background: var(--theme-gradient-primary-hover);
         }
 
         /* Espaçamento de ícones nos botões */
@@ -1603,12 +1603,12 @@
         }
 
         .table-products-scrollbar::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+            background: var(--theme-gradient-primary);
             border-radius: 4px;
         }
 
         .table-products-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #9a8e08 0%, #7d7307 100%);
+            background: var(--theme-gradient-primary-hover);
         }
 
         /* Container da tabela */
@@ -1682,12 +1682,12 @@
 
         /* MiddleRow inputs */
         .table-products .middleRowInputTh {
-            background-color: #fff9cc !important;
+            background-color: #B6A909 !important;
         }
 
         .table-products .middleRowInputTh input {
-            background-color: #fff9cc !important;
-            border: 1px solid #b7aa09;
+            background-color: #B6A909 !important;
+            border: 1px solid #9A8E08;
         }
 
         /* Separador de adição */

@@ -125,9 +125,9 @@
 
                 <br>
                 <br>
-                SHANDONG MESSI POWER CO LTD
+                {{ $cliente->nome ?? 'NÃO INFORMADO' }}
             </td>
-            <td colspan="2">CNPJ / CPF:</td>
+            <td colspan="2">CNPJ / CPF: {{ $cliente->cnpj ?? '-' }}</td>
             <td colspan="1">DATA EMISSÃO: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</td>
 
         </tr>
@@ -135,23 +135,23 @@
             <td colspan="13">ENDEREÇO:
                 <br>
                 <br>
-                JINAN, SHANDONG, CHINA
+                {{ $cliente->endereco ?? 'NÃO INFORMADO' }}
             </td>
             <td colspan="3">BAIRRO/DISTRITO: <br><br>
-                JINAN DISTRICT</td>
-            <td colspan="1">CEP:</td>
-            <td colspan="1">DATA SAÍDA/ENTRADA</td>
+                {{ $cliente->bairro ?? '-' }}</td>
+            <td colspan="1">CEP: {{ $cliente->cep ?? '-' }}</td>
+            <td colspan="1">DATA SAÍDA/ENTRADA: {{ $processo->data_desembaraco_fim ? \Carbon\Carbon::parse($processo->data_desembaraco_fim)->format('d/m/Y') : '-' }}</td>
 
 
         </tr>
         <tr>
             <td colspan="13">MUNICÍPIO: <br><br>
-                JINAN SHANDONG
+                {{ $cliente->cidade ?? 'NÃO INFORMADO' }}
             </td>
-            <td colspan="2" class="blue">FONE / FAX:</td>
-            <td colspan="1">UF:</td>
-            <td colspan="1">INSC. ESTADUAL:</td>
-            <td colspan="1">HORA SAÍDA:</td>
+            <td colspan="2" class="blue">FONE / FAX: {{ $cliente->telefone ?? '-' }}</td>
+            <td colspan="1">UF: {{ $cliente->estado ?? '-' }}</td>
+            <td colspan="1">INSC. ESTADUAL: {{ $cliente->inscricao_estadual ?? '-' }}</td>
+            <td colspan="1">HORA SAÍDA: {{ \Carbon\Carbon::now()->format('H:i') }}</td>
 
         </tr>
 
@@ -176,22 +176,26 @@
             <th>OUTROS</th>
         </tr>
 
-        <!-- Exemplo de linha de produto (replicável) -->
-        @foreach (range(1, 10) as $index)
+        <!-- Produtos do processo -->
+        @forelse ($processoProdutos as $index => $produto)
             <tr>
-                <td>001</td>
-                <td colspan="3">Produto Exemplo</td>
-                <td>0000.00.00</td>
-                <td>XXX</td>
-                <td>PCS</td>
-                <td>10</td>
-                <td>50,00</td>
-                <td>500,00</td>
-                <td>18%</td>
-                <td>5%</td>
-                <td>-</td>
+                <td>{{ optional($produto->produto)->codigo ?? ($produto->item ?? ($index + 1)) }}</td>
+                <td colspan="3">{{ optional($produto->produto)->nome ?? ($produto->descricao ?? 'PRODUTO NÃO INFORMADO') }}</td>
+                <td>{{ optional($produto->produto)->ncm ?? '0000.00.00' }}</td>
+                <td>{{ $produto->icms_percent ? number_format($produto->icms_percent, 2, ',', '.') . '%' : '-' }}</td>
+                <td>{{ optional($produto->produto)->unidade ?? 'UN' }}</td>
+                <td class="right">{{ number_format($produto->quantidade ?? 0, 2, ',', '.') }}</td>
+                <td class="right">{{ number_format($produto->valor_unit_nf ?? 0, 2, ',', '.') }}</td>
+                <td class="right">{{ number_format($produto->valor_total_nf ?? 0, 2, ',', '.') }}</td>
+                <td class="right">{{ $produto->icms_percent ? number_format($produto->icms_percent, 2, ',', '.') . '%' : '-' }}</td>
+                <td class="right">{{ $produto->ipi_percent ? number_format($produto->ipi_percent, 2, ',', '.') . '%' : '-' }}</td>
+                <td class="right">{{ number_format(($produto->valor_pis ?? 0) + ($produto->valor_cofins ?? 0), 2, ',', '.') }}</td>
             </tr>
-        @endforeach
+        @empty
+            <tr>
+                <td colspan="13" class="center">Nenhum produto cadastrado</td>
+            </tr>
+        @endforelse
     </table>
 
     <h4 style="margin-top: 30px">CÁLCULO DO IMPOSTO</h4>
@@ -199,45 +203,45 @@
         <tr>
             <td>
                 BASE DE CÁLCULO<br><br>
-                -
+                <span class="right">{{ number_format(($totalProdutos ?? 0) - ($totalIPI ?? 0), 2, ',', '.') }}</span>
             </td>
             <td>
                 VALOR DO ICMS<br><br>
-                -
+                <span class="right">{{ number_format($totalICMS ?? 0, 2, ',', '.') }}</span>
             </td>
             <td>
                 BASE DE CÁLCULO ICMS SUBSTITUIÇÃO<br><br>
-                -
+                <span class="right">{{ number_format(collect($processoProdutos)->sum('base_icms_st') ?? 0, 2, ',', '.') }}</span>
             </td>
             <td>
                 VALOR DO ICMS DE SUBSTITUIÇÃO<br><br>
-                -
+                <span class="right">{{ number_format($totalICMSST ?? 0, 2, ',', '.') }}</span>
             </td>
             <td>
                 VALOR TOTAL DOS PRODUTOS<br><br>
-                -
+                <span class="right">{{ number_format($totalProdutos ?? 0, 2, ',', '.') }}</span>
             </td>
         </tr>
         <tr>
             <td>
                 VALOR DO FRETE<br><br>
-                -
+                <span class="right">{{ number_format(collect($processoProdutos)->sum('frete_brl') ?? 0, 2, ',', '.') }}</span>
             </td>
             <td>
                 VALOR DO SEGURO<br><br>
-                -
+                <span class="right">{{ number_format(collect($processoProdutos)->sum('seguro_brl') ?? 0, 2, ',', '.') }}</span>
             </td>
             <td>
                 OUTRAS DESPESAS ACESSÓRIAS<br><br>
-                -
+                <span class="right">{{ number_format(($processo->outras_taxas_agente ?? 0) + ($processo->despesas_aduaneiras ?? 0), 2, ',', '.') }}</span>
             </td>
             <td>
                 VALOR TOTAL DO IPI<br><br>
-                -
+                <span class="right">{{ number_format($totalIPI ?? 0, 2, ',', '.') }}</span>
             </td>
             <td>
                 VALOR TOTAL DA NOTA<br><br>
-                -
+                <span class="right">{{ number_format($totalNota ?? 0, 2, ',', '.') }}</span>
             </td>
         </tr>
     </table>
@@ -295,12 +299,12 @@
             </td>
         </tr>
         <tr>
-            <td>QUANTIDADE <br> <br> XXXX</td>
-            <td colspan="6">ESPÉCIE <br><br>XXXX</td>
-            <td colspan="2">MARCA<br><br>XXXX</td>
-            <td colspan="3">NUMERO<br><br>XXXX</td>
-            <td colspan="2">PESO BRUTO<br><br>XXXX</td>
-            <td colspan="2">PESO LIQUIDO<br><br>XXXX</td>
+            <td>QUANTIDADE <br> <br> {{ number_format(collect($processoProdutos)->sum('quantidade') ?? 0, 2, ',', '.') }}</td>
+            <td colspan="6">ESPÉCIE <br><br>{{ $processo->especie ?? 'NÃO INFORMADO' }}</td>
+            <td colspan="2">MARCA<br><br>-</td>
+            <td colspan="3">NUMERO<br><br>{{ $processo->numero_processo ?? '-' }}</td>
+            <td colspan="2">PESO BRUTO<br><br>{{ number_format($processo->peso_bruto ?? 0, 3, ',', '.') }} KG</td>
+            <td colspan="2">PESO LIQUIDO<br><br>{{ number_format($processo->peso_liquido ?? 0, 3, ',', '.') }} KG</td>
         </tr>
 
     </table>
@@ -311,11 +315,52 @@
         <tr>
             <td style="width: 45%" class="small">
                 INFOS COMPLEMENTARES:<br><br>
-                DI 24/2387113-8 – DESEMBARACADA EM 31/10/2024 – PROCESSO 1911PM-024 T1 R$ 59.247,85 / IPI R$ 5.977,14 /
-                PIS R$ 10.961,59 / COFINS R$ 54.742,87 / TAXA DO DÓLAR: 5,7801 – DESPESAS ADUANEIRAS: TX SISCOMEX R$
-                47,30 – ABERMN R$ 3.659,39 – ARMAZ DTA R$ 2.505,79 – FRETE DTA R$: 17.110,00 – HONORÁRIOS DESP. R$ 76,00
-                – MERCADORIA A SER RETIRADA NO PORTO SECO CENTRO OESTE ANÁPOLIS. O PAGAMENTO DO ICMS SERÁ EFETUADO APÓS
-                A ENTRADA DA MERCADORIA EM SEU NOVO ESTABELECIMENTO.
+                @if($processo->di)
+                    DI {{ $processo->di }} 
+                @endif
+                @if($processo->data_desembaraco_fim)
+                    – DESEMBARACADA EM {{ \Carbon\Carbon::parse($processo->data_desembaraco_fim)->format('d/m/Y') }}
+                @endif
+                @if($processo->numero_processo && $processo->numero_processo != '-')
+                    – PROCESSO {{ $processo->numero_processo }}
+                @endif
+                @if($totalICMS)
+                    ICMS R$ {{ number_format($totalICMS, 2, ',', '.') }}
+                @endif
+                @if($totalIPI)
+                    / IPI R$ {{ number_format($totalIPI, 2, ',', '.') }}
+                @endif
+                @if($totalPIS)
+                    / PIS R$ {{ number_format($totalPIS, 2, ',', '.') }}
+                @endif
+                @if($totalCOFINS)
+                    / COFINS R$ {{ number_format($totalCOFINS, 2, ',', '.') }}
+                @endif
+                @if($processo->taxa_dolar)
+                    / TAXA DO DÓLAR: {{ number_format($processo->taxa_dolar, 4, ',', '.') }}
+                @endif
+                @if($processo->taxa_siscomex || $processo->afrmm || $processo->armazenagem_sts || $processo->frete_dta_sts_ana || $processo->honorarios_nix)
+                    – DESPESAS ADUANEIRAS:
+                    @if($processo->taxa_siscomex)
+                        TX SISCOMEX R$ {{ number_format(collect($processoProdutos)->sum('taxa_siscomex') ?? 0, 2, ',', '.') }}
+                    @endif
+                    @if($processo->afrmm)
+                        / AFRMM R$ {{ number_format($processo->afrmm, 2, ',', '.') }}
+                    @endif
+                    @if($processo->armazenagem_sts)
+                        / ARMAZ DTA R$ {{ number_format($processo->armazenagem_sts, 2, ',', '.') }}
+                    @endif
+                    @if($processo->frete_dta_sts_ana)
+                        / FRETE DTA R$ {{ number_format($processo->frete_dta_sts_ana, 2, ',', '.') }}
+                    @endif
+                    @if($processo->honorarios_nix)
+                        / HONORÁRIOS DESP. R$ {{ number_format($processo->honorarios_nix, 2, ',', '.') }}
+                    @endif
+                @endif
+                @if($processo->desp_anapolis)
+                    – MERCADORIA A SER RETIRADA NO PORTO SECO CENTRO OESTE ANÁPOLIS.
+                @endif
+                O PAGAMENTO DO ICMS SERÁ EFETUADO APÓS A ENTRADA DA MERCADORIA EM SEU NOVO ESTABELECIMENTO.
                 <br><br>
             </td>
             <td style="width: 45%" colspan="3">RESERVADO AO FISCO</td>

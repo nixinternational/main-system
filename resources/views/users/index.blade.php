@@ -8,7 +8,7 @@
 @endsection
 @section('content')
     <div class="card shadow-sm">
-        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+        <div class="card-header" style="background: var(--theme-gradient-primary);">
             <h3 class="card-title mb-0 text-white">
                 <i class="fas fa-users me-2"></i>Listagem de Usuários
             </h3>
@@ -17,7 +17,7 @@
             @if (!$users->isEmpty())
                 <div class="table-responsive">
                     <table class="table table-striped table-hover mb-0">
-                        <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                        <thead style="background: var(--theme-gradient-primary);">
                             <tr>
                                 <th>{!! sortable('name', 'Nome') !!}</th>
                                 <th>{!! sortable('email', 'Email') !!}</th>

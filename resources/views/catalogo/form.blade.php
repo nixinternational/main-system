@@ -5,7 +5,7 @@
 @section('content')
 
     <div class="card shadow-sm">
-        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+        <div class="card-header" style="background: var(--theme-gradient-primary);">
             <h3 class="card-title mb-0 text-white">
                 <i class="fas fa-book me-2"></i>{{ isset($catalogo) ? 'Editar Catálogo' : 'Novo Catálogo' }}
             </h3>
@@ -67,7 +67,7 @@
                             @if (!$produtos->isEmpty())
                                 {{ $produtos->appends([]) }}
                                 <table id="produtosTable" class="table shadow rounded table-striped table-hover">
-                                    <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                                    <thead style="background: var(--theme-gradient-primary);">
                                         <tr>
                                             <th>{!! sortable('modelo', 'Modelo', 'catalogo.edit') !!}</th>
                                             <th>{!! sortable('codigo', 'Codigo', 'catalogo.edit') !!}</th>

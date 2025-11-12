@@ -9,7 +9,7 @@
 
                 <div class="table-responsive">
                     <table id="fornecedorTable" class="table table-striped table-hover mb-0">
-                        <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                        <thead style="background: var(--theme-gradient-primary);">
                             <tr>
                                 <th class="text-white">Nome</th>
                                 <th class="text-white">CNPJ</th>
@@ -67,7 +67,7 @@
     <div class="modal fade" id="fornecedorModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                <div class="modal-header" style="background: var(--theme-gradient-primary);">
                     <h5 class="modal-title text-white" id="exampleModalLabel">
                         <i class="fas fa-truck me-2"></i><span>Adicionar</span> fornecedor
                     </h5>

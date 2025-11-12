@@ -83,7 +83,7 @@
     <br>
     <br>
     <div class="card shadow-sm mb-4">
-        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+        <div class="card-header" style="background: var(--theme-gradient-primary);">
             <h3 class="card-title mb-0 text-white">
                 <i class="fas fa-clock me-2"></i>Produções Pendentes
             </h3>
@@ -91,7 +91,7 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table id="pedidoTable" class="table table-striped table-hover mb-0">
-                    <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                    <thead style="background: var(--theme-gradient-primary);">
                         <tr>
                             <th>{!! sortable('id', 'ID') !!}</th>
                             <th class="text-white">Produto</th>
@@ -123,7 +123,7 @@
     </div>
 
     <div class="card shadow-sm">
-        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+        <div class="card-header" style="background: var(--theme-gradient-primary);">
             <h3 class="card-title mb-0 text-white">
                 <i class="fas fa-check-circle me-2"></i>Produções Concluídas
             </h3>
@@ -131,7 +131,7 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table id="pedidoTable" class="table table-striped table-hover mb-0">
-                    <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                    <thead style="background: var(--theme-gradient-primary);">
                         <tr>
                             <th>{!! sortable('id', '#') !!}</th>
                             <th class="text-white">Produto</th>

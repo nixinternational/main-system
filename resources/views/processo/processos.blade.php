@@ -3,7 +3,7 @@
 
 @section('content')
     <div class="card shadow-sm">
-        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+        <div class="card-header" style="background: var(--theme-gradient-primary);">
             <div class="d-flex justify-content-between align-items-center">
                 <h3 class="card-title mb-0 text-white">
                     <i class="fas fa-file-alt me-2"></i>Processos - {{ $cliente->nome ?? 'Cliente' }}
@@ -17,7 +17,7 @@
             @if (!$processos->isEmpty())
                 <div class="table-responsive">
                     <table id="clienteTable" class="table table-striped table-hover mb-0">
-                        <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                        <thead style="background: var(--theme-gradient-primary);">
                             <tr>
                                 <th>{!! sortable('codigo_interno', 'Processo', 'processo-cliente') !!}</th>
                                 <th>{!! sortable('descricao', 'Descrição', 'processo-cliente') !!}</th>

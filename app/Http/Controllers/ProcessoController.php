@@ -182,11 +182,50 @@ class ProcessoController extends Controller
     }
     public function esbocoPdf($id)
     {
-        $processo = Processo::findOrFail($id);
-        // todos os dados necessários
+        $processo = Processo::with(['cliente', 'processoProdutos.produto'])->findOrFail($id);
+        
+        // Parse dos campos monetários do processo
+        $processo = $this->parseModelFieldsFromModel($processo);
+        
+        // Parse dos campos monetários dos produtos e manter a relação produto
+        $processoProdutos = [];
+        foreach ($processo->processoProdutos as $produto) {
+            $produtoParsed = $this->parseModelFieldsFromModel($produto);
+            // Manter a relação produto após o parse
+            $produtoParsed->setRelation('produto', $produto->produto);
+            $processoProdutos[] = $produtoParsed;
+        }
+        
+        // Calcular totais
+        $totalProdutos = 0;
+        $totalICMS = 0;
+        $totalIPI = 0;
+        $totalPIS = 0;
+        $totalCOFINS = 0;
+        $totalICMSST = 0;
+        $totalNota = 0;
+        
+        foreach ($processoProdutos as $produto) {
+            $totalProdutos += $produto->valor_total_nf ?? 0;
+            $totalICMS += $produto->valor_icms_reduzido ?? 0;
+            $totalIPI += $produto->valor_ipi ?? 0;
+            $totalPIS += $produto->valor_pis ?? 0;
+            $totalCOFINS += $produto->valor_cofins ?? 0;
+            $totalICMSST += $produto->valor_icms_st ?? 0;
+            $totalNota += $produto->valor_total_nf_com_icms_st ?? 0;
+        }
+        
         $dados = [
             'processo' => $processo,
-            // outros dados como clientes, etc
+            'processoProdutos' => $processoProdutos,
+            'cliente' => $processo->cliente,
+            'totalProdutos' => $totalProdutos,
+            'totalICMS' => $totalICMS,
+            'totalIPI' => $totalIPI,
+            'totalPIS' => $totalPIS,
+            'totalCOFINS' => $totalCOFINS,
+            'totalICMSST' => $totalICMSST,
+            'totalNota' => $totalNota,
         ];
 
         $pdf = Pdf::loadView('processo.esboco', $dados);

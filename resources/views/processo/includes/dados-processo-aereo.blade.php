@@ -31,19 +31,19 @@
                        'maritimo' => [
                            'nome' => 'Marítimo', 
                            'icon' => 'fa-ship',
-                           'bgColor' => 'linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%)',
+                           'bgColor' => 'var(--theme-gradient-primary)',
                            'textColor' => '#ffffff'
                        ],
                        'aereo' => [
                            'nome' => 'Aéreo', 
                            'icon' => 'fa-plane',
-                           'bgColor' => 'linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%)',
+                           'bgColor' => 'var(--theme-gradient-primary)',
                            'textColor' => '#ffffff'
                        ],
                        'rodoviario' => [
                            'nome' => 'Rodoviário', 
                            'icon' => 'fa-truck',
-                           'bgColor' => 'linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%)',
+                           'bgColor' => 'var(--theme-gradient-primary)',
                            'textColor' => '#ffffff'
                        ],
                    ];
@@ -507,7 +507,7 @@
                    /* Seção de Divisor */
                    .divider-section {
                        height: 2px;
-                       background: linear-gradient(to right, transparent, #b7aa09, transparent);
+                       background: linear-gradient(to right, transparent, var(--theme-primary), transparent);
                        border-radius: 2px;
                    }
 
@@ -522,7 +522,7 @@
                    .icon-wrapper {
                        width: 45px;
                        height: 45px;
-                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       background: var(--theme-gradient-primary);
                        border-radius: 10px;
                        display: flex;
                        align-items: center;
@@ -552,7 +552,7 @@
 
                    /* Cabeçalho do Card */
                    .card-header-primary {
-                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       background: var(--theme-gradient-primary);
                        color: white;
                        padding: 15px 20px;
                        font-weight: 600;
@@ -625,7 +625,7 @@
 
                    /* Input Groups melhorados */
                    .input-group-text {
-                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       background: var(--theme-gradient-primary);
                        color: white;
                        border: none;
                        font-weight: 600;
@@ -655,7 +655,7 @@
 
                    /* Botão Customizado */
                    .btn-custom-primary {
-                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       background: var(--theme-gradient-primary);
                        border: none;
                        padding: 12px 30px;
                        font-weight: 600;
@@ -665,7 +665,7 @@
                    }
 
                    .btn-custom-primary:hover {
-                       background: linear-gradient(135deg, #9a8e08 0%, #7d7307 100%);
+                       background: var(--theme-gradient-primary-hover);
                        transform: translateY(-2px);
                        box-shadow: 0 6px 12px rgba(183, 170, 9, 0.5);
                        color: white;
@@ -673,7 +673,7 @@
 
                    /* Botão Salvar */
                    .btn-primary {
-                       background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);
+                       background: var(--theme-gradient-primary);
                        border: none;
                        padding: 12px 30px;
                        font-weight: 600;
@@ -682,7 +682,7 @@
                    }
 
                    .btn-primary:hover {
-                       background: linear-gradient(135deg, #9a8e08 0%, #7d7307 100%);
+                       background: var(--theme-gradient-primary-hover);
                        transform: translateY(-2px);
                        box-shadow: 0 6px 12px rgba(183, 170, 9, 0.5);
                    }

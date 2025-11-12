@@ -1,0 +1,369 @@
+/* ============================================
+   TELA DE LOGIN - DESIGN PROFISSIONAL
+   ============================================ */
+
+body.login-page {
+    background: url('/images/containers-scaled.jpeg') center center / cover no-repeat;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+body.login-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+/* Esconder seletor de tema na tela de login */
+body.login-page .theme-selector {
+    display: none !important;
+}
+
+.login-page .card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    max-width: 850px;
+    width: 100%;
+    background: #FFFFFF;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-page .card .row {
+    margin: 0;
+    min-height: 380px;
+    display: flex;
+    align-items: stretch;
+}
+
+/* Lado Esquerdo - Logo e Branding */
+.login-page .col-7 {
+    background: linear-gradient(135deg, #B6A909 0%, #D4C71C 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 25px;
+    position: relative;
+    overflow: hidden;
+    min-height: 380px;
+}
+
+.login-page .col-7::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.login-page .col-7 img,
+.login-logo {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 450px;
+    height: auto;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    animation: fadeInScale 1s ease-out;
+    object-fit: contain;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Lado Direito - Formulário */
+.login-page .col-5 {
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center !important;
+    align-items: center !important;
+    background: #FFFFFF;
+    min-height: 380px;
+    position: relative;
+}
+
+.login-page .col-5 .py-3 {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.login-page .col-5 .card-body,
+.login-page .col-5 > .card-body,
+.login-page .col-5 > div,
+.login-card-body {
+    width: 100%;
+    max-width: 100%;
+    padding: 30px 28px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    flex: 0 0 auto;
+}
+
+.login-box-msg {
+    font-size: 26px;
+    font-weight: bold;
+    color: #1A1A1A;
+    margin-bottom: 5px;
+    text-align: center;
+    font-family: 'Francophil Sans', sans-serif;
+    letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+    font-size: 13px;
+    color: #666666;
+    text-align: center;
+    margin-bottom: 20px;
+    font-family: 'Francophil Sans', sans-serif;
+}
+
+/* Inputs */
+.login-page .input-group {
+    margin-bottom: 18px;
+    position: relative;
+}
+
+.login-page .form-control {
+    height: 48px;
+    padding: 12px 18px 12px 50px;
+    border: 2px solid #E0E0E0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background-color: #F5F5F5;
+    font-family: 'Francophil Sans', sans-serif;
+}
+
+.login-page .form-control:focus {
+    border-color: #B6A909;
+    background-color: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba(182, 169, 9, 0.3);
+    transform: translateY(-2px);
+}
+
+.login-page .input-group-text {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: transparent;
+    border: none;
+    color: #666666;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    transition: color 0.3s ease;
+}
+
+.login-page .input-group-text .fas,
+.login-page .input-group-text .fa {
+    font-size: 18px;
+}
+
+.login-page .form-control:focus + .input-group-append .input-group-text,
+.login-page .form-control:focus ~ .input-group-append .input-group-text {
+    color: #B6A909;
+}
+
+/* Botão de Login */
+.login-page .btn-primary {
+    height: 48px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 10px;
+    margin-top: 8px;
+    background: linear-gradient(135deg, #B6A909 0%, #D4C71C 100%);
+    border: none;
+    box-shadow: 0 4px 15px rgba(182, 169, 9, 0.3);
+    transition: all 0.3s ease;
+    font-family: 'Francophil Sans', sans-serif;
+    color: #1A1A1A;
+}
+
+.login-page .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(182, 169, 9, 0.4);
+    background: linear-gradient(135deg, #D4C71C 0%, #B6A909 100%);
+    color: #1A1A1A;
+}
+
+.login-page .btn-primary:active {
+    transform: translateY(-1px);
+}
+
+.login-page .btn-primary:focus {
+    outline: 3px solid #B6A909;
+    outline-offset: 2px;
+}
+
+/* Link Esqueceu Senha */
+.login-page .mb-0 a,
+.login-page .mb-1 a {
+    color: #023D78;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+    font-family: 'Francophil Sans', sans-serif;
+    font-size: 14px;
+}
+
+.login-page .mb-0 a:hover,
+.login-page .mb-1 a:hover {
+    color: #B6A909;
+    transform: translateX(5px);
+}
+
+/* Mensagens de Erro */
+.login-page .invalid-feedback {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+    color: #B6A909;
+    font-weight: 500;
+    font-family: 'Francophil Sans', sans-serif;
+}
+
+.login-page .is-invalid {
+    border-color: #B6A909 !important;
+}
+
+.login-page .is-invalid:focus {
+    box-shadow: 0 0 0 4px rgba(182, 169, 9, 0.15) !important;
+}
+
+/* Loading State */
+.login-button-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-button-loading .spinner-border-sm {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+    .login-page .col-7 img,
+    .login-logo {
+        max-width: 400px;
+    }
+}
+
+@media (max-width: 992px) {
+    .login-page .col-7 img,
+    .login-logo {
+        max-width: 350px;
+    }
+}
+
+@media (max-width: 768px) {
+    body.login-page {
+        padding: 10px;
+    }
+    
+    .login-page .card .row {
+        flex-direction: column;
+        min-height: auto;
+    }
+    
+    .login-page .col-7 {
+        min-height: 180px;
+        padding: 30px 20px;
+    }
+    
+    .login-page .col-7 img,
+    .login-logo {
+        max-width: 280px;
+    }
+    
+    .login-page .col-5 {
+        padding: 30px 25px;
+    }
+    
+    .login-box-msg {
+        font-size: 24px;
+    }
+    
+    .login-page .form-control {
+        height: 48px;
+        padding: 12px 18px 12px 50px;
+    }
+    
+    .login-page .btn-primary {
+        height: 48px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-page .col-7 img,
+    .login-logo {
+        max-width: 220px;
+    }
+}
+
+/* Animações de Entrada */
+.login-card-body {
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

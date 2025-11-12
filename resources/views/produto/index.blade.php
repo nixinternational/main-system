@@ -10,7 +10,7 @@
 
 @section('content')
     <div class="card shadow-sm">
-        <div class="card-header" style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+        <div class="card-header" style="background: var(--theme-gradient-primary);">
             <h3 class="card-title mb-0 text-white">
                 <i class="fas fa-box me-2"></i>Listagem de Produtos
             </h3>
@@ -55,7 +55,7 @@
             @if (!$produtos->isEmpty())
                 <div class="table-responsive">
                     <table id="produtosTable" class="table table-striped table-hover mb-0">
-                        <thead style="background: linear-gradient(135deg, #b7aa09 0%, #9a8e08 100%);">
+                        <thead style="background: var(--theme-gradient-primary);">
                             <tr>
                                 <th>{!! sortable('id', 'ID') !!}</th>
                                 <th>{!! sortable('nome', 'Nome') !!}</th>

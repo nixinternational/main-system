@@ -127,7 +127,7 @@
         }
 
         .middleRowInputTh {
-            background-color: #ffff99 !important;
+            background-color: #B6A909 !important;
         }
 
         /* Estilo para o botão de remover */

@@ -25,7 +25,20 @@
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/vendor/bootstrap-extended.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/adminlte.min.css') }}">
+    <!-- Themes CSS -->
+    <link rel="stylesheet" href="{{ asset('css/themes.css') }}">
 
+    <!-- Aplicar tema imediatamente para evitar flash -->
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('nix-theme') || 'yellow';
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'yellow');
+            }
+        })();
+    </script>
 
     <link rel="shortcut icon" href="{{ asset('icone.png') }}">
 
@@ -92,10 +105,10 @@
         <!-- /.navbar -->
 
         <!-- Main Sidebar Container -->
-        <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color:#000">
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
-            <a href="/home" class="brand-link  d-flex align-items-center flex-column">
-                <img src="{{ asset('images/logo-preto.png') }}" alt="" class="" style=" width:140%">
+            <a href="/home" class="brand-link">
+                <img src="{{ asset('images/logo-preto.png') }}" alt="Nix International" class="brand-logo" style="width: 140%; max-width: 200px;">
                 <span class="brand-text d-none text-center font-weight-light">Nix International</span>
             </a>
 
@@ -160,6 +173,8 @@
     @endif
 
     <script src="{{ asset('js/adminlte.min.js') }}" defer></script>
+    <!-- Theme Switcher -->
+    <script src="{{ asset('js/theme-switcher.js') }}"></script>
 
     @vite('resources/js/app.js')
 

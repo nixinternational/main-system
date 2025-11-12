@@ -86,7 +86,7 @@ if (!function_exists('sortable')) {
             // Construir URL
             $url = route($route, array_merge($routeParams, $queryParams));
             
-            return '<a href="' . $url . '" class="text-white text-decoration-none d-flex align-items-center justify-content-center" style="gap: 4px;">' . 
+            return '<a href="' . $url . '" class="text-white text-decoration-none" style="display: inline-block;">' . 
                    $label . ' ' . $icon . '</a>';
         } catch (\Exception $e) {
             // Fallback: retornar apenas o label se houver erro
