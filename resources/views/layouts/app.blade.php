@@ -90,9 +90,18 @@
                 <!-- Right navbar links -->
                 <ul class="navbar-nav ml-auto">
 
-                    <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
-                        <i class="fa-solid fa-user mr-2"></i>
-                        {{ Auth::user()->name }}
+                    <a class="nav-link d-flex align-items-center" data-toggle="dropdown" href="#" aria-expanded="false">
+                        @php
+                            $avatarUrl = Auth::user()->avatar 
+                                ? asset('storage/avatars/' . Auth::user()->avatar) 
+                                : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&size=32&background=B6A909&color=fff';
+                        @endphp
+                        <img src="{{ $avatarUrl }}" 
+                             alt="{{ Auth::user()->name }}" 
+                             class="rounded-circle mr-2 user-avatar" 
+                             id="navbarAvatar"
+                             style="width: 32px; height: 32px; object-fit: cover; border: 2px solid var(--theme-primary);">
+                        <span>{{ Auth::user()->name }}</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" style="left: inherit; right: 0px;">
                         <a href="{{ route('profile.show') }}" class="dropdown-item">

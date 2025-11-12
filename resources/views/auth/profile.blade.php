@@ -26,9 +26,44 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('profile.update') }}" method="POST">
+                    <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
+
+                        <!-- Seção de Foto de Perfil -->
+                        <div class="text-center mb-4">
+                            @php
+                                $themeColor = session('nix-theme', 'yellow') === 'blue' ? '023D78' : 'B6A909';
+                                $avatarUrl = auth()->user()->avatar 
+                                    ? asset('storage/avatars/' . auth()->user()->avatar) 
+                                    : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&size=150&background=' . $themeColor . '&color=fff';
+                            @endphp
+                            <img src="{{ $avatarUrl }}" 
+                                 alt="Avatar do Usuário" 
+                                 class="img-fluid rounded-circle mb-3" 
+                                 id="avatarPreview"
+                                 style="width: 150px; height: 150px; object-fit: cover; border: 3px solid var(--theme-primary); cursor: pointer;">
+                            <div class="form-group">
+                                <label for="avatar" class="custom-file-label">
+                                    <i class="fas fa-camera me-2"></i>Alterar Foto de Perfil
+                                </label>
+                                <div class="custom-file-wrapper">
+                                    <input type="file" name="avatar" id="avatar" class="custom-file-input @error('avatar') is-invalid @enderror" accept="image/*" onchange="previewAvatar(this)">
+                                    <label for="avatar" class="custom-file-button">
+                                        <i class="fas fa-upload me-2"></i>
+                                        <span class="file-button-text">Selecionar Imagem</span>
+                                    </label>
+                                </div>
+                                @error('avatar')
+                                    <div class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                                <small class="form-text text-muted mt-2">
+                                    Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 2MB
+                                </small>
+                            </div>
+                        </div>
 
                         <div class="form-group mb-3">
                             <label for="name" class="form-label">
@@ -264,6 +299,87 @@
     .btn i {
         margin-right: 8px !important;
     }
+
+    /* Estilização do input de arquivo */
+    .custom-file-wrapper {
+        position: relative;
+        display: block;
+        width: 100%;
+    }
+
+    .custom-file-input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        z-index: -1;
+    }
+
+    .custom-file-label {
+        font-weight: bold;
+        color: var(--theme-text);
+        font-size: 15px;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .custom-file-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 24px;
+        background: var(--theme-gradient-primary);
+        color: #FFFFFF !important;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        width: 100%;
+        min-height: 42px;
+        text-decoration: none;
+        user-select: none;
+    }
+
+    .custom-file-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        background: var(--theme-gradient-primary-hover);
+        color: #FFFFFF !important;
+        text-decoration: none;
+    }
+
+    .custom-file-button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .custom-file-button i {
+        font-size: 16px;
+        margin-right: 8px;
+    }
+
+    .file-button-text {
+        display: inline-block;
+    }
+
+    /* Tema escuro */
+    [data-background="black"] .custom-file-label {
+        color: #FFFFFF !important;
+    }
+
+    [data-background="black"] .custom-file-button {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+        color: #FFFFFF !important;
+    }
+
+    [data-background="black"] .custom-file-button:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6) !important;
+        color: #FFFFFF !important;
+    }
 </style>
 @endpush
 
@@ -331,6 +447,28 @@
                 } else {
                     option.classList.remove('active');
                 }
+            });
+        }
+    });
+
+    // Função para preview do avatar
+    function previewAvatar(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatarPreview').src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Permitir clicar na imagem para selecionar arquivo
+    document.addEventListener('DOMContentLoaded', function() {
+        const avatarPreview = document.getElementById('avatarPreview');
+        const avatarInput = document.getElementById('avatar');
+        if (avatarPreview && avatarInput) {
+            avatarPreview.addEventListener('click', function() {
+                avatarInput.click();
             });
         }
     });
