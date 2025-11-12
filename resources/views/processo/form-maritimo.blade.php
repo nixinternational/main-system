@@ -347,7 +347,11 @@
                     } else {
                         const elemento = $(`#${campo}-${rowId}`);
                         if (elemento.length > 0) {
-                            const valor = MoneyUtils.parseMoney(elemento.val()) || 0;
+                            let valor = MoneyUtils.parseMoney(elemento.val()) || 0;
+                            // Validar diferenca_cambial_frete antes de somar
+                            if (campo === 'diferenca_cambial_frete') {
+                                valor = validarDiferencaCambialFrete(valor);
+                            }
                             totais[campo] += valor;
                         }
                     }
@@ -522,7 +526,7 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_frete, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(validarDiferencaCambialFrete(totais.diferenca_cambial_frete), 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>
         <td></td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 2)}</td>
@@ -1244,11 +1248,12 @@
                                 const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade,
                                     vlrIcmsReduzido, rowId);
                                 const dif_cambial_frete_processo = MoneyUtils.parseMoney($(
-                                    '#diferenca_cambial_frete').val());
+                                    '#diferenca_cambial_frete').val()) || 0;
                                 const dif_cambial_fob_processo = MoneyUtils.parseMoney($(
-                                    '#diferenca_cambial_fob').val());
-                                const diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (
+                                    '#diferenca_cambial_fob').val()) || 0;
+                                let diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (
                                     freteUsdInt * dolar);
+                                diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                                 const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (
                                     fobTotal * dolar);
                                 const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(
@@ -1812,10 +1817,11 @@
                     
                     let icms_st_percent = MoneyUtils.parsePercentage($(`#icms_st-${rowId}`).val());
                     let vlrIcmsSt = icms_st_percent > 0 ? (base_icms_st * icms_st_percent) - vlrIcmsReduzido : 0;
-                    const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val());
-                    const dif_cambial_fob_processo =  MoneyUtils.parseMoney($('#diferenca_cambial_fob').val());
-                    const diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
+                    const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val()) || 0;
+                    const dif_cambial_fob_processo =  MoneyUtils.parseMoney($('#diferenca_cambial_fob').val()) || 0;
+                    let diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
                         dolar);
+                    diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                     const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar) : 0;
 
                     atualizarCampos(rowId, {
@@ -1902,13 +1908,19 @@
                 const fobTotal = fobUnitario * quantidade;
 
                 const fatorVlrFob_AX = fobTotal / fobTotalGeral;
-                const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val());
-                const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val());
-                const diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
+                const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val()) || 0;
+                const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val()) || 0;
+                let diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
                     dolar);
+                diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
 
-                $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_frete));
+                // Se o valor for inválido ou negativo, não mostra nada no campo, caso contrário formata
+                if (diferenca_cambial_frete === 0 || isNaN(diferenca_cambial_frete) || !isFinite(diferenca_cambial_frete) || diferenca_cambial_frete < 0) {
+                    $(`#diferenca_cambial_frete-${rowId}`).val('');
+                } else {
+                    $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_frete));
+                }
                 $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob));
 
 
@@ -2196,6 +2208,15 @@
             };
         }
 
+        function validarDiferencaCambialFrete(valor) {
+            // Valida e trata o valor de diferença cambial frete
+            // Retorna 0 se o valor for inválido (NaN, null, undefined, Infinity) ou negativo
+            if (valor === null || valor === undefined || isNaN(valor) || !isFinite(valor) || valor < 0) {
+                return 0;
+            }
+            return valor;
+        }
+
         function calcularDespesas(rowId, fatorVlrFob_AX, fatorSiscomex, taxaSiscomexUnit, vlrAduaneiroBrl = null) {
             const multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
             
@@ -2208,7 +2229,8 @@
             const txDefLiPercent = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) : 0;
             const txDefLi = vlrAduaneiroBrl * txDefLiPercent;
             
-            const afrmm = $('#afrmm-' + rowId).val() ? MoneyUtils.parseMoney($('#afrmm-' + rowId).val()) : 0
+            // Removidos do cálculo: taxa_siscomex, capatazia, afrmm e honorarios_nix
+            // (são somados em outro lugar: desp_desenbaraco_parte_2)
             let armazenagem_sts = $('#armazenagem_sts-' + rowId).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' +
                     rowId).val()) :
                 0
@@ -2216,11 +2238,8 @@
                         rowId)
                     .val()) :
                 0
-            let honorarios_nix = $('#honorarios_nix-' + rowId).val() ? MoneyUtils.parseMoney($('#honorarios_nix-' + rowId)
-                .val()) : 0
 
-            return multa + txDefLi + taxaSiscomexUnit +
-                afrmm + honorarios_nix + frete_dta_sts_ana + armazenagem_sts;
+            return multa + txDefLi + frete_dta_sts_ana + armazenagem_sts;
         }
 
         function calcularBcIcmsSemReducao(base, impostos, despesas) {
@@ -2407,7 +2426,13 @@
             const valorTotalNfComIcmsStRecalculado = valores.totais.vlrTotalNfSemIcms + (valores.vlrIcmsSt || 0);
             $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado));
 
-            $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_frete));
+            // Validar e tratar diferenca_cambial_frete antes de exibir
+            const diferencaCambialFreteValidada = validarDiferencaCambialFrete(valores.diferenca_cambial_frete);
+            if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
+                $(`#diferenca_cambial_frete-${rowId}`).val('');
+            } else {
+                $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferencaCambialFreteValidada));
+            }
             $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob));
 
 
@@ -2590,7 +2615,8 @@
                 const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
                 let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0
                 const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val())
-                const diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val());
+                let diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val());
+                diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const diferenca_cambial_fob = MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val());
                 const custo_unitario_final = ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob +
                         diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade
