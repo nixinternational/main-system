@@ -40,7 +40,6 @@ use Illuminate\Support\Facades\Storage;
                                 $avatarUrl = auth()->user()->avatar 
                                     ? Storage::disk('public')->url('avatars/' . auth()->user()->avatar)
                                     : null;
-                                    dd($avatarUrl);
                             @endphp
                             <img src="{{ $avatarUrl ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&size=150&background=B6A909&color=fff' }}" 
                                  alt="Avatar do Usuário" 
