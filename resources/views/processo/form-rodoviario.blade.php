@@ -106,12 +106,12 @@
         }
 
         .table-products-scrollbar::-webkit-scrollbar-thumb {
-            background: #888;
+            background: var(--theme-scrollbar-thumb);
             border-radius: 4px;
         }
 
         .table-products-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: var(--theme-scrollbar-thumb-hover);
         }
 
         .table-products-scrollbar-content {

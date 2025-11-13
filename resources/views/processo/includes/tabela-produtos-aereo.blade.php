@@ -1270,8 +1270,10 @@
                         toast: true,
                         position: 'top-end',
                         showConfirmButton: false,
+                        showCloseButton: true,
                         timer: 3000,
                         timerProgressBar: true,
+                        allowOutsideClick: true,
                     });
 
                     Toast.fire({
@@ -1603,12 +1605,12 @@
         }
 
         .table-products-scrollbar::-webkit-scrollbar-thumb {
-            background: var(--theme-gradient-primary);
+            background: var(--theme-scrollbar-thumb);
             border-radius: 4px;
         }
 
         .table-products-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: var(--theme-gradient-primary-hover);
+            background: var(--theme-scrollbar-thumb-hover);
         }
 
         /* Container da tabela */
