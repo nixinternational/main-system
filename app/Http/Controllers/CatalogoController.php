@@ -56,8 +56,10 @@ class CatalogoController extends Controller
                 $message = $errors->unique();
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
+            $cliente = Cliente::findOrFail($request->cliente_id);
             $data = [
                 'cliente_id' => $request->cliente_id,
+                'cpf_cnpj' => $cliente->cnpj ?? null,
             ];
             $catalogo = Catalogo::create($data);
             return redirect(route('catalogo.edit', $catalogo->id))->with('messages', ['success' => ['Catálogo criado com sucesso!']]);

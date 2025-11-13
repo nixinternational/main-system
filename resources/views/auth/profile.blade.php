@@ -1,6 +1,10 @@
 @extends('layouts.app')
 @section('title', 'Meu Perfil')
 
+@php
+use Illuminate\Support\Facades\Storage;
+@endphp
+
 @push('scripts')
 <script>
     // Marcar página como profile para esconder seletor de tema
@@ -33,33 +37,34 @@
                         <!-- Seção de Foto de Perfil -->
                         <div class="text-center mb-4">
                             @php
-                                $themeColor = session('nix-theme', 'yellow') === 'blue' ? '023D78' : 'B6A909';
                                 $avatarUrl = auth()->user()->avatar 
-                                    ? asset('storage/avatars/' . auth()->user()->avatar) 
-                                    : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&size=150&background=' . $themeColor . '&color=fff';
+                                    ? Storage::disk('public')->url('avatars/' . auth()->user()->avatar)
+                                    : null;
+                                    dd($avatarUrl);
                             @endphp
-                            <img src="{{ $avatarUrl }}" 
+                            <img src="{{ $avatarUrl ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&size=150&background=B6A909&color=fff' }}" 
                                  alt="Avatar do Usuário" 
                                  class="img-fluid rounded-circle mb-3" 
                                  id="avatarPreview"
-                                 style="width: 150px; height: 150px; object-fit: cover; border: 3px solid var(--theme-primary); cursor: pointer;">
+                                 data-user-name="{{ urlencode(auth()->user()->name) }}"
+                                 data-has-avatar="{{ auth()->user()->avatar ? 'true' : 'false' }}"
+                                 data-avatar-filename="{{ auth()->user()->avatar ?? '' }}"
+                                 style="width: 150px; height: 150px; object-fit: cover; border: 3px solid var(--theme-primary); cursor: pointer;"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent(this.getAttribute('data-user-name')) + '&size=150&background=B6A909&color=fff';">
                             <div class="form-group">
-                                <label for="avatar" class="custom-file-label">
-                                    <i class="fas fa-camera me-2"></i>Alterar Foto de Perfil
-                                </label>
                                 <div class="custom-file-wrapper">
-                                    <input type="file" name="avatar" id="avatar" class="custom-file-input @error('avatar') is-invalid @enderror" accept="image/*" onchange="previewAvatar(this)">
+                                    <input type="file" name="avatar" id="avatar" class="custom-file-input @error('avatar') is-invalid @enderror" accept="image/*">
                                     <label for="avatar" class="custom-file-button">
-                                        <i class="fas fa-upload me-2"></i>
-                                        <span class="file-button-text">Selecionar Imagem</span>
+                                        <i class="fas fa-camera me-2"></i>
+                                        <span class="file-button-text">Alterar Foto de Perfil</span>
                                     </label>
                                 </div>
                                 @error('avatar')
-                                    <div class="invalid-feedback d-block">
+                                    <div class="invalid-feedback d-block mt-2">
                                         {{ $message }}
                                     </div>
                                 @enderror
-                                <small class="form-text text-muted mt-2">
+                                <small class="form-text text-muted mt-2 d-block">
                                     Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 2MB
                                 </small>
                             </div>
@@ -310,19 +315,14 @@
     .custom-file-input {
         position: absolute;
         opacity: 0;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        z-index: -1;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        cursor: pointer;
+        z-index: 1;
     }
 
-    .custom-file-label {
-        font-weight: bold;
-        color: var(--theme-text);
-        font-size: 15px;
-        display: block;
-        margin-bottom: 10px;
-    }
 
     .custom-file-button {
         display: flex;
@@ -342,6 +342,9 @@
         min-height: 42px;
         text-decoration: none;
         user-select: none;
+        position: relative;
+        z-index: 0;
+        pointer-events: none;
     }
 
     .custom-file-button:hover {
@@ -367,10 +370,6 @@
     }
 
     /* Tema escuro */
-    [data-background="black"] .custom-file-label {
-        color: #FFFFFF !important;
-    }
-
     [data-background="black"] .custom-file-button {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
         color: #FFFFFF !important;
@@ -456,21 +455,87 @@
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById('avatarPreview').src = e.target.result;
+                const preview = document.getElementById('avatarPreview');
+                if (preview) {
+                    preview.src = e.target.result;
+                    preview.setAttribute('data-has-avatar', 'true');
+                }
             };
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    // Permitir clicar na imagem para selecionar arquivo
+    // Inicializar eventos quando o DOM estiver pronto
     document.addEventListener('DOMContentLoaded', function() {
-        const avatarPreview = document.getElementById('avatarPreview');
         const avatarInput = document.getElementById('avatar');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const form = document.querySelector('form[action*="profile.update"]');
+        
+        // Atualizar avatar padrão com tema correto
+        if (avatarPreview && avatarPreview.getAttribute('data-has-avatar') === 'false') {
+            const theme = localStorage.getItem('nix-theme') || 'yellow';
+            const themeColor = theme === 'blue' ? '023D78' : 'B6A909';
+            const userName = avatarPreview.getAttribute('data-user-name');
+            avatarPreview.src = 'https://ui-avatars.com/api/?name=' + userName + '&size=150&background=' + themeColor + '&color=fff';
+        }
+        
+        // Preview ao selecionar arquivo
+        if (avatarInput) {
+            avatarInput.addEventListener('change', function() {
+                previewAvatar(this);
+            });
+        }
+        
+        // Permitir clicar na imagem para selecionar arquivo
         if (avatarPreview && avatarInput) {
             avatarPreview.addEventListener('click', function() {
                 avatarInput.click();
             });
         }
+        
+        // Atualizar avatar quando tema mudar
+        document.addEventListener('themeChanged', function(event) {
+            if (avatarPreview && avatarPreview.getAttribute('data-has-avatar') === 'false') {
+                const themeColor = event.detail.theme === 'blue' ? '023D78' : 'B6A909';
+                const userName = avatarPreview.getAttribute('data-user-name');
+                avatarPreview.src = 'https://ui-avatars.com/api/?name=' + userName + '&size=150&background=' + themeColor + '&color=fff';
+            }
+        });
+        
+        // Após submit do formulário, atualizar avatar se foi enviado
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Se há arquivo selecionado, atualizar o atributo data-has-avatar
+                if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+                    avatarPreview.setAttribute('data-has-avatar', 'true');
+                }
+            });
+        }
+        
+        // Escutar quando toast de sucesso aparecer e atualizar avatar
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1 && node.classList && node.classList.contains('swal2-popup')) {
+                            // Toast apareceu, verificar se foi sucesso e atualizar avatar
+                            setTimeout(function() {
+                                // Recarregar a página para pegar o avatar atualizado do servidor
+                                if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+                                    window.location.reload();
+                                }
+                            }, 2000);
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Observar mudanças no body para detectar toasts
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     });
 </script>
 @endpush

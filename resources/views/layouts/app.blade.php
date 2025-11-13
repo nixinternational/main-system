@@ -93,14 +93,18 @@
                     <a class="nav-link d-flex align-items-center" data-toggle="dropdown" href="#" aria-expanded="false">
                         @php
                             $avatarUrl = Auth::user()->avatar 
-                                ? asset('storage/avatars/' . Auth::user()->avatar) 
-                                : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&size=32&background=B6A909&color=fff';
+                                ? Storage::disk('public')->url('avatars/' . Auth::user()->avatar)
+                                : null;
                         @endphp
-                        <img src="{{ $avatarUrl }}" 
+                        <img src="{{ $avatarUrl ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&size=32&background=B6A909&color=fff' }}" 
                              alt="{{ Auth::user()->name }}" 
                              class="rounded-circle mr-2 user-avatar" 
                              id="navbarAvatar"
-                             style="width: 32px; height: 32px; object-fit: cover; border: 2px solid var(--theme-primary);">
+                             data-user-name="{{ urlencode(Auth::user()->name) }}"
+                             data-has-avatar="{{ Auth::user()->avatar ? 'true' : 'false' }}"
+                             data-avatar-filename="{{ Auth::user()->avatar ?? '' }}"
+                             style="width: 32px; height: 32px; object-fit: cover; border: 2px solid var(--theme-primary);"
+                             onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent(this.getAttribute('data-user-name')) + '&size=32&background=B6A909&color=fff';">
                         <span>{{ Auth::user()->name }}</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" style="left: inherit; right: 0px;">
@@ -233,6 +237,26 @@
                 }
             }
         }
+
+        // Atualizar avatar da navbar com tema correto
+        document.addEventListener('DOMContentLoaded', function() {
+            const navbarAvatar = document.getElementById('navbarAvatar');
+            if (navbarAvatar && navbarAvatar.getAttribute('data-has-avatar') === 'false') {
+                const theme = localStorage.getItem('nix-theme') || 'yellow';
+                const themeColor = theme === 'blue' ? '023D78' : 'B6A909';
+                const userName = navbarAvatar.getAttribute('data-user-name');
+                navbarAvatar.src = 'https://ui-avatars.com/api/?name=' + userName + '&size=32&background=' + themeColor + '&color=fff';
+            }
+            
+            // Atualizar avatar quando tema mudar
+            document.addEventListener('themeChanged', function(event) {
+                if (navbarAvatar && navbarAvatar.getAttribute('data-has-avatar') === 'false') {
+                    const themeColor = event.detail.theme === 'blue' ? '023D78' : 'B6A909';
+                    const userName = navbarAvatar.getAttribute('data-user-name');
+                    navbarAvatar.src = 'https://ui-avatars.com/api/?name=' + userName + '&size=32&background=' + themeColor + '&color=fff';
+                }
+            });
+        });
     </script>
 
 </body>

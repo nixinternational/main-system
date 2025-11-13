@@ -2054,3 +2054,94 @@ body:has([data-route="profile"]) .theme-selector,
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
 }
 
+/* ============================================
+   TOASTS (SWEETALERT2) - TEMAS
+   ============================================ */
+/* Tema claro - Toasts */
+.swal2-popup {
+    background-color: #FFFFFF !important;
+    color: #1A1A1A !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.swal2-title {
+    color: #1A1A1A !important;
+    font-weight: bold !important;
+}
+
+.swal2-html-container {
+    color: #1A1A1A !important;
+}
+
+.swal2-icon.swal2-success {
+    border-color: var(--theme-success) !important;
+    color: var(--theme-success) !important;
+}
+
+.swal2-icon.swal2-error {
+    border-color: #DC3545 !important;
+    color: #DC3545 !important;
+}
+
+.swal2-icon.swal2-warning {
+    border-color: var(--theme-warning) !important;
+    color: var(--theme-warning) !important;
+}
+
+.swal2-icon.swal2-info {
+    border-color: #17A2B8 !important;
+    color: #17A2B8 !important;
+}
+
+.swal2-progress-bar {
+    background-color: var(--theme-primary) !important;
+}
+
+/* Tema escuro - Toasts */
+[data-background="black"] .swal2-popup {
+    background-color: #2A2A2A !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8) !important;
+}
+
+[data-background="black"] .swal2-title {
+    color: #FFFFFF !important;
+}
+
+[data-background="black"] .swal2-html-container {
+    color: #FFFFFF !important;
+}
+
+[data-background="black"] .swal2-icon.swal2-success {
+    border-color: #51CF66 !important;
+    color: #51CF66 !important;
+}
+
+[data-background="black"] .swal2-icon.swal2-error {
+    border-color: #FF6B6B !important;
+    color: #FF6B6B !important;
+}
+
+[data-background="black"] .swal2-icon.swal2-warning {
+    border-color: #FFD43B !important;
+    color: #FFD43B !important;
+}
+
+[data-background="black"] .swal2-icon.swal2-info {
+    border-color: #74C0FC !important;
+    color: #74C0FC !important;
+}
+
+[data-background="black"] .swal2-progress-bar {
+    background-color: var(--theme-primary) !important;
+}
+
+[data-background="black"] .swal2-close {
+    color: #FFFFFF !important;
+}
+
+[data-background="black"] .swal2-close:hover {
+    color: #CCCCCC !important;
+}
+
