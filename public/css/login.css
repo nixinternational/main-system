@@ -34,8 +34,8 @@ body.login-page .card .row .col-7,
 body.login-page .col-7,
 body.login-page .login-page .col-7,
 body.hold-transition.login-page .card .row .col-7 {
-    background: linear-gradient(135deg, #023D78 0%, #034A94 100%) !important;
-    background-color: #023D78 !important;
+    background: linear-gradient(135deg, #B79C06 0%, #A08B05 100%) !important;
+    background-color: #B79C06 !important;
 }
 
 body.login-page .card .row .col-7::before {
@@ -47,8 +47,8 @@ body.login-page .login-page .btn-primary,
 body.hold-transition.login-page .btn-primary,
 body.login-page #loginButton,
 body.login-page button.btn-primary {
-    background: linear-gradient(135deg, #023D78 0%, #034A94 100%) !important;
-    background-color: #023D78 !important;
+    background: linear-gradient(135deg, #B79C06 0%, #A08B05 100%) !important;
+    background-color: #B79C06 !important;
     color: #FFFFFF !important;
     border: none !important;
 }
@@ -58,8 +58,8 @@ body.login-page .login-page .btn-primary:hover,
 body.hold-transition.login-page .btn-primary:hover,
 body.login-page #loginButton:hover,
 body.login-page button.btn-primary:hover {
-    background: linear-gradient(135deg, #034A94 0%, #023D78 100%) !important;
-    background-color: #034A94 !important;
+    background: linear-gradient(135deg, #A08B05 0%, #B79C06 100%) !important;
+    background-color: #A08B05 !important;
     color: #FFFFFF !important;
 }
 
@@ -67,8 +67,8 @@ body.login-page .btn-primary:active,
 body.login-page .btn-primary:focus,
 body.login-page #loginButton:active,
 body.login-page #loginButton:focus {
-    background: linear-gradient(135deg, #023D78 0%, #034A94 100%) !important;
-    background-color: #023D78 !important;
+    background: linear-gradient(135deg, #B79C06 0%, #A08B05 100%) !important;
+    background-color: #B79C06 !important;
     color: #FFFFFF !important;
 }
 
@@ -103,7 +103,7 @@ body.login-page #loginButton:focus {
 
 /* Lado Esquerdo - Logo e Branding */
 .login-page .col-7 {
-    background: linear-gradient(135deg, #023D78 0%, #034A94 100%) !important;
+    background: linear-gradient(135deg, #B79C06 0%, #A08B05 100%) !important;
     display: flex;
     flex-direction: column;
     justify-content: center;

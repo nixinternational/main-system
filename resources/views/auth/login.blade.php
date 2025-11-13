@@ -39,8 +39,6 @@
                 @enderror
             </div>
 
-            <div class="row">
-                <div class="col-12">
                     <button type="submit" class="btn btn-primary btn-block" id="loginButton">
                         <span class="login-button-text">Entrar</span>
                         <span class="login-button-loading d-none">
@@ -48,8 +46,6 @@
                             Entrando...
                         </span>
                     </button>
-                </div>
-            </div>
         </form>
        </div>
 
