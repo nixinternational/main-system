@@ -87,7 +87,7 @@ Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class
 
     Route::delete('destroy-bank/{id}', action: [ClienteController::class, 'destroyBancoCliente'])->name('banco.cliente.destroy');
     Route::delete('destroy-document/{id}', action: [ClienteController::class, 'deleteDocument'])->name('documento.cliente.destroy');
-    Route::delete('destroy-produto-processo/{id}', action: [ProcessoController::class, 'destroyProduto'])->name('banco.cliente.destroy');
+    Route::delete('destroy-produto-processo/{id}', action: [ProcessoController::class, 'destroyProduto'])->name('processo.produto.destroy');
 
     Route::group(['prefix' => 'ativar'], function () {
         Route::put('/documento/{documento_id}', [TipoDocumentoController::class, 'ativar'])->name('tipo-documento.ativar');

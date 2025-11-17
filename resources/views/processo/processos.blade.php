@@ -120,10 +120,37 @@
         .swal2-popup #tipoProcesso option {
             padding: 8px;
             background-color: #fff;
+            color: #000;
         }
         .swal2-popup #tipoProcesso:focus {
             border-color: #b7aa09;
             box-shadow: 0 0 0 0.2rem rgba(183, 170, 9, 0.25);
+        }
+        
+        /* Estilos para modo escuro */
+        [data-background="black"] .swal2-popup #tipoProcesso {
+            background-color: #3A3A3A !important;
+            color: #FFFFFF !important;
+            border-color: #b7aa09 !important;
+        }
+        
+        [data-background="black"] .swal2-popup #tipoProcesso option {
+            background-color: #3A3A3A !important;
+            color: #FFFFFF !important;
+            padding: 10px !important;
+        }
+        
+        [data-background="black"] .swal2-popup #tipoProcesso option:hover,
+        [data-background="black"] .swal2-popup #tipoProcesso option:checked,
+        [data-background="black"] .swal2-popup #tipoProcesso option:focus {
+            background-color: #4A4A4A !important;
+            color: #FFFFFF !important;
+        }
+        
+        /* Garantir visibilidade das opções quando o dropdown está aberto */
+        [data-background="black"] .swal2-popup #tipoProcesso:focus option {
+            background-color: #3A3A3A !important;
+            color: #FFFFFF !important;
         }
     </style>
 @endpush
@@ -160,7 +187,7 @@
                     title: 'Selecione o Tipo de Processo',
                     html: `
                         <div style="text-align: left; margin-top: 15px;">
-                            <select id="tipoProcesso" style="width: 100%; padding: 12px; margin-top: 10px; border: 2px solid #b7aa09; border-radius: 6px; font-size: 16px; background-color: #fff; cursor: pointer; outline: none;">
+                            <select id="tipoProcesso" class="tipo-processo-select" style="width: 100%; padding: 12px; margin-top: 10px; border: 2px solid #b7aa09; border-radius: 6px; font-size: 16px; background-color: #fff; color: #000; cursor: pointer; outline: none;">
                                 <option value="">-- Selecione uma opção --</option>
                                 <option value="maritimo">Marítimo</option>
                                 <option value="aereo">Aéreo</option>
@@ -189,6 +216,21 @@
                             // Remover qualquer atributo que possa causar scroll
                             select.removeAttribute('size');
                             select.setAttribute('size', '1');
+                            
+                            // Aplicar estilos para modo escuro se necessário
+                            const isDarkMode = document.documentElement.getAttribute('data-background') === 'black';
+                            if (isDarkMode) {
+                                select.style.backgroundColor = '#3A3A3A';
+                                select.style.color = '#FFFFFF';
+                                select.style.borderColor = '#b7aa09';
+                                
+                                // Estilizar opções
+                                const options = select.querySelectorAll('option');
+                                options.forEach(option => {
+                                    option.style.backgroundColor = '#3A3A3A';
+                                    option.style.color = '#FFFFFF';
+                                });
+                            }
                         }
                         // Garantir que o container do SWAL não tenha altura limitada
                         const popup = document.querySelector('.swal2-popup');

@@ -6,6 +6,7 @@ use App\Http\Requests\ClienteRequest;
 use App\Http\Requests\RelatorioCliente;
 use App\Models\BancoCliente;
 use App\Models\BancoNix;
+use App\Models\Catalogo;
 use App\Models\Cliente;
 use App\Models\ClienteAduana;
 use App\Models\ClienteDocumento;
@@ -86,6 +87,13 @@ class ClienteController extends Controller
                 'telefone_celular_responsavel_legal' => $request->telefone_celular_responsavel_legal,
             ];
             $newCliente = Cliente::create($clientData);
+            
+            // Criar catálogo automaticamente para o novo cliente
+            Catalogo::create([
+                'cliente_id' => $newCliente->id,
+                'cpf_cnpj' => $newCliente->cnpj,
+            ]);
+            
             return redirect(route('cliente.edit', $newCliente->id))->with('messages', ['success' => ['Cliente criado com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível cadastrar o cliente!']])->withInput($request->all());
@@ -405,7 +413,6 @@ class ClienteController extends Controller
     }
     public function updateClientEspecificidades($id, Request $request)
     {
-
         try {
             DB::beginTransaction();
             $cliente = Cliente::findOrFail($id);
@@ -423,38 +430,51 @@ class ClienteController extends Controller
             ];
             $cliente->update($clientData);
 
+            // Processar remoção de bancos marcados para exclusão
+            if ($request->has('bancos_remover') && $request->has('bancos_ids')) {
+                foreach ($request->bancos_ids as $index => $bancoId) {
+                    if (!empty($bancoId) && isset($request->bancos_remover[$index]) && $request->bancos_remover[$index] == '1') {
+                        BancoCliente::where('id', $bancoId)
+                            ->where('cliente_id', $id)
+                            ->where('banco_nix', false)
+                            ->delete();
+                    }
+                }
+            }
+
+            // Processar bancos (criar novos ou atualizar existentes)
             if ($request->bancos && count($request->bancos) > 0) {
+                BancoCliente::where('cliente_id', $id)->where('banco_nix', true)->delete();
+                
                 foreach ($request->bancos as $row => $banco) {
-                    // if ($request->debito_impostos_nix == 'nix') {
-                    //     $bancoNix = BancoNix::find($banco);
-                    //     BancoCliente::where('cliente_id',operator: $id)->where('banco_nix',false)->delete();
-                    //         BancoCliente::updateOrCreate(
-                    //         [
-                    //             'numero_banco' => $bancoNix->numero_banco,
-                    //             'cliente_id' => $id,
-                    //             'banco_nix' => true,
-                    //         ],
-                    //         [
-                    //             'nome' => $bancoNix->nome,
-                    //             'agencia' => $bancoNix->agencia,
-                    //             'conta_corrente' => $bancoNix->conta_corrente,
-                    //             ]
-                    //         );
-                    // } else {
-                    BancoCliente::where('cliente_id', $id)->where('banco_nix', true)->delete();
-                    if ($request->numero_bancos[$row] && $request->agencias[$row] && $request->conta_correntes[$row]) {
-                        BancoCliente::create(
-                            [
+                    // Verificar se o banco foi marcado para remoção
+                    $deveRemover = isset($request->bancos_remover[$row]) && $request->bancos_remover[$row] == '1';
+                    
+                    if (!$deveRemover && $request->numero_bancos[$row] && $request->agencias[$row] && $request->conta_correntes[$row]) {
+                        $bancoId = isset($request->bancos_ids[$row]) ? $request->bancos_ids[$row] : null;
+                        
+                        if ($bancoId && !empty($bancoId)) {
+                            // Atualizar banco existente
+                            BancoCliente::where('id', $bancoId)
+                                ->where('cliente_id', $id)
+                                ->update([
+                                    'numero_banco' => $request->numero_bancos[$row] ?? null,
+                                    'nome' => $banco,
+                                    'agencia' => $request->agencias[$row] ?? null,
+                                    'conta_corrente' => $request->conta_correntes[$row] ?? null,
+                                ]);
+                        } else {
+                            // Criar novo banco
+                            BancoCliente::create([
                                 'cliente_id' => $id,
                                 'banco_nix' => false,
                                 'numero_banco' => $request->numero_bancos[$row] ?? null,
                                 'nome' => $banco,
                                 'agencia' => $request->agencias[$row] ?? null,
                                 'conta_corrente' => $request->conta_correntes[$row] ?? null,
-                            ]
-                        );
+                            ]);
+                        }
                     }
-                    // }
                 }
             }
             DB::commit();

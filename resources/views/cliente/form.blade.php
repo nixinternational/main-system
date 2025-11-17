@@ -4,6 +4,24 @@
 
 @section('content')
     <style>
+        /* Prevenir movimento indesejado no container do formulário */
+        .card.card-tabs,
+        .card.card-primary.card-tabs {
+            transition: none !important;
+        }
+        
+        .card.card-tabs:hover,
+        .card.card-primary.card-tabs:hover {
+            transform: none !important;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Prevenir transições em inputs dentro do card */
+        .card.card-tabs .form-control,
+        .card.card-primary.card-tabs .form-control {
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+        }
+        
         /* Aumentar a altura do modal */
         .modal-dialog.modal-xl {
             max-width: 90%;
@@ -459,7 +477,7 @@
                             </div>
                             <div class="tab-pane fade" id="custom-tabs-two-info" role="tabpanel"
                                 aria-labelledby="custom-tabs-two-settings-info">
-                                <form enctype="multipart/form-data"
+                                <form id="formEspecificidades" enctype="multipart/form-data"
                                     action="{{ route('cliente.update.especificidades', $cliente->id) }}" method="POST">
                                     @csrf
                                     <div class="row gap-2">
@@ -606,7 +624,7 @@
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($bancosCliente as $banco)
-                                                        <tr>
+                                                        <tr data-banco-id="{{ $banco->id }}" data-banco-nix="{{ $banco->banco_nix ? '1' : '0' }}">
                                                             <td>
                                                                 <input value="{{ $banco->numero_banco }}"
                                                                     {{ $banco->banco_nix ? 'disabled' : '' }}
@@ -641,11 +659,15 @@
                                                             </td>
 
                                                             <td>
-                                                                {{-- <form action="{{route('banco.cliente.destroy',$banco->id)}}" method="POST">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button class="btn btn-danger"><i class="fa fa-trash"></i></button>
-                                                            </form> --}}
+                                                                @if (!$banco->banco_nix)
+                                                                    <input type="hidden" name="bancos_ids[]" value="{{ $banco->id }}">
+                                                                    <input type="hidden" name="bancos_remover[]" value="0" class="banco-remover-flag">
+                                                                    <button type="button" class="btn btn-sm btn-danger btn-remover-banco" title="Remover banco" data-banco-id="{{ $banco->id }}">
+                                                                        <i class="fa fa-trash"></i>
+                                                                    </button>
+                                                                @else
+                                                                    <span class="text-muted">Banco NIX</span>
+                                                                @endif
                                                             </td>
                                                         </tr>
                                                     @endforeach
@@ -1416,6 +1438,29 @@
             }
         })
 
+        // Handler para remover banco - marca para remoção e submete o formulário
+        $(document).on('click', '.btn-remover-banco', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const row = $(this).closest('tr');
+            
+            // Marcar o banco para remoção
+            row.find('.banco-remover-flag').val('1');
+            
+            // Desabilitar inputs da linha para que não sejam processados
+            row.find('input[type="text"]').prop('disabled', true);
+            
+            // Esconder a linha visualmente
+            row.fadeOut(200);
+            
+            // Submeter o formulário automaticamente
+            const form = $('#formEspecificidades');
+            if (form.length) {
+                form.submit();
+            }
+        });
+        
         $('#addBank').on('click', async function() {
             let id = $('#bancoCliente tbody tr').length;
             let tr = '';
@@ -1441,8 +1486,14 @@
                             data-id="${id}" id="banco-${id}" 
                             name="conta_correntes[]">
                         </td>
-                     
-                    <tr>
+                        <td>
+                            <input type="hidden" name="bancos_ids[]" value="">
+                            <input type="hidden" name="bancos_remover[]" value="0" class="banco-remover-flag">
+                            <button type="button" class="btn btn-sm btn-danger btn-remover-banco" title="Remover banco">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
                 `
             $('#bancoCliente tbody').append(tr)
         })

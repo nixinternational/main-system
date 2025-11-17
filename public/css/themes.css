@@ -369,13 +369,28 @@ a:hover {
     border-radius: 10px;
     box-shadow: 0 2px 12px var(--theme-shadow);
     border: none;
-    transition: all 0.3s ease;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
     background: var(--theme-white);
 }
 
 .card:hover {
     box-shadow: 0 4px 20px var(--theme-shadow-hover);
     transform: translateY(-2px);
+}
+
+/* Desabilitar efeito hover em cards de formulário para evitar movimento indesejado */
+.card.card-tabs:hover,
+.card.card-primary.card-tabs:hover {
+    transform: none !important;
+    box-shadow: 0 2px 12px var(--theme-shadow) !important;
+}
+
+/* Prevenir que inputs dentro de cards sejam afetados pelo transform do card */
+.card:hover .form-control,
+.card:hover input,
+.card:hover textarea,
+.card:hover select {
+    transform: none !important;
 }
 
 .card-header {
@@ -413,7 +428,7 @@ a:hover {
     border-radius: 6px;
     border: 2px solid var(--theme-border);
     font-family: 'Francophil Sans', sans-serif;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     padding: 10px 15px;
 }
 
@@ -632,7 +647,7 @@ a[class*="justify-content-center"] {
     font-size: 15px !important;
     border-radius: 8px !important;
     border: 2px solid var(--theme-border) !important;
-    transition: all 0.3s ease !important;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease !important;
 }
 
 .d-flex.gap-2 .input-group .form-control:focus {
@@ -1151,6 +1166,19 @@ a.btn-info.btn-sm:hover {
 /* Animações Suaves */
 * {
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Remover transições de transform e padding dos inputs para evitar movimento indesejado */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="tel"],
+textarea,
+select {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
 }
 
 /* Melhorias de Acessibilidade */

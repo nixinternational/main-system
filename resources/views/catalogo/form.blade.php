@@ -100,7 +100,7 @@
                                                             data-fornecedor="{{ $produto->fornecedor->id ?? '' }}"
                                                             data-id="{{ $produto->id }}" data-toggle="modal"
                                                             data-target="#editProductModal"
-                                                            class="btn btn-sm btn-warning" title="Editar">
+                                                            class="btn btn-sm btn-warning editModal" title="Editar">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                         <form method="POST"
@@ -152,11 +152,11 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="exampleModalLabel">Cadastro de Produto</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close btn-close-modal" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form action="{{ route('produto.store') }}" method="POST" enctype="multipart/form-data">
+                    <form id="formAddProduct" action="{{ route('produto.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="page" value="{{ $_GET['page'] ?? '1' }}">
 
@@ -206,7 +206,7 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                            <button type="button" class="btn btn-secondary btn-close-modal" data-dismiss="modal">Fechar</button>
                             <button type="submit" class="btn btn-primary">Salvar</button>
                             <button type="submit" class="btn btn-success"
                                 onclick="document.getElementById('add_more').value=1">
@@ -303,13 +303,27 @@
             })
 
             $('.editModal').on('click', function() {
-                $('#formEdit').attr('action', `/produto/${this.dataset.id}`)
-                $('#modelo_edit').val(this.dataset.modelo)
-                $('#ncm_edit').val(this.dataset.ncm)
-                $('#descricao_edit').val(this.dataset.descricao)
-                $('#codigo_edit').val(this.dataset.codigo)
-                console.log(this.dataset)
-                $('#fornecedor_id').val(this.dataset.fornecedor).trigger('change')
+                const produtoId = this.dataset.id;
+                $('#formEdit').attr('action', `/produto/${produtoId}`)
+                $('#modelo_edit').val(this.dataset.modelo || '')
+                $('#ncm_edit').val(this.dataset.ncm || '')
+                $('#descricao_edit').val(this.dataset.descricao || '')
+                $('#codigo_edit').val(this.dataset.codigo || '')
+                $('#fornecedor_id').val(this.dataset.fornecedor || '').trigger('change')
+            })
+            
+            // Garantir que os campos sejam preenchidos quando o modal abrir
+            $('#editProductModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+                if (button.hasClass('editModal')) {
+                    const produtoId = button.data('id');
+                    $('#formEdit').attr('action', `/produto/${produtoId}`)
+                    $('#modelo_edit').val(button.data('modelo') || '')
+                    $('#ncm_edit').val(button.data('ncm') || '')
+                    $('#descricao_edit').val(button.data('descricao') || '')
+                    $('#codigo_edit').val(button.data('codigo') || '')
+                    $('#fornecedor_id').val(button.data('fornecedor') || '').trigger('change')
+                }
             })
 
 
@@ -317,6 +331,70 @@
                 placeholder: 'Selecione um fornecedor',
                 allowClear: true,
                 width: '100%'
+            });
+            
+            // Garantir que o botão de fechar sempre funcione, mesmo com validação HTML5
+            $(document).on('click', '.btn-close-modal', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Marcar que estamos fechando o modal para prevenir submit
+                $('#formAddProduct').data('closing', true);
+                
+                // Resetar o valor de add_more
+                $('#add_more').val('0');
+                
+                // Desabilitar validação HTML5 temporariamente
+                const form = document.getElementById('formAddProduct');
+                if (form) {
+                    form.setAttribute('novalidate', 'novalidate');
+                }
+                
+                // Limpar campos do formulário
+                $('#exampleModal input[type="text"]').val('');
+                $('#exampleModal textarea').val('');
+                $('#exampleModal select').val('').trigger('change');
+                
+                // Remover classes de validação
+                $('#exampleModal').find('.is-invalid').removeClass('is-invalid');
+                $('#exampleModal').find('.invalid-feedback').remove();
+                
+                // Fechar o modal imediatamente
+                $('#exampleModal').modal('hide');
+                
+                // Reabilitar validação após um pequeno delay
+                setTimeout(function() {
+                    if (form) {
+                        form.removeAttribute('novalidate');
+                    }
+                }, 100);
+            });
+            
+            // Prevenir submit do formulário quando o botão de fechar for clicado
+            $('#formAddProduct').on('submit', function(e) {
+                // Se o botão de fechar foi clicado recentemente, não submeter
+                if ($(this).data('closing')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Limpar campos quando o modal for fechado
+            $('#exampleModal').on('hidden.bs.modal', function() {
+                // Resetar o valor de add_more
+                $('#add_more').val('0');
+                
+                // Limpar todos os campos
+                $(this).find('input[type="text"]').val('');
+                $(this).find('textarea').val('');
+                $(this).find('select').val('').trigger('change');
+                
+                // Remover classes de validação
+                $(this).find('.is-invalid').removeClass('is-invalid');
+                $(this).find('.invalid-feedback').remove();
+                
+                // Resetar flag de fechamento
+                $('#formAddProduct').data('closing', false);
             });
         })
 
@@ -329,8 +407,20 @@
     @if (session('open_modal') === 'exampleModal')
         <script>
             $(document).ready(function() {
+                // Resetar o valor de add_more antes de abrir o modal
+                $('#add_more').val('0');
+                
+                // Limpar todos os campos antes de abrir
+                $('#exampleModal input[type="text"]').val('');
+                $('#exampleModal textarea').val('');
+                $('#exampleModal select').val('').trigger('change');
+                
+                // Remover classes de validação
+                $('#exampleModal').find('.is-invalid').removeClass('is-invalid');
+                $('#exampleModal').find('.invalid-feedback').remove();
+                
+                // Abrir o modal
                 $('#exampleModal').modal('show');
-                $('#exampleModal').find('input[type="text"], textarea').val('');
             });
         </script>
     @endif
