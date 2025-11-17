@@ -69,7 +69,6 @@
                                 <i class="fas fa-user-cog mr-2"></i>
                                 <span>
                                     Administrador: pode cadastrar usuários e gerenciar permissões.
-                                    <small class="d-block mb-0">Super administradores são exclusivos dos e-mails oficiais e não podem ser atribuídos.</small>
                                 </span>
                             </div>
                             <div class="form-check mb-0">
