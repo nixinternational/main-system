@@ -64,20 +64,17 @@
                         $permissaoAdmin = $permissoes->firstWhere('slug', 'admin');
                     @endphp
                     @if ($permissaoAdmin)
-                        <div class="alert alert-info d-flex align-items-center justify-content-between flex-wrap">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="fas fa-user-cog mr-2"></i>
-                                <span>
-                                    Administrador: pode cadastrar usuários e gerenciar permissões.
-                                </span>
-                            </div>
+                        <div class="d-flex align-items-center justify-content-between border rounded p-3 mb-3">
+                            <span class="font-weight-bold">
+                                Administrador: liberar acesso para cadastrar usuários e gerenciar permissões.
+                            </span>
                             <div class="form-check mb-0">
                                 <input class="form-check-input permissao-checkbox especial" type="checkbox"
                                     id="permissao-admin" name="permissoes[]"
                                     value="{{ $permissaoAdmin->id }}"
                                     {{ in_array($permissaoAdmin->id, $permissoesMarcadas) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="permissao-admin">
-                                    Conceder acesso administrador
+                                    Ativar administrador
                                 </label>
                             </div>
                         </div>
@@ -130,52 +127,69 @@
                             ],
                         ];
                     @endphp
-                    @foreach ($agrupar as $titulo => $grupos)
-                        <div class="card mb-3">
-                            <div class="card-header d-flex align-items-center justify-content-between">
-                                <span class="font-weight-bold">{{ $titulo }}</span>
-                                <div class="form-check mb-0">
-                                    <input class="form-check-input select-module" type="checkbox"
-                                        data-target="modulo-{{ \Illuminate\Support\Str::slug($titulo) }}">
-                                    <label class="form-check-label">Selecionar módulo</label>
+                    <div class="accordion permission-accordion" id="accordionPermissoes">
+                        @foreach ($agrupar as $titulo => $grupos)
+                            @php
+                                $slug = \Illuminate\Support\Str::slug($titulo);
+                            @endphp
+                            <div class="card mb-2">
+                                <div class="card-header p-0" id="heading-{{ $slug }}">
+                                    <div class="d-flex align-items-center justify-content-between px-3 py-2">
+                                        <button class="btn btn-link btn-accordion text-left flex-grow-1" type="button"
+                                            data-toggle="collapse"
+                                            data-target="#collapse-{{ $slug }}"
+                                            aria-expanded="false"
+                                            aria-controls="collapse-{{ $slug }}">
+                                            <span class="font-weight-bold text-dark">{{ $titulo }}</span>
+                                        </button>
+                                        <div class="form-check mb-0 ml-2">
+                                            <input class="form-check-input select-module" type="checkbox"
+                                                data-target="modulo-{{ $slug }}">
+                                            <label class="form-check-label small mb-0">Selecionar módulo</label>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="card-body" id="modulo-{{ \Illuminate\Support\Str::slug($titulo) }}">
-                                <div class="row">
-                                    @foreach ($grupos as $subtitulo => $permissoesLista)
-                                        <div class="col-md-4 col-sm-6 mb-3">
-                                            <div class="border rounded h-100 p-3">
-                                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                                    <span class="font-weight-bold text-small text-uppercase">{{ ucfirst($subtitulo) }}</span>
-                                                    <div class="form-check mb-0">
-                                                        <input class="form-check-input select-group" type="checkbox"
-                                                            data-target="grupo-{{ \Illuminate\Support\Str::slug($titulo . '-' . $subtitulo) }}">
+                                <div id="collapse-{{ $slug }}" class="collapse"
+                                    aria-labelledby="heading-{{ $slug }}"
+                                    data-parent="#accordionPermissoes">
+                                    <div class="card-body" id="modulo-{{ $slug }}">
+                                        <div class="row">
+                                            @foreach ($grupos as $subtitulo => $permissoesLista)
+                                                <div class="col-md-4 col-sm-6 mb-3">
+                                                    <div class="border rounded h-100 p-3">
+                                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                                            <span class="font-weight-bold text-small text-uppercase">{{ ucfirst($subtitulo) }}</span>
+                                                            <div class="form-check mb-0">
+                                                                <input class="form-check-input select-group" type="checkbox"
+                                                                    data-target="grupo-{{ \Illuminate\Support\Str::slug($titulo . '-' . $subtitulo) }}">
+                                                            </div>
+                                                        </div>
+                                                        @php
+                                                            $permissoesIds = is_array($permissoesLista) ? $permissoesLista : [$permissoesLista];
+                                                        @endphp
+                                                        @foreach ($permissoes->whereIn('slug', $permissoesIds) as $permissao)
+                                                            <div class="custom-control custom-checkbox">
+                                                                <input class="custom-control-input permissao-checkbox grupo-{{ \Illuminate\Support\Str::slug($titulo . '-' . $subtitulo) }}"
+                                                                    type="checkbox"
+                                                                    id="permissao-{{ $permissao->id }}"
+                                                                    name="permissoes[]"
+                                                                    data-slug="{{ $permissao->slug }}"
+                                                                    value="{{ $permissao->id }}"
+                                                                    {{ in_array($permissao->id, $permissoesMarcadas) ? 'checked' : '' }}>
+                                                                <label class="custom-control-label" for="permissao-{{ $permissao->id }}">
+                                                                    {{ $permissao->nome }}
+                                                                </label>
+                                                            </div>
+                                                        @endforeach
                                                     </div>
                                                 </div>
-                                                @php
-                                                    $permissoesIds = is_array($permissoesLista) ? $permissoesLista : [$permissoesLista];
-                                                @endphp
-                                                @foreach ($permissoes->whereIn('slug', $permissoesIds) as $permissao)
-                                                    <div class="custom-control custom-checkbox">
-                                                        <input class="custom-control-input permissao-checkbox grupo-{{ \Illuminate\Support\Str::slug($titulo . '-' . $subtitulo) }}"
-                                                            type="checkbox"
-                                                            id="permissao-{{ $permissao->id }}"
-                                                            name="permissoes[]"
-                                                            data-slug="{{ $permissao->slug }}"
-                                                            value="{{ $permissao->id }}"
-                                                            {{ in_array($permissao->id, $permissoesMarcadas) ? 'checked' : '' }}>
-                                                        <label class="custom-control-label" for="permissao-{{ $permissao->id }}">
-                                                            {{ $permissao->nome }}
-                                                        </label>
-                                                    </div>
-                                                @endforeach
-                                            </div>
+                                            @endforeach
                                         </div>
-                                    @endforeach
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
                     </div>
                 </div>
 
@@ -231,3 +245,52 @@
 
     </script>
 @endsection
+
+@push('styles')
+    <style>
+        .permission-accordion .card {
+            border: 1px solid var(--theme-border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--theme-white);
+        }
+
+        .permission-accordion .card-header {
+            background: linear-gradient(135deg, var(--theme-gray-light) 0%, var(--theme-white) 100%);
+            border-bottom: 1px solid var(--theme-border);
+        }
+
+        .permission-accordion .btn-accordion {
+            color: var(--theme-text);
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .permission-accordion .btn-accordion:focus {
+            box-shadow: none;
+            outline: none;
+        }
+
+        .permission-accordion .btn-accordion::after {
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            content: "\f107";
+            float: right;
+            transition: transform 0.2s ease;
+        }
+
+        .permission-accordion .btn-accordion[aria-expanded="true"]::after {
+            transform: rotate(180deg);
+        }
+
+        .permission-accordion .form-check-label {
+            font-size: 0.85rem;
+            color: var(--theme-text-muted, #6c757d);
+        }
+
+        .permission-accordion .card-body {
+            background: var(--theme-white);
+        }
+    </style>
+@endpush
