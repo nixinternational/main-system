@@ -12,7 +12,10 @@ use Illuminate\Support\Facades\Cache;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
-    public const SUPER_ADMIN_EMAIL = 'administrador@email.com';
+    public const SUPER_ADMIN_EMAILS = [
+        'administrador@email.com',
+        'heryckmota@gmail.com',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -146,7 +149,7 @@ class User extends Authenticatable
     public function isSuperUser(): bool
     {
         $role = $this->obtemTodosGrupos();
-        return $role === 'root' || $this->hasDirectPermission('root') || $this->email === self::SUPER_ADMIN_EMAIL;
+        return $role === 'root' || $this->hasDirectPermission('root') || in_array($this->email, self::SUPER_ADMIN_EMAILS, true);
     }
 
     protected function hasDirectPermission(string $slug): bool
