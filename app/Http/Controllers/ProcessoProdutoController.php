@@ -30,9 +30,20 @@ class ProcessoProdutoController extends Controller
 
         $ids = $request->input('ids', []);
 
-        // Segurança: você pode adicionar verificação se os produtos pertencem ao processo
-        // por exemplo, checar processo_id = <processo atual>, se quiser
+        $user = $request->user();
         try {
+            $produtos = ProcessoProduto::with('processo.cliente')->whereIn('id', $ids)->get();
+
+            foreach ($produtos as $produto) {
+                $clienteId = $produto->processo->cliente_id ?? null;
+                if ($clienteId !== null && $user && !$user->canAccessCliente($clienteId)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cliente não autorizado para este usuário.',
+                    ], 403);
+                }
+            }
+
             $deleted = ProcessoProduto::whereIn('id', $ids)->delete();
 
             return response()->json([

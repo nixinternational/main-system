@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Grupo;
+use App\Models\Cliente;
+use App\Models\Permissao;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -23,7 +24,7 @@ class UserController extends Controller
             $sortColumn = 'id';
         }
         
-        $users = User::whereNot('id', 1)
+        $users = User::whereNot('email', User::SUPER_ADMIN_EMAIL)
             ->orderBy($sortColumn, $sortDirection)
             ->paginate(request()->paginacao ?? 10)
             ->appends(request()->except('page'));
@@ -38,8 +39,12 @@ class UserController extends Controller
      */
     public function create()
     {
-        $grupos = Grupo::get();
-        return view('users.form', compact('grupos'));
+        $permissoes = Permissao::orderBy('nome')->get();
+        $clientes = Cliente::orderBy('nome')->select('id', 'nome')->get();
+        $permissoesSelecionadas = [];
+        $clientesSelecionados = [];
+
+        return view('users.form', compact('permissoes', 'clientes', 'permissoesSelecionadas', 'clientesSelecionados'));
     }
 
 
@@ -52,25 +57,28 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            DB::beginTransaction();
-            $user =  User::create([
-                'name' => $request->nome,
-                'email' => $request->email,
-                'email_verified_at' => Carbon::now(),
-                'password' => Hash::make($request->senha),
-                'grupo_id' => $request->grupo
+            $dados = $request->validate([
+                'nome' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+                'senha' => ['required', 'string', 'min:6'],
+                'permissoes' => ['required', 'array', 'min:1'],
+                'permissoes.*' => ['exists:permissaos,id'],
+                'clientes' => ['nullable', 'array'],
+                'clientes.*' => ['exists:clientes,id'],
             ]);
 
-            if ($request->motorista != null) {
-                foreach ($request->motorista as $motorista_id) {
-                    MotoristaUser::create(
-                        [
-                            'user_id' => $user->id,
-                            'motorista_id' => $motorista_id
-                        ]
-                    );
-                }
-            }
+            DB::beginTransaction();
+            $user =  User::create([
+                'name' => $dados['nome'],
+                'email' => $dados['email'],
+                'email_verified_at' => Carbon::now(),
+                'password' => Hash::make($dados['senha']),
+                'grupo_id' => null,
+                'active' => true,
+            ]);
+
+            $user->syncPermissions($dados['permissoes'] ?? []);
+            $user->syncClientes($dados['clientes'] ?? []);
             DB::commit();
             return redirect(route('user.index'))->with('messages', ['success' => ['Usuário criada com sucesso!']]);
         } catch (Exception $e) {
@@ -95,9 +103,13 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $grupos = Grupo::whereNot('id', 1)->get();
         $user = User::findOrFail($id);
-        return view('users.form', compact('grupos', 'user'));
+        $permissoes = Permissao::orderBy('nome')->get();
+        $clientes = Cliente::orderBy('nome')->select('id', 'nome')->get();
+        $permissoesSelecionadas = $user->permissoes()->pluck('permissao_id')->toArray();
+        $clientesSelecionados = $user->clientesPermitidos()->pluck('cliente_id')->toArray();
+
+        return view('users.form', compact('user', 'permissoes', 'clientes', 'permissoesSelecionadas', 'clientesSelecionados'));
     }
 
     /**
@@ -111,20 +123,41 @@ class UserController extends Controller
     {
         try {
             $user = User::findOrFail($id);
-            $user->update([
-                'name' => $request->nome,
-                'email' => $request->email,
-                'email_verified_at' => Carbon::now(),
-                'grupo_id' => $request->grupo
+            DB::beginTransaction();
+            $dados = $request->validate([
+                'nome' => ['required', 'string', 'max:255'],
+                'email' => [
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('users', 'email')->ignore($user->id),
+                ],
+                'senha' => ['nullable', 'string', 'min:6'],
+                'permissoes' => ['required', 'array', 'min:1'],
+                'permissoes.*' => ['exists:permissaos,id'],
+                'clientes' => ['nullable', 'array'],
+                'clientes.*' => ['exists:clientes,id'],
             ]);
-            if ($request->senha != '' && $request->senha != null) {
+
+            $user->update([
+                'name' => $dados['nome'],
+                'email' => $dados['email'],
+                'email_verified_at' => Carbon::now(),
+            ]);
+
+            if (!empty($dados['senha'])) {
                 $user->update([
-                    'password' => Hash::make(trim($request->senha)),
+                    'password' => Hash::make(trim($dados['senha'])),
                 ]);
             }
 
+            $user->syncPermissions($dados['permissoes'] ?? []);
+            $user->syncClientes($dados['clientes'] ?? []);
+
+            DB::commit();
             return redirect(route('user.index'))->with('messages', ['success' => ['Usuário atualizado com sucesso!']]);
         } catch (Exception $e) {
+            DB::rollBack();
             return back()->with('messages', ['error' => ['Não foi possível criar o usuário!']])->withInput($request->all());;
         }
     }
@@ -136,6 +169,21 @@ class UserController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function destroy($id) {}
+
+    public function toggleStatus($id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->email === User::SUPER_ADMIN_EMAIL) {
+            return back()->with('messages', ['error' => ['Não é possível desativar o administrador principal.']]);
+        }
+
+        $user->update([
+            'active' => !$user->active,
+        ]);
+
+        return back()->with('messages', ['success' => [$user->active ? 'Usuário reativado com sucesso!' : 'Usuário desativado com sucesso!']]);
+    }
 
     public function toggleIpProtection()
     {

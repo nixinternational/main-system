@@ -36,35 +36,37 @@ class AppServiceProvider extends ServiceProvider
 
 
         Blade::if('hasGroup', function (string $groups) {
-            $grupos = explode('|', $groups);
-            $bool   = false;
             $user = Auth::user();
-            if ($user->grupoPermissao == null) {
-                return true;
-            }
-            if ($user->grupoPermissao == null && $user->obtemTodosGrupos() == 'administrador' || $user->obtemTodosGrupos() == 'root') {
-                return true;
-            }
-            foreach ($grupos as $grupo) {
-                $bool = $user->pertenceAoGrupo($grupo);
+            if (!$user) {
+                return false;
             }
 
-            return $bool;
-        });
-        Blade::if('hasPermission', function (string $groups) {
-            $grupos = explode('|', $groups);
-            $bool   = false;
-            $user = Auth::user();
-            if ($user->obtemTodosGrupos() == 'administrador' || $user->obtemTodosGrupos() == 'root') {
+            if ($user->isSuperUser()) {
                 return true;
             }
-            foreach ($grupos as $grupo) {
-                if ($user->pertenceAPermissao($grupo)) {
+
+            foreach (explode('|', $groups) as $grupo) {
+                if ($user->hasRole(trim($grupo))) {
                     return true;
                 }
             }
 
-            return $bool;
+            return false;
+        });
+
+        Blade::if('hasPermission', function (string $permissions) {
+            $user = Auth::user();
+            if (!$user) {
+                return false;
+            }
+
+            foreach (explode('|', $permissions) as $permission) {
+                if ($user->hasPermission(trim($permission))) {
+                    return true;
+                }
+            }
+
+            return false;
         });
     }
 }

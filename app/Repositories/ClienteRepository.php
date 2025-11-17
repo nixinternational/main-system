@@ -26,9 +26,15 @@ class ClienteRepository{
             $sortColumn = 'nome';
         }
         
+        $user = auth()->user();
+        $allowedIds = $user?->accessibleClienteIds();
+
         return $this->clientes->withTrashed()
             ->when(request()->search != '', function($query){
                 $query->where('nome','like','%'.request()->search.'%');
+            })
+            ->when($allowedIds !== null, function ($query) use ($allowedIds) {
+                $query->whereIn('id', $allowedIds);
             })
             ->orderBy($sortColumn, $sortDirection)
             ->paginate(request()->paginacao ?? 10)

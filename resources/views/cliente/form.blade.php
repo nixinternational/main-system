@@ -22,6 +22,23 @@
             transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
         }
         
+        .form-section {
+            margin-bottom: 1.75rem;
+        }
+
+        .section-title h4 {
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: #1A1A1A;
+        }
+
+        .section-divider {
+            width: 100%;
+            height: 1px;
+            background: #cecece;
+            margin: 1.5rem 0;
+        }
+
         /* Aumentar a altura do modal */
         .modal-dialog.modal-xl {
             max-width: 90%;
@@ -161,173 +178,182 @@
                                 @if (isset($cliente))
                                     @method('PUT')
                                 @endif
-                                <div class="row">
-                                    <div class="col-12">
+                                @if(auth()->user()?->hasPermission('clientes_dados_cadastrais_visualizar') || auth()->user()?->isSuperUser())
+                                <div class="form-section">
+                                    <div class="section-title">
                                         <h4>Empresa</h4>
                                     </div>
-                                    <div class="col-4">
-                                        <label for="exampleInputEmail1" class="form-label">Nome</label>
-                                        <input value="{{ isset($cliente) ? $cliente->nome : '' }}" class="form-control"
-                                            name="name" id="nome">
-                                        @error('nome')
-                                            <span class="mt-1  text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                        @enderror
-                                    </div>
-                                    <div class="col-2">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">CNPJ</label>
-                                            <input value="{{ isset($cliente) ? $cliente->cnpj : old('cnpj') ?? '' }}"
-                                                class="form-control" name="cnpj" id="cnpj">
-                                            @error('cnpj')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                    <div class="row">
+                                        <div class="col-4">
+                                            <label for="exampleInputEmail1" class="form-label">Nome</label>
+                                            <input value="{{ old('name', $cliente->nome ?? '') }}" class="form-control"
+                                                name="name" id="nome">
+                                            @error('name')
+                                                <span class="mt-1  text-red p-1 rounded"><small>{{ $message }}</small></span>
                                             @enderror
                                         </div>
+                                        <div class="col-2">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">CNPJ</label>
+                                                <input value="{{ old('cnpj', $cliente->cnpj ?? '') }}"
+                                                    class="form-control" name="cnpj" id="cnpj">
+                                                @error('cnpj')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
+                                        </div>
                                     </div>
-
                                 </div>
-                                <div style="height: 0.1px; width: 100%; border: 0.1px solid #cecece;" class="mb-3"></div>
-                                <div class="row">
-                                    <div class="col-12">
+                                @endif
+                                @if(auth()->user()?->hasPermission('clientes_dados_cadastrais_visualizar') || auth()->user()?->isSuperUser())
+                                <div class="section-divider"></div>
+                                @endif
+                                @if(auth()->user()?->hasPermission('clientes_dados_cadastrais_visualizar') || auth()->user()?->isSuperUser())
+                                <div class="form-section">
+                                    <div class="section-title">
                                         <h4>Endereço</h4>
                                     </div>
-
-                                    <div class="col-2">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">CEP</label>
-                                            <input value="{{ isset($cliente) ? $cliente->cep : '' }}" class="form-control"
-                                                name="cep" id="cep">
-
+                                    <div class="row">
+                                        <div class="col-2">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">CEP</label>
+                                                <input value="{{ old('cep', $cliente->cep ?? '') }}" class="form-control"
+                                                    name="cep" id="cep">
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-3">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Logradouro</label>
-                                            <input value="{{ isset($cliente) ? $cliente->logradouro : '' }}"
-                                                class="form-control" name="logradouro" id="logradouro">
-                                            @error('logradouro')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                            @enderror
+                                        <div class="col-3">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Logradouro</label>
+                                                <input value="{{ old('logradouro', $cliente->logradouro ?? '') }}"
+                                                    class="form-control" name="logradouro" id="logradouro">
+                                                @error('logradouro')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-1">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Numero</label>
-                                            <input value="{{ isset($cliente) ? $cliente->numero : '' }}"
-                                                class="form-control" name="numero" id="numero">
-                                            @error('numero')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                            @enderror
+                                        <div class="col-1">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Numero</label>
+                                                <input value="{{ old('numero', $cliente->numero ?? '') }}"
+                                                    class="form-control" name="numero" id="numero">
+                                                @error('numero')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-3">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Bairro</label>
-                                            <input value="{{ isset($cliente) ? $cliente->bairro : '' }}"
-                                                class="form-control" name="bairro" id="bairro">
-                                            @error('bairro')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                            @enderror
+                                        <div class="col-3">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Bairro</label>
+                                                <input value="{{ old('bairro', $cliente->bairro ?? '') }}"
+                                                    class="form-control" name="bairro" id="bairro">
+                                                @error('bairro')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-3">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Cidade</label>
-                                            <input value="{{ isset($cliente) ? $cliente->cidade : '' }}"
-                                                class="form-control" name="cidade" id="cidade">
-                                            @error('cidade')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                            @enderror
+                                        <div class="col-3">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Cidade</label>
+                                                <input value="{{ old('cidade', $cliente->cidade ?? '') }}"
+                                                    class="form-control" name="cidade" id="cidade">
+                                                @error('cidade')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-3">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Estado</label>
-                                            <input value="{{ isset($cliente) ? $cliente->estado : '' }}"
-                                                class="form-control" name="estado" id="estado">
-                                            @error('estado')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                            @enderror
+                                        <div class="col-3">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Estado</label>
+                                                <input value="{{ old('estado', $cliente->estado ?? '') }}"
+                                                    class="form-control" name="estado" id="estado">
+                                                @error('estado')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Complemento</label>
-                                            <input value="{{ isset($cliente) ? $cliente->complemento : '' }}"
-                                                class="form-control" name="complemento" id="complemento">
-                                            @error('complemento')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                            @enderror
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Complemento</label>
+                                                <input value="{{ old('complemento', $cliente->complemento ?? '') }}"
+                                                    class="form-control" name="complemento" id="complemento">
+                                                @error('complemento')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div style="height: 0.1px; width: 100%; border: 0.1px solid #cecece;" class="mb-3">
-                                </div>
-                                <div class="row">
-                                    <div class="col-12">
+                                @endif
+                                @if(auth()->user()?->hasPermission('clientes_responsaveis_visualizar') || auth()->user()?->isSuperUser())
+                                <div class="section-divider"></div>
+                                <div class="form-section">
+                                    <div class="section-title">
                                         <h4>Responsável Legal</h4>
                                     </div>
-                                    <div class="col-3">
-                                        <label for="exampleInputEmail1" class="form-label">Nome</label>
-                                        <input value="{{ isset($cliente) ? $cliente->nome_responsavel_legal : '' }}"
-                                            class="form-control" name="nome_responsavel_legal"
-                                            id="nome_responsavel_legal">
-                                        @error('nome_responsavel_legal')
-                                            <span class="mt-1  text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                        @enderror
-                                    </div>
-                                    <div class="col-2">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">CPF</label>
-                                            <input
-                                                value="{{ isset($cliente) ? $cliente->cpf_responsavel_legal : old('cpf_responsavel_legal') ?? '' }}"
-                                                class="form-control" name="cpf_responsavel_legal"
-                                                id="cpf_responsavel_legal">
-                                        </div>
-                                    </div>
-                                    <div class="col-2">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Email</label>
-                                            <input
-                                                value="{{ isset($cliente) ? $cliente->email_responsavel_legal : old('email_responsavel_legal') ?? '' }}"
-                                                class="form-control" name="email_responsavel_legal"
-                                                id="email_responsavel_legal">
-
-                                        </div>
-                                    </div>
-                                    <div class="col-2">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Telefone Fixo</label>
-                                            <input
-                                                value="{{ isset($cliente) ? $cliente->telefone_fixo_responsavel_legal : old('telefone_fixo_responsavel_legal') ?? '' }}"
-                                                class="form-control" name="telefone_fixo_responsavel_legal"
-                                                id="telefone_fixo_responsavel_legal">
-                                            @error('telefone_fixo_responsavel_legal')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                    <div class="row">
+                                        <div class="col-3">
+                                            <label for="exampleInputEmail1" class="form-label">Nome</label>
+                                            <input value="{{ old('nome_responsavel_legal', $cliente->nome_responsavel_legal ?? '') }}"
+                                                class="form-control" name="nome_responsavel_legal"
+                                                id="nome_responsavel_legal">
+                                            @error('nome_responsavel_legal')
+                                                <span class="mt-1  text-red p-1 rounded"><small>{{ $message }}</small></span>
                                             @enderror
                                         </div>
-                                    </div>
-                                    <div class="col-3">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1" class="form-label">Telefone Celular</label>
-                                            <input
-                                                value="{{ isset($cliente) ? $cliente->telefone_celular_responsavel_legal : old('telefone_celular_responsavel_legal') ?? '' }}"
-                                                class="form-control" name="telefone_celular_responsavel_legal"
-                                                id="telefone_celular_responsavel_legal">
-                                            @error('telefone_celular_responsavel_legal')
-                                                <span
-                                                    class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
-                                            @enderror
+                                        <div class="col-2">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">CPF</label>
+                                                <input
+                                                    value="{{ old('cpf_responsavel_legal', $cliente->cpf_responsavel_legal ?? '') }}"
+                                                    class="form-control" name="cpf_responsavel_legal"
+                                                    id="cpf_responsavel_legal">
+                                            </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Email</label>
+                                                <input
+                                                    value="{{ old('email_responsavel_legal', $cliente->email_responsavel_legal ?? '') }}"
+                                                    class="form-control" name="email_responsavel_legal"
+                                                    id="email_responsavel_legal">
+                                            </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Telefone Fixo</label>
+                                                <input
+                                                    value="{{ old('telefone_fixo_responsavel_legal', $cliente->telefone_fixo_responsavel_legal ?? '') }}"
+                                                    class="form-control" name="telefone_fixo_responsavel_legal"
+                                                    id="telefone_fixo_responsavel_legal">
+                                                @error('telefone_fixo_responsavel_legal')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="form-group">
+                                                <label for="exampleInputEmail1" class="form-label">Telefone Celular</label>
+                                                <input
+                                                    value="{{ old('telefone_celular_responsavel_legal', $cliente->telefone_celular_responsavel_legal ?? '') }}"
+                                                    class="form-control" name="telefone_celular_responsavel_legal"
+                                                    id="telefone_celular_responsavel_legal">
+                                                @error('telefone_celular_responsavel_legal')
+                                                    <span
+                                                        class="mt-1 text-red p-1 rounded"><small>{{ $message }}</small></span>
+                                                @enderror
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                                @endif
                                 <button type="submit" class="btn btn-primary mt-3">Salvar</button>
                             </form>
                         </div>
@@ -491,7 +517,7 @@
                                         </div>
                                         <div class="col-lg-4 col-md-6 col-sm-6">
                                             <label for="validationTooltip03">Data da Procuração</label>
-                                            <input value="{{ isset($cliente) ? $cliente->data_procuracao : '' }}"
+                                            <input value="{{ old('data_procuracao', $cliente->data_procuracao ?? '') }}"
                                                 type="date" class="form-control" id="data_procuracao"
                                                 name="data_procuracao">
 
@@ -500,7 +526,7 @@
                                         <div class="col-lg-4 col-md-6 col-sm-6">
                                             <label for="validationTooltip03">Data de Vencimento da Procuração</label>
                                             <input
-                                                value="{{ isset($cliente) ? $cliente->data_vencimento_procuracao : '' }}"
+                                                value="{{ old('data_vencimento_procuracao', $cliente->data_vencimento_procuracao ?? '') }}"
                                                 type="date" class="form-control" id="data_vencimento_procuracao"
                                                 name="data_vencimento_procuracao">
 
@@ -517,12 +543,17 @@
                                         <div class="col-lg-4 col-md-6">
                                             <div class="form-group">
                                                 <label for="afrmm_bb">Cadastro AFRMM Banco do Brasil</label>
+                                                @php
+                                                    $afrmmValue = old('afrmm_bb', isset($cliente) ? ($cliente->afrmm_bb ? 'true' : ($cliente->afrmm_bb === 0 ? 'false' : null)) : null);
+                                                @endphp
                                                 <select class="form-control" id="afrmm_bb" name="afrmm_bb">
-                                                    <option value="" disabled selected>Selecione uma opção</option>
-                                                    <option {{ $cliente->afrmm_bb == 1 ? 'selected' : '' }}
+                                                    <option value="" disabled
+                                                        {{ $afrmmValue === null ? 'selected' : '' }}>
+                                                        Selecione uma opção</option>
+                                                    <option {{ $afrmmValue === 'true' ? 'selected' : '' }}
                                                         value="true">
                                                         Sim</option>
-                                                    <option {{ $cliente->afrmm_bb == 0 ? 'selected' : '' }}
+                                                    <option {{ $afrmmValue === 'false' ? 'selected' : '' }}
                                                         value="false">
                                                         Não</option>
 
@@ -534,12 +565,17 @@
                                                 <div class="custom-control px-0">
                                                     <label class="">Cadastro Itaú
                                                     </label>
+                                                    @php
+                                                        $itauValue = old('itau_di', isset($cliente) ? ($cliente->itau_di ? 'true' : ($cliente->itau_di === 0 ? 'false' : null)) : null);
+                                                    @endphp
                                                     <select class="form-control" id="itau_di" name="itau_di">
-                                                        <option value="" disabled selected>Selecione uma opção
+                                                        <option value="" disabled
+                                                            {{ $itauValue === null ? 'selected' : '' }}>
+                                                            Selecione uma opção
                                                         </option>
-                                                        <option {{ $cliente->itau_di == 1 ? 'selected' : '' }}
+                                                        <option {{ $itauValue === 'true' ? 'selected' : '' }}
                                                             value="true">Sim</option>
-                                                        <option {{ $cliente->itau_di == 0 ? 'selected' : '' }}
+                                                        <option {{ $itauValue === 'false' ? 'selected' : '' }}
                                                             value="false">Não</option>
 
                                                     </select>

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+    public const SUPER_ADMIN_EMAIL = 'administrador@email.com';
 
     /**
      * The attributes that are mass assignable.
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'password',
         'email_verified_at',
         'grupo_id',
+        'active',
         'avatar'
     ];
 
@@ -44,38 +46,125 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'active' => 'boolean',
     ];
 
-    public function getPermissaosSlug(){
-        $permissoes = GrupoPermissao::where('grupo_id',$this->grupoPermissao->id)->pluck('permissao_id');
-        return Permissao::whereIn('id',$permissoes)->pluck('slug');
+    public function grupoPermissao()
+    {
+        return $this->hasOne(Grupo::class, 'id', 'grupo_id');
     }
 
-    public function grupoPermissao(){
-        return $this->hasOne(Grupo::class,'id','grupo_id');
+    public function permissoes()
+    {
+        return $this->belongsToMany(Permissao::class, 'permissao_usuario')
+            ->withTimestamps();
+    }
+
+    public function clientesPermitidos()
+    {
+        return $this->belongsToMany(Cliente::class, 'cliente_user')->withTimestamps();
     }
 
     public function pertenceAoGrupo(string $grupo): bool
     {
-        return $grupo == $this->obtemTodosGrupos();
-    }
-    public function pertenceAPermissao(string $grupo): bool
-    {
-        return  in_array($grupo,$this->obtemTodasPermissoes());
+        return $this->hasRole($grupo);
     }
 
-    public function obtemTodosGrupos(): string
+    public function pertenceAPermissao(string $permissao): bool
     {
-        return Cache::rememberForever('grupo_usuario_' . $this->id, function () {
-            return $this->grupoPermissao->slug ?? 'root';
-        });
+        return $this->hasPermission($permissao);
+    }
+
+    public function hasRole(string $slug): bool
+    {
+        $current = $this->grupoPermissao?->slug;
+        return $current !== null && $current === $slug;
+    }
+
+    public function obtemTodosGrupos(): ?string
+    {
+        return $this->grupoPermissao->slug ?? null;
     }
 
     public function obtemTodasPermissoes(): array
     {
-        return Cache::rememberForever('permissao_usuario_id' . $this->id, function () {
-            return $this->grupoPermissao->roles->pluck('slug')->toArray();
-        });
+        return $this->allPermissionSlugs();
     }
 
+    public function hasPermission(string $slug): bool
+    {
+        if ($this->isSuperUser()) {
+            return true;
+        }
+
+        return in_array($slug, $this->allPermissionSlugs(), true);
+    }
+
+    public function syncPermissions(?array $permissoesIds): void
+    {
+        $this->permissoes()->sync($permissoesIds ?? []);
+        $this->unsetRelation('permissoes');
+    }
+
+    public function syncClientes(?array $clientesIds): void
+    {
+        $this->clientesPermitidos()->sync($clientesIds ?? []);
+    }
+
+    public function canAccessCliente(?int $clienteId): bool
+    {
+        if ($clienteId === null) {
+            return true;
+        }
+
+        if ($this->canAccessAllClientes()) {
+            return true;
+        }
+
+        return $this->clientesPermitidos()
+            ->where('cliente_id', $clienteId)
+            ->exists();
+    }
+
+    public function accessibleClienteIds(): ?array
+    {
+        if ($this->canAccessAllClientes()) {
+            return null;
+        }
+
+        return $this->clientesPermitidos()
+            ->select('cliente_id')
+            ->pluck('cliente_id')
+            ->toArray();
+    }
+
+    public function canAccessAllClientes(): bool
+    {
+        return $this->isSuperUser() || $this->hasPermission('admin');
+    }
+
+    public function isSuperUser(): bool
+    {
+        $role = $this->obtemTodosGrupos();
+        return $role === 'root' || $this->hasDirectPermission('root') || $this->email === self::SUPER_ADMIN_EMAIL;
+    }
+
+    protected function hasDirectPermission(string $slug): bool
+    {
+        return $this->permissoes()
+            ->where('slug', $slug)
+            ->exists();
+    }
+
+    protected function allPermissionSlugs(): array
+    {
+        if (!$this->relationLoaded('permissoes')) {
+            $this->load('permissoes');
+        }
+
+        $direct = $this->permissoes->pluck('slug')->toArray();
+        $group = $this->grupoPermissao?->roles->pluck('slug')->toArray() ?? [];
+
+        return array_values(array_unique(array_merge($direct, $group)));
+    }
 }

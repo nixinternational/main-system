@@ -64,10 +64,7 @@ class ClienteController extends Controller
             ]);
 
             if ($validator->fails()) {
-                $errors = $validator->errors();
-                $message = $errors->unique();
-
-                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+                return back()->withErrors($validator)->withInput();
             }
             $clientData = [
                 'nome' => $request->name,
@@ -163,10 +160,7 @@ class ClienteController extends Controller
             ]);
 
             if ($validator->fails()) {
-                $errors = $validator->errors();
-                $message = $errors->unique();
-
-                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+                return back()->withErrors($validator)->withInput();
             }
             $cliente = Cliente::findOrFail($id);
             $clientData = [
@@ -232,10 +226,7 @@ class ClienteController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $errors = $validator->errors();
-            $message = $errors->unique();
-
-            return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+            return back()->withErrors($validator)->withInput();
         }
         // Buscar todos os emails já cadastrados para o cliente
         $emailsExistentes = ClienteEmail::where('cliente_id', $id)
@@ -277,8 +268,7 @@ class ClienteController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return back()->with('messages', ['error' => $validator->errors()->all()])
-                ->withInput($request->all());
+            return back()->withErrors($validator)->withInput();
         }
 
         $aduanasExistentes = ClienteAduana::where('cliente_id', $id)

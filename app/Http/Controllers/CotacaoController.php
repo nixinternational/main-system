@@ -54,19 +54,24 @@ class CotacaoController extends Controller
 
     private function buscarMoedasSuportadas(): array
     {
-        try {
-            $resposta = Http::timeout(10)->get(
-                'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas?$format=json'
-            );
-            $dados = $resposta->json()['value'] ?? [];
+        $cacheKey = 'moedas_suportadas';
+        $cacheTtl = now()->addWeek();
 
-            return collect($dados)
-                ->pluck('nomeFormatado', 'simbolo')
-                ->toArray();
-        } catch (\Exception $e) {
-            Log::error("Erro ao buscar moedas suportadas: " . $e->getMessage());
-            return [];
-        }
+        return Cache::remember($cacheKey, $cacheTtl, function () {
+            try {
+                $resposta = Http::timeout(10)->get(
+                    'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas?$format=json'
+                );
+                $dados = $resposta->json()['value'] ?? [];
+
+                return collect($dados)
+                    ->pluck('nomeFormatado', 'simbolo')
+                    ->toArray();
+            } catch (\Exception $e) {
+                Log::error("Erro ao buscar moedas suportadas: " . $e->getMessage());
+                return [];
+            }
+        });
     }
 
     private function buscarCotacao(string $codigo, string $nome, string $dataCotacao): array

@@ -107,4 +107,9 @@ class ProcessoProduto extends Model
     {
         return $this->hasOne(Produto::class, 'id', 'produto_id');
     }
+
+    public function processo()
+    {
+        return $this->belongsTo(Processo::class, 'processo_id');
+    }
 }

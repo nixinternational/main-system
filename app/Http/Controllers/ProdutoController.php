@@ -69,10 +69,10 @@ class ProdutoController extends Controller
             ]);
 
             if ($validator->fails()) {
-                $errors = $validator->errors();
-                $message = $errors->unique();
-                return back()->with('messages', ['error' => [implode('<br> ', $message)]])
-                    ->withInput($request->all());
+                return back()
+                    ->withErrors($validator)
+                    ->withInput()
+                    ->with('open_modal', 'exampleModal');
             }
 
             $produtoDuplicado = Produto::where('modelo', $request->modelo)
@@ -81,8 +81,10 @@ class ProdutoController extends Controller
                 ->exists();
 
             if ($produtoDuplicado) {
-                return back()->with('messages', ['error' => ['Já existe um produto com esse modelo e código nesse catálogo.']])
-                    ->withInput($request->all());
+                return back()
+                    ->withErrors(['codigo' => 'Já existe um produto com esse modelo e código nesse catálogo.'])
+                    ->withInput()
+                    ->with('open_modal', 'exampleModal');
             }
 
             $data = [
@@ -108,8 +110,10 @@ class ProdutoController extends Controller
             return redirect(route('catalogo.edit', $catalogo->id))
                 ->with('messages', ['success' => ['Produto criado com sucesso!']]);
         } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível cadastrar o produto!']])
-                ->withInput($request->all());
+            return back()
+                ->withErrors(['produto' => 'Não foi possível cadastrar o produto!'])
+                ->withInput()
+                ->with('open_modal', 'exampleModal');
         }
     }
 
@@ -140,9 +144,11 @@ class ProdutoController extends Controller
 
 
             if ($validator->fails()) {
-                $errors = $validator->errors();
-                $message = $errors->unique();
-                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+                return back()
+                    ->withErrors($validator)
+                    ->withInput()
+                    ->with('open_modal', 'editProductModal')
+                    ->with('edit_product_id', $id);
             }
             $produto = Produto::findOrFail($id);
 
@@ -151,7 +157,7 @@ class ProdutoController extends Controller
                 'ncm' => $request->ncm_edit,
                 'codigo' => $request->codigo_edit,
                 'descricao' => $request->descricao_edit,
-                'fornecedor_id' => $request->fornecedor_id,
+                'fornecedor_id' => $request->fornecedor_id_edit,
 
             ]);
 
@@ -165,7 +171,11 @@ class ProdutoController extends Controller
 
             return redirect(route('catalogo.edit', $produto->catalogo_id) . '?page=' . $request->page)->with('messages', ['success' => ['Produto atualizado com sucesso!']]);
         } catch (Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível atualizar o produto!']])->withInput($request->all());
+            return back()
+                ->withErrors(['produto_edit' => 'Não foi possível atualizar o produto!'])
+                ->withInput()
+                ->with('open_modal', 'editProductModal')
+                ->with('edit_product_id', $id);
         }
     }
 

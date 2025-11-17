@@ -12,27 +12,27 @@ class CheckPermission
 
     public function handle(Request $request, Closure $next, string $permissao)
     {
-        $grupos = explode('|', $permissao);
-        $bool   = false;
         $user = Auth::user();
-        
-        if($user->obtemTodosGrupos() == 'administrador' || $user->obtemTodosGrupos() == 'root'){
-            return $next($request);
-        }
-        if($user != null){
-            foreach ($grupos as $grupo) {
-                /** @var User $user */
-                $bool = $user->pertenceAoGrupo($grupo);
+        if ($user === null) {
+            if ($request->getRequestUri() === '/painel/login') {
+                return $next($request);
             }
-            abort_unless($bool, Response::HTTP_FORBIDDEN, 'Você não tem permissão para acessar esta página!');
-            
+            abort(401, 'Login Expirado!');
+        }
+
+        if ($user->isSuperUser()) {
             return $next($request);
         }
 
-        if($request->getRequestUri() === '/painel/login'){
-            return $next($request);
+        $permissoes = array_filter(array_map('trim', explode('|', $permissao)));
+
+        foreach ($permissoes as $perm) {
+            if ($user->hasPermission($perm) || $user->hasRole($perm)) {
+                return $next($request);
+            }
         }
-        abort(401,'Login Expirado!');
+
+        abort(Response::HTTP_FORBIDDEN, 'Você não tem permissão para acessar esta página!');
 
     }
 }

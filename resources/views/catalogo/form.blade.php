@@ -164,42 +164,62 @@
                         <input type="hidden" id="add_more" name="add_more" value="0"> {{-- default = não adicionar mais --}}
 
                         <div class="modal-body">
+                            @if ($errors->has('produto'))
+                                <div class="alert alert-danger text-sm mb-3">
+                                    {{ $errors->first('produto') }}
+                                </div>
+                            @endif
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="modelo" class="font-weight-bold">Modelo</label>
-                                    <input type="text" class="form-control" id="modelo" name="modelo"
+                                    <input type="text" class="form-control @error('modelo') is-invalid @enderror" id="modelo" name="modelo"
                                         value="{{ old('modelo') }}">
+                                    @error('modelo')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label for="codigo" class="font-weight-bold">Código</label>
-                                    <input type="text" class="form-control" id="codigo" name="codigo"
+                                    <input type="text" class="form-control @error('codigo') is-invalid @enderror" id="codigo" name="codigo"
                                         value="{{ old('codigo') }}">
+                                    @error('codigo')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                             </div>
 
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <label for="ncm" class="font-weight-bold">NCM</label>
-                                    <input type="text" class="form-control" id="ncm" name="ncm"
+                                    <input type="text" class="form-control @error('ncm') is-invalid @enderror" id="ncm" name="ncm"
                                         value="{{ old('ncm') }}">
+                                    @error('ncm')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                                 <div class="col-6">
                                     <label for="fornecedor_id" class="font-weight-bold">Fornecedor</label>
 
-                                    <select name="fornecedor_id" class="form-control select2 w-100" id="paises">
-                                        <option value="" selected>Selecione um país</option>
+                                    <select name="fornecedor_id" class="form-control select2 w-100 @error('fornecedor_id') is-invalid @enderror" id="paises">
+                                        <option value="" {{ old('fornecedor_id') ? '' : 'selected' }}>Selecione um país</option>
 
                                         @foreach ($catalogo->cliente->fornecedores as $fornecedor)
-                                            <option value="{{ $fornecedor->id }}">{{ $fornecedor->nome }}</option>
+                                            <option value="{{ $fornecedor->id }}" {{ old('fornecedor_id') == $fornecedor->id ? 'selected' : '' }}>{{ $fornecedor->nome }}</option>
                                         @endforeach
                                     </select>
+                                    @error('fornecedor_id')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-12">
 
                                     <label for="descricao" class="font-weight-bold">Descrição</label>
-                                    <textarea rows="3" class="form-control" id="descricao" name="descricao">{{ old('descricao') }}</textarea>
+                                    <textarea rows="3" class="form-control @error('descricao') is-invalid @enderror" id="descricao" name="descricao">{{ old('descricao') }}</textarea>
+                                    @error('descricao')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
 
                                 </div>
                             </div>
@@ -239,43 +259,62 @@
                         {{-- default = não adicionar mais --}}
 
                         <div class="modal-body">
-
+                            @if ($errors->has('produto_edit'))
+                                <div class="alert alert-danger text-sm mb-3">
+                                    {{ $errors->first('produto_edit') }}
+                                </div>
+                            @endif
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="modelo" class="font-weight-bold">Modelo</label>
-                                    <input type="text" id="modelo_edit" name="modelo_edit" class="form-control"
-                                        value="">
+                                    <input type="text" id="modelo_edit" name="modelo_edit" class="form-control @error('modelo_edit') is-invalid @enderror"
+                                        value="{{ old('modelo_edit') }}">
+                                    @error('modelo_edit')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label for="codigo" class="font-weight-bold">Código</label>
-                                    <input type="text" class="form-control" id="codigo_edit" name="codigo_edit"
-                                        value="{{ old('codigo') }}">
+                                    <input type="text" class="form-control @error('codigo_edit') is-invalid @enderror" id="codigo_edit" name="codigo_edit"
+                                        value="{{ old('codigo_edit') }}">
+                                    @error('codigo_edit')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                             </div>
 
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <label for="ncm" class="font-weight-bold">NCM</label>
-                                    <input type="text" class="form-control" id="ncm_edit" name="ncm_edit"
-                                        value="{{ old('ncm') }}">
+                                    <input type="text" class="form-control @error('ncm_edit') is-invalid @enderror" id="ncm_edit" name="ncm_edit"
+                                        value="{{ old('ncm_edit') }}">
+                                    @error('ncm_edit')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                                  <div class="col-6">
                                     <label for="fornecedor_id" class="font-weight-bold">Fornecedor</label>
 
-                                    <select name="fornecedor_id" class="form-control select2 w-100" id="fornecedor_id">
-                                        <option value="" selected>Selecione um país</option>
+                                    <select name="fornecedor_id_edit" class="form-control select2 w-100 @error('fornecedor_id_edit') is-invalid @enderror" id="fornecedor_id_edit">
+                                        <option value="" {{ old('fornecedor_id_edit') ? '' : 'selected' }}>Selecione um país</option>
 
                                         @foreach ($catalogo->cliente->fornecedores as $fornecedor)
-                                            <option value="{{ $fornecedor->id }}">{{ $fornecedor->nome }}</option>
+                                            <option value="{{ $fornecedor->id }}" {{ old('fornecedor_id_edit') == $fornecedor->id ? 'selected' : '' }}>{{ $fornecedor->nome }}</option>
                                         @endforeach
                                     </select>
+                                    @error('fornecedor_id_edit')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                                
                             </div>
                             <div class="row">
                                  <div class="col-md-12">
                                     <label for="descricao" class="font-weight-bold">Descrição</label>
-                                    <textarea rows="3" class="form-control" id="descricao_edit" name="descricao_edit">{{ old('descricao') }}</textarea>
+                                    <textarea rows="3" class="form-control @error('descricao_edit') is-invalid @enderror" id="descricao_edit" name="descricao_edit">{{ old('descricao_edit') }}</textarea>
+                                    @error('descricao_edit')
+                                        <span class="invalid-feedback d-block"><small>{{ $message }}</small></span>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
@@ -309,7 +348,7 @@
                 $('#ncm_edit').val(this.dataset.ncm || '')
                 $('#descricao_edit').val(this.dataset.descricao || '')
                 $('#codigo_edit').val(this.dataset.codigo || '')
-                $('#fornecedor_id').val(this.dataset.fornecedor || '').trigger('change')
+                $('#fornecedor_id_edit').val(this.dataset.fornecedor || '').trigger('change')
             })
             
             // Garantir que os campos sejam preenchidos quando o modal abrir
@@ -322,7 +361,7 @@
                     $('#ncm_edit').val(button.data('ncm') || '')
                     $('#descricao_edit').val(button.data('descricao') || '')
                     $('#codigo_edit').val(button.data('codigo') || '')
-                    $('#fornecedor_id').val(button.data('fornecedor') || '').trigger('change')
+                    $('#fornecedor_id_edit').val(button.data('fornecedor') || '').trigger('change')
                 }
             })
 
@@ -407,20 +446,19 @@
     @if (session('open_modal') === 'exampleModal')
         <script>
             $(document).ready(function() {
-                // Resetar o valor de add_more antes de abrir o modal
                 $('#add_more').val('0');
-                
-                // Limpar todos os campos antes de abrir
-                $('#exampleModal input[type="text"]').val('');
-                $('#exampleModal textarea').val('');
-                $('#exampleModal select').val('').trigger('change');
-                
-                // Remover classes de validação
-                $('#exampleModal').find('.is-invalid').removeClass('is-invalid');
-                $('#exampleModal').find('.invalid-feedback').remove();
-                
-                // Abrir o modal
                 $('#exampleModal').modal('show');
+            });
+        </script>
+    @endif
+    @if (session('open_modal') === 'editProductModal')
+        <script>
+            $(document).ready(function() {
+                const produtoId = "{{ session('edit_product_id') }}";
+                if (produtoId) {
+                    $('#formEdit').attr('action', `/produto/${produtoId}`);
+                }
+                $('#editProductModal').modal('show');
             });
         </script>
     @endif

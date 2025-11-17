@@ -14,8 +14,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-       $this->call([
-       FillBasicData::class
-    ]);
+        $this->call([
+            FillBasicData::class,
+            PermissoesSeeder::class,
+        ]);
     }
 }

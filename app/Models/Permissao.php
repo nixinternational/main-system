@@ -16,4 +16,9 @@ class Permissao extends Model
     public function gruposId(){
         return $this->hasMany(GrupoPermissao::class,'permissao_id','id');
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'permissao_usuario')->withTimestamps();
+    }
 }

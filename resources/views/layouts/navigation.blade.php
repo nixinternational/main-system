@@ -12,7 +12,7 @@
                     </p>
                 </a>
             </li>
-            @hasGroup('admnistrador')
+            @if(auth()->user()?->hasPermission('clientes_listar'))
                 <li class="nav-item">
                     <a href="{{ route('cliente.index') }}" class="nav-link">
                         <i class="nav-icon fa-solid fa-user"></i>
@@ -22,6 +22,10 @@
                     </a>
                 </li>
 
+                </li>
+            @endif
+
+            @if(auth()->user()?->hasPermission('catalogos_listar'))
                 <li class="nav-item">
                     <a href="{{ route('catalogo.index') }}" class="nav-link">
                         <i class="nav-icon fa-solid fa-folder-open"></i>
@@ -30,6 +34,9 @@
                         </p>
                     </a>
                 </li>
+            @endif
+
+            @if(auth()->user()?->hasPermission('processos_listar'))
                 <li class="nav-item">
                     <a href="{{ route('processo.index') }}" class="nav-link">
                         <i class="nav-icon fa-solid fa-globe"></i>
@@ -38,9 +45,9 @@
                         </p>
                     </a>
                 </li>
-            @endhasGroup
+            @endif
 
-            @hasGroup('admnistrador')
+            @if(auth()->user()?->hasPermission('admin') || auth()->user()?->isSuperUser())
                 <li class="nav-item">
                     <a href="#" class="nav-link">
                         <i class="nav-icon fas fa-cogs"></i>
@@ -92,7 +99,7 @@
           </li> --}}
                     </ul>
                 </li>
-            @endhasGroup
+            @endif
 
 
         </ul>

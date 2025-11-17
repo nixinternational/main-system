@@ -50,44 +50,73 @@ Route::middleware(['auth'])->group(function(){
 Route::middleware(['auth','check.ip'])->group(function () {
 
 Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class, 'batchDelete'])
+    ->middleware('permission.map:processo_produto')
     ->name('processo.produtos.batchDelete');
     Route::get('/processo-criar/{cliente_id}', [ProcessoController::class, 'create'])
+    ->middleware('permission.map:processo')
     ->name('processo.criar');
 
-    Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:admin|root');;
+    Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:admin|root');
     Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
-    Route::resource('grupo', GrupoController::class)->middleware('permission:admin|root');;
-    Route::resource('permissao', PermissaoController::class)->middleware('permission:admin|root');;
-    Route::resource('user', UserController::class)->middleware('permission:admin|root');;
-    Route::resource('banco-nix', BancoNixController::class)->middleware('permission:admin|root|producao');;
-    Route::resource('catalogo', CatalogoController::class)->middleware('permission:admin|root|producao');;
-    Route::resource('cliente', ClienteController::class)->middleware('permission:admin|root');;
-    Route::resource('produto', ProdutoController::class)->middleware('permission:admin|root');;
-    Route::resource('tipo-documento', TipoDocumentoController::class)->middleware('permission:admin|root');;
-    Route::resource('processo', ProcessoController::class)->middleware('permission:admin|root');;
+    Route::resource('grupo', GrupoController::class)->middleware('permission:admin|root');
+    Route::resource('permissao', PermissaoController::class)->middleware('permission:admin|root');
+    Route::resource('user', UserController::class)->middleware('super.admin');
+    Route::patch('user/{user}/toggle', [UserController::class, 'toggleStatus'])
+        ->middleware('super.admin')
+        ->name('user.toggle');
+    Route::resource('banco-nix', BancoNixController::class)->middleware('permission:admin|root|producao');
+    Route::resource('catalogo', CatalogoController::class)->middleware('permission.map:catalogo');
+    Route::resource('cliente', ClienteController::class)->middleware('permission.map:cliente');
+    Route::resource('produto', ProdutoController::class)->middleware('permission.map:produto');
+    Route::resource('tipo-documento', TipoDocumentoController::class)->middleware('permission:admin|root');
+    Route::resource('processo', ProcessoController::class)->middleware('permission.map:processo');
     Route::resource('fornecedor', FornecedorController::class);
 
-    Route::get('/processos-cliente/{cliente_id}', [ProcessoController::class, 'processoCliente'])->name('processo-cliente');
+    Route::get('/processos-cliente/{cliente_id}', [ProcessoController::class, 'processoCliente'])
+        ->middleware('permission.map:processo_extras')
+        ->name('processo-cliente');
 
     Route::post('atualizar', [PedidoController::class, 'atualizarPedidos'])->name('pedido.atualizar');
-    Route::post('update-client-emails/{id}', [ClienteController::class, 'updateClientEmail'])->name('cliente.update.email');
-    Route::post('update-client-responsaveis/{id}', action: [ClienteController::class, 'updateClientResponsaveis'])->name('cliente.update.responsavel');
-    Route::post('update-client-aduanas/{id}', action: [ClienteController::class, 'updateClientAduanas'])->name('cliente.update.aduanas');
-    Route::post('update-client-especificidades/{id}', action: [ClienteController::class, 'updateClientEspecificidades'])->name('cliente.update.especificidades');
-    Route::post('update-client-documentos/{id}', action: [ClienteController::class, 'updateClientDocument'])->name('cliente.update.documents');
-    Route::get('/processo/{id}/esboco-pdf', [ProcessoController::class, 'esbocoPdf'])->name('processo.esboco.pdf');
-    Route::post('/atualizar-campos-cabecalho/{id}', [ProcessoController::class, 'camposCabecalho'])->name('cabecalho.atualizar');
+    Route::post('update-client-emails/{id}', [ClienteController::class, 'updateClientEmail'])
+        ->middleware('permission.map:cliente_extras')
+        ->name('cliente.update.email');
+    Route::post('update-client-responsaveis/{id}', [ClienteController::class, 'updateClientResponsaveis'])
+        ->middleware('permission.map:cliente_extras')
+        ->name('cliente.update.responsavel');
+    Route::post('update-client-aduanas/{id}', [ClienteController::class, 'updateClientAduanas'])
+        ->middleware('permission.map:cliente_extras')
+        ->name('cliente.update.aduanas');
+    Route::post('update-client-especificidades/{id}', [ClienteController::class, 'updateClientEspecificidades'])
+        ->middleware('permission.map:cliente_extras')
+        ->name('cliente.update.especificidades');
+    Route::post('update-client-documentos/{id}', [ClienteController::class, 'updateClientDocument'])
+        ->middleware('permission.map:cliente_extras')
+        ->name('cliente.update.documents');
+    Route::get('/processo/{id}/esboco-pdf', [ProcessoController::class, 'esbocoPdf'])
+        ->middleware('permission.map:processo_extras')
+        ->name('processo.esboco.pdf');
+    Route::post('/atualizar-campos-cabecalho/{id}', [ProcessoController::class, 'camposCabecalho'])
+        ->middleware('permission.map:processo_extras')
+        ->name('cabecalho.atualizar');
 
 
-    Route::put('updateProcesso/{id}',[ProcessoController::class,'updateProcesso'])->name('update.processo');
+    Route::put('updateProcesso/{id}',[ProcessoController::class,'updateProcesso'])
+        ->middleware('permission.map:processo_extras')
+        ->name('update.processo');
     //  Route::get('settings/bid', [ProdutoController::class, 'getBid'])->withoutMiddleware('auth:sanctum');
 
-    Route::delete('destroy-bank/{id}', action: [ClienteController::class, 'destroyBancoCliente'])->name('banco.cliente.destroy');
-    Route::delete('destroy-document/{id}', action: [ClienteController::class, 'deleteDocument'])->name('documento.cliente.destroy');
-    Route::delete('destroy-produto-processo/{id}', action: [ProcessoController::class, 'destroyProduto'])->name('processo.produto.destroy');
+    Route::delete('destroy-bank/{id}', [ClienteController::class, 'destroyBancoCliente'])
+        ->middleware('permission.map:cliente_extras')
+        ->name('banco.cliente.destroy');
+    Route::delete('destroy-document/{id}', [ClienteController::class, 'deleteDocument'])
+        ->middleware('permission.map:cliente_extras')
+        ->name('documento.cliente.destroy');
+    Route::delete('destroy-produto-processo/{id}', [ProcessoController::class, 'destroyProduto'])
+        ->middleware('permission.map:processo_extras')
+        ->name('processo.produto.destroy');
 
     Route::group(['prefix' => 'ativar'], function () {
         Route::put('/documento/{documento_id}', [TipoDocumentoController::class, 'ativar'])->name('tipo-documento.ativar');
@@ -97,5 +126,7 @@ Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class
         Route::put('/motorista/{motorista_id}', [MotoristaController::class, 'ativar'])->name('motorista.ativar');
     });
     Route::get('obterCotacao/{data_cotacao?}', [CotacaoController::class, 'obterCotacao'])->name('cotacao.obter');
-    Route::any('currency-update',[ProcessoController::class, 'updatecurrencies'])->name('currency.update');
+    Route::any('currency-update',[ProcessoController::class, 'updatecurrencies'])
+        ->middleware('permission.map:processo_extras')
+        ->name('currency.update');
 });

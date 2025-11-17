@@ -44,7 +44,7 @@
             </form>
 
             @if (!$clientes->isEmpty())
-                <div class="table-responsive">
+                <div class="table-responsive cliente-table">
                     <table id="clienteTable" class="table table-striped table-hover mb-0">
                         <thead style="background: var(--theme-gradient-primary);">
                             <tr>
@@ -68,27 +68,43 @@
                                     <td>{{ $cliente->modalidade_radar ? ucfirst($cliente->modalidade_radar) : 'Não possui' }}</td>
                                     <td>
                                         <div class="d-flex justify-content-center" style="gap: 8px;">
-                                            @if ($cliente->deleted_at == null)
-                                                <a href="{{ route('cliente.edit', $cliente->id) }}" 
-                                                    class="btn btn-sm btn-warning" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            @endif
-                                            <form method="POST"
-                                                action="{{ route($cliente->deleted_at == null ? 'cliente.destroy' : 'cliente.ativar', $cliente->id) }}"
-                                                enctype="multipart/form-data" class="d-inline">
+                                            @if (auth()->user()?->hasPermission('clientes_editar') || auth()->user()?->isSuperUser())
                                                 @if ($cliente->deleted_at == null)
-                                                    @method('DELETE')
-                                                @else
-                                                    @method('PUT')
+                                                    <a href="{{ route('cliente.edit', $cliente->id) }}" 
+                                                        class="btn btn-sm btn-warning" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
                                                 @endif
-                                                @csrf
-                                                <button type="submit"
-                                                    class="btn btn-sm {{ $cliente->deleted_at == null ? 'btn-danger' : 'btn-success' }}"
-                                                    title="{{ $cliente->deleted_at == null ? 'Desativar' : 'Ativar' }}">
-                                                    <i class="fa fa-power-off"></i>
-                                                </button>
-                                            </form>
+                                            @endif
+                                            @if($cliente->deleted_at == null)
+                                                @if (auth()->user()?->hasPermission('clientes_inativar') || auth()->user()?->isSuperUser())
+                                                    <form method="POST"
+                                                        action="{{ route('cliente.destroy', $cliente->id) }}"
+                                                        enctype="multipart/form-data" class="d-inline">
+                                                        @method('DELETE')
+                                                        @csrf
+                                                        <button type="submit"
+                                                            class="btn btn-sm btn-danger"
+                                                            title="Desativar">
+                                                            <i class="fa fa-power-off"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            @else
+                                                @if (auth()->user()?->hasPermission('clientes_reativar') || auth()->user()?->isSuperUser())
+                                                    <form method="POST"
+                                                        action="{{ route('cliente.ativar', $cliente->id) }}"
+                                                        enctype="multipart/form-data" class="d-inline">
+                                                        @method('PUT')
+                                                        @csrf
+                                                        <button type="submit"
+                                                            class="btn btn-sm btn-success"
+                                                            title="Ativar">
+                                                            <i class="fa fa-power-off"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -134,4 +150,13 @@
             }
         });
     </script>
+@endpush
+
+@push('styles')
+    <style>
+        .cliente-table table,
+        .cliente-table table * {
+            transition: none !important;
+        }
+    </style>
 @endpush

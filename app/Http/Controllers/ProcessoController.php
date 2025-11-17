@@ -30,29 +30,27 @@ class ProcessoController extends Controller
     public static function getBid()
     {
         $cacheKey = 'cotacoes_bids_' . now()->format('Y-m-d');
-
-
-        $resultado = Cache::get($cacheKey);
-
-        if (!$resultado) {
-            Artisan::call('atualizar:moedas'); // dispara a command
-            $resultado = Cache::get($cacheKey, []); // pega do cache após atualização
-        }
-
-        return $resultado;
+        return Cache::get($cacheKey, []);
     }
 
     private static function buscarMoedasSuportadas(): array
     {
-        try {
-            $resposta = Http::timeout(10)->get('https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas?$format=json');
-            $dados = $resposta->json()['value'] ?? [];
-            return collect($dados)
-                ->pluck('nomeFormatado', 'simbolo')
-                ->toArray();
-        } catch (\Exception $e) {
-            return [];
-        }
+        $cacheKey = 'moedas_suportadas';
+        $cacheTtl = now()->addWeek();
+
+        return Cache::remember($cacheKey, $cacheTtl, function () {
+            try {
+                $resposta = Http::timeout(10)->get(
+                    'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas?$format=json'
+                );
+                $dados = $resposta->json()['value'] ?? [];
+                return collect($dados)
+                    ->pluck('nomeFormatado', 'simbolo')
+                    ->toArray();
+            } catch (\Exception $e) {
+                return [];
+            }
+        });
     }
 
 
@@ -79,8 +77,14 @@ class ProcessoController extends Controller
             $sortColumn = 'id';
         }
         
+        $user = auth()->user();
+        $allowedClienteIds = $user?->accessibleClienteIds();
+
         $processos = Cliente::when(request()->search != '', function ($query) {
             // $query->where('name','like','%'.request()->search.'%');
+        })
+        ->when($allowedClienteIds !== null, function ($query) use ($allowedClienteIds) {
+            $query->whereIn('id', $allowedClienteIds);
         })
         ->orderBy($sortColumn, $sortDirection)
         ->paginate(request()->paginacao ?? 10)
@@ -91,6 +95,7 @@ class ProcessoController extends Controller
 
     public function processoCliente($cliente_id)
     {
+        $this->ensureClienteAccess((int) $cliente_id);
         $sortColumn = request()->get('sort', 'id');
         $sortDirection = request()->get('direction', 'asc');
         
@@ -105,7 +110,7 @@ class ProcessoController extends Controller
             ->paginate(request()->paginacao ?? 10)
             ->appends(request()->except('page'));
             
-        $cliente = Cliente::find($cliente_id);
+        $cliente = Cliente::findOrFail($cliente_id);
         return view('processo.processos', compact('processos', 'cliente'));
     }
 
@@ -116,6 +121,8 @@ class ProcessoController extends Controller
             if ($cliente_id == null) {
                 return back()->with('messages', ['error' => ['Não foi possível cadastrar o processo!']]);
             }
+
+            $this->ensureClienteAccess((int) $cliente_id);
             
             $tipo_processo = $request->input('tipo_processo', 'maritimo');
             
@@ -153,7 +160,8 @@ class ProcessoController extends Controller
                 $message = $errors->unique();
                 return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
             }
-            $cliente_id = $request->cliente_id;
+            $cliente_id = (int) $request->cliente_id;
+            $this->ensureClienteAccess($cliente_id);
             $tipo_processo = $request->input('tipo_processo', 'maritimo');
             
             // Validar tipo_processo
@@ -183,6 +191,7 @@ class ProcessoController extends Controller
     public function esbocoPdf($id)
     {
         $processo = Processo::with(['cliente', 'processoProdutos.produto'])->findOrFail($id);
+        $this->ensureClienteAccess($processo->cliente_id);
         
         // Parse dos campos monetários do processo
         $processo = $this->parseModelFieldsFromModel($processo);
@@ -256,7 +265,9 @@ class ProcessoController extends Controller
     {
 
         try {
-            $processo =  $this->parseModelFieldsFromModel(Processo::findOrFail($id));
+            $processoModel = Processo::findOrFail($id);
+            $this->ensureClienteAccess($processoModel->cliente_id);
+            $processo =  $this->parseModelFieldsFromModel($processoModel);
             $clientes = Cliente::select(['id', 'nome'])->get();
             $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
             if (!$catalogo) {
@@ -302,6 +313,8 @@ class ProcessoController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $processo = Processo::findOrFail($id);
+            $this->ensureClienteAccess($processo->cliente_id);
             DB::beginTransaction();
 
             $validator = Validator::make($request->all(), [], []);
@@ -536,6 +549,8 @@ class ProcessoController extends Controller
 
     public function updateProcesso(Request $request, $id)
     {
+        $processo = Processo::findOrFail($id);
+        $this->ensureClienteAccess($processo->cliente_id);
 
         $validator = Validator::make($request->all(), [], []);
 
@@ -613,6 +628,8 @@ class ProcessoController extends Controller
 
     public function camposCabecalho(Request $request, $id)
     {
+        $processo = Processo::findOrFail($id);
+        $this->ensureClienteAccess($processo->cliente_id);
         $dadosProcesso = [
             'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
             'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
@@ -645,8 +662,10 @@ class ProcessoController extends Controller
     public function destroy(int $id)
     {
         try {
+            $processo = Processo::findOrFail($id);
+            $this->ensureClienteAccess($processo->cliente_id);
             ProcessoProduto::where('processo_id', $id)->delete();
-            Processo::findOrFail($id)->delete();
+            $processo->delete();
             return back()->with('messages', ['success' => ['Processo excluído com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluír o processo!']]);
@@ -655,7 +674,12 @@ class ProcessoController extends Controller
     public function destroyProduto(int $id)
     {
         try {
-            ProcessoProduto::find($id)->delete();
+            $produtoProcesso = ProcessoProduto::with('processo')->findOrFail($id);
+            $clienteId = $produtoProcesso->processo->cliente_id ?? null;
+            if ($clienteId !== null) {
+                $this->ensureClienteAccess($clienteId);
+            }
+            $produtoProcesso->delete();
             return back()->with('messages', ['success' => ['Produto excluído com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluír o Produto !']]);
@@ -692,5 +716,13 @@ class ProcessoController extends Controller
 
         // Retorna o valor como está, pois o campo decimal(5,2) suporta até 999.99
         return $percentage;
+    }
+
+    protected function ensureClienteAccess(int $clienteId): void
+    {
+        $user = auth()->user();
+        if ($user && !$user->canAccessCliente($clienteId)) {
+            abort(403, 'Cliente não autorizado para este usuário.');
+        }
     }
 }

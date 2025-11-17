@@ -63,9 +63,9 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'permission'               => \App\Http\Middleware\CheckPermission::class,
+        'permission' => \App\Http\Middleware\CheckPermission::class,
         'check.ip' => \App\Http\Middleware\CheckIp::class,
-
-
+        'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
+        'permission.map' => \App\Http\Middleware\MapPermission::class,
     ];
 }

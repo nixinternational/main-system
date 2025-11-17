@@ -31,6 +31,7 @@ return new class extends Migration {
 
             $table->unsignedBigInteger('grupo_id')->nullable();
             $table->foreign('grupo_id')->references('id')->on('grupos');
+            $table->boolean('active')->default(true);
         });
         $updateData = [
             'grupo_id' => $primeiroGrupo->id,

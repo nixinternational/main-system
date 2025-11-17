@@ -6,17 +6,29 @@
        <p class="login-box-msg">Bem-vindo de volta</p>
         <p class="login-subtitle">Faça login para acessar o sistema</p>
 
-        <form action="{{ route('login') }}" method="post" id="loginForm">
+        @if ($errors->any())
+            <div class="alert alert-danger text-sm">
+                Verifique os dados informados e tente novamente.
+            </div>
+        @endif
+
+        @if (session('status'))
+            <div class="alert alert-success text-sm">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        <form action="{{ route('login') }}" method="post" id="loginForm" autocomplete="on" novalidate>
             @csrf
 
-            <div class="input-group mb-3">
-                <div class="input-group-append">
+            <div class="input-group mb-3 position-relative">
+                <div class="input-group-prepend">
                     <div class="input-group-text">
                         <span class="fas fa-envelope"></span>
                     </div>
                 </div>
                 <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                    placeholder="{{ __('Email') }}" required autofocus>
+                    placeholder="E-mail" required autofocus autocomplete="username" value="{{ old('email') }}">
                 @error('email')
                     <span class="invalid-feedback d-block">
                         {{ $message }}
@@ -24,14 +36,14 @@
                 @enderror
             </div>
 
-            <div class="input-group mb-3">
-                <div class="input-group-append">
+            <div class="input-group mb-3 position-relative">
+                <div class="input-group-prepend">
                     <div class="input-group-text">
                         <span class="fas fa-lock"></span>
                     </div>
                 </div>
                 <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
-                    placeholder="Senha" required>
+                    placeholder="Senha" required autocomplete="current-password">
                 @error('password')
                     <span class="invalid-feedback d-block">
                         {{ $message }}
@@ -49,11 +61,6 @@
         </form>
        </div>
 
-        @if (Route::has('password.request'))
-            <p class="mb-0 mt-3 text-center">
-                <a href="{{ route('password.request') }}">Esqueceu sua senha?</a>
-            </p>
-        @endif
     </div>
 
     <script>
