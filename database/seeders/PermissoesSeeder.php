@@ -80,10 +80,12 @@ class PermissoesSeeder extends Seeder
         }
 
         $rootPermission = Permissao::where('slug', 'root')->first();
-        $rootUser = \App\Models\User::where('email', \App\Models\User::SUPER_ADMIN_EMAIL)->first();
 
-        if ($rootPermission && $rootUser) {
-            $rootUser->permissoes()->syncWithoutDetaching([$rootPermission->id]);
+        if ($rootPermission) {
+            $superAdmins = \App\Models\User::whereIn('email', \App\Models\User::superAdminEmails())->get();
+            foreach ($superAdmins as $admin) {
+                $admin->permissoes()->syncWithoutDetaching([$rootPermission->id]);
+            }
         }
     }
 }

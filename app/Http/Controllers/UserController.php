@@ -24,7 +24,7 @@ class UserController extends Controller
             $sortColumn = 'id';
         }
         
-        $users = User::whereNot('email', User::SUPER_ADMIN_EMAIL)
+        $users = User::whereNotIn('email', User::superAdminEmails())
             ->orderBy($sortColumn, $sortDirection)
             ->paginate(request()->paginacao ?? 10)
             ->appends(request()->except('page'));
@@ -174,7 +174,7 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        if ($user->email === User::SUPER_ADMIN_EMAIL) {
+        if (User::isSuperAdminEmail($user->email)) {
             return back()->with('messages', ['error' => ['Não é possível desativar o administrador principal.']]);
         }
 

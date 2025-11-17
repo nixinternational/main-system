@@ -17,6 +17,20 @@ class User extends Authenticatable
         'heryckmota@gmail.com',
     ];
 
+    public static function superAdminEmails(): array
+    {
+        return self::SUPER_ADMIN_EMAILS;
+    }
+
+    public static function isSuperAdminEmail(?string $email): bool
+    {
+        if ($email === null) {
+            return false;
+        }
+
+        return in_array($email, self::SUPER_ADMIN_EMAILS, true);
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -149,7 +163,9 @@ class User extends Authenticatable
     public function isSuperUser(): bool
     {
         $role = $this->obtemTodosGrupos();
-        return $role === 'root' || $this->hasDirectPermission('root') || in_array($this->email, self::SUPER_ADMIN_EMAILS, true);
+        return $role === 'root'
+            || $this->hasDirectPermission('root')
+            || self::isSuperAdminEmail($this->email);
     }
 
     protected function hasDirectPermission(string $slug): bool
