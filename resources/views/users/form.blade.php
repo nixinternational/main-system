@@ -61,6 +61,29 @@
                         @enderror
                     @php
                         $permissoesMarcadas = old('permissoes', $permissoesSelecionadas ?? []);
+                        $permissaoAdmin = $permissoes->firstWhere('slug', 'admin');
+                    @endphp
+                    @if ($permissaoAdmin)
+                        <div class="alert alert-info d-flex align-items-center justify-content-between flex-wrap">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-user-cog mr-2"></i>
+                                <span>
+                                    Administrador: pode cadastrar usuários e gerenciar permissões.
+                                    <small class="d-block mb-0">Super administradores são exclusivos dos e-mails oficiais e não podem ser atribuídos.</small>
+                                </span>
+                            </div>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input permissao-checkbox especial" type="checkbox"
+                                    id="permissao-admin" name="permissoes[]"
+                                    value="{{ $permissaoAdmin->id }}"
+                                    {{ in_array($permissaoAdmin->id, $permissoesMarcadas) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="permissao-admin">
+                                    Conceder acesso administrador
+                                </label>
+                            </div>
+                        </div>
+                    @endif
+                    @php
                         $agrupar = [
                             'Clientes' => [
                                 'listar' => 'clientes_listar',
