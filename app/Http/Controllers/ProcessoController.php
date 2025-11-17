@@ -421,6 +421,7 @@ class ProcessoController extends Controller
                             'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
                             'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
                             'capatazia' => isset($produto['capatazia']) ? $this->parseMoneyToFloat($produto['capatazia']) : null,
+                            'tx_correcao_lacre' => isset($produto['tx_correcao_lacre']) ? $this->parseMoneyToFloat($produto['tx_correcao_lacre']) : null,
                             'afrmm' => isset($produto['afrmm']) ? $this->parseMoneyToFloat($produto['afrmm']) : null,
                             'armazenagem_sts' => isset($produto['armazenagem_sts']) ? $this->parseMoneyToFloat($produto['armazenagem_sts']) : null,
                             'frete_dta_sts_ana' => isset($produto['frete_dta_sts_ana']) ? $this->parseMoneyToFloat($produto['frete_dta_sts_ana']) : null,
@@ -466,6 +467,7 @@ class ProcessoController extends Controller
                 'isps_code' => $this->parseMoneyToFloat($request->isps_code),
                 'handling' => $this->parseMoneyToFloat($request->handling),
                 'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
+                'tx_correcao_lacre' => $this->parseMoneyToFloat($request->tx_correcao_lacre),
                 // Preservar service_charges do processo se não foi enviado ou está vazio
                 'service_charges' => ($request->has('service_charges') && $request->service_charges !== '' && $request->service_charges !== null) ? $this->parseMoneyToFloat($request->service_charges) : ($processoExistente->service_charges ?? null),
                 'afrmm' => $this->parseMoneyToFloat($request->afrmm),
@@ -501,6 +503,10 @@ class ProcessoController extends Controller
                 $dadosProcesso['service_charges_brl'] = $this->parseMoneyToFloat($request->service_charges_brl);
             } else {
                 $dadosProcesso['service_charges_brl'] = $processoExistente->service_charges_brl ?? null;
+            }
+
+            if ($request->has('nacionalizacao') && $request->nacionalizacao !== null) {
+                $dadosProcesso['nacionalizacao'] = $request->nacionalizacao;
             }
             
             if ($request->has('cotacao_service_charges') && $request->cotacao_service_charges !== '' && $request->cotacao_service_charges !== null) {
@@ -606,6 +612,7 @@ class ProcessoController extends Controller
             "codigo_interno" => $request->codigo_interno ?? $id,
             "descricao" => $request->descricao,
             "canal" => $request->canal,
+            'nacionalizacao' => $request->nacionalizacao ?? $processo->nacionalizacao ?? 'outros',
             'multa' => isset($request->multa) ? $this->parseMoneyToFloat($request->multa) : null,
             "status" => $request->status,
             "data_desembaraco_inicio" => $request->data_desembaraco_inicio,
@@ -637,6 +644,7 @@ class ProcessoController extends Controller
             'isps_code' => $this->parseMoneyToFloat($request->isps_code),
             'handling' => $this->parseMoneyToFloat($request->handling),
             'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
+            'tx_correcao_lacre' => $this->parseMoneyToFloat($request->tx_correcao_lacre),
             'service_charges' => $this->parseMoneyToFloat($request->service_charges),
             'service_charges_moeda' => $request->service_charges_moeda,
             'service_charges_usd' => $this->parseMoneyToFloat($request->service_charges_usd),

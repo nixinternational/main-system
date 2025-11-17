@@ -138,6 +138,20 @@
 
                </div>
 
+               @php
+                   $nacionalizacaoSelecionada = $processo->nacionalizacao ?? 'outros';
+               @endphp
+               <div class="row mt-3">
+                   <div class="col-md-4">
+                       <label for="nacionalizacao" class="form-label">Local de Nacionalização</label>
+                       <select class="custom-select" name="nacionalizacao" id="nacionalizacao">
+                           <option value="santos" {{ $nacionalizacaoSelecionada === 'santos' ? 'selected' : '' }}>Porto de Santos</option>
+                           <option value="anapolis" {{ $nacionalizacaoSelecionada === 'anapolis' ? 'selected' : '' }}>Anápolis</option>
+                           <option value="outros" {{ $nacionalizacaoSelecionada === 'outros' ? 'selected' : '' }}>Outros</option>
+                       </select>
+                   </div>
+               </div>
+
                <div class="row mt-1">
 
 

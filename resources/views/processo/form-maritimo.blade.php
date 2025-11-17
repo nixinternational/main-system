@@ -2,6 +2,9 @@
 @section('title', isset($processo) ? '' : 'Cadastrar Processo')
 
 @section('content')
+    @php
+        $nacionalizacaoAtual = $processo->nacionalizacao ?? 'outros';
+    @endphp
     <style>
         [class^="col"] {
             display: flex !important;
@@ -313,6 +316,7 @@
                 isps_code: 0,
                 handling: 0,
                 capatazia: 0,
+                tx_correcao_lacre: 0,
                 afrmm: 0,
                 armazenagem_sts: 0,
                 frete_dta_sts_ana: 0,
@@ -518,6 +522,7 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.isps_code, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.capatazia, 2)}</td>
+        ${getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' : ''}
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.afrmm, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armazenagem_sts, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2)}</td>
@@ -525,9 +530,7 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_sts, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armaz_ana, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.lavagem_container, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_anapolis, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_anapolis, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.correios, 2)}</td>
+        ${getNacionalizacaoAtual() !== 'santos' ? '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td><td data-campo="desp_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis, 2) + '</td><td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' : ''}
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>
@@ -1940,12 +1943,173 @@
             }
         }
 
+        const CAMPOS_EXCLUSIVOS_ANAPOLIS = ['rep_anapolis', 'desp_anapolis', 'correios'];
+        const CAMPO_CORRECAO_LACRE = 'tx_correcao_lacre';
+        const CAMPOS_EXTERNOS_BASE = [
+            'outras_taxas_agente', 'liberacao_bl', 'desconsolidacao', 'isps_code', 'handling', 'capatazia',
+            'tx_correcao_lacre', 'afrmm', 'armazenagem_sts', 'frete_dta_sts_ana', 'sda', 'rep_sts', 'armaz_ana',
+            'lavagem_container', 'rep_anapolis', 'desp_anapolis', 'correios', 'li_dta_honor_nix', 'honorarios_nix'
+        ];
+
+        function getNacionalizacaoAtual() {
+            const valor = $('#nacionalizacao').val();
+            return (valor ? valor.toLowerCase() : 'outros');
+        }
+
         function getCamposExternos() {
-            return [
-                'outras_taxas_agente', 'liberacao_bl', 'desconsolidacao', 'isps_code', 'handling', 'capatazia',
-                'afrmm', 'armazenagem_sts', 'frete_dta_sts_ana', 'sda', 'rep_sts', 'armaz_ana',
-                'lavagem_container', 'rep_anapolis', 'desp_anapolis', 'correios', 'li_dta_honor_nix', 'honorarios_nix'
-            ];
+            const nacionalizacao = getNacionalizacaoAtual();
+            return CAMPOS_EXTERNOS_BASE.filter((campo) => {
+                if (campo === CAMPO_CORRECAO_LACRE) {
+                    return nacionalizacao === 'santos';
+                }
+                if (CAMPOS_EXCLUSIVOS_ANAPOLIS.includes(campo)) {
+                    return nacionalizacao !== 'santos';
+                }
+                return true;
+            });
+        }
+
+        function limparCamposEspecificos(campos) {
+            campos.forEach((campo) => {
+                const cabecalho = $(`#${campo}`);
+                if (cabecalho.length) {
+                    cabecalho.val('');
+                }
+                $(`[id^="${campo}-"]`).each(function() {
+                    $(this).val('');
+                });
+            });
+        }
+
+        function toggleColunas(selector, mostrar) {
+            if (mostrar) {
+                $(selector).show();
+            } else {
+                $(selector).hide();
+            }
+        }
+
+        function atualizarVisibilidadeNacionalizacao(options = {}) {
+            const { recalcular = false } = options;
+            const nacionalizacao = getNacionalizacaoAtual();
+            const mostrarCamposAnapolis = nacionalizacao !== 'santos';
+            const mostrarTxCorrecao = nacionalizacao === 'santos';
+
+            // Ocultar/mostrar colunas no cabeçalho (middleRow)
+            $('th[data-campo="tx_correcao_lacre"]').each(function() {
+                if (mostrarTxCorrecao) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            $('th[data-campo="rep_anapolis"], th[data-campo="desp_anapolis"], th[data-campo="correios"]').each(function() {
+                if (mostrarCamposAnapolis) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            // Ocultar/mostrar colunas nas linhas
+            $('td[data-campo="tx_correcao_lacre"]').each(function() {
+                if (mostrarTxCorrecao) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            $('td[data-campo="rep_anapolis"], td[data-campo="desp_anapolis"], td[data-campo="correios"]').each(function() {
+                if (mostrarCamposAnapolis) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            // Manter compatibilidade com classes antigas
+            toggleColunas('.coluna-anapolis', mostrarCamposAnapolis);
+            toggleColunas('.coluna-tx-correcao-lacre', mostrarTxCorrecao);
+
+            if (mostrarCamposAnapolis) {
+                limparCamposEspecificos([CAMPO_CORRECAO_LACRE]);
+            } else {
+                limparCamposEspecificos(CAMPOS_EXCLUSIVOS_ANAPOLIS);
+            }
+            
+            if (recalcular) {
+                debouncedRecalcular();
+            }
+        }
+
+        const processoId = {{ $processo->id }};
+        let salvandoAutomaticamenteNacionalizacao = false;
+
+        function aguardarConclusaoRecalculo() {
+            return new Promise((resolve) => {
+                const checar = () => {
+                    if (!isRecalculating) {
+                        resolve();
+                    } else {
+                        setTimeout(checar, 150);
+                    }
+                };
+                checar();
+            });
+        }
+
+        async function salvarProdutosAutomaticamente() {
+            if (typeof SalvamentoProdutosFases !== 'function') {
+                throw new Error('Rotina de salvamento não disponível.');
+            }
+            const salvamento = new SalvamentoProdutosFases(processoId);
+            return await salvamento.salvarProdutosEmFases(true);
+        }
+
+        async function processarMudancaNacionalizacao(selectElement) {
+            if (salvandoAutomaticamenteNacionalizacao) {
+                return;
+            }
+            salvandoAutomaticamenteNacionalizacao = true;
+
+            const $select = $(selectElement);
+            const valorAnterior = $select.data('valor-anterior') || $select.val();
+            const novoValor = $select.val();
+            $select.prop('disabled', true);
+
+            try {
+                // Salvar a nacionalização primeiro
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('_method', 'PUT');
+                formData.append('nacionalizacao', novoValor);
+
+                const response = await fetch('{{ route("update.processo", $processo->id) }}', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Não foi possível salvar a nacionalização.');
+                }
+
+                // Recarregar a página para que as colunas sumam completamente
+                window.location.reload();
+            } catch (error) {
+                console.error('Erro ao atualizar nacionalização:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro ao atualizar nacionalização',
+                    text: error.message || 'Verifique os dados e tente novamente.'
+                });
+                $select.prop('disabled', false);
+                if (valorAnterior !== undefined) {
+                    $select.val(valorAnterior);
+                }
+                salvandoAutomaticamenteNacionalizacao = false;
+            }
         }
 
         function getCamposDiferencaCambial() {
@@ -2270,7 +2434,16 @@
             // Honorários NIX
             const honorarios_nix = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0;
 
-            return multa + txDefLi + taxaSiscomex + afrmm + armazenagem_sts + frete_dta_sts_ana + honorarios_nix;
+            let despesas = multa + txDefLi + taxaSiscomex;
+            if (getNacionalizacaoAtual() === 'santos') {
+                // Para santos: multa + txdefli + txsiscomex + afrmm + honorarios
+                despesas += afrmm + honorarios_nix;
+            } else {
+                // Para outros: manter cálculo atual
+                despesas += afrmm + armazenagem_sts + frete_dta_sts_ana + honorarios_nix;
+            }
+
+            return despesas;
         }
 
         function calcularBcIcmsSemReducao(base, impostos, despesas) {
@@ -2597,6 +2770,14 @@
 
         $(document).on('change blur', '.difCambial', function() {
             debouncedAtualizarCambial();
+        });
+
+        $(document).on('focusin', '#nacionalizacao', function() {
+            $(this).data('valor-anterior', $(this).val());
+        });
+
+        $(document).on('change', '#nacionalizacao', function() {
+            processarMudancaNacionalizacao(this);
         });
 
 
@@ -2929,6 +3110,7 @@
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][isps_code]" id="isps_code-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][handling]" id="handling-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][capatazia]" id="capatazia-${newIndex}" value=""></td>
+        ${getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][tx_correcao_lacre]" id="tx_correcao_lacre-${newIndex}" value=""></td>' : ''}
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][afrmm]" id="afrmm-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][armazenagem_sts]" id="armazenagem_sts-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][frete_dta_sts_ana]" id="frete_dta_sts_ana-${newIndex}" value=""></td>
@@ -2936,9 +3118,7 @@
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_sts]" id="rep_sts-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][armaz_ana]" id="armaz_ana-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][lavagem_container]" id="lavagem_container-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_anapolis]" id="rep_anapolis-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_anapolis]" id="desp_anapolis-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][correios]" id="correios-${newIndex}" value=""></td>
+        ${getNacionalizacaoAtual() !== 'santos' ? '<td data-campo="rep_anapolis"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_anapolis]" id="rep_anapolis-${newIndex}" value=""></td><td data-campo="desp_anapolis"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_anapolis]" id="desp_anapolis-${newIndex}" value=""></td><td data-campo="correios"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][correios]" id="correios-${newIndex}" value=""></td>' : ''}
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][li_dta_honor_nix]" id="li_dta_honor_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][honorarios_nix]" id="honorarios_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
@@ -2976,6 +3156,13 @@
                     atualizarPesoLiquidoTotal(pesoLiquidoTotal);
                 }
             }, 500);
+
+            const $nacionalizacao = $('#nacionalizacao');
+            if ($nacionalizacao.length) {
+                $nacionalizacao.data('valor-anterior', $nacionalizacao.val());
+            }
+
+            atualizarVisibilidadeNacionalizacao();
 
         })
         $('.nav-link').on('click', function(e) {

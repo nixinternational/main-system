@@ -65,6 +65,7 @@ class ProcessoProduto extends Model
         'isps_code',
         'handling',
         'capatazia',
+        'tx_correcao_lacre',
         'afrmm',
         'armazenagem_sts',
         'frete_dta_sts_ana',
