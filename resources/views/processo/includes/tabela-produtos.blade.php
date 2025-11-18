@@ -1283,7 +1283,6 @@
                         showCloseButton: true,
                         timer: 3000,
                         timerProgressBar: true,
-                        allowOutsideClick: true,
                     });
 
                     Toast.fire({

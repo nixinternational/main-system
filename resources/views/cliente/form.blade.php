@@ -1262,7 +1262,6 @@
             showCloseButton: true,
             timer: 3500,
             timerProgressBar: true,
-            allowOutsideClick: true,
         });
 
         function downloadDocument(url) {

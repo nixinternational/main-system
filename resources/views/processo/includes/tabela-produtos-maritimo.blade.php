@@ -318,10 +318,15 @@
                         @foreach ($processoProdutos as $index => $processoProduto)
                             <tr class="linhas-input" id="row-{{ $index }}">
                                 <td class="d-flex align-items-center justify-content-center">
-                                    <button type="button" onclick="showDeleteConfirmation({{ $processoProduto->id }})"
-                                        class="btn btn-danger btn-sm btn-remove" data-id="{{ $processoProduto->id }}">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" onclick="showDeleteConfirmation({{ $processoProduto->id }})"
+                                            class="btn btn-danger btn-sm btn-remove" data-id="{{ $processoProduto->id }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info btn-sm btn-debug-linha" data-row="{{ $index }}" title="Cálculo da linha">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    </div>
                                     <input type="checkbox" style="margin-left: 10px" class="select-produto"
                                         value="{{ $processoProduto->id }}">
                                 </td>
@@ -1057,6 +1062,26 @@
             </div>
         </form>
 
+        <div class="modal fade" id="debugLinhaModal" tabindex="-1" aria-labelledby="debugLinhaModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable debug-modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="debugLinhaModalLabel">Cálculo da linha</h5>
+                        <button type="button" class="close btn-close-debug" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="debugLinhaConteudo" class="table-responsive"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-close-debug">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
             // Sistema de salvamento em fases para produtos
             class SalvamentoProdutosFases {
@@ -1419,7 +1444,6 @@
                         showCloseButton: true,
                         timer: 3000,
                         timerProgressBar: true,
-                        allowOutsideClick: true,
                     });
 
                     Toast.fire({
@@ -1735,6 +1759,15 @@
 
         #custom-tabs-three-home .btn-primary:hover {
             background: var(--theme-gradient-primary-hover);
+        }
+
+        #debugLinhaModal .modal-dialog {
+            max-width: 95vw;
+            width: 95vw;
+        }
+
+        #debugLinhaModal .modal-body {
+            overflow-x: auto;
         }
 
         /* Espaçamento de ícones nos botões */
