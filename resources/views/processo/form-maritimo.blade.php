@@ -288,6 +288,40 @@
             };
         }
 
+        function toNumber(value) {
+            if (value === null || value === undefined || value === '') return 0;
+            if (typeof value === 'number') return value;
+            if (typeof value === 'string') {
+                const parsed = MoneyUtils.parseMoney(value);
+                if (!isNaN(parsed)) {
+                    return parsed;
+                }
+            }
+            return Number(value) || 0;
+        }
+
+        function formatPlainNumber(value, decimals = 4) {
+            if (value === null || value === undefined || value === '') return '-';
+            const num = toNumber(value);
+            if (!isFinite(num)) return '-';
+            const fixed = num.toFixed(decimals);
+            return fixed.replace(/\.?0+$/, '') || '0';
+        }
+
+        function formatComponent(label, value, decimals = 4) {
+            return `${label} (${formatPlainNumber(value, decimals)})`;
+        }
+
+        function formatCalcDetail(result, parts, decimals = 4) {
+            const filteredParts = (parts || []).filter(part => part !== null && part !== undefined && part !== '');
+            const expression = filteredParts.join(' ');
+            const formattedResult = formatPlainNumber(result, decimals);
+            if (!expression) {
+                return formattedResult;
+            }
+            return `${expression} = ${formattedResult}`;
+        }
+
         function formatDebugMoney(value, decimals = 4) {
             return MoneyUtils.formatMoney(value ?? 0, decimals);
         }
@@ -299,66 +333,154 @@
             return MoneyUtils.formatPercentage(value, decimals);
         }
 
+        function buildRow(label, value, formula, detail = '-') {
+            return { label, value, formula, detail: detail || '-' };
+        }
+
         function buildGlobalRows(globais) {
             if (!globais || Object.keys(globais).length === 0) return [];
             return [
-                { label: 'FOB Total do processo (USD)', value: formatDebugMoney(globais.fobTotalProcesso, 4), formula: 'Soma de todos os FOB TOTAL USD das linhas.' },
-                { label: 'Peso Líq. Total do processo', value: globais.pesoTotalProcesso ?? '-', formula: 'Soma de todos os pesos líquidos totais.' },
-                { label: 'Cotação USD utilizada', value: formatDebugMoney(globais.cotacaoUSD, 4), formula: 'Cotação usada nos cálculos do processo.' },
-                { label: 'Taxa SISCOMEX do processo (R$)', value: formatDebugMoney(globais.taxaSiscomexProcesso, 2), formula: 'Valor informado em Taxa SISCOMEX (processo).' },
-                { label: 'Frete total do processo (USD)', value: formatDebugMoney(globais.freteProcessoUSD, 4), formula: 'Frete informado convertido para USD.' },
-                { label: 'Seguro total do processo (USD)', value: formatDebugMoney(globais.seguroProcessoUSD, 4), formula: 'Seguro informado convertido para USD.' },
-                { label: 'Acréscimo frete total (USD)', value: formatDebugMoney(globais.acrescimoProcessoUSD, 4), formula: 'Acréscimo informado convertido para USD.' },
-                { label: 'Service charges total (USD)', value: formatDebugMoney(globais.serviceChargesProcessoUSD, 4), formula: 'Service charges informados convertidos para USD.' },
+                buildRow(
+                    'FOB Total do processo (USD)',
+                    formatDebugMoney(globais.fobTotalProcesso, 4),
+                    'Soma de todos os FOB TOTAL USD das linhas.',
+                    formatCalcDetail(globais.fobTotalProcesso, [formatComponent('Σ FOB linhas', globais.fobTotalProcesso, 4)], 4)
+                ),
+                buildRow(
+                    'Peso Líq. Total do processo',
+                    globais.pesoTotalProcesso ?? '-',
+                    'Soma de todos os pesos líquidos totais.',
+                    formatCalcDetail(globais.pesoTotalProcesso, [formatComponent('Σ Pesos líquidos', globais.pesoTotalProcesso, 4)], 4)
+                ),
+                buildRow(
+                    'Cotação USD utilizada',
+                    formatDebugMoney(globais.cotacaoUSD, 4),
+                    'Cotação usada nos cálculos do processo.',
+                    formatCalcDetail(globais.cotacaoUSD, [formatComponent('Cotação USD', globais.cotacaoUSD, 4)], 4)
+                ),
+                buildRow(
+                    'Taxa SISCOMEX do processo (R$)',
+                    formatDebugMoney(globais.taxaSiscomexProcesso, 2),
+                    'Valor informado em Taxa SISCOMEX (processo).',
+                    formatCalcDetail(globais.taxaSiscomexProcesso, [formatComponent('Valor digitado', globais.taxaSiscomexProcesso, 2)], 2)
+                ),
+                buildRow(
+                    'Frete total do processo (USD)',
+                    formatDebugMoney(globais.freteProcessoUSD, 4),
+                    'Frete informado convertido para USD.',
+                    formatCalcDetail(globais.freteProcessoUSD, [formatComponent('Frete convertido', globais.freteProcessoUSD, 4)], 4)
+                ),
+                buildRow(
+                    'Seguro total do processo (USD)',
+                    formatDebugMoney(globais.seguroProcessoUSD, 4),
+                    'Seguro informado convertido para USD.',
+                    formatCalcDetail(globais.seguroProcessoUSD, [formatComponent('Seguro convertido', globais.seguroProcessoUSD, 4)], 4)
+                ),
+                buildRow(
+                    'Acréscimo frete total (USD)',
+                    formatDebugMoney(globais.acrescimoProcessoUSD, 4),
+                    'Acréscimo informado convertido para USD.',
+                    formatCalcDetail(globais.acrescimoProcessoUSD, [formatComponent('Acréscimo convertido', globais.acrescimoProcessoUSD, 4)], 4)
+                ),
+                buildRow(
+                    'Service charges total (USD)',
+                    formatDebugMoney(globais.serviceChargesProcessoUSD, 4),
+                    'Service charges informados convertidos para USD.',
+                    formatCalcDetail(globais.serviceChargesProcessoUSD, [formatComponent('Service charges convertidos', globais.serviceChargesProcessoUSD, 4)], 4)
+                ),
             ];
         }
 
         function buildDebugRows(dados, globais) {
+            const pesoTotalProcesso = toNumber(globais?.pesoTotalProcesso);
+            const valorAduaneiroBrl = toNumber(dados.valorAduaneiroBrl);
+            const quantidade = toNumber(dados.quantidade || 0) || 0;
+            const fobUnitario = toNumber(dados.fobUnitario);
+            const fobTotal = toNumber(dados.fobTotal);
+            const fatorPeso = toNumber(dados.fatorPeso);
+            const freteProcessoUSD = toNumber(globais?.freteProcessoUSD);
+            const seguroProcessoUSD = toNumber(globais?.seguroProcessoUSD);
+            const acrescimoProcessoUSD = toNumber(globais?.acrescimoProcessoUSD);
+            const serviceChargesProcessoUSD = toNumber(globais?.serviceChargesProcessoUSD);
+            const fobTotalProcesso = toNumber(globais?.fobTotalProcesso);
+            const cotacaoUSD = toNumber(globais?.cotacaoUSD);
+            const taxaSiscomexProcesso = toNumber(globais?.taxaSiscomexProcesso);
+            const vlrII = toNumber(dados.vlrII);
+            const bcIpiVal = toNumber(dados.bcIpi);
+            const vlrIpi = toNumber(dados.vlrIpi);
+            const bcPisCofinsVal = toNumber(dados.bcPisCofins);
+            const vlrPis = toNumber(dados.vlrPis);
+            const vlrCofins = toNumber(dados.vlrCofins);
+            const despesaAduaneiraVal = toNumber(dados.despesaAduaneira);
+            const bcIcmsSemReducaoVal = toNumber(dados.bcIcmsSemReducao);
+            const vlrIcmsSemReducaoVal = toNumber(dados.vlrIcmsSemReducao);
+            const bcIcmsReduzidoVal = toNumber(dados.bcIcmsReduzido);
+            const vlrIcmsReduzidoVal = toNumber(dados.vlrIcmsReduzido);
+            const vlrTotalProdNfVal = toNumber(dados.vlrTotalProdNf);
+            const vlrTotalNfSemIcmsVal = toNumber(dados.vlrTotalNfSemIcms);
+            const baseIcmsStVal = toNumber(dados.baseIcmsSt);
+            const vlrIcmsStVal = toNumber(dados.valorIcmsSt);
+            const icmsStPercent = toNumber(dados.icmsStPercent);
+            const fatorReducaoAplicado = dados.reducao || 1;
+            const fatorMva = 1 + (dados.mva || 0);
+            const quantidadeSafe = quantidade > 0 ? quantidade : 1;
             const formulaDespesa = (globais?.nacionalizacao === 'santos')
                 ? 'Multa + (Valor Aduaneiro BRL × % DEF/L.I.) + Taxa SISCOMEX da linha + AFRMM + Honorários NIX.'
                 : 'Multa + (Valor Aduaneiro BRL × % DEF/L.I.) + Taxa SISCOMEX da linha + AFRMM + Armazenagem STS + Frete DTA STS/ANA + Honorários NIX.';
+            const despComp = dados.despesasComponentes || {};
+            const detailDespesaExpr = (globais?.nacionalizacao === 'santos')
+                ? `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Honorários NIX', despComp.honorarios_nix, 2)}`
+                : `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Armazenagem STS', despComp.armazenagem_sts, 2)} + ${formatComponent('Frete DTA STS/ANA', despComp.frete_dta_sts_ana, 2)} + ${formatComponent('Honorários NIX', despComp.honorarios_nix, 2)}`;
+            const detailDespesa = formatCalcDetail(despesaAduaneiraVal, [detailDespesaExpr], 2);
+            const numeradorBcIcms = valorAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despesaAduaneiraVal;
+            const fatorIcmsDivisor = 1 - toNumber(dados.aliquotaIcms);
+
             const rows = [
-                { label: 'Produto / Descrição', value: dados.produto ?? '-', formula: 'Valor informado nas colunas Produto e Descrição.' },
-                { label: 'Quantidade', value: dados.quantidade ?? '-', formula: 'Valor digitado na coluna Quantidade.' },
-                { label: 'Peso Líq. Total', value: dados.pesoTotal ?? '-', formula: 'Campo Peso Líquido Total da linha.' },
-                { label: 'FOB Unit USD', value: formatDebugMoney(dados.fobUnitario, 4), formula: 'Valor digitado em FOB UNIT USD.' },
-                { label: 'FOB Total USD', value: formatDebugMoney(dados.fobTotal, 4), formula: 'FOB Unit USD × Quantidade.' },
-                { label: 'Fator Peso', value: formatDebugMoney(dados.fatorPeso, 6), formula: 'Peso Líq. Total da linha ÷ Peso Líq. Total do processo.' },
-                { label: 'Frete USD', value: formatDebugMoney(dados.freteUsd, 4), formula: 'Frete do processo (USD) × Fator Peso da linha.' },
-                { label: 'Seguro USD', value: formatDebugMoney(dados.seguroUsd, 4), formula: '(Seguro do processo ÷ FOB total do processo) × FOB total da linha.' },
-                { label: 'Acréscimo Frete USD', value: formatDebugMoney(dados.acrescimoUsd, 4), formula: '(Acréscimo do processo ÷ FOB total do processo) × FOB total da linha.' },
-                { label: 'Service Charges USD', value: formatDebugMoney(dados.serviceChargesUsd, 4), formula: 'Service charges do processo × Fator Peso da linha.' },
-                { label: 'THC (R$ → USD)', value: formatDebugMoney(dados.thc, 4), formula: 'THC/Capatazia informado × Fator Peso (convertido para USD).' },
-                { label: 'VLR CRF Total', value: formatDebugMoney(dados.vlrCrfTotal, 4), formula: 'FOB Total USD + Frete USD.' },
-                { label: 'Valor Aduaneiro USD', value: formatDebugMoney(dados.vlrAduaneiroUsd, 4), formula: 'VLR CRF Total + Service Charges USD + Acréscimo USD + Seguro USD + THC (USD).' },
-                { label: 'Fator Valor FOB', value: formatDebugMoney(dados.fatorVlrFob, 6), formula: 'FOB Total USD da linha ÷ FOB Total USD do processo.' },
-                { label: 'Fator Taxa Siscomex', value: formatDebugMoney(dados.fatorSiscomex, 6), formula: 'Taxa SISCOMEX do processo ÷ (FOB Total USD × Cotação USD).' },
-                { label: 'Taxa Siscomex (linha)', value: formatDebugMoney(dados.taxaSiscomexUnit, 4), formula: 'Fator Taxa Siscomex × (FOB Total da linha × Cotação USD).' },
-                { label: 'Dif. Cambial Frete', value: formatDebugMoney(dados.diferencaCambialFrete, 4), formula: '(Frete USD da linha × Dif. cambial frete processo) - (Frete USD × cotação).' },
-                { label: 'Dif. Cambial FOB', value: formatDebugMoney(dados.diferencaCambialFob, 4), formula: '(Fator Valor FOB × Dif. cambial FOB processo) - (FOB Total × cotação).' },
-                { label: 'Redução ICMS', value: formatDebugPercentage(dados.reducao, 2), formula: 'Percentual informado em Redução na linha.' },
-                { label: 'VLR II', value: formatDebugMoney(dados.vlrII, 2), formula: 'Valor Aduaneiro BRL × Alíquota de II.' },
-                { label: 'BC IPI', value: formatDebugMoney(dados.bcIpi, 2), formula: 'Valor Aduaneiro BRL + VLR II.' },
-                { label: 'VLR IPI', value: formatDebugMoney(dados.vlrIpi, 2), formula: 'BC IPI × Alíquota de IPI.' },
-                { label: 'BC PIS/COFINS', value: formatDebugMoney(dados.bcPisCofins, 2), formula: 'Base igual ao Valor Aduaneiro BRL.' },
-                { label: 'VLR PIS', value: formatDebugMoney(dados.vlrPis, 2), formula: 'BC PIS/COFINS × Alíquota PIS.' },
-                { label: 'VLR COFINS', value: formatDebugMoney(dados.vlrCofins, 2), formula: 'BC PIS/COFINS × Alíquota COFINS.' },
-                { label: 'Desp. Aduaneira', value: formatDebugMoney(dados.despesaAduaneira, 2), formula: formulaDespesa },
-                { label: 'BC ICMS s/Redução', value: formatDebugMoney(dados.bcIcmsSemReducao, 2), formula: '[(Base + II + IPI + PIS + COFINS + Despesas)] ÷ (1 - % ICMS).' },
-                { label: 'VLR ICMS s/Redução', value: formatDebugMoney(dados.vlrIcmsSemReducao, 2), formula: 'BC ICMS s/Redução × % ICMS.' },
-                { label: 'BC ICMS reduzido', value: formatDebugMoney(dados.bcIcmsReduzido, 2), formula: 'Resultado de BC ICMS após aplicar o percentual de redução.' },
-                { label: 'VLR ICMS reduzido', value: formatDebugMoney(dados.vlrIcmsReduzido, 2), formula: 'BC ICMS reduzido × % ICMS.' },
-                { label: 'VLR Unit. Prod. NF', value: formatDebugMoney(dados.vlrUnitProdNf, 2), formula: 'Valor Total Produto NF ÷ Quantidade.' },
-                { label: 'VLR Total Prod. NF', value: formatDebugMoney(dados.vlrTotalProdNf, 2), formula: 'Base Aduaneira BRL + VLR II.' },
-                { label: 'VLR Total NF s/ICMS ST', value: formatDebugMoney(dados.vlrTotalNfSemIcms, 2), formula: 'VLR Total Prod. NF + IPI + PIS + COFINS + Despesas + ICMS reduzido.' },
-                { label: 'BC ICMS-ST', value: formatDebugMoney(dados.baseIcmsSt, 2), formula: 'VLR Total NF s/ICMS ST × (1 + MVA).' }
+                buildRow('Produto / Descrição', dados.produto ?? '-', 'Valor informado nas colunas Produto e Descrição.', `Valor informado: ${dados.produto ?? '-'}`),
+                buildRow('Quantidade', dados.quantidade ?? '-', 'Valor digitado na coluna Quantidade.', formatComponent('Quantidade', quantidade, 4)),
+                buildRow('Peso Líq. Total', dados.pesoTotal ?? '-', 'Campo Peso Líquido Total da linha.', formatComponent('Peso da linha', dados.pesoTotal, 4)),
+                buildRow('FOB Unit USD', formatDebugMoney(dados.fobUnitario, 4), 'Valor digitado em FOB UNIT USD.', formatComponent('FOB Unit USD', fobUnitario, 4)),
+                buildRow('FOB Total USD', formatDebugMoney(dados.fobTotal, 4), 'FOB Unit USD × Quantidade.', formatCalcDetail(fobTotal, [formatComponent('FOB Unit USD', fobUnitario, 4), '×', formatComponent('Quantidade', quantidade, 4)], 4)),
+                buildRow('Fator Peso', formatDebugMoney(dados.fatorPeso, 6), 'Peso Líq. Total da linha ÷ Peso Líq. Total do processo.', formatCalcDetail(fatorPeso, [formatComponent('Peso da linha', dados.pesoTotal, 4), '÷', formatComponent('Peso total processo', pesoTotalProcesso, 4)], 6)),
+                buildRow('Frete USD', formatDebugMoney(dados.freteUsd, 4), 'Frete do processo (USD) × Fator Peso da linha.', formatCalcDetail(dados.freteUsd, [formatComponent('Frete processo USD', freteProcessoUSD, 4), '×', formatComponent('Fator Peso', fatorPeso, 6)], 4)),
+                buildRow('Seguro USD', formatDebugMoney(dados.seguroUsd, 4), '(Seguro do processo ÷ FOB total do processo) × FOB total da linha.', formatCalcDetail(dados.seguroUsd, ['(', formatComponent('Seguro processo USD', seguroProcessoUSD, 4), '÷', formatComponent('FOB total processo', fobTotalProcesso, 4), ')', '×', formatComponent('FOB total linha', fobTotal, 4)], 4)),
+                buildRow('Acréscimo Frete USD', formatDebugMoney(dados.acrescimoUsd, 4), '(Acréscimo do processo ÷ FOB total do processo) × FOB total da linha.', formatCalcDetail(dados.acrescimoUsd, ['(', formatComponent('Acréscimo processo USD', acrescimoProcessoUSD, 4), '÷', formatComponent('FOB total processo', fobTotalProcesso, 4), ')', '×', formatComponent('FOB total linha', fobTotal, 4)], 4)),
+                buildRow('Service Charges USD', formatDebugMoney(dados.serviceChargesUsd, 4), 'Service charges do processo × Fator Peso da linha.', formatCalcDetail(dados.serviceChargesUsd, [formatComponent('Service charges processo USD', serviceChargesProcessoUSD, 4), '×', formatComponent('Fator Peso', fatorPeso, 6)], 4)),
+                buildRow('THC (R$ → USD)', formatDebugMoney(dados.thc, 4), 'THC/Capatazia informado × Fator Peso (convertido para USD).', formatCalcDetail(dados.thc, [formatComponent('THC processo', dados.thcBaseProcesso, 4), '×', formatComponent('Fator Peso', fatorPeso, 6)], 4)),
+                buildRow('VLR CRF Total', formatDebugMoney(dados.vlrCrfTotal, 4), 'FOB Total USD + Frete USD.', formatCalcDetail(dados.vlrCrfTotal, [formatComponent('FOB Total USD', fobTotal, 4), '+', formatComponent('Frete USD', dados.freteUsd, 4)], 4)),
+                buildRow('Valor Aduaneiro USD', formatDebugMoney(dados.vlrAduaneiroUsd, 4), 'VLR CRF Total + Service Charges USD + Acréscimo USD + Seguro USD + THC (USD).', formatCalcDetail(dados.vlrAduaneiroUsd, [formatComponent('VLR CRF Total', dados.vlrCrfTotal, 4), '+', formatComponent('Service Charges USD', dados.serviceChargesUsd, 4), '+', formatComponent('Acréscimo USD', dados.acrescimoUsd, 4), '+', formatComponent('Seguro USD', dados.seguroUsd, 4), '+', formatComponent('THC USD', dados.thc, 4)], 4)),
+                buildRow('Fator Valor FOB', formatDebugMoney(dados.fatorVlrFob, 6), 'FOB Total USD da linha ÷ FOB Total USD do processo.', formatCalcDetail(dados.fatorVlrFob, [formatComponent('FOB Total linha', fobTotal, 4), '÷', formatComponent('FOB Total processo', fobTotalProcesso, 4)], 6)),
+                buildRow('Fator Taxa Siscomex', formatDebugMoney(dados.fatorSiscomex, 6), 'Taxa SISCOMEX do processo ÷ (FOB Total USD × Cotação USD).', formatCalcDetail(dados.fatorSiscomex, [formatComponent('Taxa SISCOMEX processo', taxaSiscomexProcesso, 2), '÷', '(', formatComponent('FOB Total processo', fobTotalProcesso, 4), '×', formatComponent('Cotação USD', cotacaoUSD, 4), ')'], 6)),
+                buildRow('Taxa Siscomex (linha)', formatDebugMoney(dados.taxaSiscomexUnit, 4), 'Fator Taxa Siscomex × (FOB Total da linha × Cotação USD).', formatCalcDetail(dados.taxaSiscomexUnit, [formatComponent('Fator Taxa Siscomex', dados.fatorSiscomex, 6), '×', '(', formatComponent('FOB Total linha', fobTotal, 4), '×', formatComponent('Cotação USD', cotacaoUSD, 4), ')'], 4)),
+                buildRow('Dif. Cambial Frete', formatDebugMoney(dados.diferencaCambialFrete, 4), '(Frete USD da linha × Dif. cambial frete processo) - (Frete USD × cotação).', formatCalcDetail(dados.diferencaCambialFrete, ['(', formatComponent('Frete USD linha', dados.freteUsd, 4), '×', formatComponent('Dif. cambial frete (processo)', dados.diferencaCambialFreteProcesso, 4), ')', '-', '(', formatComponent('Frete USD linha', dados.freteUsd, 4), '×', formatComponent('Cotação USD', cotacaoUSD, 4), ')'], 4)),
+                buildRow('Dif. Cambial FOB', formatDebugMoney(dados.diferencaCambialFob, 4), '(Fator Valor FOB × Dif. cambial FOB processo) - (FOB Total × cotação).', formatCalcDetail(dados.diferencaCambialFob, ['(', formatComponent('Fator Valor FOB', dados.fatorVlrFob, 6), '×', formatComponent('Dif. cambial FOB (processo)', dados.diferencaCambialFobProcesso, 4), ')', '-', '(', formatComponent('FOB Total USD', fobTotal, 4), '×', formatComponent('Cotação USD', cotacaoUSD, 4), ')'], 4)),
+                buildRow('Redução ICMS', formatDebugPercentage(dados.reducao, 2), 'Percentual informado em Redução na linha.', `Percentual: ${formatDebugPercentage(dados.reducao, 2)} / Fração aplicada: ${formatPlainNumber(fatorReducaoAplicado, 4)}`),
+                buildRow('VLR II', formatDebugMoney(dados.vlrII, 2), 'Valor Aduaneiro BRL × Alíquota de II.', formatCalcDetail(vlrII, [formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '×', formatComponent('Alíquota II', dados.aliquotaIi, 4)], 2)),
+                buildRow('BC IPI', formatDebugMoney(dados.bcIpi, 2), 'Valor Aduaneiro BRL + VLR II.', formatCalcDetail(bcIpiVal, [formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '+', formatComponent('VLR II', vlrII, 2)], 2)),
+                buildRow('VLR IPI', formatDebugMoney(dados.vlrIpi, 2), 'BC IPI × Alíquota de IPI.', formatCalcDetail(vlrIpi, [formatComponent('BC IPI', bcIpiVal, 2), '×', formatComponent('Alíquota IPI', dados.aliquotaIpi, 4)], 2)),
+                buildRow('BC PIS/COFINS', formatDebugMoney(dados.bcPisCofins, 2), 'Base igual ao Valor Aduaneiro BRL.', formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2)),
+                buildRow('VLR PIS', formatDebugMoney(dados.vlrPis, 2), 'BC PIS/COFINS × Alíquota PIS.', formatCalcDetail(vlrPis, [formatComponent('BC PIS/COFINS', bcPisCofinsVal, 2), '×', formatComponent('Alíquota PIS', dados.aliquotaPis, 4)], 2)),
+                buildRow('VLR COFINS', formatDebugMoney(dados.vlrCofins, 2), 'BC PIS/COFINS × Alíquota COFINS.', formatCalcDetail(vlrCofins, [formatComponent('BC PIS/COFINS', bcPisCofinsVal, 2), '×', formatComponent('Alíquota COFINS', dados.aliquotaCofins, 4)], 2)),
+                buildRow('Desp. Aduaneira', formatDebugMoney(dados.despesaAduaneira, 2), formulaDespesa, detailDespesa),
+                buildRow('BC ICMS s/Redução', formatDebugMoney(dados.bcIcmsSemReducao, 2), '[(Base + II + IPI + PIS + COFINS + Despesas)] ÷ (1 - % ICMS).', formatCalcDetail(bcIcmsSemReducaoVal, ['(', formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '+', formatComponent('II', vlrII, 2), '+', formatComponent('IPI', vlrIpi, 2), '+', formatComponent('PIS', vlrPis, 2), '+', formatComponent('COFINS', vlrCofins, 2), '+', formatComponent('Despesas Aduaneiras', despesaAduaneiraVal, 2), ')', '÷', formatComponent('(1 - % ICMS)', fatorIcmsDivisor, 4)], 2)),
+                buildRow('VLR ICMS s/Redução', formatDebugMoney(dados.vlrIcmsSemReducao, 2), 'BC ICMS s/Redução × % ICMS.', formatCalcDetail(vlrIcmsSemReducaoVal, [formatComponent('BC ICMS s/Redução', bcIcmsSemReducaoVal, 2), '×', formatComponent('% ICMS', dados.aliquotaIcms, 4)], 2)),
+                buildRow('BC ICMS reduzido', formatDebugMoney(dados.bcIcmsReduzido, 2), 'Resultado de BC ICMS após aplicar o percentual de redução.', formatCalcDetail(bcIcmsReduzidoVal, [formatComponent('BC ICMS s/Redução', bcIcmsSemReducaoVal, 2), '×', formatComponent('Fator Redução', fatorReducaoAplicado, 4)], 2)),
+                buildRow('VLR ICMS reduzido', formatDebugMoney(dados.vlrIcmsReduzido, 2), 'BC ICMS reduzido × % ICMS.', formatCalcDetail(vlrIcmsReduzidoVal, [formatComponent('BC ICMS reduzido', bcIcmsReduzidoVal, 2), '×', formatComponent('% ICMS', dados.aliquotaIcms, 4)], 2)),
+                buildRow('VLR Unit. Prod. NF', formatDebugMoney(dados.vlrUnitProdNf, 2), 'Valor Total Produto NF ÷ Quantidade.', quantidade > 0
+                    ? formatCalcDetail(dados.vlrUnitProdNf, [formatComponent('VLR Total Prod. NF', vlrTotalProdNfVal, 2), '÷', formatComponent('Quantidade', quantidade, 4)], 2)
+                    : `Quantidade informada igual a 0; sistema assume 1 unidade. ${formatCalcDetail(dados.vlrUnitProdNf, [formatComponent('VLR Total Prod. NF', vlrTotalProdNfVal, 2), '÷', formatComponent('Quantidade assumida', quantidadeSafe, 4)], 2)}`),
+                buildRow('VLR Total Prod. NF', formatDebugMoney(dados.vlrTotalProdNf, 2), 'Base Aduaneira BRL + VLR II.', formatCalcDetail(vlrTotalProdNfVal, [formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '+', formatComponent('VLR II', vlrII, 2)], 2)),
+                buildRow('VLR Total NF s/ICMS ST', formatDebugMoney(dados.vlrTotalNfSemIcms, 2), 'VLR Total Prod. NF + IPI + PIS + COFINS + Desp. Aduaneira + VLR ICMS reduzido.', formatCalcDetail(vlrTotalNfSemIcmsVal, [formatComponent('VLR Total Prod. NF', vlrTotalProdNfVal, 2), '+', formatComponent('IPI', vlrIpi, 2), '+', formatComponent('PIS', vlrPis, 2), '+', formatComponent('COFINS', vlrCofins, 2), '+', formatComponent('Desp. Aduaneira', despesaAduaneiraVal, 2), '+', formatComponent('VLR ICMS reduzido', vlrIcmsReduzidoVal, 2)], 2)),
+                buildRow('BC ICMS-ST', formatDebugMoney(dados.baseIcmsSt, 2), 'VLR Total NF s/ICMS ST × (1 + MVA).', formatCalcDetail(baseIcmsStVal, [formatComponent('VLR Total NF s/ICMS ST', vlrTotalNfSemIcmsVal, 2), '×', formatComponent('(1 + MVA)', fatorMva, 4)], 2)),
+                buildRow('VLR ICMS-ST', formatDebugMoney(dados.valorIcmsSt, 2), 'Base ICMS-ST × % ICMS-ST - VLR ICMS reduzido (quando aplicável).', icmsStPercent > 0 ? formatCalcDetail(vlrIcmsStVal, ['(', formatComponent('BC ICMS-ST', baseIcmsStVal, 2), '×', formatComponent('% ICMS-ST', icmsStPercent, 4), ')', '-', formatComponent('VLR ICMS reduzido', vlrIcmsReduzidoVal, 2)], 2) : 'Percentual ICMS-ST não informado.')
             ];
             if (globais && globais.fobTotalProcesso) {
-                rows.splice(5, 0, {
-                    label: 'FOB Total do processo (USD)',
-                    value: formatDebugMoney(globais.fobTotalProcesso, 4),
-                    formula: 'Soma dos FOB TOTAL USD de todas as linhas, usada como base para rateios.'
-                });
+                rows.splice(5, 0, buildRow(
+                    'FOB Total do processo (USD)',
+                    formatDebugMoney(globais.fobTotalProcesso, 4),
+                    'Soma dos FOB TOTAL USD de todas as linhas, usada como base para rateios.',
+                    formatCalcDetail(globais.fobTotalProcesso, [formatComponent('Σ FOB linhas', globais.fobTotalProcesso, 4)], 4)
+                ));
             }
             return rows;
         }
@@ -377,12 +499,13 @@
             const globais = buildGlobalRows(debugGlobals);
             if (globais.length) {
                 html += '<h6>Totais do processo</h6>';
-                html += '<table class="table table-sm table-bordered table-striped mb-4"><thead><tr><th>Campo</th><th>Valor</th><th>Descrição</th></tr></thead><tbody>';
+                html += '<table class="table table-sm table-bordered table-striped mb-4"><thead><tr><th>Campo</th><th>Valor</th><th>Descrição</th><th>Detalhamento</th></tr></thead><tbody>';
                 globais.forEach(linha => {
                     html += `<tr>
                         <td>${linha.label}</td>
                         <td>${linha.value}</td>
                         <td><small>${linha.formula}</small></td>
+                        <td><small>${linha.detail || '-'}</small></td>
                     </tr>`;
                 });
                 html += '</tbody></table>';
@@ -390,12 +513,13 @@
 
             const linhas = buildDebugRows(dados, debugGlobals);
             html += '<h6>Detalhes da linha</h6>';
-            html += '<table class="table table-sm table-bordered table-striped"><thead><tr><th>Coluna</th><th>Valor</th><th>Fórmula Utilizada</th></tr></thead><tbody>';
+            html += '<table class="table table-sm table-bordered table-striped"><thead><tr><th>Coluna</th><th>Valor</th><th>Fórmula Utilizada</th><th>Detalhamento</th></tr></thead><tbody>';
             linhas.forEach(linha => {
                 html += `<tr>
                     <td>${linha.label}</td>
                     <td>${linha.value}</td>
                     <td><small>${linha.formula}</small></td>
+                    <td><small>${linha.detail || '-'}</small></td>
                 </tr>`;
             });
             html += '</tbody></table>';
@@ -1836,8 +1960,9 @@
                     const fatorTaxaSiscomex_AY = taxaSisComex / ((fobTotalGeralAtualizado) * dolar);
                     const taxaSiscomexUnitaria_BB = fatorTaxaSiscomex_AY * (fobTotal * dolar);
 
-                    const despesas = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY,
+                    const despesasInfo = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY,
                         (taxaSiscomexUnitaria_BB ?? 0), vlrAduaneiroBrl);
+                    const despesas = despesasInfo.total;
 
                     const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas);
                     const vlrIcmsSReducao = bcIcmsSReducao * impostos.icms;
@@ -1883,6 +2008,8 @@
                         taxaSiscomexUnit: taxaSiscomexUnitaria_BB,
                         diferencaCambialFrete: diferenca_cambial_frete,
                         diferencaCambialFob: diferenca_cambial_fob,
+                        diferencaCambialFreteProcesso: dif_cambial_frete_processo,
+                        diferencaCambialFobProcesso: dif_cambial_fob_processo,
                         reducao: reducaoPercent,
                         vlrII: totais.vlrII,
                         bcIpi: totais.bcIpi,
@@ -1898,7 +2025,19 @@
                         vlrUnitProdNf: totais.vlrUnitProdutNf,
                         vlrTotalProdNf: totais.vlrTotalProdutoNf,
                         vlrTotalNfSemIcms: totais.vlrTotalNfSemIcms,
-                        baseIcmsSt: base_icms_st
+                        baseIcmsSt: base_icms_st,
+                        valorAduaneiroBrl: vlrAduaneiroBrl,
+                        aliquotaIi: impostos.ii,
+                        aliquotaIpi: impostos.ipi,
+                        aliquotaPis: impostos.pis,
+                        aliquotaCofins: impostos.cofins,
+                        aliquotaIcms: impostos.icms,
+                        thcBaseProcesso: thc_capataziaBase,
+                        despesasComponentes: despesasInfo.componentes,
+                        mva,
+                        icmsStPercent: icms_st_percent,
+                        vlrIcmsSt,
+                        valorIcmsSt: vlrIcmsSt
                     });
 
                     atualizarCampos(rowId, {
@@ -2507,7 +2646,19 @@
                 despesas += afrmm + armazenagem_sts + frete_dta_sts_ana + honorarios_nix;
             }
 
-            return despesas;
+            return {
+                total: despesas,
+                componentes: {
+                    multa,
+                    txDefLi,
+                    taxaSiscomex,
+                    afrmm,
+                    armazenagem_sts,
+                    frete_dta_sts_ana,
+                    honorarios_nix
+                },
+                tipoCalculo: getNacionalizacaoAtual()
+            };
         }
 
         function calcularBcIcmsSemReducao(base, impostos, despesas) {
