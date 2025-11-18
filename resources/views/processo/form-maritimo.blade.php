@@ -461,7 +461,7 @@
                 buildRow('BC PIS/COFINS', formatDebugMoney(dados.bcPisCofins, 2), 'Base igual ao Valor Aduaneiro BRL.', formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2)),
                 buildRow('VLR PIS', formatDebugMoney(dados.vlrPis, 2), 'BC PIS/COFINS × Alíquota PIS.', formatCalcDetail(vlrPis, [formatComponent('BC PIS/COFINS', bcPisCofinsVal, 2), '×', formatComponent('Alíquota PIS', dados.aliquotaPis, 4)], 2)),
                 buildRow('VLR COFINS', formatDebugMoney(dados.vlrCofins, 2), 'BC PIS/COFINS × Alíquota COFINS.', formatCalcDetail(vlrCofins, [formatComponent('BC PIS/COFINS', bcPisCofinsVal, 2), '×', formatComponent('Alíquota COFINS', dados.aliquotaCofins, 4)], 2)),
-                buildRow('Desp. Aduaneira', formatDebugMoney(dados.despesaAduaneira, 2), formulaDespesa, detailDespesa),
+                buildRow('Desp. Aduaneira', formatDebugMoney(dados.despesaAduaneira, 2), `${formulaDespesa} [Nacionalização: ${(globais?.nacionalizacao || '').toUpperCase()}]`, detailDespesa),
                 buildRow('BC ICMS s/Redução', formatDebugMoney(dados.bcIcmsSemReducao, 2), '[(Base + II + IPI + PIS + COFINS + Despesas)] ÷ (1 - % ICMS).', formatCalcDetail(bcIcmsSemReducaoVal, ['(', formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '+', formatComponent('II', vlrII, 2), '+', formatComponent('IPI', vlrIpi, 2), '+', formatComponent('PIS', vlrPis, 2), '+', formatComponent('COFINS', vlrCofins, 2), '+', formatComponent('Despesas Aduaneiras', despesaAduaneiraVal, 2), ')', '÷', formatComponent('(1 - % ICMS)', fatorIcmsDivisor, 4)], 2)),
                 buildRow('VLR ICMS s/Redução', formatDebugMoney(dados.vlrIcmsSemReducao, 2), 'BC ICMS s/Redução × % ICMS.', formatCalcDetail(vlrIcmsSemReducaoVal, [formatComponent('BC ICMS s/Redução', bcIcmsSemReducaoVal, 2), '×', formatComponent('% ICMS', dados.aliquotaIcms, 4)], 2)),
                 buildRow('BC ICMS reduzido', formatDebugMoney(dados.bcIcmsReduzido, 2), 'Resultado de BC ICMS após aplicar o percentual de redução.', formatCalcDetail(bcIcmsReduzidoVal, [formatComponent('BC ICMS s/Redução', bcIcmsSemReducaoVal, 2), '×', formatComponent('Fator Redução', fatorReducaoAplicado, 4)], 2)),
@@ -472,7 +472,9 @@
                 buildRow('VLR Total Prod. NF', formatDebugMoney(dados.vlrTotalProdNf, 2), 'Base Aduaneira BRL + VLR II.', formatCalcDetail(vlrTotalProdNfVal, [formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '+', formatComponent('VLR II', vlrII, 2)], 2)),
                 buildRow('VLR Total NF s/ICMS ST', formatDebugMoney(dados.vlrTotalNfSemIcms, 2), 'VLR Total Prod. NF + IPI + PIS + COFINS + Desp. Aduaneira + VLR ICMS reduzido.', formatCalcDetail(vlrTotalNfSemIcmsVal, [formatComponent('VLR Total Prod. NF', vlrTotalProdNfVal, 2), '+', formatComponent('IPI', vlrIpi, 2), '+', formatComponent('PIS', vlrPis, 2), '+', formatComponent('COFINS', vlrCofins, 2), '+', formatComponent('Desp. Aduaneira', despesaAduaneiraVal, 2), '+', formatComponent('VLR ICMS reduzido', vlrIcmsReduzidoVal, 2)], 2)),
                 buildRow('BC ICMS-ST', formatDebugMoney(dados.baseIcmsSt, 2), 'VLR Total NF s/ICMS ST × (1 + MVA).', formatCalcDetail(baseIcmsStVal, [formatComponent('VLR Total NF s/ICMS ST', vlrTotalNfSemIcmsVal, 2), '×', formatComponent('(1 + MVA)', fatorMva, 4)], 2)),
-                buildRow('VLR ICMS-ST', formatDebugMoney(dados.valorIcmsSt, 2), 'Base ICMS-ST × % ICMS-ST - VLR ICMS reduzido (quando aplicável).', icmsStPercent > 0 ? formatCalcDetail(vlrIcmsStVal, ['(', formatComponent('BC ICMS-ST', baseIcmsStVal, 2), '×', formatComponent('% ICMS-ST', icmsStPercent, 4), ')', '-', formatComponent('VLR ICMS reduzido', vlrIcmsReduzidoVal, 2)], 2) : 'Percentual ICMS-ST não informado.')
+                buildRow('VLR ICMS-ST', formatDebugMoney(dados.valorIcmsSt, 2), 'Base ICMS-ST × % ICMS-ST - VLR ICMS reduzido (quando aplicável).', icmsStPercent > 0 ? formatCalcDetail(vlrIcmsStVal, ['(', formatComponent('BC ICMS-ST', baseIcmsStVal, 2), '×', formatComponent('% ICMS-ST', icmsStPercent, 4), ')', '-', formatComponent('VLR ICMS reduzido', vlrIcmsReduzidoVal, 2)], 2) : 'Percentual ICMS-ST não informado.'),
+                buildRow('Custo Unit. Final', formatDebugMoney(dados.custoUnitarioFinal, 2), '[(Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete) - ICMS reduzido] ÷ Quantidade.', formatCalcDetail(dados.custoUnitarioFinal, ['(', formatComponent('Total NF c/ICMS', dados.vlrTotalNfComIcms ?? dados.vlrTotalNfSemIcms ?? vlrTotalNfSemIcmsVal, 2), '+', formatComponent('Desp. Desembaraço', dados.despesaDesembaraco ?? 0, 2), '+', formatComponent('Dif. Cambial FOB', dados.diferencaCambialFob, 2), '+', formatComponent('Dif. Cambial Frete', dados.diferencaCambialFrete, 2), '-', formatComponent('ICMS reduzido', vlrIcmsReduzidoVal, 2), ')', '÷', formatComponent('Quantidade', quantidadeSafe, 4)], 2)),
+                buildRow('Custo Total Final', formatDebugMoney(dados.custoTotalFinal, 2), 'Custo unitário final × Quantidade.', formatCalcDetail(dados.custoTotalFinal, [formatComponent('Custo Unit. Final', dados.custoUnitarioFinal, 2), '×', formatComponent('Quantidade', quantidade, 4)], 2))
             ];
             if (globais && globais.fobTotalProcesso) {
                 rows.splice(5, 0, buildRow(
@@ -483,6 +485,33 @@
                 ));
             }
             return rows;
+        }
+
+        function buildSectionHtml(titulo, linhas) {
+            if (!linhas || linhas.length === 0) {
+                return '';
+            }
+
+            let html = `<div class="debug-section">
+                <div class="debug-section-title">${titulo}</div>
+                <div class="debug-grid debug-grid-header">
+                    <div>Campo</div>
+                    <div>Valor</div>
+                    <div>Fórmula utilizada</div>
+                    <div>Detalhamento</div>
+                </div>`;
+
+            linhas.forEach(linha => {
+                html += `<div class="debug-grid debug-grid-row">
+                    <div class="debug-cell-label">${linha.label}</div>
+                    <div class="debug-cell-value">${linha.value ?? '-'}</div>
+                    <div class="debug-cell-text">${linha.formula ?? '-'}</div>
+                    <div class="debug-cell-text">${linha.detail || '-'}</div>
+                </div>`;
+            });
+
+            html += '</div>';
+            return html;
         }
 
         function renderDebugModal(rowId) {
@@ -497,32 +526,11 @@
             let html = '';
 
             const globais = buildGlobalRows(debugGlobals);
-            if (globais.length) {
-                html += '<h6>Totais do processo</h6>';
-                html += '<table class="table table-sm table-bordered table-striped mb-4"><thead><tr><th>Campo</th><th>Valor</th><th>Descrição</th><th>Detalhamento</th></tr></thead><tbody>';
-                globais.forEach(linha => {
-                    html += `<tr>
-                        <td>${linha.label}</td>
-                        <td>${linha.value}</td>
-                        <td><small>${linha.formula}</small></td>
-                        <td><small>${linha.detail || '-'}</small></td>
-                    </tr>`;
-                });
-                html += '</tbody></table>';
-            }
+            html += buildSectionHtml('Totais do processo', globais);
 
             const linhas = buildDebugRows(dados, debugGlobals);
-            html += '<h6>Detalhes da linha</h6>';
-            html += '<table class="table table-sm table-bordered table-striped"><thead><tr><th>Coluna</th><th>Valor</th><th>Fórmula Utilizada</th><th>Detalhamento</th></tr></thead><tbody>';
-            linhas.forEach(linha => {
-                html += `<tr>
-                    <td>${linha.label}</td>
-                    <td>${linha.value}</td>
-                    <td><small>${linha.formula}</small></td>
-                    <td><small>${linha.detail || '-'}</small></td>
-                </tr>`;
-            });
-            html += '</tbody></table>';
+            html += buildSectionHtml('Detalhes da linha', linhas);
+
             container.html(html);
         }
 
@@ -1995,6 +2003,9 @@
                     diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                     const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar) : 0;
                     const reducaoPercent = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+                    const custoUnitarioFinal = MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0;
+                    const custoTotalFinal = MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || (custoUnitarioFinal * quantidadeAtual);
+
                     addDebugEntry(rowId, {
                         freteUsd: freteUsdInt,
                         seguroUsd: seguroIntUsdRow,
@@ -2037,7 +2048,9 @@
                         mva,
                         icmsStPercent: icms_st_percent,
                         vlrIcmsSt,
-                        valorIcmsSt: vlrIcmsSt
+                        valorIcmsSt: vlrIcmsSt,
+                        custoUnitarioFinal,
+                        custoTotalFinal
                     });
 
                     atualizarCampos(rowId, {

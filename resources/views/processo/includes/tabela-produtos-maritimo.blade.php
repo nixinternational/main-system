@@ -1762,12 +1762,105 @@
         }
 
         #debugLinhaModal .modal-dialog {
-            max-width: 95vw;
-            width: 95vw;
+            max-width: none;
+            width: auto;
         }
 
         #debugLinhaModal .modal-body {
             overflow-x: auto;
+        }
+
+        .debug-section {
+            background: #fff;
+            border: 1px solid #e4e7f2;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+        }
+
+        .debug-section-title {
+            background: var(--theme-gradient-primary, linear-gradient(90deg, #253b80 0%, #485fc7 100%));
+            color: #fff;
+            padding: 14px 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+        }
+
+        .debug-grid {
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(220px, 1.4fr) minmax(220px, 1.4fr);
+            gap: 0;
+        }
+
+        .debug-grid > div {
+            padding: 14px 18px;
+            border-top: 1px solid #f0f2f8;
+            background: #fff;
+        }
+
+        .debug-grid-header {
+            background: #f5f6fb;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #5f6385;
+        }
+
+        .debug-grid-header > div {
+            border-top: none;
+            background: transparent;
+        }
+
+        .debug-grid-row:nth-of-type(even) .debug-cell-label,
+        .debug-grid-row:nth-of-type(even) .debug-cell-value,
+        .debug-grid-row:nth-of-type(even) .debug-cell-text {
+            background: #fafbff;
+        }
+
+        .debug-cell-label {
+            font-weight: 600;
+            color: #2f3859;
+        }
+
+        .debug-cell-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .debug-cell-text {
+            font-size: 13px;
+            color: #4b4f68;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 1200px) {
+            .debug-grid {
+                grid-template-columns: repeat(2, minmax(180px, 1fr));
+            }
+
+            .debug-grid-header,
+            .debug-grid-row {
+                grid-template-columns: repeat(2, minmax(180px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .debug-grid,
+            .debug-grid-header,
+            .debug-grid-row {
+                grid-template-columns: 1fr;
+            }
+
+            .debug-grid > div {
+                border-left: none;
+                border-right: none;
+            }
         }
 
         /* Espaçamento de ícones nos botões */
