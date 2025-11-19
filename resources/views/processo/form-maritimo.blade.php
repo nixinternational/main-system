@@ -292,6 +292,28 @@
             };
         }
 
+        function getDebugFobData() {
+            if (!debugStore || Object.keys(debugStore).length === 0) {
+                return [];
+            }
+
+            const dados = [];
+            Object.entries(debugStore).forEach(([rowId, dadosLinha]) => {
+                const elementoLinha = document.getElementById(`row-${rowId}`);
+                if (!elementoLinha) {
+                    return;
+                }
+                const fobTotal = toNumber(dadosLinha?.fobTotal);
+                if (!isNaN(fobTotal)) {
+                    dados.push({
+                        rowId,
+                        fobTotal
+                    });
+                }
+            });
+            return dados;
+        }
+
         function normalizeNumericValue(value) {
             if (value === null || value === undefined || value === '') return 0;
             if (typeof value === 'number') return value;
@@ -2828,15 +2850,21 @@
 
         function atualizarFatoresFob() {
             const moedasOBject = getCotacaoesProcesso();
-            const moedaDolar = moedasOBject['USD'].venda ?? $(`#cotacao_frete_internacional`).val().replace(',', '.');
-            const dolar = MoneyUtils.parseMoney(moedaDolar);
-            const taxaSiscomex = calcularTaxaSiscomex();
+            const dolarDebug = toNumber(debugGlobals?.cotacaoUSD);
+            const moedaDolar = moedasOBject['USD']?.venda
+                ?? $(`#cotacao_frete_internacional`).val()?.replace(',', '.')
+                ?? dolarDebug
+                ?? 1;
+            const dolar = toNumber(moedaDolar) || 1;
+            const taxaSiscomexDebug = toNumber(debugGlobals?.taxaSiscomexProcesso);
+            const taxaSiscomex = taxaSiscomexDebug || calcularTaxaSiscomex() || 0;
 
-            let fobTotalGeral = calcularFobTotalGeral();
-            const dadosFob = [];
+            // Preferir dados calculados via debug (mesma base do modal)
+            let dadosFob = getDebugFobData();
 
-            if ($('#moeda_processo').val() != 'USD') {
-                $('input[id^="fob_total_usd-"]').each(function() {
+            if (!dadosFob.length) {
+                dadosFob = [];
+                $('[id^="fob_total_usd-"]').each(function() {
                     const rowId = $(this).data('row');
                     const fobTotal = MoneyUtils.parseMoney($(this).val());
                     dadosFob.push({
@@ -2844,49 +2872,33 @@
                         fobTotal
                     });
                 });
-            } else {
-                $('.fobUnitario').each(function() {
-                    const rowId = $(this).data('row');
-                    const fobUnit = MoneyUtils.parseMoney($(this).val());
-                    const qtd = parseInt($(`#quantidade-${rowId}`).val()) || 0;
-                    const fobTotal = fobUnit * qtd;
-                    dadosFob.push({
-                        rowId,
-                        fobTotal
-                    });
-                });
             }
 
-            fobTotalGeral = dadosFob.reduce((acc, linha) => acc + linha.fobTotal, 0);
+            const fobTotalGeral = dadosFob.reduce((acc, linha) => acc + (linha.fobTotal || 0), 0);
+            if (fobTotalGeral <= 0) {
+                return;
+            }
 
-            for (const linha of dadosFob) {
-                const {
-                    rowId,
-                    fobTotal
-                } = linha;
+            dadosFob.forEach(({ rowId, fobTotal }) => {
+                const fatorVlrFob_AX = (fobTotal || 0) / fobTotalGeral;
+                const divisorSiscomex = fobTotalGeral * dolar || 1;
+                const fatorTaxaSiscomex_AY = divisorSiscomex !== 0 ? (taxaSiscomex || 0) / divisorSiscomex : 0;
+                const taxaSiscomexUnitaria_BB = fatorTaxaSiscomex_AY * (fobTotal || 0) * dolar;
 
-                const fatorVlrFob_AX = fobTotal / (fobTotalGeral || 1);
-                const fatorTaxaSiscomex_AY = taxaSiscomex / ((fobTotalGeral * dolar) || 1);
-                const taxaSiscomexUnitaria_BB = fatorTaxaSiscomex_AY * fobTotal * dolar;
-
-                // Atualiza campos de fatores e taxa siscomex
                 $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX, 6));
                 $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY, 6));
                 $(`#taxa_siscomex-${rowId}`).val(MoneyUtils.formatMoney(taxaSiscomexUnitaria_BB, 2));
 
-
-                // Atualiza campos de fator_vlr_fob e campos externos
-                // Usar formatMoney para truncar sem arredondar
                 $(`#fator_vlr_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX, 6));
                 const camposExternos = getCamposExternos();
-                for (let campo of camposExternos) {
+                camposExternos.forEach(campo => {
                     const campoEl = $(`#${campo}-${rowId}`);
+                    if (!campoEl.length) return;
                     const valorOriginal = MoneyUtils.parseMoney(campoEl.val());
                     const valorComFator = valorOriginal * fatorVlrFob_AX;
-                    // Usar formatMoney para truncar sem arredondar
                     campoEl.val(MoneyUtils.formatMoney(valorComFator, 6));
-                }
-            }
+                });
+            });
 
             $('#fobTotalProcesso').text(MoneyUtils.formatMoney(fobTotalGeral));
             $('#fobTotalProcessoReal').text(MoneyUtils.formatMoney(fobTotalGeral * dolar));
