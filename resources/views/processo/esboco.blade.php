@@ -259,11 +259,11 @@
             </td>
             <td>
                 BASE DE CÁLCULO ICMS SUBSTITUIÇÃO<br><br>
-                <span class="right">{{ number_format(collect($processoProdutos)->sum('base_icms_st') ?? 0, 2, ',', '.') }}</span>
+                <span class="right">&nbsp;</span>
             </td>
             <td>
                 VALOR DO ICMS DE SUBSTITUIÇÃO<br><br>
-                <span class="right">{{ number_format($totalICMSST ?? 0, 2, ',', '.') }}</span>
+                <span class="right">&nbsp;</span>
             </td>
             <td>
                 VALOR TOTAL DOS PRODUTOS<br><br>
@@ -285,7 +285,7 @@
             </td>
             <td>
                 VALOR TOTAL DO IPI<br><br>
-                <span class="right">{{ number_format($totalIPI ?? 0, 2, ',', '.') }}</span>
+                <span class="right">&nbsp;</span>
             </td>
             <td>
                 VALOR TOTAL DA NOTA<br><br>
