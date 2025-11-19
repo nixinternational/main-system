@@ -62,6 +62,56 @@
 
 <body>
 
+    @php
+        $formatarDocumento = function ($valor) {
+            if (!$valor) {
+                return null;
+            }
+            $apenasNumeros = preg_replace('/\D+/', '', $valor);
+            if (strlen($apenasNumeros) === 14) {
+                return substr($apenasNumeros, 0, 2) . '.' .
+                    substr($apenasNumeros, 2, 3) . '.' .
+                    substr($apenasNumeros, 5, 3) . '/' .
+                    substr($apenasNumeros, 8, 4) . '-' .
+                    substr($apenasNumeros, 12, 2);
+            }
+            if (strlen($apenasNumeros) === 11) {
+                return substr($apenasNumeros, 0, 3) . '.' .
+                    substr($apenasNumeros, 3, 3) . '.' .
+                    substr($apenasNumeros, 6, 3) . '-' .
+                    substr($apenasNumeros, 9, 2);
+            }
+            return $valor;
+        };
+
+        $remetente = $processo->fornecedor;
+        $remetenteNome = $remetente->nome ?? 'NÃO INFORMADO';
+        $remetenteCnpj = $formatarDocumento($remetente->cnpj ?? null) ?? '-';
+        $remetenteEndereco = trim(collect([$remetente->logradouro ?? null, $remetente->numero ?? null, $remetente->complemento ?? null])->filter()->implode(', '));
+        $remetenteEndereco = $remetenteEndereco !== '' ? $remetenteEndereco : 'NÃO INFORMADO';
+        $remetenteBairro = $remetente->bairro ?? '-';
+        $remetenteCep = $remetente->cep ?? '-';
+        $remetenteMunicipio = $remetente->cidade ?? 'NÃO INFORMADO';
+        $remetenteTelefone = $remetente->telefone_contato ?? '-';
+        $remetenteEstado = $remetente->estado ?? '-';
+        $remetenteInscricao = $remetente->inscricao_estadual ?? '-';
+
+        $transportadoraNome = $processo->transportadora_nome ?? 'NÃO INFORMADO';
+        $transportadoraEndereco = $processo->transportadora_endereco ?? 'NÃO INFORMADO';
+        $transportadoraMunicipio = $processo->transportadora_municipio ?? 'NÃO INFORMADO';
+        $transportadoraCnpj = $formatarDocumento($processo->transportadora_cnpj ?? null) ?? 'NÃO INFORMADO';
+
+        $pesoLiquidoTotalProdutos = collect($processoProdutos)->sum(function ($produto) {
+            return $produto->peso_liquido_total ?? 0;
+        });
+
+        $baseCalculoReduzidoTotal = $totalBaseCalculoReducao ?? collect($processoProdutos)->sum(function ($produto) {
+            return $produto->base_icms_reduzido ?? 0;
+        });
+
+        $totalPisCofinsDesp = ($totalPIS ?? 0) + ($totalCOFINS ?? 0) + ($totalDespesasAduaneirasItens ?? 0);
+    @endphp
+
     <table width="100%">
         <tr>
             <td rowspan="4" style="width: 20%; text-align: center;">
@@ -117,7 +167,7 @@
 
         </tr>
     </table>
-    <h4 style="margin-top: 30px">DESTINATÁRIO REMETENTE</h4>
+    <h4 style="margin-top: 30px">REMETENTE</h4>
 
     <table>
         <tr>
@@ -125,9 +175,9 @@
 
                 <br>
                 <br>
-                {{ $cliente->nome ?? 'NÃO INFORMADO' }}
+                {{ $remetenteNome }}
             </td>
-            <td colspan="2">CNPJ / CPF: {{ $cliente->cnpj ?? '-' }}</td>
+            <td colspan="2">CNPJ / CPF: {{ $remetenteCnpj }}</td>
             <td colspan="1">DATA EMISSÃO: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</td>
 
         </tr>
@@ -135,22 +185,22 @@
             <td colspan="13">ENDEREÇO:
                 <br>
                 <br>
-                {{ $cliente->endereco ?? 'NÃO INFORMADO' }}
+                {{ $remetenteEndereco }}
             </td>
             <td colspan="3">BAIRRO/DISTRITO: <br><br>
-                {{ $cliente->bairro ?? '-' }}</td>
-            <td colspan="1">CEP: {{ $cliente->cep ?? '-' }}</td>
+                {{ $remetenteBairro }}</td>
+            <td colspan="1">CEP: {{ $remetenteCep }}</td>
             <td colspan="1">DATA SAÍDA/ENTRADA: {{ $processo->data_desembaraco_fim ? \Carbon\Carbon::parse($processo->data_desembaraco_fim)->format('d/m/Y') : '-' }}</td>
 
 
         </tr>
         <tr>
             <td colspan="13">MUNICÍPIO: <br><br>
-                {{ $cliente->cidade ?? 'NÃO INFORMADO' }}
+                {{ $remetenteMunicipio }}
             </td>
-            <td colspan="2" class="blue">FONE / FAX: {{ $cliente->telefone ?? '-' }}</td>
-            <td colspan="1">UF: {{ $cliente->estado ?? '-' }}</td>
-            <td colspan="1">INSC. ESTADUAL: {{ $cliente->inscricao_estadual ?? '-' }}</td>
+            <td colspan="2" class="blue">FONE / FAX: {{ $remetenteTelefone }}</td>
+            <td colspan="1">UF: {{ $remetenteEstado }}</td>
+            <td colspan="1">INSC. ESTADUAL: {{ $remetenteInscricao }}</td>
             <td colspan="1">HORA SAÍDA: {{ \Carbon\Carbon::now()->format('H:i') }}</td>
 
         </tr>
@@ -173,7 +223,6 @@
             <th>VALOR TOTAL</th>
             <th>ICMS</th>
             <th>IPI</th>
-            <th>OUTROS</th>
         </tr>
 
         <!-- Produtos do processo -->
@@ -182,14 +231,13 @@
                 <td>{{ optional($produto->produto)->codigo ?? ($produto->item ?? ($index + 1)) }}</td>
                 <td colspan="3">{{ optional($produto->produto)->nome ?? ($produto->descricao ?? 'PRODUTO NÃO INFORMADO') }}</td>
                 <td>{{ optional($produto->produto)->ncm ?? '0000.00.00' }}</td>
-                <td>{{ $produto->icms_percent ? number_format($produto->icms_percent, 2, ',', '.') . '%' : '-' }}</td>
+                <td>&nbsp;</td>
                 <td>{{ optional($produto->produto)->unidade ?? 'UN' }}</td>
                 <td class="right">{{ number_format($produto->quantidade ?? 0, 2, ',', '.') }}</td>
                 <td class="right">{{ number_format($produto->valor_unit_nf ?? 0, 2, ',', '.') }}</td>
                 <td class="right">{{ number_format($produto->valor_total_nf ?? 0, 2, ',', '.') }}</td>
                 <td class="right">{{ $produto->icms_percent ? number_format($produto->icms_percent, 2, ',', '.') . '%' : '-' }}</td>
                 <td class="right">{{ $produto->ipi_percent ? number_format($produto->ipi_percent, 2, ',', '.') . '%' : '-' }}</td>
-                <td class="right">{{ number_format(($produto->valor_pis ?? 0) + ($produto->valor_cofins ?? 0), 2, ',', '.') }}</td>
             </tr>
         @empty
             <tr>
@@ -203,7 +251,7 @@
         <tr>
             <td>
                 BASE DE CÁLCULO<br><br>
-                <span class="right">{{ number_format(($totalProdutos ?? 0) - ($totalIPI ?? 0), 2, ',', '.') }}</span>
+                <span class="right">{{ number_format($baseCalculoReduzidoTotal ?? 0, 2, ',', '.') }}</span>
             </td>
             <td>
                 VALOR DO ICMS<br><br>
@@ -233,7 +281,7 @@
             </td>
             <td>
                 OUTRAS DESPESAS ACESSÓRIAS<br><br>
-                <span class="right">{{ number_format(($processo->outras_taxas_agente ?? 0) + ($processo->despesas_aduaneiras ?? 0), 2, ',', '.') }}</span>
+                <span class="right">{{ number_format($totalPisCofinsDesp ?? 0, 2, ',', '.') }}</span>
             </td>
             <td>
                 VALOR TOTAL DO IPI<br><br>
@@ -253,23 +301,23 @@
 
         <tr>
             <td colspan="7" rowspan="3" style="border: 1px solid #000;">NOME / RAZÃO SOCIAL:
-                <br><br><strong>RODOPORTO TRANSPORTES RODOVIÁRIOS LTDA</strong>
-                << /td>
+                <br><br><strong>{{ $transportadoraNome }}</strong>
+            </td>
             <td colspan="2" style="border: 1px solid #000; text-align: center;">
                 FRETE POR CONTA
             </td>
             <td rowspan="3" colspan="2" style="border: 1px solid #000;">PLACA VEÍCULO</td>
             <td rowspan="3" colspan="2" style="border: 1px solid #000;">UF</td>
-            <td rowspan="3" colspan="3" style="border: 1px solid #000;">CNPJ / CPF</td>
+            <td rowspan="3" colspan="3" style="border: 1px solid #000;">CNPJ / CPF<br><br>{{ $transportadoraCnpj }}</td>
         </tr>
         <tr>
             <td colspan="1" style="border: 1px solid #000;">EMITENTE</td>
-            <td colspan="1" style="border: 1px solid #000; color: blue;"></td>
+            <td colspan="1" style="border: 1px solid #000;"></td>
 
         </tr>
         <tr>
             <td colspan="1" style="border: 1px solid #000;">DESTINATÁRIO</td>
-            <td colspan="1" style="border: 1px solid #000; color: blue;">X</td>
+            <td colspan="1" style="border: 1px solid #000;"></td>
 
         </tr>
         <tr>
@@ -277,19 +325,19 @@
                 ENDEREÇO:
                 <br>
                 <br>
-                RUA DO COMERCIO, 055, CENTRO
+                {{ $transportadoraEndereco }}
             </td>
             <td colspan="4">
                 MUNICÍPIO
                 <br>
                 <br>
-                SANTOS
+                {{ $transportadoraMunicipio }}
             </td>
             <td colspan="2">
                 UF
                 <br>
                 <br>
-                SP
+                -
             </td>
             <td colspan="3">
                 INSCRIÇÃO ESTADUAL
@@ -304,7 +352,7 @@
             <td colspan="2">MARCA<br><br>-</td>
             <td colspan="3">NUMERO<br><br>{{ $processo->numero_processo ?? '-' }}</td>
             <td colspan="2">PESO BRUTO<br><br>{{ number_format($processo->peso_bruto ?? 0, 3, ',', '.') }} KG</td>
-            <td colspan="2">PESO LIQUIDO<br><br>{{ number_format($processo->peso_liquido ?? 0, 3, ',', '.') }} KG</td>
+            <td colspan="2">PESO LÍQUIDO<br><br>{{ number_format($pesoLiquidoTotalProdutos ?? 0, 3, ',', '.') }} KG</td>
         </tr>
 
     </table>
@@ -315,52 +363,56 @@
         <tr>
             <td style="width: 45%" class="small">
                 INFOS COMPLEMENTARES:<br><br>
-                @if($processo->di)
-                    DI {{ $processo->di }} 
-                @endif
-                @if($processo->data_desembaraco_fim)
-                    – DESEMBARACADA EM {{ \Carbon\Carbon::parse($processo->data_desembaraco_fim)->format('d/m/Y') }}
-                @endif
-                @if($processo->numero_processo && $processo->numero_processo != '-')
-                    – PROCESSO {{ $processo->numero_processo }}
-                @endif
-                @if($totalICMS)
-                    ICMS R$ {{ number_format($totalICMS, 2, ',', '.') }}
-                @endif
-                @if($totalIPI)
-                    / IPI R$ {{ number_format($totalIPI, 2, ',', '.') }}
-                @endif
-                @if($totalPIS)
-                    / PIS R$ {{ number_format($totalPIS, 2, ',', '.') }}
-                @endif
-                @if($totalCOFINS)
-                    / COFINS R$ {{ number_format($totalCOFINS, 2, ',', '.') }}
-                @endif
-                @if($processo->taxa_dolar)
-                    / TAXA DO DÓLAR: {{ number_format($processo->taxa_dolar, 4, ',', '.') }}
-                @endif
-                @if($processo->taxa_siscomex || $processo->afrmm || $processo->armazenagem_sts || $processo->frete_dta_sts_ana || $processo->honorarios_nix)
-                    – DESPESAS ADUANEIRAS:
-                    @if($processo->taxa_siscomex)
-                        TX SISCOMEX R$ {{ number_format(collect($processoProdutos)->sum('taxa_siscomex') ?? 0, 2, ',', '.') }}
+                @if($processo->info_complementar_nf)
+                    {!! nl2br(e($processo->info_complementar_nf)) !!}
+                @else
+                    @if($processo->di)
+                        DI {{ $processo->di }} 
                     @endif
-                    @if($processo->afrmm)
-                        / AFRMM R$ {{ number_format($processo->afrmm, 2, ',', '.') }}
+                    @if($processo->data_desembaraco_fim)
+                        – DESEMBARACADA EM {{ \Carbon\Carbon::parse($processo->data_desembaraco_fim)->format('d/m/Y') }}
                     @endif
-                    @if($processo->armazenagem_sts)
-                        / ARMAZ DTA R$ {{ number_format($processo->armazenagem_sts, 2, ',', '.') }}
+                    @if($processo->numero_processo && $processo->numero_processo != '-')
+                        – PROCESSO {{ $processo->numero_processo }}
                     @endif
-                    @if($processo->frete_dta_sts_ana)
-                        / FRETE DTA R$ {{ number_format($processo->frete_dta_sts_ana, 2, ',', '.') }}
+                    @if($totalICMS)
+                        ICMS R$ {{ number_format($totalICMS, 2, ',', '.') }}
                     @endif
-                    @if($processo->honorarios_nix)
-                        / HONORÁRIOS DESP. R$ {{ number_format($processo->honorarios_nix, 2, ',', '.') }}
+                    @if($totalIPI)
+                        / IPI R$ {{ number_format($totalIPI, 2, ',', '.') }}
                     @endif
+                    @if($totalPIS)
+                        / PIS R$ {{ number_format($totalPIS, 2, ',', '.') }}
+                    @endif
+                    @if($totalCOFINS)
+                        / COFINS R$ {{ number_format($totalCOFINS, 2, ',', '.') }}
+                    @endif
+                    @if($processo->taxa_dolar)
+                        / TAXA DO DÓLAR: {{ number_format($processo->taxa_dolar, 4, ',', '.') }}
+                    @endif
+                    @if($processo->taxa_siscomex || $processo->afrmm || $processo->armazenagem_sts || $processo->frete_dta_sts_ana || $processo->honorarios_nix)
+                        – DESPESAS ADUANEIRAS:
+                        @if($processo->taxa_siscomex)
+                            TX SISCOMEX R$ {{ number_format(collect($processoProdutos)->sum('taxa_siscomex') ?? 0, 2, ',', '.') }}
+                        @endif
+                        @if($processo->afrmm)
+                            / AFRMM R$ {{ number_format($processo->afrmm, 2, ',', '.') }}
+                        @endif
+                        @if($processo->armazenagem_sts)
+                            / ARMAZ DTA R$ {{ number_format($processo->armazenagem_sts, 2, ',', '.') }}
+                        @endif
+                        @if($processo->frete_dta_sts_ana)
+                            / FRETE DTA R$ {{ number_format($processo->frete_dta_sts_ana, 2, ',', '.') }}
+                        @endif
+                        @if($processo->honorarios_nix)
+                            / HONORÁRIOS DESP. R$ {{ number_format($processo->honorarios_nix, 2, ',', '.') }}
+                        @endif
+                    @endif
+                    @if($processo->desp_anapolis)
+                        – MERCADORIA A SER RETIRADA NO PORTO SECO CENTRO OESTE ANÁPOLIS.
+                    @endif
+                    O PAGAMENTO DO ICMS SERÁ EFETUADO APÓS A ENTRADA DA MERCADORIA EM SEU NOVO ESTABELECIMENTO.
                 @endif
-                @if($processo->desp_anapolis)
-                    – MERCADORIA A SER RETIRADA NO PORTO SECO CENTRO OESTE ANÁPOLIS.
-                @endif
-                O PAGAMENTO DO ICMS SERÁ EFETUADO APÓS A ENTRADA DA MERCADORIA EM SEU NOVO ESTABELECIMENTO.
                 <br><br>
             </td>
             <td style="width: 45%" colspan="3">RESERVADO AO FISCO</td>
@@ -377,7 +429,7 @@
             <td rowspan="2" colspan="2">DATA DO RECEBIMENTO
 
                 <br><br>
-                25/07/2025
+                
             </td>
             <td colspan="14">ASSINATURA</td>
             <td colspan="1">NOTA FISCAL</td>

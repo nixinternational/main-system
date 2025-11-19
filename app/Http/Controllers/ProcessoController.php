@@ -6,6 +6,7 @@ use App\Models\Catalogo;
 use App\Models\Cliente;
 use App\Models\Processo;
 use App\Models\ProcessoProduto;
+use App\Models\Fornecedor;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
@@ -190,7 +191,11 @@ class ProcessoController extends Controller
     }
     public function esbocoPdf($id)
     {
-        $processo = Processo::with(['cliente', 'processoProdutos.produto'])->findOrFail($id);
+        $processo = Processo::with([
+            'cliente',
+            'processoProdutos.produto.fornecedor',
+            'fornecedor'
+        ])->findOrFail($id);
         $this->ensureClienteAccess($processo->cliente_id);
         
         // Parse dos campos monetários do processo
@@ -224,6 +229,14 @@ class ProcessoController extends Controller
             $totalNota += $produto->valor_total_nf_com_icms_st ?? 0;
         }
         
+        $totalBaseCalculoReducao = collect($processoProdutos)->sum(function ($produto) {
+            return $produto->base_icms_reduzido ?? 0;
+        });
+
+        $totalDespesasAduaneirasItens = collect($processoProdutos)->sum(function ($produto) {
+            return $produto->despesa_aduaneira ?? 0;
+        });
+        
         $dados = [
             'processo' => $processo,
             'processoProdutos' => $processoProdutos,
@@ -235,6 +248,8 @@ class ProcessoController extends Controller
             'totalCOFINS' => $totalCOFINS,
             'totalICMSST' => $totalICMSST,
             'totalNota' => $totalNota,
+            'totalBaseCalculoReducao' => $totalBaseCalculoReducao,
+            'totalDespesasAduaneirasItens' => $totalDespesasAduaneirasItens,
         ];
 
         $pdf = Pdf::loadView('processo.esboco', $dados);
@@ -247,7 +262,8 @@ class ProcessoController extends Controller
             if (!is_null($value) && is_numeric($value) && !in_array($field, [
                 'cotacao_frete_internacional',
                 'cotacao_seguro_internacional',
-                'cotacao_acrescimo_frete'
+                'cotacao_acrescimo_frete',
+                'transportadora_cnpj'
             ])) {
 
                 // apenas transforma string numérica em float, sem truncar casas decimais
@@ -267,6 +283,11 @@ class ProcessoController extends Controller
         try {
             $processoModel = Processo::findOrFail($id);
             $this->ensureClienteAccess($processoModel->cliente_id);
+            $processoModel->loadMissing([
+                'cliente.fornecedores',
+                'processoProdutos.produto.fornecedor',
+                'fornecedor'
+            ]);
             $processo =  $this->parseModelFieldsFromModel($processoModel);
             $clientes = Cliente::select(['id', 'nome'])->get();
             $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
@@ -277,8 +298,28 @@ class ProcessoController extends Controller
             $dolar = self::getBid();
 
             $moedasSuportadas = self::buscarMoedasSuportadas();
+            $processoProdutosCollection = $processo->processoProdutos;
+
+            $fornecedoresPorProduto = $processoProdutosCollection
+                ? $processoProdutosCollection
+                    ->map(function ($processoProduto) {
+                        return $processoProduto->produto?->fornecedor;
+                    })
+                    ->filter()
+                    ->unique('id')
+                    ->values()
+                : collect();
+
+            $podeSelecionarFornecedor = $processoProdutosCollection && $processoProdutosCollection->count() > 0;
+
+            if ($podeSelecionarFornecedor && $fornecedoresPorProduto->isEmpty()) {
+                $fornecedoresPorProduto = optional($processo->cliente)->fornecedores ?? collect();
+            }
+
+            $fornecedoresEsboco = $fornecedoresPorProduto ?? collect();
+
             $produtos = [];
-            foreach ($processo->processoProdutos as $produto) {
+            foreach ($processoProdutosCollection as $produto) {
                 $produtos[] = $this->parseModelFieldsFromModel($produto);
             }
             $processoProdutos = $produtos;
@@ -292,7 +333,16 @@ class ProcessoController extends Controller
                 $viewName = 'processo.form-maritimo';
             }
             
-            return view($viewName, compact('processo', 'clientes', 'productsClient', 'dolar', 'processoProdutos', 'moedasSuportadas'));
+            return view($viewName, compact(
+                'processo',
+                'clientes',
+                'productsClient',
+                'dolar',
+                'processoProdutos',
+                'moedasSuportadas',
+                'fornecedoresEsboco',
+                'podeSelecionarFornecedor'
+            ));
         } catch (Exception $e) {
             dd($e);
             return redirect(route('processo.index'))->with('messages', ['error' => ['Processo não encontrado!']]);
@@ -337,6 +387,39 @@ class ProcessoController extends Controller
                         ->get()
                         ->keyBy('id')
                         ->toArray();
+                }
+            }
+
+            $possuiProdutosExistentes = $processo->processoProdutos()->exists();
+            $fornecedorValidado = null;
+
+            if ($request->has('fornecedor_id')) {
+                $fornecedorId = $request->input('fornecedor_id');
+                if (!empty($fornecedorId)) {
+                    $possuiProdutos = $possuiProdutosExistentes;
+                    if (!$possuiProdutos && $request->produtos && count($request->produtos) > 0) {
+                        $possuiProdutos = true;
+                    }
+
+                    if (!$possuiProdutos) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Adicione ao menos um produto antes de vincular um fornecedor.'
+                        ], 422);
+                    }
+
+                    $fornecedorValidado = Fornecedor::where('id', $fornecedorId)
+                        ->where('cliente_id', $processo->cliente_id)
+                        ->first();
+
+                    if (!$fornecedorValidado) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Fornecedor inválido para este processo.'
+                        ], 422);
+                    }
                 }
             }
 
@@ -485,6 +568,30 @@ class ProcessoController extends Controller
                 'diferenca_cambial_frete' => $this->parseMoneyToFloat($request->diferenca_cambial_frete),
                 'diferenca_cambial_fob' => $this->parseMoneyToFloat($request->diferenca_cambial_fob),
             ];
+
+            if ($request->has('fornecedor_id')) {
+                $dadosProcesso['fornecedor_id'] = $fornecedorValidado?->id ?: null;
+            }
+
+            if ($request->has('transportadora_nome')) {
+                $dadosProcesso['transportadora_nome'] = $this->normalizeNullableString($request->transportadora_nome);
+            }
+
+            if ($request->has('transportadora_endereco')) {
+                $dadosProcesso['transportadora_endereco'] = $this->normalizeNullableString($request->transportadora_endereco);
+            }
+
+            if ($request->has('transportadora_municipio')) {
+                $dadosProcesso['transportadora_municipio'] = $this->normalizeNullableString($request->transportadora_municipio);
+            }
+
+            if ($request->has('transportadora_cnpj')) {
+                $dadosProcesso['transportadora_cnpj'] = $this->sanitizeNumericString($request->transportadora_cnpj);
+            }
+
+            if ($request->has('info_complementar_nf')) {
+                $dadosProcesso['info_complementar_nf'] = $this->normalizeNullableString($request->info_complementar_nf);
+            }
             
             // Preservar campos de service_charges do processo se não foram enviados
             if ($request->has('service_charges_moeda') && $request->service_charges_moeda !== '' && $request->service_charges_moeda !== null) {
@@ -724,6 +831,26 @@ class ProcessoController extends Controller
 
         // Retorna o valor como está, pois o campo decimal(5,2) suporta até 999.99
         return $percentage;
+    }
+
+    private function sanitizeNumericString(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $clean = preg_replace('/\D+/', '', $value);
+        return $clean !== '' ? $clean : null;
+    }
+
+    private function normalizeNullableString(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+        return $trimmed === '' ? null : $trimmed;
     }
 
     protected function ensureClienteAccess(int $clienteId): void

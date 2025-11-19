@@ -241,8 +241,12 @@
                             @include('processo.includes.tabela-produtos-maritimo')
                             <div class="tab-pane fade" id="custom-tabs-four-home"
                                 aria-labelledby="custom-tabs-four-home-tab" role="tabpanel">
-                                <iframe src="{{ route('processo.esboco.pdf', $processo->id) }}" width="100%"
-                                    height="800px" frameborder="0"></iframe>
+                                @include('processo.includes.esboco-tab-content', [
+                                    'processo' => $processo,
+                                    'pdfRoute' => route('processo.esboco.pdf', $processo->id),
+                                    'fornecedoresEsboco' => $fornecedoresEsboco ?? collect(),
+                                    'podeSelecionarFornecedor' => $podeSelecionarFornecedor ?? false,
+                                ])
                             </div>
                         @endif
                     </div>

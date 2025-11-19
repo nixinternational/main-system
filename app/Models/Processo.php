@@ -34,6 +34,7 @@ class Processo extends Model
         'quantidade',
         'especie',
         'cliente_id',
+        'fornecedor_id',
         'tipo_processo',
         'frete_internacional_moeda',
         'seguro_internacional_moeda',
@@ -74,6 +75,11 @@ class Processo extends Model
         'li_dta_honor_nix',
         'honorarios_nix',
         'nacionalizacao',
+        'transportadora_nome',
+        'transportadora_endereco',
+        'transportadora_municipio',
+        'transportadora_cnpj',
+        'info_complementar_nf',
     ];
 
     protected $casts = [
@@ -88,5 +94,10 @@ class Processo extends Model
     public function processoProdutos()
     {
         return $this->hasMany(ProcessoProduto::class)->orderBy('created_at', 'asc');;
+    }
+
+    public function fornecedor()
+    {
+        return $this->belongsTo(Fornecedor::class);
     }
 }
