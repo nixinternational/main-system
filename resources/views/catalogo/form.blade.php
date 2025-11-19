@@ -333,6 +333,12 @@
             </div>
         </div>
     @endif
+    <style>
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            pointer-events: auto;
+            cursor: text;
+        }
+    </style>
     <script>
         $(document).ready(function($) {
 
@@ -366,10 +372,43 @@
             })
 
 
-            $('.select2').select2({
-                placeholder: 'Selecione um fornecedor',
-                allowClear: true,
-                width: '100%'
+            const fornecedorFields = ['fornecedor_id', 'fornecedor_id_edit'];
+
+            $('.select2').each(function() {
+                const $select = $(this);
+                const fieldName = $select.attr('name');
+                const config = {
+                    allowClear: true,
+                    width: '100%',
+                    placeholder: $select.data('placeholder') || 'Selecione uma opção'
+                };
+
+                if (fornecedorFields.includes(fieldName)) {
+                    config.placeholder = 'Selecione um fornecedor';
+                    const modalParent = $select.closest('.modal');
+                    if (modalParent.length) {
+                        config.dropdownParent = modalParent;
+                    }
+                }
+
+                $select.select2(config);
+            });
+
+            $(document).on('select2:open', function(e) {
+                const fieldName = $(e.target).attr('name');
+                if (!fornecedorFields.includes(fieldName)) {
+                    return;
+                }
+
+                setTimeout(function() {
+                    const $searchField = $('.select2-container--open .select2-search__field');
+                    if ($searchField.length) {
+                        $searchField.prop('disabled', false)
+                            .prop('readonly', false)
+                            .css('pointer-events', 'auto')
+                            .focus();
+                    }
+                }, 0);
             });
             
             // Garantir que o botão de fechar sempre funcione, mesmo com validação HTML5
