@@ -292,11 +292,16 @@
             };
         }
 
-        function toNumber(value) {
+        function normalizeNumericValue(value) {
             if (value === null || value === undefined || value === '') return 0;
             if (typeof value === 'number') return value;
             if (typeof value === 'string') {
-                const parsed = MoneyUtils.parseMoney(value);
+                let normalized = value.trim()
+                    .replace(/\s/g, '')
+                    .replace(/\./g, '')
+                    .replace(',', '.')
+                    .replace(/[^\d.-]/g, '');
+                const parsed = parseFloat(normalized);
                 if (!isNaN(parsed)) {
                     return parsed;
                 }
@@ -304,37 +309,79 @@
             return Number(value) || 0;
         }
 
-        function formatPlainNumber(value, decimals = 4) {
+        function truncateNumber(value, decimals = 2) {
+            const num = normalizeNumericValue(value);
+            if (!isFinite(num)) return 0;
+            if (decimals <= 0) {
+                return num >= 0 ? Math.floor(num) : Math.ceil(num);
+            }
+
+            const factor = Math.pow(10, decimals);
+            if (num >= 0) {
+                return Math.floor(num * factor) / factor;
+            }
+            return Math.ceil(num * factor) / factor;
+        }
+
+        function formatTruncatedNumber(value, decimals = 2, options = {}) {
+            const truncated = truncateNumber(value, decimals);
+            return truncated.toLocaleString('pt-BR', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals,
+                useGrouping: options.useGrouping !== false
+            });
+        }
+
+        function toNumber(value) {
+            return normalizeNumericValue(value);
+        }
+
+        function formatPlainNumber(value, decimals = 4, options = {}) {
             if (value === null || value === undefined || value === '') return '-';
             const num = toNumber(value);
             if (!isFinite(num)) return '-';
-            const fixed = num.toFixed(decimals);
-            return fixed.replace(/\.?0+$/, '') || '0';
+            const truncated = truncateNumber(num, decimals);
+            let text = truncated.toFixed(decimals);
+            if (!options.keepTrailingZeros) {
+                text = text.replace(/\.?0+$/, '');
+            }
+            text = text.replace('.', ',');
+            return text || '0';
         }
 
-        function formatComponent(label, value, decimals = 4) {
-            return `${label} (${formatPlainNumber(value, decimals)})`;
+        function formatRawValue(value, decimals = 10) {
+            if (value === null || value === undefined || value === '') return '-';
+            const num = toNumber(value);
+            if (!isFinite(num)) return '-';
+            const truncated = truncateNumber(num, decimals);
+            let text = truncated.toFixed(decimals).replace(/\.?0+$/, '');
+            return text.replace('.', ',');
         }
 
-        function formatCalcDetail(result, parts, decimals = 4) {
+        function formatComponent(label, value, decimals = 10) {
+            return `${label} (${formatRawValue(value, decimals)})`;
+        }
+
+        function formatCalcDetail(result, parts, decimals = 10) {
             const filteredParts = (parts || []).filter(part => part !== null && part !== undefined && part !== '');
             const expression = filteredParts.join(' ');
-            const formattedResult = formatPlainNumber(result, decimals);
+            const formattedResult = formatRawValue(result, decimals);
             if (!expression) {
                 return formattedResult;
             }
             return `${expression} = ${formattedResult}`;
         }
 
-        function formatDebugMoney(value, decimals = 4) {
-            return MoneyUtils.formatMoney(value ?? 0, decimals);
+        function formatDebugMoney(value, decimals = 10) {
+            return formatRawValue(value, decimals);
         }
 
-        function formatDebugPercentage(value, decimals = 2) {
+        function formatDebugPercentage(value, decimals = 6) {
             if (value === undefined || value === null) {
                 return '-';
             }
-            return MoneyUtils.formatPercentage(value, decimals);
+            const percentValue = toNumber(value) * 100;
+            return `${formatRawValue(percentValue, decimals)} %`;
         }
 
         function buildRow(label, value, formula, detail = '-') {
@@ -458,7 +505,7 @@
                 buildRow('Taxa Siscomex (linha)', formatDebugMoney(dados.taxaSiscomexUnit, 4), 'Fator Taxa Siscomex × (FOB Total da linha × Cotação USD).', formatCalcDetail(dados.taxaSiscomexUnit, [formatComponent('Fator Taxa Siscomex', dados.fatorSiscomex, 6), '×', '(', formatComponent('FOB Total linha', fobTotal, 4), '×', formatComponent('Cotação USD', cotacaoUSD, 4), ')'], 4)),
                 buildRow('Dif. Cambial Frete', formatDebugMoney(dados.diferencaCambialFrete, 4), '(Frete USD da linha × Dif. cambial frete processo) - (Frete USD × cotação).', formatCalcDetail(dados.diferencaCambialFrete, ['(', formatComponent('Frete USD linha', dados.freteUsd, 4), '×', formatComponent('Dif. cambial frete (processo)', dados.diferencaCambialFreteProcesso, 4), ')', '-', '(', formatComponent('Frete USD linha', dados.freteUsd, 4), '×', formatComponent('Cotação USD', cotacaoUSD, 4), ')'], 4)),
                 buildRow('Dif. Cambial FOB', formatDebugMoney(dados.diferencaCambialFob, 4), '(Fator Valor FOB × Dif. cambial FOB processo) - (FOB Total × cotação).', formatCalcDetail(dados.diferencaCambialFob, ['(', formatComponent('Fator Valor FOB', dados.fatorVlrFob, 6), '×', formatComponent('Dif. cambial FOB (processo)', dados.diferencaCambialFobProcesso, 4), ')', '-', '(', formatComponent('FOB Total USD', fobTotal, 4), '×', formatComponent('Cotação USD', cotacaoUSD, 4), ')'], 4)),
-                buildRow('Redução ICMS', formatDebugPercentage(dados.reducao, 2), 'Percentual informado em Redução na linha.', `Percentual: ${formatDebugPercentage(dados.reducao, 2)} / Fração aplicada: ${formatPlainNumber(fatorReducaoAplicado, 4)}`),
+                buildRow('Redução ICMS', formatDebugPercentage(dados.reducao, 2), 'Percentual informado em Redução na linha.', `Percentual: ${formatDebugPercentage(dados.reducao, 2)} / Fração aplicada: ${formatRawValue(fatorReducaoAplicado, 10)}`),
                 buildRow('VLR II', formatDebugMoney(dados.vlrII, 2), 'Valor Aduaneiro BRL × Alíquota de II.', formatCalcDetail(vlrII, [formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '×', formatComponent('Alíquota II', dados.aliquotaIi, 4)], 2)),
                 buildRow('BC IPI', formatDebugMoney(dados.bcIpi, 2), 'Valor Aduaneiro BRL + VLR II.', formatCalcDetail(bcIpiVal, [formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '+', formatComponent('VLR II', vlrII, 2)], 2)),
                 buildRow('VLR IPI', formatDebugMoney(dados.vlrIpi, 2), 'BC IPI × Alíquota de IPI.', formatCalcDetail(vlrIpi, [formatComponent('BC IPI', bcIpiVal, 2), '×', formatComponent('Alíquota IPI', dados.aliquotaIpi, 4)], 2)),
@@ -527,7 +574,7 @@
                 return;
             }
 
-            let html = '';
+            let html = '<p class="text-muted small mb-3"><i class="fas fa-info-circle mr-2"></i>Os valores abaixo exibem todas as casas decimais utilizadas nos cálculos, sem qualquer arredondamento. Na tabela principal mostramos apenas duas casas para facilitar a leitura.</p>';
 
             const globais = buildGlobalRows(debugGlobals);
             html += buildSectionHtml('Totais do processo', globais);
@@ -1087,71 +1134,29 @@
                     setTimeout(atualizarVisibilidadeColunasMoeda, 100);
                 });
             $('.moneyReal').on('blur', function() {
-                let val = $(this).val();
-                if (val) {
-                    val = val.trim().replace('%', '').trim();
-                    if (val.includes(',')) {
-                        val = val.replace(/\./g, '').replace(',', '.');
-                    } else {
-                        val = val.replace(',', '.');
-                    }
-                    let numero = parseFloat(val);
-                    if (!isNaN(numero)) {
-                        let formatado = numero.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 5,
-                            maximumFractionDigits: 5
-                        });
-                        $(this).val(formatado);
-                    } else {
-                        $(this).val('');
-                    }
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 5));
                 } else {
                     $(this).val('');
                 }
             });
-            // Dinheiro com 7 casas decimais
+            // Dinheiro com 2 casas decimais
             $('.moneyReal2').on('blur', function() {
-                let val = $(this).val();
-                if (val) {
-                    val = val.trim().replace('%', '').trim();
-                    if (val.includes(',')) {
-                        val = val.replace(/\./g, '').replace(',', '.');
-                    } else {
-                        val = val.replace(',', '.');
-                    }
-                    let numero = parseFloat(val);
-                    if (!isNaN(numero)) {
-                        let formatado = numero.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
-                        $(this).val(formatado);
-                    } else {
-                        $(this).val('');
-                    }
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 2));
                 } else {
                     $(this).val('');
                 }
             });
             $('.cotacao').on('blur', function() {
-                let val = $(this).val();
-                if (val) {
-                    val = val.trim().replace('%', '').trim();
-                    if (val.includes(',')) {
-                        val = val.replace(/\./g, '').replace(',', '.');
-                    } else {
-                        val = val.replace(',', '.');
-                    }
-                    let numero = parseFloat(val);
-                    if (!isNaN(numero)) {
-                        let formatado = numero.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 4,
-                            maximumFractionDigits: 4
-                        });
-                        $(this).val(formatado);
-                    } else {
-                        $(this).val('');
-                    }
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 4));
                 } else {
                     $(this).val('');
                 }
@@ -1159,24 +1164,10 @@
 
             // Dinheiro com 7 casas decimais (usando mesma lógica do moneyReal2 para consistência)
             $('.moneyReal7').on('blur', function() {
-                let val = $(this).val();
-                if (val) {
-                    val = val.trim().replace('%', '').trim();
-                    if (val.includes(',')) {
-                        val = val.replace(/\./g, '').replace(',', '.');
-                    } else {
-                        val = val.replace(',', '.');
-                    }
-                    let numero = parseFloat(val);
-                    if (!isNaN(numero)) {
-                        let formatado = numero.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 7,
-                            maximumFractionDigits: 7
-                        });
-                        $(this).val(formatado);
-                    } else {
-                        $(this).val('');
-                    }
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 7));
                 } else {
                     $(this).val('');
                 }
@@ -1184,47 +1175,19 @@
 
             // Percentuais (7 casas decimais igual migration)
             $('.percentage').on('blur', function() {
-                let val = $(this).val();
-                if (val) {
-                    val = val.trim().replace('%', '').trim();
-                    if (val.includes(',')) {
-                        val = val.replace(/\./g, '').replace(',', '.');
-                    } else {
-                        val = val.replace(',', '.');
-                    }
-                    let numero = parseFloat(val);
-                    if (!isNaN(numero)) {
-                        let formatado = numero.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 7,
-                            maximumFractionDigits: 7
-                        });
-                        $(this).val(formatado + ' %');
-                    } else {
-                        $(this).val('');
-                    }
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val.replace('%', ''));
+                    $(this).val(`${formatTruncatedNumber(numero, 7)} %`);
                 } else {
                     $(this).val('');
                 }
             });
             $('.percentage2').on('blur', function() {
-                let val = $(this).val();
-                if (val) {
-                    val = val.trim().replace('%', '').trim();
-                    if (val.includes(',')) {
-                        val = val.replace(/\./g, '').replace(',', '.');
-                    } else {
-                        val = val.replace(',', '.');
-                    }
-                    let numero = parseFloat(val);
-                    if (!isNaN(numero)) {
-                        let formatado = numero.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
-                        $(this).val(formatado + ' %');
-                    } else {
-                        $(this).val('');
-                    }
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val.replace('%', ''));
+                    $(this).val(`${formatTruncatedNumber(numero, 2)} %`);
                 } else {
                     $(this).val('');
                 }
@@ -1747,6 +1710,10 @@
                 return parsedValue / 100;
             },
 
+            truncate: function(value, decimals = 2) {
+                return truncateNumber(value, decimals);
+            },
+
 
             formatUSD: function(value, decimals = 2) {
                 if (value === null || value === undefined) return "0.00";
@@ -1762,19 +1729,16 @@
             },
 
             formatPercentage: function(value, decimals = 2) {
-                if (value === null || value === undefined) return "0,00%";
+                if (value === null || value === undefined) {
+                    return formatTruncatedNumber(0, decimals) + '%';
+                }
 
-                // Multiplicar por 100 para obter a porcentagem
-                const percentageValue = (typeof value === 'string' ?
-                    parseFloat(value.replace(',', '.')) : value) * 100;
-
-                let fixedDecimals = percentageValue.toFixed(decimals);
-
-                let parts = fixedDecimals.split('.');
-                let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                let decimalPart = parts[1] || '00';
-
-                return `${integerPart},${decimalPart}%`;
+                const percentageValue = normalizeNumericValue(value) * 100;
+                const truncated = this.truncate(percentageValue, decimals);
+                return `${truncated.toLocaleString('pt-BR', {
+                    minimumFractionDigits: decimals,
+                    maximumFractionDigits: decimals
+                })}%`;
             },
             parseMoney: function(value) {
                 if (value === null || value === undefined || value === "") return 0;
@@ -1801,32 +1765,9 @@
             },
 
             formatMoney: function(value, decimals = 6) {
-                if (value === null || value === undefined || value === '') {
-                    return (0).toLocaleString('pt-BR', {
-                        minimumFractionDigits: decimals,
-                        maximumFractionDigits: decimals
-                    });
-                }
-
-                let num;
-                if (typeof value === 'string') {
-                    if (value.includes(',')) {
-                        num = parseFloat(value.replace(/\./g, '').replace(',', '.'));
-                    } else {
-                        num = parseFloat(value);
-                    }
-                } else {
-                    num = Number(value);
-                }
-
-                if (!isFinite(num) || isNaN(num)) {
-                    num = 0;
-                }
-
-                const factor = Math.pow(10, decimals);
-                const rounded = Math.round((num + Number.EPSILON) * factor) / factor;
-
-                return rounded.toLocaleString('pt-BR', {
+                const num = normalizeNumericValue(value);
+                const truncated = this.truncate(num, decimals);
+                return truncated.toLocaleString('pt-BR', {
                     minimumFractionDigits: decimals,
                     maximumFractionDigits: decimals
                 });
