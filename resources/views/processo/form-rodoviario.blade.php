@@ -640,18 +640,18 @@
                 let fobTotalMoedaEstrangeira = valores.fobUnitarioMoedaEstrangeira * quantidade;
 
                 // Atualizar campos da moeda estrangeira
-                // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitarioMoedaEstrangeira));
-                $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira));
+                // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitarioMoedaEstrangeira, 7));
+                $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira, 7));
 
                 // Para moeda diferente de USD, o fobTotalUSD já está convertido na função obterValoresBase
             } else {
                 // Moeda é USD - atualizar campo USD diretamente
-                $(`#fob_unit_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitario));
+                $(`#fob_unit_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitario, 7));
             }
 
             // Valores totais (sempre em USD e BRL)
-            $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotalUSD));
-            $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotalBRL));
+            $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotalUSD, 7));
+            $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotalBRL, 7));
         }
         // Função para atualizar títulos
         function atualizarTitulosColunas(moedaFrete, moedaSeguro, moedaAcrescimo, moedaProcesso) {
@@ -1524,8 +1524,10 @@
 
                     // Atualiza campos básicos
                     $(`#peso_liquido_unitario-${rowId}`).val(pesoTotal / (quantidade || 1));
-                    $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal));
-                    $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar));
+                                $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal, 7));
+                                $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar, 7));
+                    $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal, 7));
+                    $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar, 7));
                 }
             });
 
@@ -2094,7 +2096,7 @@
                     let fobUnitMoedaEstrangeira = valores.fobUnitario * (cotacaoMoedaProcesso / cotacaoUSD);
                     let fobTotalMoedaEstrangeira = valores.fobTotal * (cotacaoMoedaProcesso / cotacaoUSD);
                     // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobUnitMoedaEstrangeira));
-                    $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira));
+                    $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira, 7));
                 }
             }
             $(`#acresc_frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow));
@@ -2521,8 +2523,8 @@
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fator_peso]" id="fator_peso-${newIndex}" value=""></td>
         ${colunasFOB}
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal fobUnitario" name="produtos[${newIndex}][fob_unit_usd]" id="fob_unit_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
         
         <!-- FRETE -->
         ${colunaFreteMoeda}

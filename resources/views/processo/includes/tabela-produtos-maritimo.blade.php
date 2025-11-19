@@ -419,7 +419,7 @@
                                             class="form-control fobUnitario moneyReal7"
                                             name="produtos[{{ $index }}][fob_unit_usd]"
                                             id="fob_unit_usd-{{ $index }}"
-                                            value="{{ $processoProduto->fob_unit_usd ? number_format($processoProduto->fob_unit_usd, 2, ',' , '.') : '' }}">
+                                            value="{{ $processoProduto->fob_unit_usd ? number_format($processoProduto->fob_unit_usd, 7, ',' , '.') : '' }}">
                                     </td>
                                 @else
                                     <td>
@@ -427,7 +427,7 @@
                                             class="form-control fobUnitarioMoedaEstrangeira moneyReal7"
                                             name="produtos[{{ $index }}][fob_unit_moeda_estrangeira]"
                                             id="fob_unit_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->fob_unit_moeda_estrangeira ? number_format($processoProduto->fob_unit_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                            value="{{ $processoProduto->fob_unit_moeda_estrangeira ? number_format($processoProduto->fob_unit_moeda_estrangeira, 7, ',' , '.') : '' }}">
                                     </td>
                                 @endif
 
@@ -437,7 +437,7 @@
                                             class="form-control moneyReal" readonly
                                             name="produtos[{{ $index }}][fob_total_moeda_estrangeira]"
                                             id="fob_total_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->fob_total_moeda_estrangeira ? number_format($processoProduto->fob_total_moeda_estrangeira, 2, ',', '.') : '' }}">
+                                            value="{{ $processoProduto->fob_total_moeda_estrangeira ? number_format($processoProduto->fob_total_moeda_estrangeira, 7, ',', '.') : '' }}">
                                     </td>
                                 @endif
 
@@ -446,7 +446,7 @@
                                         class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][fob_total_usd]"
                                         id="fob_total_usd-{{ $index }}"
-                                        value="{{ $processoProduto->fob_total_usd ? number_format($processoProduto->fob_total_usd, 2, ',' , '.') : '' }}">
+                                        value="{{ $processoProduto->fob_total_usd ? number_format($processoProduto->fob_total_usd, 7, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -454,7 +454,7 @@
                                         class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][fob_total_brl]"
                                         id="fob_total_brl-{{ $index }}"
-                                        value="{{ $processoProduto->fob_total_brl ? number_format($processoProduto->fob_total_brl, 2, ',' , '.') : '' }}">
+                                        value="{{ $processoProduto->fob_total_brl ? number_format($processoProduto->fob_total_brl, 7, ',' , '.') : '' }}">
                                 </td>
 
                                 <!-- FRETE - Colunas condicionais -->
