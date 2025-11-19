@@ -1170,8 +1170,8 @@
                     let numero = parseFloat(val);
                     if (!isNaN(numero)) {
                         let formatado = numero.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
+                            minimumFractionDigits: 7,
+                            maximumFractionDigits: 7
                         });
                         $(this).val(formatado);
                     } else {
