@@ -821,18 +821,18 @@
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
+                                        class=" form-control moneyReal7" readonly
                                         name="produtos[{{ $index }}][fator_valor_fob]"
                                         id="fator_valor_fob-{{ $index }}"
-                                        value="{{ $processoProduto->fator_valor_fob ? number_format($processoProduto->fator_valor_fob, 5, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->fator_valor_fob ? number_format($processoProduto->fator_valor_fob, 6, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
+                                        class=" form-control moneyReal7" readonly
                                         name="produtos[{{ $index }}][fator_tx_siscomex]"
                                         id="fator_tx_siscomex-{{ $index }}"
-                                        value="{{ $processoProduto->fator_tx_siscomex ? number_format($processoProduto->fator_tx_siscomex, 5, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->fator_tx_siscomex ? number_format($processoProduto->fator_tx_siscomex, 6, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
