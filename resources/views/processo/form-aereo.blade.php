@@ -1016,7 +1016,6 @@
             // Usar o valor total calculado diretamente pela função calcularTaxaSiscomex() para garantir precisão
             // ao invés de somar os valores arredondados das linhas (evita diferenças de arredondamento)
             tr += `<td data-field="taxa-siscomex" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(taxaSiscomexTotalProcesso, 2)}</td>`;
-            tr += `<td data-field="taxa-siscomex" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(taxaSiscomexTotalProcesso, 2)}</td>`;
             
             // OUTRAS TX AGENTE, DELIVERY FEE, DELIVERY FEE R$, COLLECT FEE, COLLECT FEE R$, DESCONS., HANDLING, DAI, HONORÁRIOS NIX, DAPE, CORREIOS, LI+DTA+HONOR.NIX
             tr += `<td data-field="outras-tx-agente" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 2)}</td>`;
