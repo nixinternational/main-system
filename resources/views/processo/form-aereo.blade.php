@@ -434,9 +434,9 @@
                 buildRow(
                     'Taxa SISCOMEX do processo (R$)',
                     formatDebugMoney(globais.taxaSiscomexProcesso, 2),
-                    'Valor calculado automaticamente baseado no número de adições únicas do processo.',
+                    'Valor calculado automaticamente baseado no número de adições únicas do processo, usando faixas progressivas.',
                     (function() {
-                        // Calcular detalhes do cálculo da taxa SISCOMEX
+                        // Calcular detalhes do cálculo da taxa SISCOMEX usando a mesma lógica da função
                         const valores = $('input[name^="produtos["][name$="[adicao]"]')
                             .map(function() {
                                 return $(this).val();
@@ -449,50 +449,40 @@
                         let detalhes = [];
                         let totalCalculado = valorRegistroDI;
                         
+                        detalhes.push(`Quantidade de adições únicas: ${quantidade}`);
+                        detalhes.push(`Taxa base (Registro DI): ${formatRawValue(valorRegistroDI, 2)}`);
+                        
                         if (quantidade === 0) {
-                            detalhes.push(`Quantidade de adições: ${quantidade}`);
-                            detalhes.push(formatComponent('Taxa de Registro DI', valorRegistroDI, 2));
-                        } else if (quantidade <= 10) {
-                            const totaisPorQuantidade = {
-                                1: 154.23,
-                                2: 192.79,
-                                3: 223.64,
-                                4: 254.49,
-                                5: 285.34,
-                                6: 308.48,
-                                7: 331.62,
-                                8: 354.76,
-                                9: 377.90,
-                                10: 401.04
-                            };
-                            totalCalculado = totaisPorQuantidade[quantidade] || valorRegistroDI;
-                            detalhes.push(`Quantidade de adições únicas: ${quantidade}`);
-                            detalhes.push(`Valor total conforme tabela: ${formatRawValue(totalCalculado, 2)}`);
+                            detalhes.push(`Total: ${formatRawValue(totalCalculado, 2)}`);
                         } else {
-                            totalCalculado = 401.04; // Total para 10 adições
-                            detalhes.push(`Quantidade de adições únicas: ${quantidade}`);
-                            detalhes.push(`Base (até 10 adições): ${formatRawValue(401.04, 2)}`);
+                            // Definição das faixas progressivas (mesma lógica da função calcularTaxaSiscomex)
+                            const faixas = [
+                                { limite: 2, valor: 38.56, inicio: 0, descricao: 'Adições 1-2' },
+                                { limite: 3, valor: 30.85, inicio: 2, descricao: 'Adições 3-5' },
+                                { limite: 5, valor: 23.14, inicio: 5, descricao: 'Adições 6-10' },
+                                { limite: 10, valor: 15.42, inicio: 10, descricao: 'Adições 11-20' },
+                                { limite: 30, valor: 7.71, inicio: 20, descricao: 'Adições 21-50' },
+                                { limite: Infinity, valor: 3.86, inicio: 50, descricao: 'Adições acima de 50' }
+                            ];
                             
-                            if (quantidade > 10) {
-                                const adicoes11a20 = Math.min(quantidade, 20) - 10;
-                                const valor11a20 = adicoes11a20 * 15.42;
-                                totalCalculado += valor11a20;
-                                detalhes.push(`Adições 11-20 (${adicoes11a20} × R$ 15,42): ${formatRawValue(valor11a20, 2)}`);
-                            }
-                            
-                            if (quantidade > 20) {
-                                const adicoes21a50 = Math.min(quantidade, 50) - 20;
-                                const valor21a50 = adicoes21a50 * 7.71;
-                                totalCalculado += valor21a50;
-                                detalhes.push(`Adições 21-50 (${adicoes21a50} × R$ 7,71): ${formatRawValue(valor21a50, 2)}`);
-                            }
-                            
-                            if (quantidade > 50) {
-                                const adicoesAcima50 = quantidade - 50;
-                                const valorAcima50 = adicoesAcima50 * 3.86;
-                                totalCalculado += valorAcima50;
-                                detalhes.push(`Adições acima de 50 (${adicoesAcima50} × R$ 3,86): ${formatRawValue(valorAcima50, 2)}`);
-                            }
+                            // Calcula progressivamente faixa por faixa
+                            faixas.forEach(faixa => {
+                                let adicoesNaFaixa;
+                                if (faixa.limite === Infinity) {
+                                    adicoesNaFaixa = Math.max(quantidade - faixa.inicio, 0);
+                                } else {
+                                    adicoesNaFaixa = Math.min(
+                                        Math.max(quantidade - faixa.inicio, 0),
+                                        faixa.limite
+                                    );
+                                }
+                                
+                                if (adicoesNaFaixa > 0) {
+                                    const valorFaixa = adicoesNaFaixa * faixa.valor;
+                                    totalCalculado += valorFaixa;
+                                    detalhes.push(`${faixa.descricao}: ${adicoesNaFaixa} × R$ ${faixa.valor.toFixed(2)} = ${formatRawValue(valorFaixa, 2)}`);
+                                }
+                            });
                             
                             detalhes.push(`TOTAL: ${formatRawValue(totalCalculado, 2)}`);
                         }
@@ -3896,17 +3886,18 @@
         })
 
         function calcularTaxaSiscomex() {
-            // pega os valores dos inputs de adição
+            // Pega os valores dos inputs de adição
             const valores = $('input[name^="produtos["][name$="[adicao]"]')
                 .map(function() {
                     return $(this).val();
                 })
                 .get();
 
-            // remove vazios e duplicatas
+            // Remove vazios e duplicatas
             const unicos = [...new Set(valores.filter(v => v !== ""))];
             const quantidade = unicos.length;
 
+            // Taxa base de registro DI
             const valorRegistroDI = 115.67;
 
             // Se não houver adições, retorna apenas a taxa de registro
@@ -3914,51 +3905,42 @@
                 return valorRegistroDI;
             }
 
-            // Calcular conforme a tabela:
-            // - Taxa base: R$ 115,67
-            // - Até 10 adições: usar valores totais da tabela
-            // - Acima de 10: usar fórmula (taxa base + somatório dos adicionais por faixa)
-            
+            // Definição das faixas progressivas
+            // Cada faixa tem: { limite: número máximo de adições na faixa, valor: valor por adição, inicio: adição inicial da faixa }
+            const faixas = [
+                { limite: 2, valor: 38.56, inicio: 0 },      // Adições 1-2: R$ 38,56 cada
+                { limite: 3, valor: 30.85, inicio: 2 },      // Adições 3-5: R$ 30,85 cada
+                { limite: 5, valor: 23.14, inicio: 5 },      // Adições 6-10: R$ 23,14 cada
+                { limite: 10, valor: 15.42, inicio: 10 },   // Adições 11-20: R$ 15,42 cada
+                { limite: 30, valor: 7.71, inicio: 20 },     // Adições 21-50: R$ 7,71 cada
+                { limite: Infinity, valor: 3.86, inicio: 50 } // Adições acima de 50: R$ 3,86 cada
+            ];
+
+            // Inicia com a taxa base
             let total = valorRegistroDI;
 
-            if (quantidade <= 10) {
-                // Para até 10 adições, usar os valores totais exatos da tabela
-                const totaisPorQuantidade = {
-                    1: 154.23,
-                    2: 192.79,
-                    3: 223.64,
-                    4: 254.49,
-                    5: 285.34,
-                    6: 308.48,
-                    7: 331.62,
-                    8: 354.76,
-                    9: 377.90,
-                    10: 401.04
-                };
-                total = totaisPorQuantidade[quantidade] || valorRegistroDI;
-            } else {
-                // Para mais de 10 adições:
-                // 1. Começar com o total de 10 adições (R$ 401,04)
-                total = 401.04;
-                
-                // 2. Adicionar adicionais para adições 11-20 (R$ 15,42 cada)
-                if (quantidade > 10) {
-                    const adicoes11a20 = Math.min(quantidade, 20) - 10;
-                    total += adicoes11a20 * 15.42;
+            // Calcula progressivamente faixa por faixa
+            faixas.forEach(faixa => {
+                // Calcula quantas adições desta faixa devem ser consideradas
+                // Para faixas com limite finito: min(max(x - inicio, 0), limite)
+                // Para faixa com limite infinito: max(x - inicio, 0)
+                let adicoesNaFaixa;
+                if (faixa.limite === Infinity) {
+                    // Faixa sem limite superior: todas as adições acima do início
+                    adicoesNaFaixa = Math.max(quantidade - faixa.inicio, 0);
+                } else {
+                    // Faixa com limite: não ultrapassa o limite da faixa
+                    adicoesNaFaixa = Math.min(
+                        Math.max(quantidade - faixa.inicio, 0),
+                        faixa.limite
+                    );
                 }
                 
-                // 3. Adicionar adicionais para adições 21-50 (R$ 7,71 cada)
-                if (quantidade > 20) {
-                    const adicoes21a50 = Math.min(quantidade, 50) - 20;
-                    total += adicoes21a50 * 7.71;
+                // Adiciona o valor desta faixa ao total
+                if (adicoesNaFaixa > 0) {
+                    total += adicoesNaFaixa * faixa.valor;
                 }
-                
-                // 4. Adicionar adicionais para adições acima de 50 (R$ 3,86 cada)
-                if (quantidade > 50) {
-                    const adicoesAcima50 = quantidade - 50;
-                    total += adicoesAcima50 * 3.86;
-                }
-            }
+            });
 
             return total; // Retornar valor exato sem arredondar
         }

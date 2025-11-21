@@ -434,8 +434,61 @@
                 buildRow(
                     'Taxa SISCOMEX do processo (R$)',
                     formatDebugMoney(globais.taxaSiscomexProcesso, 2),
-                    'Valor informado em Taxa SISCOMEX (processo).',
-                    formatCalcDetail(globais.taxaSiscomexProcesso, [formatComponent('Valor digitado', globais.taxaSiscomexProcesso, 2)], 2)
+                    'Valor calculado automaticamente baseado no número de adições únicas do processo, usando faixas progressivas.',
+                    (function() {
+                        // Calcular detalhes do cálculo da taxa SISCOMEX usando a mesma lógica da função
+                        const valores = $('input[name^="produtos["][name$="[adicao]"]')
+                            .map(function() {
+                                return $(this).val();
+                            })
+                            .get();
+                        const unicos = [...new Set(valores.filter(v => v !== ""))];
+                        const quantidade = unicos.length;
+                        const valorRegistroDI = 115.67;
+                        
+                        let detalhes = [];
+                        let totalCalculado = valorRegistroDI;
+                        
+                        detalhes.push(`Quantidade de adições únicas: ${quantidade}`);
+                        detalhes.push(`Taxa base (Registro DI): ${formatRawValue(valorRegistroDI, 2)}`);
+                        
+                        if (quantidade === 0) {
+                            detalhes.push(`Total: ${formatRawValue(totalCalculado, 2)}`);
+                        } else {
+                            // Definição das faixas progressivas (mesma lógica da função calcularTaxaSiscomex)
+                            const faixas = [
+                                { limite: 2, valor: 38.56, inicio: 0, descricao: 'Adições 1-2' },
+                                { limite: 3, valor: 30.85, inicio: 2, descricao: 'Adições 3-5' },
+                                { limite: 5, valor: 23.14, inicio: 5, descricao: 'Adições 6-10' },
+                                { limite: 10, valor: 15.42, inicio: 10, descricao: 'Adições 11-20' },
+                                { limite: 30, valor: 7.71, inicio: 20, descricao: 'Adições 21-50' },
+                                { limite: Infinity, valor: 3.86, inicio: 50, descricao: 'Adições acima de 50' }
+                            ];
+                            
+                            // Calcula progressivamente faixa por faixa
+                            faixas.forEach(faixa => {
+                                let adicoesNaFaixa;
+                                if (faixa.limite === Infinity) {
+                                    adicoesNaFaixa = Math.max(quantidade - faixa.inicio, 0);
+                                } else {
+                                    adicoesNaFaixa = Math.min(
+                                        Math.max(quantidade - faixa.inicio, 0),
+                                        faixa.limite
+                                    );
+                                }
+                                
+                                if (adicoesNaFaixa > 0) {
+                                    const valorFaixa = adicoesNaFaixa * faixa.valor;
+                                    totalCalculado += valorFaixa;
+                                    detalhes.push(`${faixa.descricao}: ${adicoesNaFaixa} × R$ ${faixa.valor.toFixed(2)} = ${formatRawValue(valorFaixa, 2)}`);
+                                }
+                            });
+                            
+                            detalhes.push(`TOTAL: ${formatRawValue(totalCalculado, 2)}`);
+                        }
+                        
+                        return detalhes.join(' | ');
+                    })()
                 ),
                 buildRow(
                     'Frete total do processo (USD)',
@@ -3264,111 +3317,62 @@
         })
 
         function calcularTaxaSiscomex() {
-            // pega os valores dos inputs de adição
+            // Pega os valores dos inputs de adição
             const valores = $('input[name^="produtos["][name$="[adicao]"]')
                 .map(function() {
                     return $(this).val();
                 })
                 .get();
 
-            // remove vazios e duplica­tas
+            // Remove vazios e duplicatas
             const unicos = [...new Set(valores.filter(v => v !== ""))];
             const quantidade = unicos.length;
 
+            // Taxa base de registro DI
             const valorRegistroDI = 115.67;
 
-            const faixas = [{
-                    min: 1,
-                    max: 1,
-                    adicional: 38.56,
-                    total: 154.23
-                },
-                {
-                    min: 2,
-                    max: 2,
-                    adicional: 38.56,
-                    total: 192.79
-                },
-                {
-                    min: 3,
-                    max: 3,
-                    adicional: 30.85,
-                    total: 223.64
-                },
-                {
-                    min: 4,
-                    max: 4,
-                    adicional: 30.85,
-                    total: 254.49
-                },
-                {
-                    min: 5,
-                    max: 5,
-                    adicional: 30.85,
-                    total: 285.34
-                },
-                {
-                    min: 6,
-                    max: 6,
-                    adicional: 23.14,
-                    total: 308.48
-                },
-                {
-                    min: 7,
-                    max: 7,
-                    adicional: 23.14,
-                    total: 331.62
-                },
-                {
-                    min: 8,
-                    max: 8,
-                    adicional: 23.14,
-                    total: 354.76
-                },
-                {
-                    min: 9,
-                    max: 9,
-                    adicional: 23.14,
-                    total: 377.90
-                },
-                {
-                    min: 10,
-                    max: 10,
-                    adicional: 23.14,
-                    total: 401.04
-                },
-
-                // A partir daqui NÃO tem total na tabela → usar fórmula B
-                {
-                    min: 11,
-                    max: 20,
-                    adicional: 15.42,
-                    total: null
-                },
-                {
-                    min: 21,
-                    max: 50,
-                    adicional: 7.71,
-                    total: null
-                },
-                {
-                    min: 51,
-                    max: Infinity,
-                    adicional: 3.86,
-                    total: null
-                },
-            ];
-
-            const faixa = faixas.find(f => quantidade >= f.min && quantidade <= f.max);
-            if (!faixa) return valorRegistroDI;
-
-            // Se a tabela já tiver total -> usa ele (sem arredondar, manter precisão máxima)
-            if (faixa.total !== null) {
-                return faixa.total; // Retornar valor exato sem arredondar
+            // Se não houver adições, retorna apenas a taxa de registro
+            if (quantidade === 0) {
+                return valorRegistroDI;
             }
 
-            // Se não tiver total na tabela -> aplica fórmula B (sem arredondar)
-            const total = valorRegistroDI + (quantidade * faixa.adicional);
+            // Definição das faixas progressivas
+            // Cada faixa tem: { limite: número máximo de adições na faixa, valor: valor por adição, inicio: adição inicial da faixa }
+            const faixas = [
+                { limite: 2, valor: 38.56, inicio: 0 },      // Adições 1-2: R$ 38,56 cada
+                { limite: 3, valor: 30.85, inicio: 2 },      // Adições 3-5: R$ 30,85 cada
+                { limite: 5, valor: 23.14, inicio: 5 },      // Adições 6-10: R$ 23,14 cada
+                { limite: 10, valor: 15.42, inicio: 10 },   // Adições 11-20: R$ 15,42 cada
+                { limite: 30, valor: 7.71, inicio: 20 },     // Adições 21-50: R$ 7,71 cada
+                { limite: Infinity, valor: 3.86, inicio: 50 } // Adições acima de 50: R$ 3,86 cada
+            ];
+
+            // Inicia com a taxa base
+            let total = valorRegistroDI;
+
+            // Calcula progressivamente faixa por faixa
+            faixas.forEach(faixa => {
+                // Calcula quantas adições desta faixa devem ser consideradas
+                // Para faixas com limite finito: min(max(x - inicio, 0), limite)
+                // Para faixa com limite infinito: max(x - inicio, 0)
+                let adicoesNaFaixa;
+                if (faixa.limite === Infinity) {
+                    // Faixa sem limite superior: todas as adições acima do início
+                    adicoesNaFaixa = Math.max(quantidade - faixa.inicio, 0);
+                } else {
+                    // Faixa com limite: não ultrapassa o limite da faixa
+                    adicoesNaFaixa = Math.min(
+                        Math.max(quantidade - faixa.inicio, 0),
+                        faixa.limite
+                    );
+                }
+                
+                // Adiciona o valor desta faixa ao total
+                if (adicoesNaFaixa > 0) {
+                    total += adicoesNaFaixa * faixa.valor;
+                }
+            });
+
             return total; // Retornar valor exato sem arredondar
         }
 
