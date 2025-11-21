@@ -1243,24 +1243,25 @@
                         formData.append('salvar_apenas_produtos', 'true');
 
                         let campos = [
+                            'peso_liquido_total_cabecalho',
                             'outras_taxas_agente',
-                            'desconsolidacao',
-                            'handling',
                             'delivery_fee',
                             'delivery_fee_brl',
                             'collect_fee',
                             'collect_fee_brl',
+                            'desconsolidacao',
+                            'handling',
                             'dai',
+                            'honorarios_nix',
                             'dape',
                             'correios',
                             'li_dta_honor_nix',
-                            'honorarios_nix',
                             'diferenca_cambial_frete',
                             'diferenca_cambial_fob'
                         ];
 
                         for (let campo of campos) {
-                            formData.append(campo, MoneyUtils.parseMoney($(`#${campo}`).val()))
+                            formData.append(campo, MoneyUtils.parseMoney($(`#${campo}`).val()) || 0)
                         }
 
                         // Adicionar produtos do bloco

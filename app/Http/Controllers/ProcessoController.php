@@ -772,11 +772,16 @@ class ProcessoController extends Controller
             }
 
             // Atualizar peso líquido na tabela correta
+            // Se peso_liquido_total_cabecalho foi enviado, usar ele; caso contrário, usar a soma dos produtos
+            $pesoLiquidoFinal = $request->has('peso_liquido_total_cabecalho') 
+                ? $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho) 
+                : $pesoLiquidoTotal;
+            
             if ($isAereo) {
-                ProcessoAereo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
+                ProcessoAereo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
                 $processoExistente = ProcessoAereo::find($id);
             } else {
-                Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
+                Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
                 $processoExistente = Processo::find($id);
             }
             
