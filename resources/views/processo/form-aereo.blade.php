@@ -985,7 +985,10 @@
             // DESP. ADUANEIRA, BC ICMS S/REDUÇÃO, VLR ICMS S/RED., BC ICMS REDUZIDO, VLR ICMS REDUZ.
             // Para processos aéreos: DESP. ADUANEIRA = TX DEF LI + Taxa SISCOMEX + DAI + Honorários NIX
             // tx_def_li já foi calculado corretamente acima (txDefLiTotal)
-            const despAduaneiraCalculada = txDefLiTotal + totais.taxa_siscomex + (totais.dai || 0) + totais.honorarios_nix;
+            // IMPORTANTE: Usar o valor total da taxa SISCOMEX calculado diretamente pela função calcularTaxaSiscomex()
+            // ao invés de somar os valores arredondados das linhas, para evitar diferenças de arredondamento
+            const taxaSiscomexTotalProcesso = calcularTaxaSiscomex();
+            const despAduaneiraCalculada = txDefLiTotal + taxaSiscomexTotalProcesso + (totais.dai || 0) + totais.honorarios_nix;
             tr += `<td data-field="desp-aduaneira" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(despAduaneiraCalculada, 2)}</td>`;
             tr += `<td data-field="bc-icms-sem-reducao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_sem_reducao, 2)}</td>`;
             tr += `<td data-field="vlr-icms-sem-reducao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_sem_reducao, 2)}</td>`;
@@ -1010,7 +1013,10 @@
             tr += `<td data-field="multa" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.multa, 2)}</td>`;
             // TX DEF LI: usar o valor calculado corretamente (txDefLiTotal)
             tr += `<td data-field="tx-def-li" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(txDefLiTotal, 2)}</td>`;
-            tr += `<td data-field="taxa-siscomex" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.taxa_siscomex, 2)}</td>`;
+            // Usar o valor total calculado diretamente pela função calcularTaxaSiscomex() para garantir precisão
+            // ao invés de somar os valores arredondados das linhas (evita diferenças de arredondamento)
+            tr += `<td data-field="taxa-siscomex" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(taxaSiscomexTotalProcesso, 2)}</td>`;
+            tr += `<td data-field="taxa-siscomex" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(taxaSiscomexTotalProcesso, 2)}</td>`;
             
             // OUTRAS TX AGENTE, DELIVERY FEE, DELIVERY FEE R$, COLLECT FEE, COLLECT FEE R$, DESCONS., HANDLING, DAI, HONORÁRIOS NIX, DAPE, CORREIOS, LI+DTA+HONOR.NIX
             tr += `<td data-field="outras-tx-agente" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 2)}</td>`;
