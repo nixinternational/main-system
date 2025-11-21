@@ -118,6 +118,11 @@ Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class
     Route::delete('destroy-produto-processo/{id}', [ProcessoController::class, 'destroyProduto'])
         ->middleware('permission.map:processo_extras')
         ->name('processo.produto.destroy');
+    
+    // Rota para salvar apenas os campos do cabeçalho (cabecalhoInputs) do processo aéreo
+    Route::post('/processo/{id}/salvar-cabecalho-inputs-aereo', [ProcessoController::class, 'salvarCabecalhoInputsAereo'])
+        ->middleware('permission.map:processo')
+        ->name('processo.salvar.cabecalho.inputs.aereo');
 
     Route::group(['prefix' => 'ativar'], function () {
         Route::put('/documento/{documento_id}', [TipoDocumentoController::class, 'ativar'])->name('tipo-documento.ativar');

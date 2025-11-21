@@ -351,6 +351,35 @@ class ProcessoController extends Controller
 
                 // se quiser, pode controlar arredondamento só para exibição:
                 // $model->$field = round((float)$value, 7); // por exemplo, até 7 casas
+            } elseif (is_null($value) && !in_array($field, [
+                'cotacao_frete_internacional',
+                'cotacao_seguro_internacional',
+                'cotacao_acrescimo_frete',
+                'transportadora_cnpj',
+                'fornecedor_id',
+                'cliente_id',
+                'catalogo_id',
+                'created_at',
+                'updated_at',
+                'deleted_at'
+            ]) && in_array($field, [
+                'outras_taxas_agente',
+                'delivery_fee',
+                'delivery_fee_brl',
+                'collect_fee',
+                'collect_fee_brl',
+                'desconsolidacao',
+                'handling',
+                'dai',
+                'dape',
+                'correios',
+                'li_dta_honor_nix',
+                'honorarios_nix',
+                'diferenca_cambial_frete',
+                'diferenca_cambial_fob'
+            ])) {
+                // Converter valores null para 0 para campos monetários específicos do processo aéreo
+                $model->$field = 0;
             }
         }
 
@@ -377,6 +406,19 @@ class ProcessoController extends Controller
                     'fornecedor'
                 ]);
                 $processoProdutosCollection = $processoModel->processoAereoProdutos;
+                
+                // Log para debug - remover depois
+                \Log::info('Carregando ProcessoAereo ID: ' . $id, [
+                    'outras_taxas_agente' => $processoModel->outras_taxas_agente,
+                    'delivery_fee' => $processoModel->delivery_fee,
+                    'collect_fee' => $processoModel->collect_fee,
+                    'dai' => $processoModel->dai,
+                    'dape' => $processoModel->dape,
+                    'handling' => $processoModel->handling,
+                    'correios' => $processoModel->correios,
+                    'li_dta_honor_nix' => $processoModel->li_dta_honor_nix,
+                    'honorarios_nix' => $processoModel->honorarios_nix,
+                ]);
             } else {
                 // Buscar como processo marítimo (padrão)
                 $processoModel = Processo::findOrFail($id);
@@ -910,6 +952,10 @@ class ProcessoController extends Controller
 
             // Atualizar processo na tabela correta
             if ($isAereo) {
+                // Log para debug - remover depois
+                if (!empty($dadosProcesso)) {
+                    \Log::info('Atualizando ProcessoAereo ID: ' . $id, ['dadosProcesso' => $dadosProcesso]);
+                }
                 ProcessoAereo::where('id', $id)->update($dadosProcesso);
             } else {
                 Processo::where('id', $id)->update($dadosProcesso);
@@ -1108,6 +1154,78 @@ class ProcessoController extends Controller
         ];
         Processo::where('id', $id)->update($dadosProcesso);
         return back()->with('messages', ['success' => ['Cabeçalho do processo atualizado com sucesso!']]);
+    }
+
+    /**
+     * Salvar apenas os campos do cabeçalho (cabecalhoInputs) do processo aéreo
+     */
+    public function salvarCabecalhoInputsAereo(Request $request, $id)
+    {
+        try {
+            $processo = ProcessoAereo::findOrFail($id);
+            $this->ensureClienteAccess($processo->cliente_id);
+            
+            DB::beginTransaction();
+            
+            // Preparar dados do cabeçalho
+            $dadosCabecalho = [];
+            
+            // Campos do cabeçalho que devem ser salvos
+            $camposCabecalho = [
+                'outras_taxas_agente',
+                'delivery_fee',
+                'delivery_fee_brl',
+                'collect_fee',
+                'collect_fee_brl',
+                'desconsolidacao',
+                'handling',
+                'dai',
+                'dape',
+                'correios',
+                'li_dta_honor_nix',
+                'honorarios_nix',
+                'diferenca_cambial_frete',
+                'diferenca_cambial_fob'
+            ];
+            
+            foreach ($camposCabecalho as $campo) {
+                if ($request->has($campo)) {
+                    $valor = $this->parseMoneyToFloat($request->$campo);
+                    // Se o valor for null (campo vazio), salvar como 0
+                    $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
+                }
+            }
+            
+            // Atualizar peso_liquido se peso_liquido_total_cabecalho foi enviado
+            if ($request->has('peso_liquido_total_cabecalho')) {
+                $pesoLiquido = $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho);
+                $dadosCabecalho['peso_liquido'] = $pesoLiquido !== null ? $pesoLiquido : 0;
+            }
+            
+            // Atualizar no banco
+            if (!empty($dadosCabecalho)) {
+                ProcessoAereo::where('id', $id)->update($dadosCabecalho);
+                \Log::info('CabecalhoInputs salvos para ProcessoAereo ID: ' . $id, ['dadosCabecalho' => $dadosCabecalho]);
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Campos do cabeçalho salvos com sucesso!',
+                'dados' => $dadosCabecalho
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erro ao salvar cabecalhoInputs do ProcessoAereo ' . $id . ': ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Erro ao salvar campos do cabeçalho: ' . $e->getMessage()
+            ], 500);
+        }
     }
     public function destroy(int $id)
     {

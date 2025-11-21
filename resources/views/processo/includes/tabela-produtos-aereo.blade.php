@@ -1101,7 +1101,23 @@
                     console.log('Modal de progresso aberto');
 
                     try {
-                        // Processar bloco por bloco
+                        // PRIMEIRO: Salvar os cabecalhoInputs antes de salvar os produtos
+                        console.log('Salvando cabecalhoInputs antes de salvar produtos...');
+                        const cabecalhoSalvo = await this.salvarCabecalhoInputs();
+                        if (!cabecalhoSalvo) {
+                            console.error('Falha ao salvar cabecalhoInputs');
+                            await Swal.close();
+                            await Swal.fire({
+                                title: 'Erro',
+                                text: 'Erro ao salvar campos do cabeçalho',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                            return false;
+                        }
+                        console.log('CabecalhoInputs salvos com sucesso!');
+                        
+                        // DEPOIS: Processar bloco por bloco
                         for (let i = 0; i < this.blocos.length; i++) {
                             console.log(`Iniciando processamento do bloco ${i + 1}`);
                             const sucesso = await this.salvarBloco(i);
@@ -1229,19 +1245,17 @@
                     return blocos;
                 }
 
-                async salvarBloco(indiceBloco) {
-                    const blocoProdutos = this.blocos[indiceBloco];
-                    console.log(`Iniciando salvamento do bloco ${indiceBloco + 1} com ${blocoProdutos.length} produtos`);
-
+                /**
+                 * Salvar apenas os cabecalhoInputs antes de salvar os produtos
+                 */
+                async salvarCabecalhoInputs() {
                     try {
-                        // Usar FormData que é mais adequado para envio de arquivos e dados complexos
+                        console.log('Iniciando salvamento dos cabecalhoInputs...');
+                        
                         const formData = new FormData();
                         formData.append('_token', '{{ csrf_token() }}');
-                        formData.append('_method', 'PUT');
-                        formData.append('bloco_indice', indiceBloco);
-                        formData.append('total_blocos', this.blocos.length);
-                        formData.append('salvar_apenas_produtos', 'true');
-
+                        
+                        // Campos do cabeçalho que devem ser salvos
                         let campos = [
                             'peso_liquido_total_cabecalho',
                             'outras_taxas_agente',
@@ -1265,6 +1279,44 @@
                             // Sempre enviar o valor, mesmo que seja 0 ou vazio
                             formData.append(campo, valor !== null && valor !== undefined ? valor : '0');
                         }
+                        
+                        const url = '{{ route("processo.salvar.cabecalho.inputs.aereo", $processo->id ?? 0) }}';
+                        console.log('Enviando cabecalhoInputs para:', url);
+                        
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            console.log('CabecalhoInputs salvos com sucesso:', data);
+                            return true;
+                        } else {
+                            console.error('Erro ao salvar cabecalhoInputs:', data.error);
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error('Erro ao salvar cabecalhoInputs:', error);
+                        return false;
+                    }
+                }
+
+                async salvarBloco(indiceBloco) {
+                    const blocoProdutos = this.blocos[indiceBloco];
+                    console.log(`Iniciando salvamento do bloco ${indiceBloco + 1} com ${blocoProdutos.length} produtos`);
+
+                    try {
+                        // Usar FormData que é mais adequado para envio de arquivos e dados complexos
+                        const formData = new FormData();
+                        formData.append('_token', '{{ csrf_token() }}');
+                        formData.append('_method', 'PUT');
+                        formData.append('bloco_indice', indiceBloco);
+                        formData.append('total_blocos', this.blocos.length);
+                        formData.append('salvar_apenas_produtos', 'true');
+
+                        // NÃO enviar mais os cabecalhoInputs aqui, pois já foram salvos antes
 
                         // Adicionar produtos do bloco
                         blocoProdutos.forEach((produto, index) => {
