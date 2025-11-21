@@ -18,6 +18,7 @@ use App\Http\Controllers\ProcessoProdutoController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LogController;
 
 use Illuminate\Support\Facades\Auth;
 
@@ -129,4 +130,15 @@ Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class
     Route::any('currency-update',[ProcessoController::class, 'updatecurrencies'])
         ->middleware('permission.map:processo_extras')
         ->name('currency.update');
+    
+    // Rotas de Logs
+    Route::get('logs', [LogController::class, 'index'])
+        ->middleware('permission:admin|root')
+        ->name('logs.index');
+    Route::post('logs/clear', [LogController::class, 'clear'])
+        ->middleware('permission:admin|root')
+        ->name('logs.clear');
+    Route::get('logs/download', [LogController::class, 'download'])
+        ->middleware('permission:admin|root')
+        ->name('logs.download');
 });

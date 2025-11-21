@@ -786,18 +786,35 @@ class ProcessoController extends Controller
             }
             
             // Campos comuns a ambos os tipos de processo
-            $dadosProcesso = [
-                'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
-                'desconsolidacao' => $this->parseMoneyToFloat($request->desconsolidacao),
-                'handling' => $this->parseMoneyToFloat($request->handling),
-                // Preservar service_charges do processo se não foi enviado ou está vazio
-                'service_charges' => ($request->has('service_charges') && $request->service_charges !== '' && $request->service_charges !== null) ? $this->parseMoneyToFloat($request->service_charges) : ($processoExistente->service_charges ?? null),
-                'correios' => $this->parseMoneyToFloat($request->correios),
-                'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
-                'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
-                'diferenca_cambial_frete' => $this->parseMoneyToFloat($request->diferenca_cambial_frete),
-                'diferenca_cambial_fob' => $this->parseMoneyToFloat($request->diferenca_cambial_fob),
+            // Garantir que os valores sejam salvos mesmo quando são 0 ou vazios
+            // Quando salvar_apenas_produtos é true, sempre atualizar os campos enviados
+            $dadosProcesso = [];
+            
+            // Campos que sempre devem ser atualizados quando enviados
+            $camposComuns = [
+                'outras_taxas_agente',
+                'desconsolidacao',
+                'handling',
+                'correios',
+                'li_dta_honor_nix',
+                'honorarios_nix',
+                'diferenca_cambial_frete',
+                'diferenca_cambial_fob'
             ];
+            
+            foreach ($camposComuns as $campo) {
+                // Sempre incluir o campo no array quando enviado, mesmo que seja 0 ou vazio
+                if ($request->has($campo)) {
+                    $valor = $this->parseMoneyToFloat($request->$campo);
+                    // Se o valor for null (campo vazio), salvar como 0
+                    $dadosProcesso[$campo] = $valor !== null ? $valor : 0;
+                }
+            }
+            
+            // Preservar service_charges do processo se não foi enviado ou está vazio
+            if ($request->has('service_charges') && $request->service_charges !== '' && $request->service_charges !== null) {
+                $dadosProcesso['service_charges'] = $this->parseMoneyToFloat($request->service_charges);
+            }
             
             // Campos específicos para processos marítimos
             if (!$isAereo) {
@@ -818,21 +835,24 @@ class ProcessoController extends Controller
             
             // Campos específicos para processos aéreos
             if ($isAereo) {
-                if ($request->has('delivery_fee')) {
-                    $dadosProcesso['delivery_fee'] = $this->parseMoneyToFloat($request->delivery_fee);
+                // Sempre atualizar os campos se foram enviados, mesmo que sejam 0
+                $camposAereos = [
+                    'delivery_fee',
+                    'delivery_fee_brl',
+                    'collect_fee',
+                    'collect_fee_brl',
+                    'dai',
+                    'dape'
+                ];
+                
+                foreach ($camposAereos as $campo) {
+                    // Sempre incluir o campo no array quando enviado, mesmo que seja 0 ou vazio
+                    if ($request->has($campo)) {
+                        $valor = $this->parseMoneyToFloat($request->$campo);
+                        // Se o valor for null (campo vazio), salvar como 0
+                        $dadosProcesso[$campo] = $valor !== null ? $valor : 0;
+                    }
                 }
-                if ($request->has('delivery_fee_brl')) {
-                    $dadosProcesso['delivery_fee_brl'] = $this->parseMoneyToFloat($request->delivery_fee_brl);
-                }
-                if ($request->has('collect_fee')) {
-                    $dadosProcesso['collect_fee'] = $this->parseMoneyToFloat($request->collect_fee);
-                }
-                if ($request->has('collect_fee_brl')) {
-                    $dadosProcesso['collect_fee_brl'] = $this->parseMoneyToFloat($request->collect_fee_brl);
-                }
-                // DAI e DAPE sempre devem ser processados, mesmo se vazios ou zero
-                $dadosProcesso['dai'] = $this->parseMoneyToFloat($request->dai ?? 0);
-                $dadosProcesso['dape'] = $this->parseMoneyToFloat($request->dape ?? 0);
             }
 
             if ($request->has('fornecedor_id')) {

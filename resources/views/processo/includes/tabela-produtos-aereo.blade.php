@@ -1261,7 +1261,9 @@
                         ];
 
                         for (let campo of campos) {
-                            formData.append(campo, MoneyUtils.parseMoney($(`#${campo}`).val()) || 0)
+                            const valor = MoneyUtils.parseMoney($(`#${campo}`).val());
+                            // Sempre enviar o valor, mesmo que seja 0 ou vazio
+                            formData.append(campo, valor !== null && valor !== undefined ? valor : '0');
                         }
 
                         // Adicionar produtos do bloco
