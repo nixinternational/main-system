@@ -434,8 +434,71 @@
                 buildRow(
                     'Taxa SISCOMEX do processo (R$)',
                     formatDebugMoney(globais.taxaSiscomexProcesso, 2),
-                    'Valor informado em Taxa SISCOMEX (processo).',
-                    formatCalcDetail(globais.taxaSiscomexProcesso, [formatComponent('Valor digitado', globais.taxaSiscomexProcesso, 2)], 2)
+                    'Valor calculado automaticamente baseado no número de adições únicas do processo.',
+                    (function() {
+                        // Calcular detalhes do cálculo da taxa SISCOMEX
+                        const valores = $('input[name^="produtos["][name$="[adicao]"]')
+                            .map(function() {
+                                return $(this).val();
+                            })
+                            .get();
+                        const unicos = [...new Set(valores.filter(v => v !== ""))];
+                        const quantidade = unicos.length;
+                        const valorRegistroDI = 115.67;
+                        
+                        let detalhes = [];
+                        let totalCalculado = valorRegistroDI;
+                        
+                        if (quantidade === 0) {
+                            detalhes.push(`Quantidade de adições: ${quantidade}`);
+                            detalhes.push(formatComponent('Taxa de Registro DI', valorRegistroDI, 2));
+                        } else if (quantidade <= 10) {
+                            const totaisPorQuantidade = {
+                                1: 154.23,
+                                2: 192.79,
+                                3: 223.64,
+                                4: 254.49,
+                                5: 285.34,
+                                6: 308.48,
+                                7: 331.62,
+                                8: 354.76,
+                                9: 377.90,
+                                10: 401.04
+                            };
+                            totalCalculado = totaisPorQuantidade[quantidade] || valorRegistroDI;
+                            detalhes.push(`Quantidade de adições únicas: ${quantidade}`);
+                            detalhes.push(`Valor total conforme tabela: ${formatRawValue(totalCalculado, 2)}`);
+                        } else {
+                            totalCalculado = 401.04; // Total para 10 adições
+                            detalhes.push(`Quantidade de adições únicas: ${quantidade}`);
+                            detalhes.push(`Base (até 10 adições): ${formatRawValue(401.04, 2)}`);
+                            
+                            if (quantidade > 10) {
+                                const adicoes11a20 = Math.min(quantidade, 20) - 10;
+                                const valor11a20 = adicoes11a20 * 15.42;
+                                totalCalculado += valor11a20;
+                                detalhes.push(`Adições 11-20 (${adicoes11a20} × R$ 15,42): ${formatRawValue(valor11a20, 2)}`);
+                            }
+                            
+                            if (quantidade > 20) {
+                                const adicoes21a50 = Math.min(quantidade, 50) - 20;
+                                const valor21a50 = adicoes21a50 * 7.71;
+                                totalCalculado += valor21a50;
+                                detalhes.push(`Adições 21-50 (${adicoes21a50} × R$ 7,71): ${formatRawValue(valor21a50, 2)}`);
+                            }
+                            
+                            if (quantidade > 50) {
+                                const adicoesAcima50 = quantidade - 50;
+                                const valorAcima50 = adicoesAcima50 * 3.86;
+                                totalCalculado += valorAcima50;
+                                detalhes.push(`Adições acima de 50 (${adicoesAcima50} × R$ 3,86): ${formatRawValue(valorAcima50, 2)}`);
+                            }
+                            
+                            detalhes.push(`TOTAL: ${formatRawValue(totalCalculado, 2)}`);
+                        }
+                        
+                        return detalhes.join(' | ');
+                    })()
                 ),
                 buildRow(
                     'Frete total do processo (USD)',
