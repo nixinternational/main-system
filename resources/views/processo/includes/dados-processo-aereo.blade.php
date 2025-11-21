@@ -1,7 +1,7 @@
    <div class="tab-pane fade active show" id="custom-tabs-two-home" role="tabpanel"
        aria-labelledby="custom-tabs-two-home-tab">
        <form enctype="multipart/form-data" id="formProcesso"
-           action="{{ isset($processo) ? route('update.processo', $processo->id) : route('processo.store') }}"
+           action="{{ isset($processo) ? route('update.processo', $processo->id) . '?tipo_processo=aereo' : route('processo.store') }}"
            method="POST">
            @csrf
            @if (isset($processo))
@@ -47,8 +47,9 @@
                            'textColor' => '#ffffff'
                        ],
                    ];
-                   $tipo = $processo->tipo_processo ?? 'maritimo';
-                   $tipoInfo = $tiposMap[$tipo] ?? $tiposMap['maritimo'];
+                   // Se for ProcessoAereo, sempre será 'aereo', caso contrário usa o tipo_processo do modelo
+                   $tipo = isset($tipoProcesso) ? $tipoProcesso : ($processo->tipo_processo ?? 'aereo');
+                   $tipoInfo = $tiposMap[$tipo] ?? $tiposMap['aereo'];
                @endphp
                <div class="row mb-4">
                    <div class="col-12">
@@ -140,14 +141,6 @@
 
                <div class="row mt-1">
 
-
-                   <div class="col-md-2">
-                       <label for="thc_capatazia" class="form-label">THC/CAPATAZIA (R$)</label>
-                       <input
-                           value="{{ isset($processo->thc_capatazia) ? number_format($processo->thc_capatazia, 2, ',', '.') : '' }}"
-                           class="form-control moneyReal" name="thc_capatazia" id="thc_capatazia">
-                   </div>
-
                    <div class="col-md-2">
                        <label for="peso_bruto" class="form-label">PESO BRUTO</label>
                        <input type="text"
@@ -155,10 +148,10 @@
                            class="form-control moneyReal" name="peso_bruto" id="peso_bruto">
                    </div>
                    <div class="col-md-2">
-                       <label for="peso_bruto" class="form-label">PESO LÍQUIDO</label>
+                       <label for="peso_liquido" class="form-label">PESO LÍQUIDO</label>
                        <input type="text"
                            value="{{ isset($processo->peso_liquido) ? number_format($processo->peso_liquido, 4, ',', '.') : '' }}"
-                           class="form-control moneyReal" readonly>
+                           class="form-control moneyReal" readonly id="peso_liquido">
                    </div>
                    <div class="col-md-2">
                        <label for="multa" class="form-label">MULTA</label>
@@ -167,17 +160,48 @@
                            class="form-control moneyReal2" name="multa" id="multa">
                    </div>
                    <div class="col-md-2">
-                       <label for="multa" class="form-label">QUANTIDADE</label>
+                       <label for="quantidade" class="form-label">QUANTIDADE</label>
                        <input type="text"
                            value="{{ isset($processo->quantidade) ? number_format($processo->quantidade, 4, ',', '.') : '' }}"
                            class="form-control moneyReal" name="quantidade" id="quantidade">
                    </div>
                    <div class="col-md-2">
-                       <label for="multa" class="form-label">ESPÉCIE</label>
+                       <label for="especie" class="form-label">ESPÉCIE</label>
                        <input type="text" value="{{ isset($processo) ? $processo->especie : '' }}"
                            class="form-control " name="especie" id="especie">
                    </div>
 
+               </div>
+               
+               <div class="row mt-3">
+                   <div class="col-md-3">
+                       <label for="valor_exw_usd" class="form-label">VALOR EXW (USD)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">USD</span>
+                           <input type="text" readonly class="form-control moneyReal2" id="valor_exw_usd">
+                       </div>
+                   </div>
+                   <div class="col-md-3">
+                       <label for="valor_exw_brl" class="form-label">VALOR EXW (BRL)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">R$</span>
+                           <input type="text" readonly class="form-control moneyReal2" id="valor_exw_brl">
+                       </div>
+                   </div>
+                   <div class="col-md-3">
+                       <label for="valor_cif_usd" class="form-label">VALOR CIF (USD)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">USD</span>
+                           <input type="text" readonly class="form-control moneyReal2" id="valor_cif_usd">
+                       </div>
+                   </div>
+                   <div class="col-md-3">
+                       <label for="valor_cif_brl" class="form-label">VALOR CIF (BRL)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">R$</span>
+                           <input type="text" readonly class="form-control moneyReal2" id="valor_cif_brl">
+                       </div>
+                   </div>
                </div>
                <div class="row">
 
@@ -453,27 +477,33 @@
                    </div>
                </div>
                <div class="row">
-                   @php
-                       $cotacoes = isset($processo->cotacao_moeda_processo)
-                           ? (is_array($processo->cotacao_moeda_processo)
-                               ? $processo->cotacao_moeda_processo
-                               : $processo->cotacao_moeda_processo)
-                           : [];
-                   @endphp
+                  @php
+                      $cotacoes = isset($processo->cotacao_moeda_processo)
+                          ? (is_array($processo->cotacao_moeda_processo)
+                              ? $processo->cotacao_moeda_processo
+                              : (is_string($processo->cotacao_moeda_processo) 
+                                  ? json_decode($processo->cotacao_moeda_processo, true) 
+                                  : []))
+                          : [];
+                      // Garantir que é um array
+                      if (!is_array($cotacoes)) {
+                          $cotacoes = [];
+                      }
+                  @endphp
 
-                   @if (!empty($cotacoes))
-                       <div class="col-12 mt-4">
-                           <div class="card-item shadow-sm" style="flex: 1 1 100%;">
-                               <div class="card-header-primary">
-                                   <i class="fas fa-edit me-3"></i>
-                                   <span>Editar valores de venda das moedas do dia</span>
-                                   <span class="badge-custom ms-3" id="cotacao-data-exibicao">
-                                       {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
-                                   </span>
-                               </div>
-                               <div class="card-body p-3">
-                                   <div class="row" id="cotacoes-moedas-row">
-                                       @foreach ($cotacoes as $codigo => $cotacao)
+                  @if (!empty($cotacoes))
+                      <div class="col-12 mt-4">
+                          <div class="card-item shadow-sm" style="flex: 1 1 100%;">
+                              <div class="card-header-primary">
+                                  <i class="fas fa-edit me-3"></i>
+                                  <span>Editar valores de venda das moedas do dia</span>
+                                  <span class="badge-custom ms-3" id="cotacao-data-exibicao">
+                                      {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
+                                  </span>
+                              </div>
+                              <div class="card-body p-3">
+                                  <div class="row" id="cotacoes-moedas-row">
+                                      @foreach ($cotacoes as $codigo => $cotacao)
                                            <div class="col-md-3 mb-3">
                                                <label class="form-label fw-bold small text-muted">
                                                    {{ $cotacao['nome'] ?? $codigo }} ({{ $codigo }})
@@ -762,13 +792,14 @@
                });
            }
 
-           // Monitoramento específico para o campo thc_capatazia
-           function monitorarTHCCapatazia() {
-               const campo = $('#thc_capatazia');
+           // Monitoramento específico para os campos aéreos (delivery_fee e collect_fee)
+           function monitorarCamposAereos() {
+               const campoDeliveryFee = $('#delivery_fee');
+               const campoCollectFee = $('#collect_fee');
 
                // Monitora mudanças de valor
-               campo.on('input change', function(e) {
-                   console.log('🚨 THC Capatazia alterado por EVENTO:', e.type);
+               campoDeliveryFee.add(campoCollectFee).on('input change', function(e) {
+                   console.log('🚨 Campo aéreo alterado por EVENTO:', e.type, this.id);
                    console.log('Valor atual:', this.value);
                    console.trace('Stack trace do evento');
                });
@@ -776,8 +807,8 @@
                // Monkey patch do método val()
                const originalVal = $.fn.val;
                $.fn.val = function(value) {
-                   if (value !== undefined && this.is('#thc_capatazia')) {
-                       console.log('🚨 THC Capatazia alterado via .val()');
+                   if (value !== undefined && (this.is('#delivery_fee') || this.is('#collect_fee'))) {
+                       console.log('🚨 Campo aéreo alterado via .val()', this.attr('id'));
                        console.log('Novo valor:', value);
                        console.trace('Stack trace do .val()');
                    }
@@ -785,17 +816,17 @@
                };
 
                // Monitora focos e blurs para debug
-               campo.on('focus', function() {
-                   console.log('THC Capatazia em foco, valor:', this.value);
+               campoDeliveryFee.add(campoCollectFee).on('focus', function() {
+                   console.log('Campo aéreo em foco, valor:', this.value, this.id);
                });
 
-               campo.on('blur', function() {
-                   console.log('THC Capatazia perdeu foco, valor:', this.value);
+               campoDeliveryFee.add(campoCollectFee).on('blur', function() {
+                   console.log('Campo aéreo perdeu foco, valor:', this.value, this.id);
                });
            }
 
            // Executar o monitoramento
-           monitorarTHCCapatazia();
+           monitorarCamposAereos();
 
            function forcarFormatacaoCamposCards() {
 
@@ -861,6 +892,13 @@
                            
                            $('#cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete')
                                .trigger('change');
+                           
+                           // Atualizar valores EXW e CIF após atualizar cotações
+                           if (typeof atualizarValoresExwECif === 'function') {
+                               setTimeout(function() {
+                                   atualizarValoresExwECif();
+                               }, 200);
+                           }
                        }, 100);
                        const moedaProcesso = $('#moeda_processo').val();
                        if (moedaProcesso && data[moedaProcesso]) {

@@ -707,14 +707,27 @@
                             totais[campo] += valor;
                         }
                     } else {
-                        const elemento = $(`#${campo}-${rowId}`);
-                        if (elemento.length > 0) {
-                            let valor = MoneyUtils.parseMoney(elemento.val()) || 0;
+                        // Para campos externos, usar valores brutos armazenados (não formatados) para precisão máxima
+                        if (window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos[campo] && 
+                            window.valoresBrutosCamposExternos[campo][rowId] !== undefined) {
+                            // Usar valor bruto (não formatado) para cálculo preciso
+                            let valor = window.valoresBrutosCamposExternos[campo][rowId] || 0;
                             // Validar diferenca_cambial_frete antes de somar
                             if (campo === 'diferenca_cambial_frete') {
                                 valor = validarDiferencaCambialFrete(valor);
                             }
                             totais[campo] += valor;
+                        } else {
+                            // Fallback: usar valor formatado se valor bruto não estiver disponível
+                            const elemento = $(`#${campo}-${rowId}`);
+                            if (elemento.length > 0) {
+                                let valor = MoneyUtils.parseMoney(elemento.val()) || 0;
+                                // Validar diferenca_cambial_frete antes de somar
+                                if (campo === 'diferenca_cambial_frete') {
+                                    valor = validarDiferencaCambialFrete(valor);
+                                }
+                                totais[campo] += valor;
+                            }
                         }
                     }
                 });
@@ -1270,8 +1283,23 @@
                 }, 100);
             });
 
-            recalcularTodaTabela()
-            setTimeout(atualizarTotalizadores, 500);
+            // Removido recalcularTodaTabela() ao carregar a página para melhorar performance
+            
+            // Inicializar valores brutos dos campos externos ao carregar a página
+            if (window.valoresBrutosCamposExternos === undefined) {
+                window.valoresBrutosCamposExternos = {};
+            }
+            const camposExternos = getCamposExternos();
+            const lengthTable = $('.linhas-input').length;
+            camposExternos.forEach(campo => {
+                if (!window.valoresBrutosCamposExternos[campo]) {
+                    window.valoresBrutosCamposExternos[campo] = [];
+                }
+                for (let i = 0; i < lengthTable; i++) {
+                    const valor = MoneyUtils.parseMoney($(`#${campo}-${i}`).val()) || 0;
+                    window.valoresBrutosCamposExternos[campo][i] = valor;
+                }
+            });
 
 
         });
@@ -1788,11 +1816,49 @@
 
             formatMoney: function(value, decimals = 6) {
                 const num = normalizeNumericValue(value);
-                const truncated = this.truncate(num, decimals);
-                return truncated.toLocaleString('pt-BR', {
+                if (!isFinite(num)) return '0';
+                
+                let processedValue;
+                // Para valores monetários (decimals <= 2), usar arredondamento
+                // Para fatores (decimals > 2), usar truncamento
+                if (decimals <= 2) {
+                    processedValue = Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+                } else {
+                    processedValue = this.truncate(num, decimals);
+                }
+                
+                // Formatar para exibição
+                return processedValue.toLocaleString('pt-BR', {
                     minimumFractionDigits: decimals,
                     maximumFractionDigits: decimals
                 });
+            },
+            
+            formatMoneyExato: function(value) {
+                // Formatação SEM ARREDONDAMENTO - mantém EXATAMENTE o valor calculado
+                const num = normalizeNumericValue(value);
+                if (!isFinite(num)) return '0';
+                
+                // Usar toFixed com muitas casas decimais para evitar notação científica
+                // e depois remover zeros à direita desnecessários
+                let str = num.toFixed(20);
+                
+                // Remover zeros à direita desnecessários (mas manter todas as casas significativas)
+                str = str.replace(/\.?0+$/, '');
+                
+                // Separar parte inteira e decimal
+                let parts = str.split('.');
+                let integerPart = parts[0];
+                let decimalPart = parts[1] || '';
+                
+                // Formatar parte inteira com separadores de milhar
+                integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                
+                // Se houver parte decimal, adicionar vírgula
+                if (decimalPart) {
+                    return `${integerPart},${decimalPart}`;
+                }
+                return integerPart;
             }
         };
 
@@ -2910,6 +2976,29 @@
             atualizarCamposCabecalho();
             atualizarTotalizadores();
         });
+        
+        // Atualizar valores brutos quando campos externos forem editados manualmente
+        $(document).on('blur', '[id$="-0"], [id$="-1"], [id$="-2"], [id$="-3"], [id$="-4"], [id$="-5"], [id$="-6"], [id$="-7"], [id$="-8"], [id$="-9"]', function() {
+            const campoId = $(this).attr('id');
+            if (campoId) {
+                // Extrair nome do campo e rowId (formato: campo-rowId)
+                const match = campoId.match(/^(.+?)-(\d+)$/);
+                if (match) {
+                    const campo = match[1];
+                    const rowId = parseInt(match[2]);
+                    // Verificar se é um campo externo
+                    const camposExternos = getCamposExternos();
+                    if (camposExternos.includes(campo)) {
+                        // Atualizar valor bruto quando campo for editado manualmente
+                        const valor = MoneyUtils.parseMoney($(this).val()) || 0;
+                        if (!window.valoresBrutosCamposExternos[campo]) {
+                            window.valoresBrutosCamposExternos[campo] = [];
+                        }
+                        window.valoresBrutosCamposExternos[campo][rowId] = valor;
+                    }
+                }
+            }
+        });
         $(document).on('change', '.icms_reduzido_percent', function() {
             const rowId = $(this).data('row');
             atualizarReducao(rowId);
@@ -2974,7 +3063,8 @@
             processarMudancaNacionalizacao(this);
         });
 
-
+        // Armazenar valores brutos (não formatados) para cálculo preciso do totalizador
+        window.valoresBrutosCamposExternos = window.valoresBrutosCamposExternos || {};
 
         function atualizarCamposCabecalho() {
             const campos = getCamposExternos()
@@ -2983,18 +3073,125 @@
             // Usar a função centralizada em vez de calcular manualmente
             let fobTotalGeral = calcularFobTotalGeral();
 
-            // Para cada linha da tabela
+            // Para cada campo externo, garantir que a soma total seja exatamente igual ao valor do cabeçalho
+            for (let campo of campos) {
+                const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
+                if (valorCampo === 0) {
+                    // Se o valor for zero, limpar todos os campos
+                    for (let i = 0; i < lengthTable; i++) {
+                        $(`#${campo}-${i}`).val('');
+                        // Limpar valor bruto também
+                        if (window.valoresBrutosCamposExternos[campo]) {
+                            window.valoresBrutosCamposExternos[campo][i] = 0;
+                        }
+                    }
+                    continue;
+                }
+
+                // Inicializar array de valores brutos para este campo
+                if (!window.valoresBrutosCamposExternos[campo]) {
+                    window.valoresBrutosCamposExternos[campo] = [];
+                }
+                
+                let somaDistribuida = 0;
+                const valoresPorLinha = [];
+                
+                // Primeira passada: distribuir para todas as linhas exceto a última
+                // Arredondar para cima, mas garantir que não ultrapasse o total
+                for (let i = 0; i < lengthTable - 1; i++) {
+                    const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
+                    const fatorVlrFob_AX = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
+                    
+                    const valorCalculado = valorCampo * fatorVlrFob_AX;
+                    // Arredondar para cima com 2 casas decimais
+                    const valorArredondado = Math.ceil(valorCalculado * 100) / 100;
+                    
+                    // Verificar se não ultrapassa o valor total disponível
+                    const valorDisponivel = valorCampo - somaDistribuida;
+                    const valorFinal = Math.min(valorArredondado, valorDisponivel);
+                    
+                    valoresPorLinha[i] = valorFinal;
+                    somaDistribuida += valorFinal;
+                    
+                    // Armazenar valor bruto (não formatado) para cálculo preciso do totalizador
+                    window.valoresBrutosCamposExternos[campo][i] = valorFinal;
+                    
+                    // Formatar com 2 casas decimais para exibição
+                    $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valorFinal, 2));
+                }
+                
+                // Segunda passada: ajustar a última linha para que a soma total seja EXATAMENTE igual ao valor do cabeçalho
+                const ultimaLinha = lengthTable - 1;
+                
+                // Recalcular somaDistribuida usando os valores brutos armazenados para máxima precisão
+                let somaDistribuidaRecalculada = 0;
+                for (let i = 0; i < lengthTable - 1; i++) {
+                    // Usar valor bruto armazenado (já foi atualizado acima)
+                    somaDistribuidaRecalculada += window.valoresBrutosCamposExternos[campo][i] || 0;
+                }
+                
+                // Última linha recebe EXATAMENTE a diferença (garantir que não falte nenhum centavo)
+                // Usar subtração direta para máxima precisão
+                let valorUltimaLinha = valorCampo - somaDistribuidaRecalculada;
+                
+                // Garantir que o valor da última linha não seja negativo
+                if (valorUltimaLinha < 0) {
+                    // Se der negativo, redistribuir proporcionalmente (sem arredondar para cima)
+                    const fatorAjuste = valorCampo / somaDistribuidaRecalculada;
+                    somaDistribuidaRecalculada = 0;
+                    for (let i = 0; i < lengthTable - 1; i++) {
+                        if (valoresPorLinha[i] !== undefined) {
+                            valoresPorLinha[i] = valoresPorLinha[i] * fatorAjuste;
+                            // Truncar para 2 casas (não arredondar para cima quando redistribuindo)
+                            valoresPorLinha[i] = Math.floor(valoresPorLinha[i] * 100) / 100;
+                            somaDistribuidaRecalculada += valoresPorLinha[i];
+                            
+                            // Atualizar valor bruto
+                            window.valoresBrutosCamposExternos[campo][i] = valoresPorLinha[i];
+                            
+                            $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valoresPorLinha[i], 2));
+                        }
+                    }
+                    // Última linha recebe a diferença exata (recalcular com máxima precisão)
+                    valorUltimaLinha = valorCampo - somaDistribuidaRecalculada;
+                }
+                
+                // Atribuir o valor exato na última linha (preservar todas as casas decimais necessárias)
+                valoresPorLinha[ultimaLinha] = valorUltimaLinha;
+                
+                // Armazenar valor bruto da última linha (valor exato, não formatado)
+                // Garantir que seja exatamente a diferença para que a soma total seja exata
+                window.valoresBrutosCamposExternos[campo][ultimaLinha] = valorUltimaLinha;
+                
+                // Verificação final: garantir que a soma seja exata
+                let somaFinal = 0;
+                for (let i = 0; i < lengthTable; i++) {
+                    somaFinal += window.valoresBrutosCamposExternos[campo][i] || 0;
+                }
+                
+                // Se ainda houver diferença (mesmo que mínima), ajustar a última linha
+                const diferencaFinal = valorCampo - somaFinal;
+                if (Math.abs(diferencaFinal) > 0.000001) {
+                    window.valoresBrutosCamposExternos[campo][ultimaLinha] += diferencaFinal;
+                    valorUltimaLinha += diferencaFinal;
+                }
+                
+                // Formatar preservando o valor exato - usar formatMoneyExato para manter precisão máxima
+                // Isso garante que a soma total seja exatamente igual ao valor do cabeçalho
+                $(`#${campo}-${ultimaLinha}`).val(MoneyUtils.formatMoneyExato(valorUltimaLinha));
+            }
+            
+            // Recalcular desp_desenbaraco para todas as linhas (lógica do marítimo)
             for (let i = 0; i < lengthTable; i++) {
-                // Obter o fob_total_usd diretamente da coluna
                 const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
-                const fatorVlrFob_AX = fobTotalGeral ? (fobTotal / fobTotalGeral) : 0;
+                const fatorVlrFob_AX = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
                 let desp_desenbaraco_parte_1 = 0
 
                 for (let campo of campos) {
-                    const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0
-                    const valorDistribuido = MoneyUtils.formatMoney(valorCampo * fatorVlrFob_AX, 2)
-                    desp_desenbaraco_parte_1 += valorCampo * fatorVlrFob_AX;
-                    $(`#${campo}-${i}`).val(valorDistribuido)
+                    // Usar valor bruto armazenado quando disponível
+                    const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
+                    const valorDistribuido = window.valoresBrutosCamposExternos[campo]?.[i] ?? (valorCampo * fatorVlrFob_AX);
+                    desp_desenbaraco_parte_1 += valorDistribuido;
                 }
 
                 let taxa_siscomex = $(`#taxa_siscomex-${i}`).val() ? MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) :

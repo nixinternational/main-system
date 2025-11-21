@@ -35,13 +35,14 @@
                                     <td>
                                         @php
                                             $tiposMap = [
-                                                'maritimo' => 'Marítimo',
-                                                'aereo' => 'Aéreo',
-                                                'rodoviario' => 'Rodoviário',
+                                                'maritimo' => ['nome' => 'Marítimo', 'cor' => 'badge-info'],
+                                                'aereo' => ['nome' => 'Aéreo', 'cor' => 'badge-success'],
+                                                'rodoviario' => ['nome' => 'Rodoviário', 'cor' => 'badge-warning'],
                                             ];
-                                            $tipoTexto = $tiposMap[$processo->tipo_processo ?? 'maritimo'] ?? 'Marítimo';
+                                            $tipo = $processo->tipo_processo ?? 'maritimo';
+                                            $tipoInfo = $tiposMap[$tipo] ?? $tiposMap['maritimo'];
                                         @endphp
-                                        <span class="badge badge-info">{{ $tipoTexto }}</span>
+                                        <span class="badge {{ $tipoInfo['cor'] }}">{{ $tipoInfo['nome'] }}</span>
                                     </td>
                                     <td>
                                         @php
@@ -68,7 +69,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-center" style="gap: 8px;">
-                                            <a href="{{ route('processo.edit', $processo->id) }}" 
+                                            <a href="{{ route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => $processo->tipo_processo ?? 'maritimo']) }}" 
                                                 class="btn btn-sm btn-warning" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>

@@ -51,7 +51,7 @@
                                 $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
                                 $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
                                 $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
-                                $colspanBeforeMiddleRow = 10; // Colunas fixas iniciais (Ações até FATOR PESO)
+                                $colspanBeforeMiddleRow = 12; // Colunas fixas iniciais (Ações até FATOR PESO, incluindo ORIGEM e PESO LIQ. LBS)
 
                                 // Colunas FOB
                                 if ($moedaProcesso == 'USD') {
@@ -81,57 +81,132 @@
                                     $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
                                 }
 
-                                // Colunas fixas após (THC até VLR TOTAL NF C/ICMS-ST)
-                                $colspanBeforeMiddleRow += 30; // THC USD até VLR TOTAL NF C/ICMS-ST
+                                // Colunas fixas após (VLR CFR até VLR TOTAL NF C/ICMS-ST)
+                                $colspanBeforeMiddleRow += 30; // VLR CFR UNIT + VLR CFR TOTAL até VLR TOTAL NF C/ICMS-ST (removidos delivery_fee e collect_fee que agora estão na middleRow)
 
                                 // Colunas dos fatores (FATOR VLR FOB até TAXA SISCOMEX)
                                 $colspanBeforeMiddleRow += 5; // FATOR VLR FOB até TAXA SISCOMEX
                             @endphp
 
                             <th style="background-color: #fff"> </th>
-                            <th colspan="{{ $colspanBeforeMiddleRow }}"></th>
+                            @php
+                                // Calcular quantas colunas existem antes do PESO LIQ TOTAL
+                                // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + NCM (1) + QUANTD (1) + PESO LIQ. LBS (1) + PESO LIQ. UNIT (1) = 11 colunas
+                                $colspanAntesPesoLiq = 9;
+                            @endphp
+                            <th colspan="{{ $colspanAntesPesoLiq }}"></th>
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="peso_liquido_total_cabecalho" id="peso_liquido_total_cabecalho"
+                                    value="{{ number_format($processo->peso_liquido ?? 0, 5, ',', '.') }}">
+                            </th>
+                            <th colspan="{{ $colspanBeforeMiddleRow - $colspanAntesPesoLiq - 1 }}"></th>
 
                             @php
+                                // Ordem: OUTRAS TX AGENTE, DELIVERY FEE, DELIVERY FEE R$, COLLECT FEE, COLLECT FEE R$, DESCONS., HANDLING, DAI, HONORÁRIOS NIX, DAPE, CORREIOS, LI+DTA+HONOR.NIX
                                 $campos = [
                                     'outras_taxas_agente',
-                                    'liberacao_bl',
+                                    'delivery_fee',
+                                    'collect_fee',
                                     'desconsolidacao',
-                                    'isps_code',
                                     'handling',
-                                    'capatazia',
-                                    'afrmm',
-                                    'armazenagem_sts',
-                                    'frete_dta_sts_ana',
-                                    'sda',
-                                    'rep_sts',
-                                    'armaz_ana',
-                                    'lavagem_container',
-                                    'rep_anapolis',
+                                    'dai',
+                                    'honorarios_nix', // Acima do DAPE conforme solicitado
+                                    'dape',
+                                    'correios',
                                     'li_dta_honor_nix',
-                                    'honorarios_nix',
                                 ];
                                 $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
 
-
-
-                            @foreach ($campos as $campo)
-                                <th class="middleRowInputTh">
-                                    @if ($campo == 'capatazia')
-                                        <input type="text" class="form-control moneyReal" name="{{ $campo }}"
-                                            id="{{ $campo }}" readonly
-                                            value="{{ number_format($processo->thc_capatazia ?? 0, 5, ',', '.') }}">
-                                    @else
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                            name="{{ $campo }}" id="{{ $campo }}"
-                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    @endif
-                                </th>
-                            @endforeach
+                            {{-- OUTRAS TX AGENTE --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="outras_taxas_agente" id="outras_taxas_agente"
+                                    value="{{ number_format($processo->outras_taxas_agente ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- DELIVERY FEE --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="delivery_fee" id="delivery_fee"
+                                    value="{{ number_format($processo->delivery_fee ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- DELIVERY FEE R$ --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="delivery_fee_brl" id="delivery_fee_brl"
+                                    value="{{ number_format($processo->delivery_fee_brl ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- COLLECT FEE --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="collect_fee" id="collect_fee"
+                                    value="{{ number_format($processo->collect_fee ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- COLLECT FEE R$ --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="collect_fee_brl" id="collect_fee_brl"
+                                    value="{{ number_format($processo->collect_fee_brl ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- DESCONSOLIDAÇÃO --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="desconsolidacao" id="desconsolidacao"
+                                    value="{{ number_format($processo->desconsolidacao ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- HANDLING --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="handling" id="handling"
+                                    value="{{ number_format($processo->handling ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- DAI --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="dai" id="dai"
+                                    value="{{ number_format($processo->dai ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- HONORÁRIOS NIX --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="honorarios_nix" id="honorarios_nix"
+                                    value="{{ number_format($processo->honorarios_nix ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- DAPE --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="dape" id="dape"
+                                    value="{{ number_format($processo->dape ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- CORREIOS --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="correios" id="correios"
+                                    value="{{ number_format($processo->correios ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- LI+DTA+HONOR.NIX --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="li_dta_honor_nix" id="li_dta_honor_nix"
+                                    value="{{ number_format($processo->li_dta_honor_nix ?? 0, 5, ',', '.') }}">
+                            </th>
 
                             @php
                                 // Colunas restantes após os campos da middleRow
-                                $colspanAfterMiddleRow = 1; // DESP. DESEMBARAÇO até CUSTO TOTAL FINAL
+                                // DESP. DESEMBARAÇO (1 coluna) - depois vêm os campos cambiais como inputs separados, depois CUSTO UNIT FINAL e CUSTO TOTAL FINAL
+                                $colspanAfterMiddleRow = 1; // Apenas DESP. DESEMBARAÇO (os campos cambiais são inputs separados, e depois vêm CUSTO UNIT FINAL e CUSTO TOTAL FINAL)
                             @endphp
 
                             <th colspan="{{ $colspanAfterMiddleRow }}"></th>
@@ -143,7 +218,9 @@
                                         value="{{ number_format($processo->$campoCambial ?? 0, 5, ',', '.') }}">
                                 </th>
                             @endforeach
-                            <th colspan="3"></th>
+                            
+                            {{-- CUSTO UNIT FINAL e CUSTO TOTAL FINAL (2 colunas vazias após os campos cambiais) --}}
+                            <th colspan="2"></th>
                         </tr>
                         <tr>
                             <th class="d-flex align-items-center justify-content-center"
@@ -153,11 +230,13 @@
                             <th style="min-width: 500px !important;">DESCRIÇÃO</th>
                             <th>ADIÇÃO</th>
                             <th>ITEM</th>
+                            <th>ORIGEM</th>
                             <th>CODIGO</th>
                             <th>NCM</th>
                             <th>QUANTD</th>
+                            <th>PESO LIQ. LBS</th>
                             <th>PESO LIQ. UNIT</th>
-                            <th>PESO LIQ TOTAL</th>
+                            <th>PESO LIQ TOTAL KG</th>
                             <th>FATOR PESO</th>
                             <!-- COLUNAS FOB CONDICIONAIS -->
                             <!-- COLUNAS FOB CONDICIONAIS -->
@@ -204,8 +283,8 @@
                             <th>ACRESC. FRETE USD</th>
                             <th>ACRESC. FRETE R$</th>
 
-                            <th>THC USD</th>
-                            <th>THC R$</th>
+                            <th>VLR CFR UNIT</th>
+                            <th>VLR CFR TOTAL</th>
                             <th>VLR ADUANEIRO USD</th>
                             <th>VLR ADUANEIRO R$</th>
                             <th>II</th>
@@ -242,21 +321,17 @@
                             <th>TX DEF. LI</th>
                             <th>TAXA SISCOMEX</th>
                             <th>OUTRAS TX AGENTE</th>
-                            <th>LIBERAÇÃO BL</th>
+                            <th>DELIVERY FEE</th>
+                            <th>DELIVERY FEE R$</th>
+                            <th>COLLECT FEE</th>
+                            <th>COLLECT FEE R$</th>
                             <th>DESCONS.</th>
-                            <th>ISPS CODE</th>
                             <th>HANDLING</th>
-                            <th>CAPATAZIA</th>
-                            <th>AFRMM</th>
-                            <th>ARMAZENAGEM STS</th>
-                            <th>FRETE DTA STS/ANA</th>
-                            <th>S.D.A</th>
-                            <th>REP.STS</th>
-                            <th>ARMAZ. ANA</th>
-                            <th>LAVAGEM CONT</th>
-                            <th>REP. ANAPOLIS</th>
-                            <th>LI+DTA+HONOR.NIX</th>
+                            <th>DAI</th>
                             <th>HONORÁRIOS NIX</th>
+                            <th>DAPE</th>
+                            <th>CORREIOS</th>
+                            <th>LI+DTA+HONOR.NIX</th>
                             <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
                             <th>DIF. CAMBIAL FRETE</th>
                             <th>DIF.CAMBIAL FOB</th>
@@ -265,13 +340,19 @@
                         </tr>
                     </thead>
                     <tbody id="productsBody">
-                        @foreach ($processoProdutos as $index => $processoProduto)
+                        @if (isset($processoProdutos) && count($processoProdutos) > 0)
+                            @foreach ($processoProdutos as $index => $processoProduto)
                             <tr class="linhas-input" id="row-{{ $index }}">
                                 <td class="d-flex align-items-center justify-content-center">
-                                    <button type="button" onclick="showDeleteConfirmation({{ $processoProduto->id }})"
-                                        class="btn btn-danger btn-sm btn-remove" data-id="{{ $processoProduto->id }}">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="button" onclick="showDeleteConfirmation({{ $processoProduto->id }})"
+                                            class="btn btn-danger btn-sm btn-remove" data-id="{{ $processoProduto->id }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info btn-sm btn-debug-linha" data-row="{{ $index }}" title="Cálculo da linha">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    </div>
                                     <input type="checkbox" style="margin-left: 10px" class="select-produto"
                                         value="{{ $processoProduto->id }}">
                                 </td>
@@ -314,6 +395,12 @@
                                 </td>
 
                                 <td>
+                                    <input data-row="{{ $index }}" type="text" class=" form-control"
+                                        name="produtos[{{ $index }}][origem]" id="origem-{{ $index }}"
+                                        value="{{ $processoProduto->origem ?? '' }}">
+                                </td>
+
+                                <td>
                                     <input type="text" class=" form-control" readonly
                                         name="produtos[{{ $index }}][codigo]" id="codigo-{{ $index }}"
                                         value="{{ $processoProduto->produto->codigo }}">
@@ -335,18 +422,26 @@
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][peso_liquido_unitario]"
-                                        id="peso_liquido_unitario-{{ $index }}"
-                                        value="{{ $processoProduto->peso_liquido_unitario ? number_format($processoProduto->peso_liquido_unitario, 5, ',', '.') : '' }}">
+                                        class="form-control pesoLiqLbs moneyReal"
+                                        name="produtos[{{ $index }}][peso_liq_lbs]"
+                                        id="peso_liq_lbs-{{ $index }}"
+                                        value="{{ $processoProduto->peso_liq_lbs ? number_format($processoProduto->peso_liq_lbs, 6, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class="form-control pesoLiqTotal moneyReal"
-                                        name="produtos[{{ $index }}][peso_liquido_total]"
-                                        id="peso_liquido_total-{{ $index }}"
-                                        value="{{ $processoProduto->peso_liquido_total ? number_format($processoProduto->peso_liquido_total, 5, ',', '.') : '' }}">
+                                        class="form-control moneyReal" readonly
+                                        name="produtos[{{ $index }}][peso_liquido_unitario]"
+                                        id="peso_liquido_unitario-{{ $index }}"
+                                        value="{{ $processoProduto->peso_liquido_unitario ? number_format($processoProduto->peso_liquido_unitario, 6, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control pesoLiqTotalKg moneyReal" readonly
+                                        name="produtos[{{ $index }}][peso_liq_total_kg]"
+                                        id="peso_liq_total_kg-{{ $index }}"
+                                        value="{{ $processoProduto->peso_liq_total_kg ? number_format($processoProduto->peso_liq_total_kg, 6, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -354,7 +449,7 @@
                                         class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][fator_peso]"
                                         id="fator_peso-{{ $index }}"
-                                        value="{{ $processoProduto->fator_peso ? number_format($processoProduto->fator_peso, 5, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->fator_peso ? number_format($processoProduto->fator_peso, 8, ',', '.') : '' }}">
                                 </td>
 
                                 <!-- COLUNAS FOB - SEMPRE EXISTEM -->
@@ -477,22 +572,19 @@
                                         value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 7, ',', '.') : '' }}">
                                 </td>
 
-                                <!-- Resto das colunas permanecem iguais -->
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
                                         class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][thc_usd]"
-                                        id="thc_usd-{{ $index }}"
-                                        value="{{ $processoProduto->thc_usd ? number_format($processoProduto->thc_usd, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][vlr_cfr_unit]"
+                                        id="vlr_cfr_unit-{{ $index }}"
+                                        value="{{ $processoProduto->vlr_cfr_unit ? number_format($processoProduto->vlr_cfr_unit, 7, ',', '.') : '' }}">
                                 </td>
-
-
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
                                         class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][thc_brl]"
-                                        id="thc_brl-{{ $index }}"
-                                        value="{{ $processoProduto->thc_brl ? number_format($processoProduto->thc_brl, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][vlr_cfr_total]"
+                                        id="vlr_cfr_total-{{ $index }}"
+                                        value="{{ $processoProduto->vlr_cfr_total ? number_format($processoProduto->vlr_cfr_total, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -723,7 +815,7 @@
                                         class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][fator_valor_fob]"
                                         id="fator_valor_fob-{{ $index }}"
-                                        value="{{ $processoProduto->fator_valor_fob ? number_format($processoProduto->fator_valor_fob, 5, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->fator_valor_fob ? number_format($processoProduto->fator_valor_fob, 8, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -731,7 +823,7 @@
                                         class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][fator_tx_siscomex]"
                                         id="fator_tx_siscomex-{{ $index }}"
-                                        value="{{ $processoProduto->fator_tx_siscomex ? number_format($processoProduto->fator_tx_siscomex, 5, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->fator_tx_siscomex ? number_format($processoProduto->fator_tx_siscomex, 8, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -768,9 +860,33 @@
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][liberacao_bl]"
-                                        id="liberacao_bl-{{ $index }}"
-                                        value="{{ $processoProduto->liberacao_bl ? number_format($processoProduto->liberacao_bl, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][delivery_fee]"
+                                        id="delivery_fee-{{ $index }}"
+                                        value="{{ $processoProduto->delivery_fee ? number_format($processoProduto->delivery_fee, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][delivery_fee_brl]"
+                                        id="delivery_fee_brl-{{ $index }}"
+                                        value="{{ $processoProduto->delivery_fee_brl ? number_format($processoProduto->delivery_fee_brl, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][collect_fee]"
+                                        id="collect_fee-{{ $index }}"
+                                        value="{{ $processoProduto->collect_fee ? number_format($processoProduto->collect_fee, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][collect_fee_brl]"
+                                        id="collect_fee_brl-{{ $index }}"
+                                        value="{{ $processoProduto->collect_fee_brl ? number_format($processoProduto->collect_fee_brl, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -784,95 +900,18 @@
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][isps_code]"
-                                        id="isps_code-{{ $index }}"
-                                        value="{{ $processoProduto->isps_code ? number_format($processoProduto->isps_code, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
                                         name="produtos[{{ $index }}][handling]"
                                         id="handling-{{ $index }}"
                                         value="{{ $processoProduto->handling ? number_format($processoProduto->handling, 7, ',', '.') : '' }}">
                                 </td>
 
+                                <!-- Campos específicos do transporte aéreo -->
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][capatazia]"
-                                        id="capatazia-{{ $index }}"
-                                        value="{{ $processoProduto->capatazia ? number_format($processoProduto->capatazia, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][afrmm]" id="afrmm-{{ $index }}"
-                                        value="{{ $processoProduto->afrmm ? number_format($processoProduto->afrmm, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][armazenagem_sts]"
-                                        id="armazenagem_sts-{{ $index }}"
-                                        value="{{ $processoProduto->armazenagem_sts ? number_format($processoProduto->armazenagem_sts, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][frete_dta_sts_ana]"
-                                        id="frete_dta_sts_ana-{{ $index }}"
-                                        value="{{ $processoProduto->frete_dta_sts_ana ? number_format($processoProduto->frete_dta_sts_ana, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][sda]" id="sda-{{ $index }}"
-                                        value="{{ $processoProduto->sda ? number_format($processoProduto->sda, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][rep_sts]"
-                                        id="rep_sts-{{ $index }}"
-                                        value="{{ $processoProduto->rep_sts ? number_format($processoProduto->rep_sts, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][armaz_ana]"
-                                        id="armaz_ana-{{ $index }}"
-                                        value="{{ $processoProduto->armaz_ana ? number_format($processoProduto->armaz_ana, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][lavagem_container]"
-                                        id="lavagem_container-{{ $index }}"
-                                        value="{{ $processoProduto->lavagem_container ? number_format($processoProduto->lavagem_container, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][rep_anapolis]"
-                                        id="rep_anapolis-{{ $index }}"
-                                        value="{{ $processoProduto->rep_anapolis ? number_format($processoProduto->rep_anapolis, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][li_dta_honor_nix]"
-                                        id="li_dta_honor_nix-{{ $index }}"
-                                        value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][dai]"
+                                        id="dai-{{ $index }}"
+                                        value="{{ $processoProduto->dai ? number_format($processoProduto->dai, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -881,6 +920,30 @@
                                         name="produtos[{{ $index }}][honorarios_nix]"
                                         id="honorarios_nix-{{ $index }}"
                                         value="{{ $processoProduto->honorarios_nix ? number_format($processoProduto->honorarios_nix, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][dape]"
+                                        id="dape-{{ $index }}"
+                                        value="{{ $processoProduto->dape ? number_format($processoProduto->dape, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][correios]"
+                                        id="correios-{{ $index }}"
+                                        value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][li_dta_honor_nix]"
+                                        id="li_dta_honor_nix-{{ $index }}"
+                                        value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -923,7 +986,14 @@
                                         value="{{ $processoProduto->custo_total_final ? number_format($processoProduto->custo_total_final, 7, ',', '.') : '' }}">
                                 </td>
                             </tr>
-                        @endforeach
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="100" class="text-center">
+                                    <p class="text-muted mt-3">Nenhum produto cadastrado. Clique em "Adicionar Produto" para começar.</p>
+                                </td>
+                            </tr>
+                        @endif
                     </tbody>
                     <tfoot id="resultado-totalizadores">
 
@@ -932,6 +1002,26 @@
                 </div>
             </div>
         </form>
+
+        <div class="modal fade" id="debugLinhaModal" tabindex="-1" aria-labelledby="debugLinhaModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable debug-modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="debugLinhaModalLabel">Cálculo da linha</h5>
+                        <button type="button" class="close btn-close-debug" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="debugLinhaConteudo" class="table-responsive"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-close-debug">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <script>
             // Sistema de salvamento em fases para produtos
@@ -1154,19 +1244,15 @@
 
                         let campos = [
                             'outras_taxas_agente',
-                            'liberacao_bl',
                             'desconsolidacao',
-                            'isps_code',
                             'handling',
-                            'capatazia',
-                            'afrmm',
-                            'armazenagem_sts',
-                            'frete_dta_sts_ana',
-                            'sda',
-                            'rep_sts',
-                            'armaz_ana',
-                            'lavagem_container',
-                            'rep_anapolis',
+                            'delivery_fee',
+                            'delivery_fee_brl',
+                            'collect_fee',
+                            'collect_fee_brl',
+                            'dai',
+                            'dape',
+                            'correios',
                             'li_dta_honor_nix',
                             'honorarios_nix',
                             'diferenca_cambial_frete',
@@ -1709,6 +1795,80 @@
                 width: 100%;
                 margin-bottom: 8px;
             }
+        }
+
+        #debugLinhaModal .modal-dialog {
+            max-width: none;
+            width: auto;
+        }
+
+        #debugLinhaModal .modal-body {
+            overflow-x: auto;
+        }
+
+        .debug-section {
+            background: #fff;
+            border: 1px solid #e4e7f2;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+        }
+
+        .debug-section-title {
+            background: var(--theme-gradient-primary, linear-gradient(90deg, #253b80 0%, #485fc7 100%));
+            color: #fff;
+            padding: 14px 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+        }
+
+        .debug-grid {
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(220px, 1.4fr) minmax(220px, 1.4fr);
+            gap: 0;
+        }
+
+        .debug-grid > div {
+            padding: 14px 18px;
+            border-top: 1px solid #f0f2f8;
+            background: #fff;
+        }
+
+        .debug-grid-header {
+            background: #f5f6fb;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #5f6385;
+        }
+
+        .debug-grid-header > div {
+            border-top: none;
+        }
+
+        .debug-grid-row:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        .debug-cell-label {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .debug-cell-value {
+            font-weight: 600;
+            color: #1a202c;
+            font-family: 'Courier New', monospace;
+        }
+
+        .debug-cell-text {
+            color: #4a5568;
+            font-size: 13px;
+            line-height: 1.6;
         }
     </style>
 </div>

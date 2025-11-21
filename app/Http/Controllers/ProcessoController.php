@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Catalogo;
 use App\Models\Cliente;
 use App\Models\Processo;
+use App\Models\ProcessoAereo;
+use App\Models\ProcessoAereoProduto;
 use App\Models\ProcessoProduto;
 use App\Models\Fornecedor;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProcessoController extends Controller
 {
@@ -105,11 +108,48 @@ class ProcessoController extends Controller
             $sortColumn = 'id';
         }
         
-        $processos = Processo::when(request()->search != '', function ($query) {})
+        // Buscar processos marítimos e adicionar tipo_processo
+        $processosMaritimos = Processo::when(request()->search != '', function ($query) {})
             ->where('cliente_id', $cliente_id)
-            ->orderBy($sortColumn, $sortDirection)
-            ->paginate(request()->paginacao ?? 10)
-            ->appends(request()->except('page'));
+            ->get()
+            ->map(function ($processo) {
+                $processo->tipo_processo = $processo->tipo_processo ?? 'maritimo';
+                return $processo;
+            });
+        
+        // Buscar processos aéreos e adicionar tipo_processo
+        $processosAereos = ProcessoAereo::when(request()->search != '', function ($query) {})
+            ->where('cliente_id', $cliente_id)
+            ->get()
+            ->map(function ($processo) {
+                $processo->tipo_processo = 'aereo';
+                return $processo;
+            });
+        
+        // Unir as collections
+        $processosUnidos = $processosMaritimos->concat($processosAereos);
+        
+        // Ordenar a collection
+        $processosOrdenados = $processosUnidos->sortBy(function ($processo) use ($sortColumn, $sortDirection) {
+            $value = $processo->$sortColumn ?? '';
+            return is_numeric($value) ? (float)$value : strtolower($value);
+        }, SORT_REGULAR, $sortDirection === 'desc');
+        
+        // Paginar manualmente
+        $perPage = request()->paginacao ?? 10;
+        $currentPage = request()->get('page', 1);
+        $items = $processosOrdenados->values();
+        $total = $items->count();
+        $items = $items->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        
+        // Criar paginator manual
+        $processos = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
             
         $cliente = Cliente::findOrFail($cliente_id);
         return view('processo.processos', compact('processos', 'cliente'));
@@ -132,14 +172,23 @@ class ProcessoController extends Controller
                 return back()->with('messages', ['error' => ['Tipo de processo inválido!']]);
             }
             
-            $processo = Processo::create([
-                'codigo_interno' => '-',
-                'numero_processo' => '-',
-                'cliente_id' => $cliente_id,
-                'tipo_processo' => $tipo_processo
-            ]);
-
-            return redirect(route('processo.edit', $processo->id))->with('messages', ['success' => ['Processo criado com sucesso!']]);
+            // Criar processo na tabela correta
+            if ($tipo_processo === 'aereo') {
+                $processo = ProcessoAereo::create([
+                    'codigo_interno' => '-',
+                    'numero_processo' => '-',
+                    'cliente_id' => $cliente_id,
+                ]);
+                return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => 'aereo']))->with('messages', ['success' => ['Processo aéreo criado com sucesso!']]);
+            } else {
+                $processo = Processo::create([
+                    'codigo_interno' => '-',
+                    'numero_processo' => '-',
+                    'cliente_id' => $cliente_id,
+                    'tipo_processo' => $tipo_processo
+                ]);
+                return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => $tipo_processo]))->with('messages', ['success' => ['Processo criado com sucesso!']]);
+            }
         } catch (\Exception $e) {
             dd($e);
             return back()->with('messages', ['error' => ['Não foi possível cadastrar o processo!']])->withInput($request->all());
@@ -170,14 +219,23 @@ class ProcessoController extends Controller
                 $tipo_processo = 'maritimo';
             }
             
-            $processo = Processo::create([
-                'codigo_interno' => '-',
-                'numero_processo' => '-',
-                'cliente_id' => $cliente_id,
-                'tipo_processo' => $tipo_processo
-            ]);
-
-            return redirect(route('processo.edit', $processo->id))->with('messages', ['success' => ['Processo criado com sucesso!']]);
+            // Criar processo na tabela correta
+            if ($tipo_processo === 'aereo') {
+                $processo = ProcessoAereo::create([
+                    'codigo_interno' => '-',
+                    'numero_processo' => '-',
+                    'cliente_id' => $cliente_id,
+                ]);
+                return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => 'aereo']))->with('messages', ['success' => ['Processo aéreo criado com sucesso!']]);
+            } else {
+                $processo = Processo::create([
+                    'codigo_interno' => '-',
+                    'numero_processo' => '-',
+                    'cliente_id' => $cliente_id,
+                    'tipo_processo' => $tipo_processo
+                ]);
+                return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => $tipo_processo]))->with('messages', ['success' => ['Processo criado com sucesso!']]);
+            }
         } catch (\Exception $e) {
             dd($e);
             return back()->with('messages', ['error' => ['Não foi possível cadastrar o tipo de documento!']])->withInput($request->all());
@@ -189,13 +247,25 @@ class ProcessoController extends Controller
     {
         //
     }
-    public function esbocoPdf($id)
+    public function esbocoPdf($id, Request $request)
     {
-        $processo = Processo::with([
-            'cliente',
-            'processoProdutos.produto.fornecedor',
-            'fornecedor'
-        ])->findOrFail($id);
+        // Verificar se é processo aéreo ou marítimo
+        $tipoProcesso = $request->query('tipo_processo', 'maritimo');
+        
+        if ($tipoProcesso === 'aereo') {
+            $processo = ProcessoAereo::with([
+                'cliente',
+                'processoAereoProdutos.produto.fornecedor',
+                'fornecedor'
+            ])->findOrFail($id);
+        } else {
+            $processo = Processo::with([
+                'cliente',
+                'processoProdutos.produto.fornecedor',
+                'fornecedor'
+            ])->findOrFail($id);
+        }
+        
         $this->ensureClienteAccess($processo->cliente_id);
         
         // Parse dos campos monetários do processo
@@ -203,11 +273,21 @@ class ProcessoController extends Controller
         
         // Parse dos campos monetários dos produtos e manter a relação produto
         $processoProdutos = [];
-        foreach ($processo->processoProdutos as $produto) {
-            $produtoParsed = $this->parseModelFieldsFromModel($produto);
-            // Manter a relação produto após o parse
-            $produtoParsed->setRelation('produto', $produto->produto);
-            $processoProdutos[] = $produtoParsed;
+        
+        if ($tipoProcesso === 'aereo') {
+            foreach ($processo->processoAereoProdutos as $produto) {
+                $produtoParsed = $this->parseModelFieldsFromModel($produto);
+                // Manter a relação produto após o parse
+                $produtoParsed->setRelation('produto', $produto->produto);
+                $processoProdutos[] = $produtoParsed;
+            }
+        } else {
+            foreach ($processo->processoProdutos as $produto) {
+                $produtoParsed = $this->parseModelFieldsFromModel($produto);
+                // Manter a relação produto após o parse
+                $produtoParsed->setRelation('produto', $produto->produto);
+                $processoProdutos[] = $produtoParsed;
+            }
         }
         
         // Calcular totais
@@ -279,16 +359,38 @@ class ProcessoController extends Controller
 
     public function edit($id)
     {
-
         try {
-            $processoModel = Processo::findOrFail($id);
-            $this->ensureClienteAccess($processoModel->cliente_id);
-            $processoModel->loadMissing([
-                'cliente.fornecedores',
-                'processoProdutos.produto.fornecedor',
-                'fornecedor'
-            ]);
-            $processo =  $this->parseModelFieldsFromModel($processoModel);
+            // Obter o tipo de processo do query param ou tentar detectar
+            $tipoProcessoRequest = request()->get('tipo_processo', 'maritimo');
+            $processoModel = null;
+            $tipoProcesso = 'maritimo';
+            $processoProdutosCollection = null;
+            
+            // Buscar na tabela correta baseado no tipo_processo
+            if ($tipoProcessoRequest === 'aereo') {
+                $processoModel = ProcessoAereo::findOrFail($id);
+                $tipoProcesso = 'aereo';
+                $this->ensureClienteAccess($processoModel->cliente_id);
+                $processoModel->loadMissing([
+                    'cliente.fornecedores',
+                    'processoAereoProdutos.produto.fornecedor',
+                    'fornecedor'
+                ]);
+                $processoProdutosCollection = $processoModel->processoAereoProdutos;
+            } else {
+                // Buscar como processo marítimo (padrão)
+                $processoModel = Processo::findOrFail($id);
+                $tipoProcesso = $processoModel->tipo_processo ?? 'maritimo';
+                $this->ensureClienteAccess($processoModel->cliente_id);
+                $processoModel->loadMissing([
+                    'cliente.fornecedores',
+                    'processoProdutos.produto.fornecedor',
+                    'fornecedor'
+                ]);
+                $processoProdutosCollection = $processoModel->processoProdutos;
+            }
+            
+            $processo = $this->parseModelFieldsFromModel($processoModel);
             $clientes = Cliente::select(['id', 'nome'])->get();
             $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
             if (!$catalogo) {
@@ -298,7 +400,6 @@ class ProcessoController extends Controller
             $dolar = self::getBid();
 
             $moedasSuportadas = self::buscarMoedasSuportadas();
-            $processoProdutosCollection = $processo->processoProdutos;
 
             $fornecedoresPorProduto = $processoProdutosCollection
                 ? $processoProdutosCollection
@@ -319,14 +420,15 @@ class ProcessoController extends Controller
             $fornecedoresEsboco = $fornecedoresPorProduto ?? collect();
 
             $produtos = [];
-            foreach ($processoProdutosCollection as $produto) {
-                $produtos[] = $this->parseModelFieldsFromModel($produto);
+            if ($processoProdutosCollection && $processoProdutosCollection->count() > 0) {
+                foreach ($processoProdutosCollection as $produto) {
+                    $produtos[] = $this->parseModelFieldsFromModel($produto);
+                }
             }
             $processoProdutos = $produtos;
             
             // Determinar a view baseada no tipo_processo
-            $tipo_processo = $processo->tipo_processo ?? 'maritimo';
-            $viewName = 'processo.form-' . $tipo_processo;
+            $viewName = 'processo.form-' . $tipoProcesso;
             
             // Se a view específica não existir, usar a view marítimo como fallback
             if (!view()->exists($viewName)) {
@@ -341,7 +443,8 @@ class ProcessoController extends Controller
                 'processoProdutos',
                 'moedasSuportadas',
                 'fornecedoresEsboco',
-                'podeSelecionarFornecedor'
+                'podeSelecionarFornecedor',
+                'tipoProcesso'
             ));
         } catch (Exception $e) {
             dd($e);
@@ -363,7 +466,24 @@ class ProcessoController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $processo = Processo::findOrFail($id);
+            // Detectar tipo de processo pelo query param ou tentar encontrar em ambas as tabelas
+            $tipoProcessoRequest = request()->get('tipo_processo', null);
+            $processo = null;
+            $isAereo = false;
+            
+            if ($tipoProcessoRequest === 'aereo') {
+                $processo = ProcessoAereo::findOrFail($id);
+                $isAereo = true;
+            } else {
+                // Tentar buscar como processo marítimo primeiro
+                $processo = Processo::find($id);
+                if (!$processo) {
+                    // Se não encontrar, tentar como processo aéreo
+                    $processo = ProcessoAereo::findOrFail($id);
+                    $isAereo = true;
+                }
+            }
+            
             $this->ensureClienteAccess($processo->cliente_id);
             DB::beginTransaction();
 
@@ -383,14 +503,23 @@ class ProcessoController extends Controller
             if ($request->produtos && count($request->produtos) > 0) {
                 $idsProdutos = array_filter(array_column($request->produtos, 'processo_produto_id'));
                 if (!empty($idsProdutos)) {
-                    $produtosExistentes = ProcessoProduto::whereIn('id', $idsProdutos)
-                        ->get()
-                        ->keyBy('id')
-                        ->toArray();
+                    if ($isAereo) {
+                        $produtosExistentes = ProcessoAereoProduto::whereIn('id', $idsProdutos)
+                            ->get()
+                            ->keyBy('id')
+                            ->toArray();
+                    } else {
+                        $produtosExistentes = ProcessoProduto::whereIn('id', $idsProdutos)
+                            ->get()
+                            ->keyBy('id')
+                            ->toArray();
+                    }
                 }
             }
 
-            $possuiProdutosExistentes = $processo->processoProdutos()->exists();
+            $possuiProdutosExistentes = $isAereo 
+                ? $processo->processoAereoProdutos()->exists() 
+                : $processo->processoProdutos()->exists();
             $fornecedorValidado = null;
 
             if ($request->has('fornecedor_id')) {
@@ -437,12 +566,13 @@ class ProcessoController extends Controller
                 foreach ($request->produtos as $key => $produto) {
                     $pesoLiquidoTotal += isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
 
-                    $processoProduto = ProcessoProduto::updateOrCreate(
-                        [
-                            'id' => $produto['processo_produto_id'] ?? null,
-                            'processo_id' => $id ?? 0,
-                        ],
-                        [
+                    if ($isAereo) {
+                        $processoProduto = ProcessoAereoProduto::updateOrCreate(
+                            [
+                                'id' => $produto['processo_produto_id'] ?? null,
+                                'processo_aereo_id' => $id ?? 0,
+                            ],
+                            [
                             'item' => $produto['item'],
                             'produto_id' => $produto['produto_id'],
                             'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
@@ -461,6 +591,15 @@ class ProcessoController extends Controller
                             'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
                             'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
                             'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
+                            // Campos específicos do transporte aéreo
+                            'delivery_fee' => isset($produto['delivery_fee']) ? $this->parseMoneyToFloat($produto['delivery_fee']) : null,
+                            'delivery_fee_brl' => isset($produto['delivery_fee_brl']) ? $this->parseMoneyToFloat($produto['delivery_fee_brl']) : null,
+                            'collect_fee' => isset($produto['collect_fee']) ? $this->parseMoneyToFloat($produto['collect_fee']) : null,
+                            'collect_fee_brl' => isset($produto['collect_fee_brl']) ? $this->parseMoneyToFloat($produto['collect_fee_brl']) : null,
+                            'dai' => isset($produto['dai']) ? $this->parseMoneyToFloat($produto['dai']) : null,
+                            'dape' => isset($produto['dape']) ? $this->parseMoneyToFloat($produto['dape']) : null,
+                            'vlr_cfr_unit' => isset($produto['vlr_cfr_unit']) ? $this->parseMoneyToFloat($produto['vlr_cfr_unit']) : null,
+                            'vlr_cfr_total' => isset($produto['vlr_cfr_total']) ? $this->parseMoneyToFloat($produto['vlr_cfr_total']) : null,
                             'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
                             'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
                             'ii_percent' => isset($produto['ii_percent']) ? $this->safePercentage($produto['ii_percent']) : null,
@@ -513,6 +652,7 @@ class ProcessoController extends Controller
                             'armaz_ana' => isset($produto['armaz_ana']) ? $this->parseMoneyToFloat($produto['armaz_ana']) : null,
                             'lavagem_container' => isset($produto['lavagem_container']) ? $this->parseMoneyToFloat($produto['lavagem_container']) : null,
                             'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
+                            // Campos aéreos já adicionados acima (dai, dape)
                             'desp_anapolis' => isset($produto['desp_anapolis']) ? $this->parseMoneyToFloat($produto['desp_anapolis']) : null,
                             'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
                             'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
@@ -529,45 +669,166 @@ class ProcessoController extends Controller
                             'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
                             // Preservar valores existentes de service_charges se não foram enviados ou estão vazios
                             'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
-                            'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
-                            'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
-                        ]
-                    );
+                        ]);
+                    } else {
+                        $processoProduto = ProcessoProduto::updateOrCreate(
+                            [
+                                'id' => $produto['processo_produto_id'] ?? null,
+                                'processo_id' => $id ?? 0,
+                            ],
+                            [
+                                'item' => $produto['item'],
+                                'produto_id' => $produto['produto_id'],
+                                'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
+                                'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
+                                'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
+                                'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
+                                'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
+                                'fob_unit_usd' => isset($produto['fob_unit_usd']) ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : null,
+                                'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
+                                'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
+                                'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
+                                'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
+                                'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
+                                'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
+                                'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
+                                'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
+                                'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
+                                'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
+                                'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
+                                'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
+                                'ii_percent' => isset($produto['ii_percent']) ? $this->safePercentage($produto['ii_percent']) : null,
+                                'ipi_percent' => isset($produto['ipi_percent']) ? $this->safePercentage($produto['ipi_percent']) : null,
+                                'pis_percent' => isset($produto['pis_percent']) ? $this->safePercentage($produto['pis_percent']) : null,
+                                'cofins_percent' => isset($produto['cofins_percent']) ? $this->safePercentage($produto['cofins_percent']) : null,
+                                'icms_percent' => isset($produto['icms_percent']) ? $this->safePercentage($produto['icms_percent']) : null,
+                                'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
+                                'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
+                                'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
+                                'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
+                                'frete_moeda' => $request->frete_internacional_moeda,
+                                'seguro_moeda' => $request->seguro_internacional_moeda,
+                                'acrescimo_moeda' => $request->acrescimo_frete_moeda,
+                                'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
+                                'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
+                                'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
+                                'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
+                                'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
+                                'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
+                                'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
+                                'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
+                                'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
+                                'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
+                                'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
+                                'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
+                                'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
+                                'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
+                                'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
+                                'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
+                                'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
+                                'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
+                                'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
+                                'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
+                                'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
+                                'tx_def_li' => isset($produto['tx_def_li']) ? $this->safePercentage($produto['tx_def_li']) : null,
+                                'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
+                                'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
+                                'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
+                                'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
+                                'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
+                                'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
+                                'capatazia' => isset($produto['capatazia']) ? $this->parseMoneyToFloat($produto['capatazia']) : null,
+                                'tx_correcao_lacre' => isset($produto['tx_correcao_lacre']) ? $this->parseMoneyToFloat($produto['tx_correcao_lacre']) : null,
+                                'afrmm' => isset($produto['afrmm']) ? $this->parseMoneyToFloat($produto['afrmm']) : null,
+                                'armazenagem_sts' => isset($produto['armazenagem_sts']) ? $this->parseMoneyToFloat($produto['armazenagem_sts']) : null,
+                                'frete_dta_sts_ana' => isset($produto['frete_dta_sts_ana']) ? $this->parseMoneyToFloat($produto['frete_dta_sts_ana']) : null,
+                                'sda' => isset($produto['sda']) ? $this->parseMoneyToFloat($produto['sda']) : null,
+                                'rep_sts' => isset($produto['rep_sts']) ? $this->parseMoneyToFloat($produto['rep_sts']) : null,
+                                'armaz_ana' => isset($produto['armaz_ana']) ? $this->parseMoneyToFloat($produto['armaz_ana']) : null,
+                                'lavagem_container' => isset($produto['lavagem_container']) ? $this->parseMoneyToFloat($produto['lavagem_container']) : null,
+                                'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
+                                'desp_anapolis' => isset($produto['desp_anapolis']) ? $this->parseMoneyToFloat($produto['desp_anapolis']) : null,
+                                'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
+                                'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
+                                'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
+                                'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
+                                'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
+                                'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                                'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
+                                'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
+                                "descricao" => $produto['descricao'],
+                                'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
+                                'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
+                                'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
+                                'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
+                                'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
+                                'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
+                                'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
+                            ]);
+                    }
 
                     $produtosProcessados++;
                 }
             }
 
-            Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
+            // Atualizar peso líquido na tabela correta
+            if ($isAereo) {
+                ProcessoAereo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
+                $processoExistente = ProcessoAereo::find($id);
+            } else {
+                Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoTotal]);
+                $processoExistente = Processo::find($id);
+            }
             
-            // Carregar processo existente para preservar valores quando salvar apenas produtos
-            $processoExistente = Processo::find($id);
-            
+            // Campos comuns a ambos os tipos de processo
             $dadosProcesso = [
                 'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
-                'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
                 'desconsolidacao' => $this->parseMoneyToFloat($request->desconsolidacao),
-                'isps_code' => $this->parseMoneyToFloat($request->isps_code),
                 'handling' => $this->parseMoneyToFloat($request->handling),
-                'capatazia' => $this->parseMoneyToFloat($request->thc_capatazia),
-                'tx_correcao_lacre' => $this->parseMoneyToFloat($request->tx_correcao_lacre),
                 // Preservar service_charges do processo se não foi enviado ou está vazio
                 'service_charges' => ($request->has('service_charges') && $request->service_charges !== '' && $request->service_charges !== null) ? $this->parseMoneyToFloat($request->service_charges) : ($processoExistente->service_charges ?? null),
-                'afrmm' => $this->parseMoneyToFloat($request->afrmm),
-                'armazenagem_sts' => $this->parseMoneyToFloat($request->armazenagem_sts),
-                'frete_dta_sts_ana' => $this->parseMoneyToFloat($request->frete_dta_sts_ana),
-                'sda' => $this->parseMoneyToFloat($request->sda),
-                'rep_sts' => $this->parseMoneyToFloat($request->rep_sts),
-                'armaz_ana' => $this->parseMoneyToFloat($request->armaz_ana),
-                'lavagem_container' => $this->parseMoneyToFloat($request->lavagem_container),
-                'rep_anapolis' => $this->parseMoneyToFloat($request->rep_anapolis),
-                'desp_anapolis' => $this->parseMoneyToFloat($request->desp_anapolis),
                 'correios' => $this->parseMoneyToFloat($request->correios),
                 'li_dta_honor_nix' => $this->parseMoneyToFloat($request->li_dta_honor_nix),
                 'honorarios_nix' => $this->parseMoneyToFloat($request->honorarios_nix),
                 'diferenca_cambial_frete' => $this->parseMoneyToFloat($request->diferenca_cambial_frete),
                 'diferenca_cambial_fob' => $this->parseMoneyToFloat($request->diferenca_cambial_fob),
             ];
+            
+            // Campos específicos para processos marítimos
+            if (!$isAereo) {
+                $dadosProcesso['liberacao_bl'] = $this->parseMoneyToFloat($request->liberacao_bl);
+                $dadosProcesso['isps_code'] = $this->parseMoneyToFloat($request->isps_code);
+                $dadosProcesso['capatazia'] = $this->parseMoneyToFloat($request->thc_capatazia);
+                $dadosProcesso['tx_correcao_lacre'] = $this->parseMoneyToFloat($request->tx_correcao_lacre);
+                $dadosProcesso['afrmm'] = $this->parseMoneyToFloat($request->afrmm);
+                $dadosProcesso['armazenagem_sts'] = $this->parseMoneyToFloat($request->armazenagem_sts);
+                $dadosProcesso['frete_dta_sts_ana'] = $this->parseMoneyToFloat($request->frete_dta_sts_ana);
+                $dadosProcesso['sda'] = $this->parseMoneyToFloat($request->sda);
+                $dadosProcesso['rep_sts'] = $this->parseMoneyToFloat($request->rep_sts);
+                $dadosProcesso['armaz_ana'] = $this->parseMoneyToFloat($request->armaz_ana);
+                $dadosProcesso['lavagem_container'] = $this->parseMoneyToFloat($request->lavagem_container);
+                $dadosProcesso['rep_anapolis'] = $this->parseMoneyToFloat($request->rep_anapolis);
+                $dadosProcesso['desp_anapolis'] = $this->parseMoneyToFloat($request->desp_anapolis);
+            }
+            
+            // Campos específicos para processos aéreos
+            if ($isAereo) {
+                if ($request->has('delivery_fee')) {
+                    $dadosProcesso['delivery_fee'] = $this->parseMoneyToFloat($request->delivery_fee);
+                }
+                if ($request->has('delivery_fee_brl')) {
+                    $dadosProcesso['delivery_fee_brl'] = $this->parseMoneyToFloat($request->delivery_fee_brl);
+                }
+                if ($request->has('collect_fee')) {
+                    $dadosProcesso['collect_fee'] = $this->parseMoneyToFloat($request->collect_fee);
+                }
+                if ($request->has('collect_fee_brl')) {
+                    $dadosProcesso['collect_fee_brl'] = $this->parseMoneyToFloat($request->collect_fee_brl);
+                }
+                // DAI e DAPE sempre devem ser processados, mesmo se vazios ou zero
+                $dadosProcesso['dai'] = $this->parseMoneyToFloat($request->dai ?? 0);
+                $dadosProcesso['dape'] = $this->parseMoneyToFloat($request->dape ?? 0);
+            }
 
             if ($request->has('fornecedor_id')) {
                 $dadosProcesso['fornecedor_id'] = $fornecedorValidado?->id ?: null;
@@ -622,7 +883,12 @@ class ProcessoController extends Controller
                 $dadosProcesso['cotacao_service_charges'] = $processoExistente->cotacao_service_charges ?? null;
             }
 
-            Processo::where('id', $id)->update($dadosProcesso);
+            // Atualizar processo na tabela correta
+            if ($isAereo) {
+                ProcessoAereo::where('id', $id)->update($dadosProcesso);
+            } else {
+                Processo::where('id', $id)->update($dadosProcesso);
+            }
             DB::commit();
 
             // Retorno para requisições AJAX (salvamento por blocos)
@@ -662,7 +928,24 @@ class ProcessoController extends Controller
 
     public function updateProcesso(Request $request, $id)
     {
-        $processo = Processo::findOrFail($id);
+        // Detectar tipo de processo pelo query param ou tentar encontrar em ambas as tabelas
+        $tipoProcessoRequest = request()->get('tipo_processo', null);
+        $processo = null;
+        $isAereo = false;
+        
+        if ($tipoProcessoRequest === 'aereo') {
+            $processo = ProcessoAereo::findOrFail($id);
+            $isAereo = true;
+        } else {
+            // Tentar buscar como processo marítimo primeiro
+            $processo = Processo::find($id);
+            if (!$processo) {
+                // Se não encontrar, tentar como processo aéreo
+                $processo = ProcessoAereo::findOrFail($id);
+                $isAereo = true;
+            }
+        }
+        
         $this->ensureClienteAccess($processo->cliente_id);
 
         $validator = Validator::make($request->all(), [], []);
@@ -695,17 +978,11 @@ class ProcessoController extends Controller
                 ];
             }
         }
+        // Campos comuns entre marítimo e aéreo
         $dadosProcesso = [
             "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
-            "frete_internacional_usd" => $this->parseMoneyToFloat($request->frete_internacional_usd),
-            "frete_internacional_brl" => $this->parseMoneyToFloat($request->frete_internacional_brl),
             "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
-            "seguro_internacional_usd" => $this->parseMoneyToFloat($request->seguro_internacional_usd),
-            "seguro_internacional_brl" => $this->parseMoneyToFloat($request->seguro_internacional_brl),
             "acrescimo_frete" => $this->parseMoneyToFloat($request->acrescimo_frete),
-            "acrescimo_frete_usd" => $this->parseMoneyToFloat($request->acrescimo_frete_usd),
-            "acrescimo_frete_brl" => $this->parseMoneyToFloat($request->acrescimo_frete_brl),
-            "thc_capatazia" => $this->parseMoneyToFloat($request->thc_capatazia),
             "service_charges" => $this->parseMoneyToFloat($request->service_charges),
             "service_charges_moeda" => $request->service_charges_moeda,
             "service_charges_usd" => $this->parseMoneyToFloat($request->service_charges_usd),
@@ -736,7 +1013,40 @@ class ProcessoController extends Controller
             'data_cotacao_processo' => $request->data_cotacao,
             'moeda_processo' => $request->moeda_processo,
         ];
-        Processo::where('id', $id)->update($dadosProcesso);
+        
+        // Adicionar campos específicos baseado no tipo de processo
+        if ($isAereo) {
+            // Campos específicos do transporte aéreo
+            $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
+            $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
+            $taxaDolar = $this->parseMoneyToFloat($request->cotacao_frete_internacional, 4) ?? $processo->taxa_dolar ?? 1;
+            $dadosProcesso['dai'] = isset($request->dai) ? $this->parseMoneyToFloat($request->dai) : null;
+            $dadosProcesso['dape'] = isset($request->dape) ? $this->parseMoneyToFloat($request->dape) : null;
+            $dadosProcesso['delivery_fee'] = isset($request->delivery_fee) ? $this->parseMoneyToFloat($request->delivery_fee) : null;
+            $dadosProcesso['delivery_fee_brl'] = isset($request->delivery_fee) ? $this->parseMoneyToFloat($request->delivery_fee) * $taxaDolar : null;
+            $dadosProcesso['collect_fee'] = isset($request->collect_fee) ? $this->parseMoneyToFloat($request->collect_fee) : null;
+            $dadosProcesso['collect_fee_brl'] = isset($request->collect_fee) ? $this->parseMoneyToFloat($request->collect_fee) * $taxaDolar : null;
+            $dadosProcesso['outras_taxas_agente'] = isset($request->outras_taxas_agente) ? $this->parseMoneyToFloat($request->outras_taxas_agente) : null;
+            $dadosProcesso['desconsolidacao'] = isset($request->desconsolidacao) ? $this->parseMoneyToFloat($request->desconsolidacao) : null;
+            $dadosProcesso['handling'] = isset($request->handling) ? $this->parseMoneyToFloat($request->handling) : null;
+            $dadosProcesso['correios'] = isset($request->correios) ? $this->parseMoneyToFloat($request->correios) : null;
+            $dadosProcesso['li_dta_honor_nix'] = isset($request->li_dta_honor_nix) ? $this->parseMoneyToFloat($request->li_dta_honor_nix) : null;
+            $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
+            
+            ProcessoAereo::where('id', $id)->update($dadosProcesso);
+        } else {
+            // Campos específicos do transporte marítimo (incluindo campos _usd e _brl que não existem no aéreo)
+            $dadosProcesso['frete_internacional_usd'] = $this->parseMoneyToFloat($request->frete_internacional_usd);
+            $dadosProcesso['frete_internacional_brl'] = $this->parseMoneyToFloat($request->frete_internacional_brl);
+            $dadosProcesso['seguro_internacional_usd'] = $this->parseMoneyToFloat($request->seguro_internacional_usd);
+            $dadosProcesso['seguro_internacional_brl'] = $this->parseMoneyToFloat($request->seguro_internacional_brl);
+            $dadosProcesso['acrescimo_frete_usd'] = $this->parseMoneyToFloat($request->acrescimo_frete_usd);
+            $dadosProcesso['acrescimo_frete_brl'] = $this->parseMoneyToFloat($request->acrescimo_frete_brl);
+            $dadosProcesso['thc_capatazia'] = $this->parseMoneyToFloat($request->thc_capatazia);
+            
+            Processo::where('id', $id)->update($dadosProcesso);
+        }
+        
         return back()->with('messages', ['success' => ['Dados do processo atualizado com sucesso!']]);
     }
 
