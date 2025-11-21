@@ -102,6 +102,9 @@ class ProcessoAereoProduto extends Model
         'service_charges',
         'service_charges_brl',
         'service_charges_moeda_estrangeira',
+        'thc_usd',
+        'thc_brl',
+        'codigo_giiro',
     ];
     
     protected $casts = [

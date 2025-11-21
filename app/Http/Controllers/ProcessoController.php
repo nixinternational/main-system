@@ -1103,6 +1103,7 @@ class ProcessoController extends Controller
             $dadosProcesso['correios'] = isset($request->correios) ? $this->parseMoneyToFloat($request->correios) : null;
             $dadosProcesso['li_dta_honor_nix'] = isset($request->li_dta_honor_nix) ? $this->parseMoneyToFloat($request->li_dta_honor_nix) : null;
             $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
+            $dadosProcesso['thc_capatazia'] = isset($request->thc_capatazia) ? $this->parseMoneyToFloat($request->thc_capatazia) : null;
             
             ProcessoAereo::where('id', $id)->update($dadosProcesso);
         } else {

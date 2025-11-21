@@ -142,6 +142,13 @@
                <div class="row mt-1">
 
                    <div class="col-md-2">
+                       <label for="thc_capatazia" class="form-label">THC/CAPATAZIA (R$)</label>
+                       <input
+                           value="{{ isset($processo->thc_capatazia) ? number_format($processo->thc_capatazia, 2, ',', '.') : '' }}"
+                           class="form-control moneyReal" name="thc_capatazia" id="thc_capatazia">
+                   </div>
+
+                   <div class="col-md-2">
                        <label for="peso_bruto" class="form-label">PESO BRUTO</label>
                        <input type="text"
                            value="{{ isset($processo->peso_bruto) ? number_format($processo->peso_bruto, 4, ',', '.') : '' }}"
@@ -153,24 +160,42 @@
                            value="{{ isset($processo->peso_liquido) ? number_format($processo->peso_liquido, 4, ',', '.') : '' }}"
                            class="form-control moneyReal" readonly id="peso_liquido">
                    </div>
-                   <div class="col-md-2">
-                       <label for="multa" class="form-label">MULTA</label>
-                       <input type="text"
-                           value="{{ isset($processo->multa) ? number_format($processo->multa, 2, ',', '.') : '' }}"
-                           class="form-control moneyReal2" name="multa" id="multa">
-                   </div>
-                   <div class="col-md-2">
-                       <label for="quantidade" class="form-label">QUANTIDADE</label>
-                       <input type="text"
-                           value="{{ isset($processo->quantidade) ? number_format($processo->quantidade, 4, ',', '.') : '' }}"
-                           class="form-control moneyReal" name="quantidade" id="quantidade">
-                   </div>
-                   <div class="col-md-2">
-                       <label for="especie" class="form-label">ESPÉCIE</label>
-                       <input type="text" value="{{ isset($processo) ? $processo->especie : '' }}"
-                           class="form-control " name="especie" id="especie">
-                   </div>
+                  <div class="col-md-2">
+                      <label for="multa" class="form-label">MULTA</label>
+                      <input type="text"
+                          value="{{ isset($processo->multa) ? number_format($processo->multa, 2, ',', '.') : '' }}"
+                          class="form-control moneyReal2" name="multa" id="multa">
+                  </div>
+                  <div class="col-md-2">
+                      <label for="taxa_siscomex_total" class="form-label">TAXA SISCOMEX TOTAL (R$)</label>
+                      <input type="text" readonly
+                          class="form-control moneyReal2" id="taxa_siscomex_total">
+                  </div>
+                  <div class="col-md-2">
+                      <label for="quantidade" class="form-label">QUANTIDADE</label>
+                      <input type="text"
+                          value="{{ isset($processo->quantidade) ? number_format($processo->quantidade, 4, ',', '.') : '' }}"
+                          class="form-control moneyReal" name="quantidade" id="quantidade">
+                  </div>
+                  <div class="col-md-2">
+                      <label for="especie" class="form-label">ESPÉCIE</label>
+                      <input type="text" value="{{ isset($processo) ? $processo->especie : '' }}"
+                          class="form-control " name="especie" id="especie">
+                  </div>
 
+               </div>
+               
+               @php
+                   $nacionalizacaoSelecionada = $processo->nacionalizacao ?? 'outros';
+               @endphp
+               <div class="row mt-3">
+                   <div class="col-md-4">
+                       <label for="nacionalizacao" class="form-label">Local de Nacionalização</label>
+                       <select class="custom-select" name="nacionalizacao" id="nacionalizacao">
+                           <option value="santa_catarina" {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'selected' : '' }}>Santa Catarina</option>
+                           <option value="outros" {{ $nacionalizacaoSelecionada === 'outros' ? 'selected' : '' }}>Outros</option>
+                       </select>
+                   </div>
                </div>
                
                <div class="row mt-3">
@@ -426,6 +451,70 @@
                        </div>
                        </div>
                        </div>
+                   </div>
+
+                   <div class="col-md-6 mb-3">
+                       <div class="card-item shadow-sm h-100">
+                           <div class="card-header-primary">
+                               <i class="fas fa-dollar-sign me-2"></i>
+                               <span>SERVICE CHARGES</span>
+                           </div>
+                       <div class="card-body p-3">
+                           <div class="row">
+                               <div class="col-12 col-sm-6 mb-2 mb-sm-0">
+                                   <label for="service_charges" class="form-label fw-bold">SERVICE CHARGES</label>
+                              <div class="input-group">
+                                  <span class="input-group-text" id="service_charges_symbol">-</span>
+                                  <input
+                                      value="{{ isset($processo->service_charges) ? number_format($processo->service_charges, 7, ',', '.') : '' }}"
+                                      class="form-control moneyReal7" name="service_charges" id="service_charges" aria-describedby="service_charges_symbol">
+                              </div>
+                          </div>
+                          <div class="col-12 col-sm-6">
+                              <label class="">MOEDA</label>
+                              <select name="service_charges_moeda" id="service_charges_moeda"
+                                  class="select2 w-100 moedas" aria-label="Moedas BRICS, UE e G20">
+                                  <option value="">Selecione um país...</option>
+                                  @foreach ($moedasSuportadas as $codigo => $nome)
+                                      <option value="{{ $codigo }}"
+                                          {{ isset($processo) && $processo->service_charges_moeda == $codigo ? 'selected' : '' }}>
+                                          {{ $codigo }} - {{ $nome }}
+                                      </option>
+                                  @endforeach
+                              </select>
+                          </div>
+                      </div>
+                      <div class="row mt-2">
+                          <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                              <label for="service_charges_usd" class="form-label small">EM USD</label>
+                              <div class="input-group">
+                                  <span class="input-group-text">USD</span>
+                                  <input readonly
+                                      value="{{ isset($processo->service_charges_usd) ? number_format($processo->service_charges_usd, 2, ',', '.') : '' }}"
+                                      class="form-control moneyReal" name="service_charges_usd"
+                                      id="service_charges_usd">
+                              </div>
+                          </div>
+                          <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                              <label for="service_charges_brl" class="form-label small">EM BRL</label>
+                              <div class="input-group">
+                                  <span class="input-group-text">R$</span>
+                                  <input readonly
+                                      value="{{ isset($processo->service_charges_brl) ? number_format($processo->service_charges_brl, 2, ',', '.') : '' }}"
+                                      class="form-control moneyReal" name="service_charges_brl"
+                                      id="service_charges_brl">
+                              </div>
+                          </div>
+                          <div class="col-12 col-sm-4">
+                              <label for="cotacao_service_charges" class="form-label small">COTAÇÃO</label>
+                              <input
+                                  value="{{ isset($processo->cotacao_service_charges) ? number_format($processo->cotacao_service_charges, 4, ',', '.') : '' }}"
+                                  class="form-control cotacao" id="cotacao_service_charges"
+                                  name="cotacao_service_charges">
+                          </div>
+                      </div>
+                      </div>
+                      </div>
                    </div>
 
                    <div class="col-md-6 mb-3">
@@ -880,6 +969,12 @@
                                .venda, 4));
                        }
 
+                       const moedaServiceCharges = $('#service_charges_moeda').val();
+                       if (moedaServiceCharges && data[moedaServiceCharges]) {
+                           $('#cotacao_service_charges').val(MoneyUtils.formatMoney(data[moedaServiceCharges]
+                               .venda, 4));
+                       }
+
                        setTimeout(() => {
                            forcarFormatacaoCamposCards();
 
@@ -888,9 +983,10 @@
                                convertToUSDAndBRL('frete_internacional');
                                convertToUSDAndBRL('seguro_internacional');
                                convertToUSDAndBRL('acrescimo_frete');
+                               convertToUSDAndBRL('service_charges');
                            }
                            
-                           $('#cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete')
+                           $('#cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete, #cotacao_service_charges')
                                .trigger('change');
                            
                            // Atualizar valores EXW e CIF após atualizar cotações

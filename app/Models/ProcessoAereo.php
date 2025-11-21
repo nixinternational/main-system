@@ -79,6 +79,7 @@ class ProcessoAereo extends Model
         'transportadora_cnpj',
         'info_complementar_nf',
         'multa',
+        'thc_capatazia',
     ];
 
     protected $casts = [

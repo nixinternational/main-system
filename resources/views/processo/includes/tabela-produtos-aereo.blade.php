@@ -51,7 +51,7 @@
                                 $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
                                 $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
                                 $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
-                                $colspanBeforeMiddleRow = 12; // Colunas fixas iniciais (Ações até FATOR PESO, incluindo ORIGEM e PESO LIQ. LBS)
+                                $colspanBeforeMiddleRow = 13; // Colunas fixas iniciais (Ações até FATOR PESO, incluindo ORIGEM, CODIGO GIIRO e PESO LIQ. LBS)
 
                                 // Colunas FOB
                                 if ($moedaProcesso == 'USD') {
@@ -81,6 +81,9 @@
                                     $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
                                 }
 
+                                // Colunas THC (adicionadas)
+                                $colspanBeforeMiddleRow += 2; // THC USD + THC BRL
+
                                 // Colunas fixas após (VLR CFR até VLR TOTAL NF C/ICMS-ST)
                                 $colspanBeforeMiddleRow += 30; // VLR CFR UNIT + VLR CFR TOTAL até VLR TOTAL NF C/ICMS-ST (removidos delivery_fee e collect_fee que agora estão na middleRow)
 
@@ -91,8 +94,8 @@
                             <th style="background-color: #fff"> </th>
                             @php
                                 // Calcular quantas colunas existem antes do PESO LIQ TOTAL
-                                // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + NCM (1) + QUANTD (1) + PESO LIQ. LBS (1) + PESO LIQ. UNIT (1) = 11 colunas
-                                $colspanAntesPesoLiq = 9;
+                                // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + CODIGO GIIRO (1) + NCM (1) + QUANTD (1) + PESO LIQ. LBS (1) + PESO LIQ. UNIT (1) = 12 colunas
+                                $colspanAntesPesoLiq = 11; // Ações até PESO LIQ. UNIT (antes do PESO LIQ TOTAL)
                             @endphp
                             <th colspan="{{ $colspanAntesPesoLiq }}"></th>
                             <th class="middleRowInputTh">
@@ -232,6 +235,7 @@
                             <th>ITEM</th>
                             <th>ORIGEM</th>
                             <th>CODIGO</th>
+                            <th>CODIGO GIIRO</th>
                             <th>NCM</th>
                             <th>QUANTD</th>
                             <th>PESO LIQ. LBS</th>
@@ -282,6 +286,8 @@
                             @endif
                             <th>ACRESC. FRETE USD</th>
                             <th>ACRESC. FRETE R$</th>
+                            <th>THC USD</th>
+                            <th>THC BRL</th>
 
                             <th>VLR CFR UNIT</th>
                             <th>VLR CFR TOTAL</th>
@@ -404,6 +410,12 @@
                                     <input type="text" class=" form-control" readonly
                                         name="produtos[{{ $index }}][codigo]" id="codigo-{{ $index }}"
                                         value="{{ $processoProduto->produto->codigo }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" class="form-control"
+                                        name="produtos[{{ $index }}][codigo_giiro]" id="codigo_giiro-{{ $index }}"
+                                        value="{{ $processoProduto->codigo_giiro ?? '' }}">
                                 </td>
 
                                 <td>
@@ -570,6 +582,21 @@
                                         name="produtos[{{ $index }}][acresc_frete_brl]"
                                         id="acresc_frete_brl-{{ $index }}"
                                         value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal" readonly
+                                        name="produtos[{{ $index }}][thc_usd]"
+                                        id="thc_usd-{{ $index }}"
+                                        value="{{ $processoProduto->thc_usd ? number_format($processoProduto->thc_usd, 2, ',', '.') : '' }}">
+                                </td>
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal" readonly
+                                        name="produtos[{{ $index }}][thc_brl]"
+                                        id="thc_brl-{{ $index }}"
+                                        value="{{ $processoProduto->thc_brl ? number_format($processoProduto->thc_brl, 2, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
