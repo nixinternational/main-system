@@ -113,23 +113,25 @@
                                     'capatazia',
                                 ];
                                 
-                                // Adicionar tx_correcao_lacre apenas se nacionalizacao = santos
-                                if ($nacionalizacaoAtual === 'santos') {
-                                    $campos[] = 'tx_correcao_lacre';
-                                }
-                                
                                 $campos[] = 'afrmm';
                                 $campos[] = 'armazenagem_sts';
                                 $campos[] = 'frete_dta_sts_ana';
                                 $campos[] = 'sda';
                                 $campos[] = 'rep_sts';
                                 $campos[] = 'armaz_ana';
+                                
+                                // Adicionar tx_correcao_lacre apenas se nacionalizacao = santos (movido para depois de armaz_ana)
+                                if ($nacionalizacaoAtual === 'santos') {
+                                    $campos[] = 'tx_correcao_lacre';
+                                }
+                                
                                 $campos[] = 'lavagem_container';
                                 
                                 // Adicionar campos de anapolis apenas se nacionalizacao != santos
+                                // NOTA: desp_anapolis foi removido dos cálculos (oculto)
                                 if ($nacionalizacaoAtual !== 'santos') {
                                     $campos[] = 'rep_anapolis';
-                                    $campos[] = 'desp_anapolis';
+                                    // $campos[] = 'desp_anapolis'; // Removido - coluna oculta e não considerada no cálculo
                                     $campos[] = 'correios';
                                 }
                                 
@@ -290,19 +292,19 @@
                             <th>ISPS CODE</th>
                             <th>HANDLING</th>
                             <th>CAPATAZIA</th>
+                            <th>AFRMM</th>
+                            <th>ARMAZENAGEM PORTO</th>
+                            <th>FRETE DTA</th>
+                            <th>S.D.A</th>
+                            <th>REP. PORTO</th>
+                            <th>ARMAZENAGEM EADI</th>
                             @if ($nacionalizacaoAtual === 'santos')
                                 <th data-campo="tx_correcao_lacre">TX CORREÇÃO LACRE</th>
                             @endif
-                            <th>AFRMM</th>
-                            <th>ARMAZENAGEM STS</th>
-                            <th>FRETE DTA STS/ANA</th>
-                            <th>S.D.A</th>
-                            <th>REP.STS</th>
-                            <th>ARMAZ. ANA</th>
                             <th>LAVAGEM CONT</th>
                             @if ($nacionalizacaoAtual !== 'santos')
-                                <th data-campo="rep_anapolis">REP. ANAPOLIS</th>
-                                <th data-campo="desp_anapolis">DESP. ANÁPOLIS</th>
+                                <th data-campo="rep_anapolis">REP. EADI</th>
+                                <th data-campo="desp_anapolis" style="display: none;">DESP. ANÁPOLIS</th>
                                 <th data-campo="correios">CORREIOS</th>
                             @endif
                             <th>LI+DTA+HONOR.NIX</th>
@@ -662,10 +664,10 @@
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal" readonly
+                                        class=" form-control moneyReal8" readonly
                                         name="produtos[{{ $index }}][reducao]"
                                         id="reducao-{{ $index }}"
-                                        value="{{ $processoProduto->reducao ? number_format($processoProduto->reducao, 2, ',' , '.') : '' }}">
+                                        value="{{ $processoProduto->reducao ? number_format($processoProduto->reducao, 8, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -906,16 +908,6 @@
                                         value="{{ $processoProduto->capatazia ? number_format($processoProduto->capatazia, 2, ',' , '.') : '' }}">
                                 </td>
 
-                                @if ($nacionalizacaoAtual === 'santos')
-                                    <td data-campo="tx_correcao_lacre">
-                                        <input type="text" data-row="{{ $index }}"
-                                            class=" form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][tx_correcao_lacre]"
-                                            id="tx_correcao_lacre-{{ $index }}"
-                                            value="{{ $processoProduto->tx_correcao_lacre ? number_format($processoProduto->tx_correcao_lacre, 2, ',' , '.') : '' }}">
-                                    </td>
-                                @endif
-
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal" readonly
@@ -962,6 +954,16 @@
                                         value="{{ $processoProduto->armaz_ana ? number_format($processoProduto->armaz_ana, 2, ',' , '.') : '' }}">
                                 </td>
 
+                                @if ($nacionalizacaoAtual === 'santos')
+                                    <td data-campo="tx_correcao_lacre">
+                                        <input type="text" data-row="{{ $index }}"
+                                            class=" form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][tx_correcao_lacre]"
+                                            id="tx_correcao_lacre-{{ $index }}"
+                                            value="{{ $processoProduto->tx_correcao_lacre ? number_format($processoProduto->tx_correcao_lacre, 2, ',' , '.') : '' }}">
+                                    </td>
+                                @endif
+
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal" readonly
@@ -979,7 +981,7 @@
                                             value="{{ $processoProduto->rep_anapolis ? number_format($processoProduto->rep_anapolis, 2, ',' , '.') : '' }}">
                                     </td>
 
-                                    <td data-campo="desp_anapolis">
+                                    <td data-campo="desp_anapolis" style="display: none;">
                                         <input type="text" data-row="{{ $index }}"
                                             class=" form-control moneyReal" readonly
                                             name="produtos[{{ $index }}][desp_anapolis]"
@@ -1302,6 +1304,7 @@
                         const formData = new FormData();
                         formData.append('_token', '{{ csrf_token() }}');
                         formData.append('_method', 'PUT');
+                        formData.append('tipo_processo', 'maritimo');
                         formData.append('bloco_indice', indiceBloco);
                         formData.append('total_blocos', this.blocos.length);
                         formData.append('salvar_apenas_produtos', 'true');
@@ -1966,9 +1969,9 @@
 
         /* Separador de adição */
         .separador-adicao td {
-            background-color: #b7aa09 !important;
+            background-color: #000 !important;
             border: none !important;
-            height: 5px;
+            height: 2px;
             padding: 0 !important;
         }
 

@@ -7,6 +7,8 @@ use App\Models\Cliente;
 use App\Models\Processo;
 use App\Models\ProcessoAereo;
 use App\Models\ProcessoAereoProduto;
+use App\Models\ProcessoRodoviario;
+use App\Models\ProcessoRodoviarioProduto;
 use App\Models\ProcessoProduto;
 use App\Models\Fornecedor;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -126,8 +128,17 @@ class ProcessoController extends Controller
                 return $processo;
             });
         
+        // Buscar processos rodoviários e adicionar tipo_processo
+        $processosRodoviarios = ProcessoRodoviario::when(request()->search != '', function ($query) {})
+            ->where('cliente_id', $cliente_id)
+            ->get()
+            ->map(function ($processo) {
+                $processo->tipo_processo = 'rodoviario';
+                return $processo;
+            });
+        
         // Unir as collections
-        $processosUnidos = $processosMaritimos->concat($processosAereos);
+        $processosUnidos = $processosMaritimos->concat($processosAereos)->concat($processosRodoviarios);
         
         // Ordenar a collection
         $processosOrdenados = $processosUnidos->sortBy(function ($processo) use ($sortColumn, $sortDirection) {
@@ -227,6 +238,13 @@ class ProcessoController extends Controller
                     'cliente_id' => $cliente_id,
                 ]);
                 return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => 'aereo']))->with('messages', ['success' => ['Processo aéreo criado com sucesso!']]);
+            } elseif ($tipo_processo === 'rodoviario') {
+                $processo = ProcessoRodoviario::create([
+                    'codigo_interno' => '-',
+                    'numero_processo' => '-',
+                    'cliente_id' => $cliente_id,
+                ]);
+                return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => 'rodoviario']))->with('messages', ['success' => ['Processo rodoviário criado com sucesso!']]);
             } else {
                 $processo = Processo::create([
                     'codigo_interno' => '-',
@@ -249,13 +267,19 @@ class ProcessoController extends Controller
     }
     public function esbocoPdf($id, Request $request)
     {
-        // Verificar se é processo aéreo ou marítimo
+        // Verificar se é processo aéreo, rodoviário ou marítimo
         $tipoProcesso = $request->query('tipo_processo', 'maritimo');
         
         if ($tipoProcesso === 'aereo') {
             $processo = ProcessoAereo::with([
                 'cliente',
                 'processoAereoProdutos.produto.fornecedor',
+                'fornecedor'
+            ])->findOrFail($id);
+        } elseif ($tipoProcesso === 'rodoviario') {
+            $processo = ProcessoRodoviario::with([
+                'cliente',
+                'processoRodoviarioProdutos.produto.fornecedor',
                 'fornecedor'
             ])->findOrFail($id);
         } else {
@@ -276,6 +300,13 @@ class ProcessoController extends Controller
         
         if ($tipoProcesso === 'aereo') {
             foreach ($processo->processoAereoProdutos as $produto) {
+                $produtoParsed = $this->parseModelFieldsFromModel($produto);
+                // Manter a relação produto após o parse
+                $produtoParsed->setRelation('produto', $produto->produto);
+                $processoProdutos[] = $produtoParsed;
+            }
+        } elseif ($tipoProcesso === 'rodoviario') {
+            foreach ($processo->processoRodoviarioProdutos as $produto) {
                 $produtoParsed = $this->parseModelFieldsFromModel($produto);
                 // Manter a relação produto após o parse
                 $produtoParsed->setRelation('produto', $produto->produto);
@@ -406,30 +437,53 @@ class ProcessoController extends Controller
                     'fornecedor'
                 ]);
                 $processoProdutosCollection = $processoModel->processoAereoProdutos;
-                
-                // Log para debug - remover depois
-                \Log::info('Carregando ProcessoAereo ID: ' . $id, [
-                    'outras_taxas_agente' => $processoModel->outras_taxas_agente,
-                    'delivery_fee' => $processoModel->delivery_fee,
-                    'collect_fee' => $processoModel->collect_fee,
-                    'dai' => $processoModel->dai,
-                    'dape' => $processoModel->dape,
-                    'handling' => $processoModel->handling,
-                    'correios' => $processoModel->correios,
-                    'li_dta_honor_nix' => $processoModel->li_dta_honor_nix,
-                    'honorarios_nix' => $processoModel->honorarios_nix,
-                ]);
-            } else {
-                // Buscar como processo marítimo (padrão)
-                $processoModel = Processo::findOrFail($id);
-                $tipoProcesso = $processoModel->tipo_processo ?? 'maritimo';
+            } elseif ($tipoProcessoRequest === 'rodoviario') {
+                $processoModel = ProcessoRodoviario::findOrFail($id);
+                $tipoProcesso = 'rodoviario';
                 $this->ensureClienteAccess($processoModel->cliente_id);
                 $processoModel->loadMissing([
                     'cliente.fornecedores',
-                    'processoProdutos.produto.fornecedor',
+                    'processoRodoviarioProdutos.produto.fornecedor',
                     'fornecedor'
                 ]);
-                $processoProdutosCollection = $processoModel->processoProdutos;
+                $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
+            } else {
+                // Tentar buscar em todas as tabelas se o tipo não foi especificado
+                $processoModel = Processo::find($id);
+                if ($processoModel) {
+                    $tipoProcesso = $processoModel->tipo_processo ?? 'maritimo';
+                    $this->ensureClienteAccess($processoModel->cliente_id);
+                    $processoModel->loadMissing([
+                        'cliente.fornecedores',
+                        'processoProdutos.produto.fornecedor',
+                        'fornecedor'
+                    ]);
+                    $processoProdutosCollection = $processoModel->processoProdutos;
+                } else {
+                    // Tentar como processo aéreo
+                    $processoModel = ProcessoAereo::find($id);
+                    if ($processoModel) {
+                        $tipoProcesso = 'aereo';
+                        $this->ensureClienteAccess($processoModel->cliente_id);
+                        $processoModel->loadMissing([
+                            'cliente.fornecedores',
+                            'processoAereoProdutos.produto.fornecedor',
+                            'fornecedor'
+                        ]);
+                        $processoProdutosCollection = $processoModel->processoAereoProdutos;
+                    } else {
+                        // Tentar como processo rodoviário
+                        $processoModel = ProcessoRodoviario::findOrFail($id);
+                        $tipoProcesso = 'rodoviario';
+                        $this->ensureClienteAccess($processoModel->cliente_id);
+                        $processoModel->loadMissing([
+                            'cliente.fornecedores',
+                            'processoRodoviarioProdutos.produto.fornecedor',
+                            'fornecedor'
+                        ]);
+                        $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
+                    }
+                }
             }
             
             $processo = $this->parseModelFieldsFromModel($processoModel);
@@ -508,21 +562,40 @@ class ProcessoController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            // Detectar tipo de processo pelo query param ou tentar encontrar em ambas as tabelas
-            $tipoProcessoRequest = request()->get('tipo_processo', null);
+            // Detectar tipo de processo pelo query param, FormData ou tentar encontrar em todas as tabelas
+            $tipoProcessoRequest = $request->input('tipo_processo') ?? $request->query('tipo_processo') ?? $request->get('tipo_processo');
             $processo = null;
             $isAereo = false;
+            $isRodoviario = false;
             
             if ($tipoProcessoRequest === 'aereo') {
                 $processo = ProcessoAereo::findOrFail($id);
                 $isAereo = true;
+            } elseif ($tipoProcessoRequest === 'rodoviario') {
+                $processo = ProcessoRodoviario::findOrFail($id);
+                $isRodoviario = true;
             } else {
                 // Tentar buscar como processo marítimo primeiro
                 $processo = Processo::find($id);
-                if (!$processo) {
+                if ($processo) {
+                    // Processo marítimo encontrado
+                } else {
                     // Se não encontrar, tentar como processo aéreo
-                    $processo = ProcessoAereo::findOrFail($id);
-                    $isAereo = true;
+                    $processo = ProcessoAereo::find($id);
+                    if ($processo) {
+                        $isAereo = true;
+                    } else {
+                        // Se não encontrar, tentar como processo rodoviário
+                        $processo = ProcessoRodoviario::find($id);
+                        if ($processo) {
+                            $isRodoviario = true;
+                        } else {
+                            // Se não encontrou em nenhuma tabela, lançar exceção
+                            throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
+                                "Processo com ID {$id} não encontrado em nenhuma tabela (marítimo, aéreo ou rodoviário)."
+                            );
+                        }
+                    }
                 }
             }
             
@@ -550,6 +623,11 @@ class ProcessoController extends Controller
                             ->get()
                             ->keyBy('id')
                             ->toArray();
+                    } elseif ($isRodoviario) {
+                        $produtosExistentes = ProcessoRodoviarioProduto::whereIn('id', $idsProdutos)
+                            ->get()
+                            ->keyBy('id')
+                            ->toArray();
                     } else {
                         $produtosExistentes = ProcessoProduto::whereIn('id', $idsProdutos)
                             ->get()
@@ -561,7 +639,9 @@ class ProcessoController extends Controller
 
             $possuiProdutosExistentes = $isAereo 
                 ? $processo->processoAereoProdutos()->exists() 
-                : $processo->processoProdutos()->exists();
+                : ($isRodoviario 
+                    ? $processo->processoRodoviarioProdutos()->exists() 
+                    : $processo->processoProdutos()->exists());
             $fornecedorValidado = null;
 
             if ($request->has('fornecedor_id')) {
@@ -595,6 +675,15 @@ class ProcessoController extends Controller
             }
 
             if ($request->produtos && count($request->produtos) > 0) {
+                // DEBUG: Log completo de TODOS os produtos recebidos da tabela ANTES de processar
+                \Log::info("DEBUG PROCESSO AEREO - TODOS OS PRODUTOS RECEBIDOS DA TABELA", [
+                    'total_produtos' => count($request->produtos),
+                    'tipo_processo' => $isAereo ? 'AEREO' : ($isRodoviario ? 'RODOVIARIO' : 'MARITIMO'),
+                    'processo_id' => $id,
+                    'request_all_keys' => array_keys($request->all()),
+                    'produtos_array_completo' => $request->produtos
+                ]);
+
                 foreach ($request->produtos as $key => $produto) {
                     if (!isset($produto['produto_id']) || empty($produto['produto_id'])) {
                         DB::rollBack();
@@ -607,8 +696,32 @@ class ProcessoController extends Controller
 
                 foreach ($request->produtos as $key => $produto) {
                     $pesoLiquidoTotal += isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
-
                     if ($isAereo) {
+                        // Verificar tipo de peso do processo
+                        $tipoPeso = $processo->tipo_peso ?? 'lbs';
+                        
+                        $pesoLiqLbsValue = null;
+                        $pesoLiqKgValue = null;
+                        $pesoLiqTotalKgValue = null;
+                        
+                        if ($tipoPeso === 'kg') {
+                            // Modo KG: usar peso_liq_kg
+                            if (isset($produto['peso_liq_kg']) && $produto['peso_liq_kg'] !== '') {
+                                $pesoLiqKgValue = $this->parseMoneyToFloat($produto['peso_liq_kg']);
+                                // peso_liq_total_kg = peso_liq_kg (sem conversão)
+                                $pesoLiqTotalKgValue = $pesoLiqKgValue;
+                            }
+                        } else {
+                            // Modo LBS: usar peso_liq_lbs
+                            if (isset($produto['peso_liq_lbs']) && $produto['peso_liq_lbs'] !== '') {
+                                $pesoLiqLbsValue = $this->parseMoneyToFloat($produto['peso_liq_lbs']);
+                            }
+                            // peso_liq_total_kg será calculado a partir de peso_liq_lbs * fator
+                            if (isset($produto['peso_liq_total_kg']) && $produto['peso_liq_total_kg'] !== '') {
+                                $pesoLiqTotalKgValue = $this->parseMoneyToFloat($produto['peso_liq_total_kg']);
+                            }
+                        }
+                        
                         $processoProduto = ProcessoAereoProduto::updateOrCreate(
                             [
                                 'id' => $produto['processo_produto_id'] ?? null,
@@ -618,8 +731,9 @@ class ProcessoController extends Controller
                             'item' => $produto['item'],
                             'produto_id' => $produto['produto_id'],
                             'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
+                            'origem' => isset($produto['origem']) ? $produto['origem'] : null,
                             'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
-                            'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
+                            'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) && $produto['peso_liquido_unitario'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
                             'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
                             'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
                             'fob_unit_usd' => isset($produto['fob_unit_usd']) ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : null,
@@ -644,12 +758,12 @@ class ProcessoController extends Controller
                             'vlr_cfr_total' => isset($produto['vlr_cfr_total']) ? $this->parseMoneyToFloat($produto['vlr_cfr_total']) : null,
                             'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
                             'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
-                            'ii_percent' => isset($produto['ii_percent']) ? $this->safePercentage($produto['ii_percent']) : null,
-                            'ipi_percent' => isset($produto['ipi_percent']) ? $this->safePercentage($produto['ipi_percent']) : null,
-                            'pis_percent' => isset($produto['pis_percent']) ? $this->safePercentage($produto['pis_percent']) : null,
-                            'cofins_percent' => isset($produto['cofins_percent']) ? $this->safePercentage($produto['cofins_percent']) : null,
-                            'icms_percent' => isset($produto['icms_percent']) ? $this->safePercentage($produto['icms_percent']) : null,
-                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
+                            'ii_percent' => isset($produto['ii_percent']) && trim($produto['ii_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ii_percent'])) !== '' ? $this->safePercentage($produto['ii_percent']) : null,
+                            'ipi_percent' => isset($produto['ipi_percent']) && trim($produto['ipi_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ipi_percent'])) !== '' ? $this->safePercentage($produto['ipi_percent']) : null,
+                            'pis_percent' => isset($produto['pis_percent']) && trim($produto['pis_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['pis_percent'])) !== '' ? $this->safePercentage($produto['pis_percent']) : null,
+                            'cofins_percent' => isset($produto['cofins_percent']) && trim($produto['cofins_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['cofins_percent'])) !== '' ? $this->safePercentage($produto['cofins_percent']) : null,
+                            'icms_percent' => isset($produto['icms_percent']) && trim($produto['icms_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_percent'])) !== '' ? $this->safePercentage($produto['icms_percent']) : null,
+                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) && trim($produto['icms_reduzido_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_reduzido_percent'])) !== '' ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
                             'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
                             'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
                             'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
@@ -677,7 +791,7 @@ class ProcessoController extends Controller
                             'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
                             'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
                             'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
-                            'tx_def_li' => isset($produto['tx_def_li']) ? $this->safePercentage($produto['tx_def_li']) : null,
+                            'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
                             'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
                             'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
                             'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
@@ -711,6 +825,113 @@ class ProcessoController extends Controller
                             'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
                             // Preservar valores existentes de service_charges se não foram enviados ou estão vazios
                             'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
+                            // Campos de peso específicos do aéreo
+                            'peso_liq_lbs' => $pesoLiqLbsValue,
+                            'peso_liq_kg' => $pesoLiqKgValue ?? null,
+                            'peso_liq_total_kg' => $pesoLiqTotalKgValue,
+                        ]);
+                        
+                    } elseif ($isRodoviario) {
+                        $processoProduto = ProcessoRodoviarioProduto::updateOrCreate(
+                            [
+                                'id' => $produto['processo_produto_id'] ?? null,
+                                'processo_rodoviario_id' => $id ?? 0,
+                            ],
+                            [
+                            'item' => $produto['item'],
+                            'produto_id' => $produto['produto_id'],
+                            'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
+                            'origem' => isset($produto['origem']) ? $produto['origem'] : null,
+                            'codigo_giiro' => isset($produto['codigo_giiro']) ? $produto['codigo_giiro'] : null,
+                            'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
+                            'peso_liq_lbs' => isset($produto['peso_liq_lbs']) && $produto['peso_liq_lbs'] !== '' ? $this->parseMoneyToFloat($produto['peso_liq_lbs']) : null,
+                            'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) && $produto['peso_liquido_unitario'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
+                            'peso_liquido_total' => isset($produto['peso_liquido_total']) && $produto['peso_liquido_total'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
+                            'peso_liq_total_kg' => isset($produto['peso_liq_total_kg']) && $produto['peso_liq_total_kg'] !== '' ? $this->parseMoneyToFloat($produto['peso_liq_total_kg']) : null,
+                            'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
+                            'fob_unit_usd' => isset($produto['fob_unit_usd']) ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : null,
+                            'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
+                            'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
+                            'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
+                            'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
+                            'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
+                            'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
+                            'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
+                            'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
+                            'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
+                            'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
+                            // Campos específicos rodoviário (sem delivery_fee e collect_fee)
+                            'dai' => isset($produto['dai']) ? $this->parseMoneyToFloat($produto['dai']) : null,
+                            'dape' => isset($produto['dape']) ? $this->parseMoneyToFloat($produto['dape']) : null,
+                            'vlr_cfr_unit' => isset($produto['vlr_cfr_unit']) ? $this->parseMoneyToFloat($produto['vlr_cfr_unit']) : null,
+                            'vlr_cfr_total' => isset($produto['vlr_cfr_total']) ? $this->parseMoneyToFloat($produto['vlr_cfr_total']) : null,
+                            'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
+                            'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
+                            'ii_percent' => isset($produto['ii_percent']) && trim($produto['ii_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ii_percent'])) !== '' ? $this->safePercentage($produto['ii_percent']) : null,
+                            'ipi_percent' => isset($produto['ipi_percent']) && trim($produto['ipi_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ipi_percent'])) !== '' ? $this->safePercentage($produto['ipi_percent']) : null,
+                            'pis_percent' => isset($produto['pis_percent']) && trim($produto['pis_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['pis_percent'])) !== '' ? $this->safePercentage($produto['pis_percent']) : null,
+                            'cofins_percent' => isset($produto['cofins_percent']) && trim($produto['cofins_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['cofins_percent'])) !== '' ? $this->safePercentage($produto['cofins_percent']) : null,
+                            'icms_percent' => isset($produto['icms_percent']) && trim($produto['icms_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_percent'])) !== '' ? $this->safePercentage($produto['icms_percent']) : null,
+                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) && trim($produto['icms_reduzido_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_reduzido_percent'])) !== '' ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
+                            'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
+                            'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
+                            'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
+                            'frete_moeda' => $request->frete_internacional_moeda,
+                            'seguro_moeda' => $request->seguro_internacional_moeda,
+                            'acrescimo_moeda' => $request->acrescimo_frete_moeda,
+                            'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
+                            'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
+                            'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
+                            'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
+                            'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
+                            'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
+                            'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
+                            'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
+                            'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
+                            'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
+                            'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
+                            'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
+                            'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
+                            'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
+                            'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
+                            'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
+                            'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
+                            'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
+                            'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
+                            'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
+                            'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
+                            'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
+                            'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
+                            'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
+                            'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
+                            'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
+                            'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
+                            'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
+                            'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
+                            'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
+                            'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
+                            'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
+                            // Campos específicos rodoviário
+                            'desp_fronteira' => isset($produto['desp_fronteira']) ? $this->parseMoneyToFloat($produto['desp_fronteira']) : null,
+                            'das_fronteira' => isset($produto['das_fronteira']) ? $this->parseMoneyToFloat($produto['das_fronteira']) : null,
+                            'armazenagem' => isset($produto['armazenagem']) ? $this->parseMoneyToFloat($produto['armazenagem']) : null,
+                            'frete_foz_gyn' => isset($produto['frete_foz_gyn']) ? $this->parseMoneyToFloat($produto['frete_foz_gyn']) : null,
+                            'rep_fronteira' => isset($produto['rep_fronteira']) ? $this->parseMoneyToFloat($produto['rep_fronteira']) : null,
+                            'armaz_anapolis' => isset($produto['armaz_anapolis']) ? $this->parseMoneyToFloat($produto['armaz_anapolis']) : null,
+                            'mov_anapolis' => isset($produto['mov_anapolis']) ? $this->parseMoneyToFloat($produto['mov_anapolis']) : null,
+                            'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
+                            'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
+                            'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                            'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
+                            'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
+                            "descricao" => $produto['descricao'],
+                            'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
+                            'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
+                            'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
+                            'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
+                            'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
+                            'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
+                            'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
                         ]);
                     } else {
                         $processoProduto = ProcessoProduto::updateOrCreate(
@@ -772,7 +993,7 @@ class ProcessoController extends Controller
                                 'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
                                 'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
                                 'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
-                                'tx_def_li' => isset($produto['tx_def_li']) ? $this->safePercentage($produto['tx_def_li']) : null,
+                                'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
                                 'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
                                 'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
                                 'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
@@ -822,6 +1043,9 @@ class ProcessoController extends Controller
             if ($isAereo) {
                 ProcessoAereo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
                 $processoExistente = ProcessoAereo::find($id);
+            } elseif ($isRodoviario) {
+                ProcessoRodoviario::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
+                $processoExistente = ProcessoRodoviario::find($id);
             } else {
                 Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
                 $processoExistente = Processo::find($id);
@@ -896,6 +1120,32 @@ class ProcessoController extends Controller
                     }
                 }
             }
+            
+            // Campos específicos para processos rodoviários
+            if ($isRodoviario) {
+                // Sempre atualizar os campos se foram enviados, mesmo que sejam 0
+                $camposRodoviarios = [
+                    'dai',
+                    'dape',
+                    'desp_fronteira',
+                    'das_fronteira',
+                    'armazenagem',
+                    'frete_foz_gyn',
+                    'rep_fronteira',
+                    'armaz_anapolis',
+                    'mov_anapolis',
+                    'rep_anapolis'
+                ];
+                
+                foreach ($camposRodoviarios as $campo) {
+                    // Sempre incluir o campo no array quando enviado, mesmo que seja 0 ou vazio
+                    if ($request->has($campo)) {
+                        $valor = $this->parseMoneyToFloat($request->$campo);
+                        // Se o valor for null (campo vazio), salvar como 0
+                        $dadosProcesso[$campo] = $valor !== null ? $valor : 0;
+                    }
+                }
+            }
 
             if ($request->has('fornecedor_id')) {
                 $dadosProcesso['fornecedor_id'] = $fornecedorValidado?->id ?: null;
@@ -957,6 +1207,8 @@ class ProcessoController extends Controller
                     \Log::info('Atualizando ProcessoAereo ID: ' . $id, ['dadosProcesso' => $dadosProcesso]);
                 }
                 ProcessoAereo::where('id', $id)->update($dadosProcesso);
+            } elseif ($isRodoviario) {
+                ProcessoRodoviario::where('id', $id)->update($dadosProcesso);
             } else {
                 Processo::where('id', $id)->update($dadosProcesso);
             }
@@ -999,21 +1251,40 @@ class ProcessoController extends Controller
 
     public function updateProcesso(Request $request, $id)
     {
-        // Detectar tipo de processo pelo query param ou tentar encontrar em ambas as tabelas
+        // Detectar tipo de processo pelo query param ou tentar encontrar em todas as tabelas
         $tipoProcessoRequest = request()->get('tipo_processo', null);
         $processo = null;
         $isAereo = false;
+        $isRodoviario = false;
         
         if ($tipoProcessoRequest === 'aereo') {
             $processo = ProcessoAereo::findOrFail($id);
             $isAereo = true;
+        } elseif ($tipoProcessoRequest === 'rodoviario') {
+            $processo = ProcessoRodoviario::findOrFail($id);
+            $isRodoviario = true;
         } else {
             // Tentar buscar como processo marítimo primeiro
             $processo = Processo::find($id);
-            if (!$processo) {
+            if ($processo) {
+                // Processo marítimo encontrado
+            } else {
                 // Se não encontrar, tentar como processo aéreo
-                $processo = ProcessoAereo::findOrFail($id);
-                $isAereo = true;
+                $processo = ProcessoAereo::find($id);
+                if ($processo) {
+                    $isAereo = true;
+                } else {
+                    // Se não encontrar, tentar como processo rodoviário
+                    $processo = ProcessoRodoviario::find($id);
+                    if ($processo) {
+                        $isRodoviario = true;
+                    } else {
+                        // Se não encontrou em nenhuma tabela, lançar exceção
+                        throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
+                            "Processo com ID {$id} não encontrado em nenhuma tabela (marítimo, aéreo ou rodoviário)."
+                        );
+                    }
+                }
             }
         }
         
@@ -1106,6 +1377,30 @@ class ProcessoController extends Controller
             $dadosProcesso['thc_capatazia'] = isset($request->thc_capatazia) ? $this->parseMoneyToFloat($request->thc_capatazia) : null;
             
             ProcessoAereo::where('id', $id)->update($dadosProcesso);
+        } elseif ($isRodoviario) {
+            // Campos específicos do transporte rodoviário
+            $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
+            $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
+            $dadosProcesso['dai'] = isset($request->dai) ? $this->parseMoneyToFloat($request->dai) : null;
+            $dadosProcesso['dape'] = isset($request->dape) ? $this->parseMoneyToFloat($request->dape) : null;
+            $dadosProcesso['outras_taxas_agente'] = isset($request->outras_taxas_agente) ? $this->parseMoneyToFloat($request->outras_taxas_agente) : null;
+            $dadosProcesso['desconsolidacao'] = isset($request->desconsolidacao) ? $this->parseMoneyToFloat($request->desconsolidacao) : null;
+            $dadosProcesso['handling'] = isset($request->handling) ? $this->parseMoneyToFloat($request->handling) : null;
+            $dadosProcesso['correios'] = isset($request->correios) ? $this->parseMoneyToFloat($request->correios) : null;
+            $dadosProcesso['li_dta_honor_nix'] = isset($request->li_dta_honor_nix) ? $this->parseMoneyToFloat($request->li_dta_honor_nix) : null;
+            $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
+            $dadosProcesso['thc_capatazia'] = isset($request->thc_capatazia) ? $this->parseMoneyToFloat($request->thc_capatazia) : null;
+            // Campos específicos rodoviário
+            $dadosProcesso['desp_fronteira'] = isset($request->desp_fronteira) ? $this->parseMoneyToFloat($request->desp_fronteira) : null;
+            $dadosProcesso['das_fronteira'] = isset($request->das_fronteira) ? $this->parseMoneyToFloat($request->das_fronteira) : null;
+            $dadosProcesso['armazenagem'] = isset($request->armazenagem) ? $this->parseMoneyToFloat($request->armazenagem) : null;
+            $dadosProcesso['frete_foz_gyn'] = isset($request->frete_foz_gyn) ? $this->parseMoneyToFloat($request->frete_foz_gyn) : null;
+            $dadosProcesso['rep_fronteira'] = isset($request->rep_fronteira) ? $this->parseMoneyToFloat($request->rep_fronteira) : null;
+            $dadosProcesso['armaz_anapolis'] = isset($request->armaz_anapolis) ? $this->parseMoneyToFloat($request->armaz_anapolis) : null;
+            $dadosProcesso['mov_anapolis'] = isset($request->mov_anapolis) ? $this->parseMoneyToFloat($request->mov_anapolis) : null;
+            $dadosProcesso['rep_anapolis'] = isset($request->rep_anapolis) ? $this->parseMoneyToFloat($request->rep_anapolis) : null;
+            
+            ProcessoRodoviario::where('id', $id)->update($dadosProcesso);
         } else {
             // Campos específicos do transporte marítimo (incluindo campos _usd e _brl que não existem no aéreo)
             $dadosProcesso['frete_internacional_usd'] = $this->parseMoneyToFloat($request->frete_internacional_usd);
@@ -1200,10 +1495,21 @@ class ProcessoController extends Controller
             // Atualizar peso_liquido se peso_liquido_total_cabecalho foi enviado
             if ($request->has('peso_liquido_total_cabecalho')) {
                 $pesoLiquido = $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho);
-                $dadosCabecalho['peso_liquido'] = $pesoLiquido !== null ? $pesoLiquido : 0;
+                // Sempre salvar o peso_liquido, mesmo que seja 0 ou 1 (modo Kg)
+                if ($pesoLiquido !== null) {
+                    $dadosCabecalho['peso_liquido'] = $pesoLiquido;
+                } else {
+                    // Se for null, manter o valor atual do processo
+                    $dadosCabecalho['peso_liquido'] = $processo->peso_liquido ?? 0;
+                }
             }
             
-            // Atualizar no banco
+            // Atualizar tipo_peso se foi enviado
+            if ($request->has('tipo_peso_aereo')) {
+                $dadosCabecalho['tipo_peso'] = $request->tipo_peso_aereo;
+            }
+            
+            // Atualizar no banco (sempre atualizar, mesmo que dadosCabecalho tenha apenas tipo_peso)
             if (!empty($dadosCabecalho)) {
                 ProcessoAereo::where('id', $id)->update($dadosCabecalho);
                 \Log::info('CabecalhoInputs salvos para ProcessoAereo ID: ' . $id, ['dadosCabecalho' => $dadosCabecalho]);
@@ -1228,6 +1534,83 @@ class ProcessoController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Salvar apenas os campos do cabeçalho (cabecalhoInputs) do processo rodoviário
+     */
+    public function salvarCabecalhoInputsRodoviario(Request $request, $id)
+    {
+        try {
+            $processo = ProcessoRodoviario::findOrFail($id);
+            $this->ensureClienteAccess($processo->cliente_id);
+            
+            DB::beginTransaction();
+            
+            // Preparar dados do cabeçalho
+            $dadosCabecalho = [];
+            
+            // Campos do cabeçalho que devem ser salvos (sem delivery_fee e collect_fee)
+            $camposCabecalho = [
+                'outras_taxas_agente',
+                'desconsolidacao',
+                'handling',
+                'dai',
+                'dape',
+                'correios',
+                'li_dta_honor_nix',
+                'honorarios_nix',
+                'desp_fronteira',
+                'das_fronteira',
+                'armazenagem',
+                'frete_foz_gyn',
+                'rep_fronteira',
+                'armaz_anapolis',
+                'mov_anapolis',
+                'rep_anapolis',
+                'diferenca_cambial_frete',
+                'diferenca_cambial_fob'
+            ];
+            
+            foreach ($camposCabecalho as $campo) {
+                if ($request->has($campo)) {
+                    $valor = $this->parseMoneyToFloat($request->$campo);
+                    // Se o valor for null (campo vazio), salvar como 0
+                    $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
+                }
+            }
+            
+            // Atualizar peso_liquido se peso_liquido_total_cabecalho foi enviado
+            if ($request->has('peso_liquido_total_cabecalho')) {
+                $pesoLiquido = $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho);
+                $dadosCabecalho['peso_liquido'] = $pesoLiquido !== null ? $pesoLiquido : 0;
+            }
+            
+            // Atualizar no banco
+            if (!empty($dadosCabecalho)) {
+                ProcessoRodoviario::where('id', $id)->update($dadosCabecalho);
+                \Log::info('CabecalhoInputs salvos para ProcessoRodoviario ID: ' . $id, ['dadosCabecalho' => $dadosCabecalho]);
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Campos do cabeçalho salvos com sucesso!',
+                'dados' => $dadosCabecalho
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erro ao salvar cabecalhoInputs do ProcessoRodoviario ' . $id . ': ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Erro ao salvar campos do cabeçalho: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
     public function destroy(int $id)
     {
         try {
@@ -1260,16 +1643,26 @@ class ProcessoController extends Controller
             return null;
         }
 
-        // Se já for numérico, retorna como está (o banco espera valores como 33.45, não 0.3345)
-        if (is_numeric($value)) {
-            return (float) $value;
-        }
-
         // Remove símbolo de porcentagem e espaços
         $cleanValue = str_replace(['%', ' '], '', trim($value));
+        
+        // Se após limpar ficou vazio, retorna null
+        if ($cleanValue === '') {
+            return null;
+        }
+
+        // Se já for numérico, retorna como está (o banco espera valores como 33.45, não 0.3345)
+        if (is_numeric($cleanValue)) {
+            return (float) $cleanValue;
+        }
 
         // Substitui vírgula por ponto para decimal
         $cleanValue = str_replace(',', '.', $cleanValue);
+
+        // Se ainda não for numérico após substituir vírgula, retorna null
+        if (!is_numeric($cleanValue)) {
+            return null;
+        }
 
         // Converte para float
         return (float) $cleanValue;

@@ -5,21 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ProcessoAereoProduto extends Model
+class ProcessoRodoviarioProduto extends Model
 {
     use HasFactory;
     
-    protected $table = 'processo_aereo_produtos';
+    protected $table = 'processo_rodoviario_produtos';
     
     protected $fillable = [
         'adicao',
         'item',
         'origem',
         'produto_id',
-        'processo_aereo_id',
+        'processo_rodoviario_id',
         'quantidade',
         'peso_liq_lbs',
-        'peso_liq_kg',
         'peso_liquido_unitario',
         'peso_liquido_total',
         'peso_liq_total_kg',
@@ -41,11 +40,6 @@ class ProcessoAereoProduto extends Model
         'acresc_frete_brl',
         'acrescimo_moeda_estrangeira',
         'acrescimo_moeda',
-        // Campos específicos do transporte aéreo
-        'delivery_fee',
-        'delivery_fee_brl',
-        'collect_fee',
-        'collect_fee_brl',
         'vlr_cfr_unit',
         'vlr_cfr_total',
         'vlr_crf_total',
@@ -106,6 +100,15 @@ class ProcessoAereoProduto extends Model
         'thc_usd',
         'thc_brl',
         'codigo_giiro',
+        // Campos específicos rodoviário
+        'desp_fronteira',
+        'das_fronteira',
+        'armazenagem',
+        'frete_foz_gyn',
+        'rep_fronteira',
+        'armaz_anapolis',
+        'mov_anapolis',
+        'rep_anapolis',
     ];
     
     protected $casts = [
@@ -119,8 +122,9 @@ class ProcessoAereoProduto extends Model
         return $this->hasOne(Produto::class, 'id', 'produto_id');
     }
 
-    public function processoAereo()
+    public function processoRodoviario()
     {
-        return $this->belongsTo(ProcessoAereo::class, 'processo_aereo_id');
+        return $this->belongsTo(ProcessoRodoviario::class, 'processo_rodoviario_id');
     }
 }
+

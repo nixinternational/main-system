@@ -611,7 +611,16 @@
                 buildRow('LI+DTA+HONOR.NIX', formatDebugMoney(dados.liDtaHonorNix || 0, 2), 'Valor distribuído do campo externo LI+DTA+HONOR.NIX.', formatComponent('LI+DTA+HONOR.NIX', dados.liDtaHonorNix || 0, 2)),
                 buildRow('Honorários NIX', formatDebugMoney(dados.honorariosNix || 0, 2), 'Valor distribuído do campo externo Honorários NIX.', formatComponent('Honorários NIX', dados.honorariosNix || 0, 2)),
                 buildRow('Desp. Desembaraço', formatDebugMoney(dados.despesaDesembaraco || 0, 2), '(Outras TX + Delivery Fee + Collect Fee + Desconsolidacao + HANDLING + DAI + DAPE + Correios + LI+DTA+HONOR.NIX + Honorários + Taxa SISCOMEX) - (Multa + TX DEF LI + Taxa SISCOMEX + DAI + Honorários).', formatCalcDetail(dados.despesaDesembaraco || 0, ['(', formatComponent('Soma campos externos', (dados.outrasTaxasAgente || 0) + (dados.deliveryFee || 0) + (dados.collectFee || 0) + (dados.desconsolidacao || 0) + (dados.handling || 0) + (dados.dai || 0) + (dados.dape || 0) + (dados.correios || 0) + (dados.liDtaHonorNix || 0) + (dados.honorariosNix || 0) + (dados.taxaSiscomexUnit || 0), 2), ')', '-', formatComponent('Subtrações', (dados.multa || 0) + (dados.taxaDefLi || 0) + (dados.taxaSiscomexUnit || 0) + (dados.dai || 0) + (dados.honorariosNix || 0), 2)], 2)),
-                buildRow('Custo Unit. Final', formatDebugMoney(dados.custoUnitarioFinal, 2), '(VLR TOTAL NF C/ICMS-ST + Desp. Desembaraço + Dif. Cambial Frete) ÷ Quantidade.', formatCalcDetail(dados.custoUnitarioFinal, ['(', formatComponent('VLR TOTAL NF C/ICMS-ST', dados.vlrTotalNfComIcms || vlrTotalNfSemIcmsVal, 2), '+', formatComponent('Desp. Desembaraço', dados.despesaDesembaraco || 0, 2), '+', formatComponent('Dif. Cambial Frete', dados.diferencaCambialFrete || 0, 2), ')', '÷', formatComponent('Quantidade', quantidadeSafe, 4)], 2)),
+                buildRow('Custo Unit. Final', formatDebugMoney(dados.custoUnitarioFinal, 2), '[(Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete) - ICMS reduzido (apenas SC)] ÷ Quantidade.', (() => {
+                    const nacionalizacao = getNacionalizacaoAtual();
+                    const icmsReduzidoParaSubtrair = (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') ? vlrIcmsReduzidoVal : 0;
+                    const componentes = ['(', formatComponent('Total NF c/ICMS', dados.vlrTotalNfComIcms || vlrTotalNfSemIcmsVal, 2), '+', formatComponent('Desp. Desembaraço', dados.despesaDesembaraco || 0, 2), '+', formatComponent('Dif. Cambial FOB', dados.diferencaCambialFob || 0, 2), '+', formatComponent('Dif. Cambial Frete', dados.diferencaCambialFrete || 0, 2)];
+                    if (icmsReduzidoParaSubtrair > 0) {
+                        componentes.push('-', formatComponent('ICMS reduzido (SC)', icmsReduzidoParaSubtrair, 2));
+                    }
+                    componentes.push(')', '÷', formatComponent('Quantidade', quantidadeSafe, 4));
+                    return formatCalcDetail(dados.custoUnitarioFinal, componentes, 2);
+                })()),
                 buildRow('Custo Total Final', formatDebugMoney(dados.custoTotalFinal, 2), 'Custo unitário final × Quantidade.', formatCalcDetail(dados.custoTotalFinal, [formatComponent('Custo Unit. Final', dados.custoUnitarioFinal, 2), '×', formatComponent('Quantidade', quantidade, 4)], 2))
             ];
             if (globais && globais.fobTotalProcesso) {
@@ -692,6 +701,7 @@
 
             let totais = {
                 quantidade: 0,
+                peso_liq_lbs: 0,
                 peso_liq_total_kg: 0,
                 peso_liquido_total: 0, // Mantido para compatibilidade
                 fob_total_usd: 0,
@@ -711,9 +721,7 @@
                 service_charges: 0,
                 service_charges_brl: 0,
                 delivery_fee: 0,
-                delivery_fee_brl: 0,
                 collect_fee: 0,
-                collect_fee_brl: 0,
                 valor_aduaneiro_usd: 0,
                 valor_aduaneiro_brl: 0,
                 valor_ii: 0,
@@ -773,6 +781,13 @@
                     // Para service_charges, se a moeda não for USD, usar service_charges_moeda_estrangeira
                     if (campo === 'service_charges' && moedaServiceCharges && moedaServiceCharges !== 'USD') {
                         const elemento = $(`#service_charges_moeda_estrangeira-${rowId}`);
+                        if (elemento.length > 0) {
+                            const valor = MoneyUtils.parseMoney(elemento.val()) || 0;
+                            totais[campo] += valor;
+                        }
+                    } else if (campo === 'peso_liq_lbs') {
+                        // Somar peso_liq_lbs de todas as linhas
+                        const elemento = $(`#peso_liq_lbs-${rowId}`);
                         if (elemento.length > 0) {
                             const valor = MoneyUtils.parseMoney(elemento.val()) || 0;
                             totais[campo] += valor;
@@ -863,25 +878,30 @@
             // Colunas antes dos dados: Ações (1) = 1 coluna
             let tr = '<tr><td colspan="1" style="text-align: right; font-weight: bold;">TOTAIS:</td>';
 
-            // PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, ORIGEM, CODIGO, CODIGO GIIRO, NCM (8 colunas vazias)
-            tr += '<td colspan="8" data-field="produto-descricao-adicao-item-origem-codigo-codigo-giiro-ncm"></td>';
+            // PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, ORIGEM, CODIGO, NCM (7 colunas vazias - CODIGO GIIRO removido)
+            tr += '<td colspan="7" data-field="produto-descricao-adicao-item-origem-codigo-ncm"></td>';
 
             // QUANTIDADE
             tr += `<td data-field="quantidade" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.quantidade, 2)}</td>`;
 
-            // PESO LIQ. LBS (vazio - não é somado)
-            tr += '<td data-field="peso-liq-lbs"></td>';
+            // PESO LIQ. LBS (soma total)
+            tr += `<td data-field="peso-liq-lbs" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liq_lbs, 6)}</td>`;
 
             // PESO LIQ. UNIT (vazio - é unitário)
             tr += '<td data-field="peso-liq-unit"></td>';
 
-            // PESO LIQ TOTAL KG (para aéreo)
-            tr +=
-                `<td data-field="peso-liq-total-kg" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liq_total_kg || totais.peso_liquido_total, 2)}</td>`;
+            // PESO LIQ TOTAL KG (para aéreo) - verificar se está oculto
+            const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
+            if (tipoPeso === 'kg') {
+                // Em modo KG, ocultar a coluna
+                tr += `<td data-field="peso-liq-total-kg" style="display: none;"></td>`;
+            } else {
+                // Em modo LBS, mostrar a coluna
+                tr += `<td data-field="peso-liq-total-kg" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liq_total_kg || totais.peso_liquido_total, 2)}</td>`;
+            }
 
             // FATOR PESO (total deve ser 1)
-            tr +=
-                `<td data-field="fator-peso" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorPesoSum, 8)}</td>`;
+            tr += `<td data-field="fator-peso" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorPesoSum, 8)}</td>`;
             
             // FOB UNIT (vazio - é unitário, não é somado)
             const moedaProcesso = $('#moeda_processo').val();
@@ -897,10 +917,8 @@
                 tr += `<td data-field="fob-total-moeda" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFobMoeda, 2)}</td>`;
             }
 
-            tr +=
-                `<td data-field="fob-total-usd" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_usd, 2)}</td>`;
-            tr +=
-                `<td data-field="fob-total-brl" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_brl, 2)}</td>`;
+            tr += `<td data-field="fob-total-usd" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_usd, 2)}</td>`;
+            tr += `<td data-field="fob-total-brl" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_brl, 2)}</td>`;
 
             // COLUNAS FRETE
             const moedaFrete = $('#frete_internacional_moeda').val();
@@ -912,8 +930,7 @@
 
                     totalFreteMoeda += MoneyUtils.parseMoney($(`#frete_moeda_estrangeira-${rowId}`).val()) || 0;
                 });
-                tr +=
-                    `<td data-field="frete-moeda" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 2)}</td>`;
+                tr += `<td data-field="frete-moeda" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 2)}</td>`;
             }
 
             tr += `<td data-field="frete-usd" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
@@ -1007,19 +1024,17 @@
             // ao invés de somar os valores arredondados das linhas (evita diferenças de arredondamento)
             tr += `<td data-field="taxa-siscomex" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(taxaSiscomexTotalProcesso, 2)}</td>`;
             
-            // OUTRAS TX AGENTE, DELIVERY FEE, DELIVERY FEE R$, COLLECT FEE, COLLECT FEE R$, DESCONS., HANDLING, DAI, HONORÁRIOS NIX, DAPE, CORREIOS, LI+DTA+HONOR.NIX
+            // OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
             tr += `<td data-field="outras-tx-agente" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 2)}</td>`;
             tr += `<td data-field="delivery-fee" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.delivery_fee || 0, 2)}</td>`;
-            tr += `<td data-field="delivery-fee-brl" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.delivery_fee_brl || 0, 2)}</td>`;
             tr += `<td data-field="collect-fee" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.collect_fee || 0, 2)}</td>`;
-            tr += `<td data-field="collect-fee-brl" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.collect_fee_brl || 0, 2)}</td>`;
             tr += `<td data-field="desconsolidacao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desconsolidacao, 2)}</td>`;
             tr += `<td data-field="handling" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>`;
             tr += `<td data-field="dai" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.dai || 0, 2)}</td>`;
-            tr += `<td data-field="honorarios-nix" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>`;
             tr += `<td data-field="dape" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.dape || 0, 2)}</td>`;
             tr += `<td data-field="correios" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.correios || 0, 2)}</td>`;
             tr += `<td data-field="li-dta-honor-nix" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2)}</td>`;
+            tr += `<td data-field="honorarios-nix" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>`;
             
             // DESP. DESEMBARAÇO, DIF. CAMBIAL FRETE, DIF.CAMBIAL FOB, CUSTO UNIT FINAL, CUSTO TOTAL FINAL
             tr += `<td data-field="desp-desembaraco" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>`;
@@ -1350,6 +1365,17 @@
                 if (val && val.trim() !== '') {
                     const numero = normalizeNumericValue(val);
                     $(this).val(formatTruncatedNumber(numero, 7));
+                } else {
+                    $(this).val('');
+                }
+            });
+
+            // Dinheiro com 8 casas decimais (para fator de redução ICMS - maior precisão)
+            $('.moneyReal8').on('blur', function() {
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 8));
                 } else {
                     $(this).val('');
                 }
@@ -2187,8 +2213,10 @@
                         collectFeeValores[rowId] = collectFeeRowFinal;
                     }
                     
-                    const deliveryFeeBrl = deliveryFeeRowFinal * dolar;
-                    const collectFeeBrl = collectFeeRowFinal * dolar;
+                    // deliveryFeeBrl e collectFeeBrl removidos - colunas R$ não são mais exibidas
+                    // Definir como 0 para evitar erros de referência
+                    const deliveryFeeBrl = 0;
+                    const collectFeeBrl = 0;
                     
                     // Calcular SERVICE_CHARGES conforme fórmula: N23 = $N$64*J23 (SERVICE_CHARGES_TOTAL_USD * FATOR_PESO)
                     // Primeiro obter SERVICE_CHARGES total em USD
@@ -2296,7 +2324,8 @@
                     const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val()) || 0;
                     const fobTotalBrl = fobTotal * dolar;
                     const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (dif_cambial_fob_processo * fatorVlrFob_AX) - fobTotalBrl : 0;
-                    const reducaoPercent = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+                    // Usar parseMoney pois redução é uma fração decimal (ex: 0,46315789), não uma porcentagem
+                    const reducaoPercent = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
                     const custoUnitarioFinal = MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0;
                     const custoTotalFinal = MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || (custoUnitarioFinal * quantidadeAtual);
 
@@ -2375,9 +2404,9 @@
                         seguroIntUsdRow,
                         acrescimoFreteUsdRow,
                         deliveryFeeRow,
-                        deliveryFeeBrl,
+                        // deliveryFeeBrl removido - coluna R$ não é mais exibida
                         collectFeeRow,
-                        collectFeeBrl,
+                        // collectFeeBrl removido - coluna R$ não é mais exibida
                         thcRow,
                         thcUsd,
                         serviceChargesRow: serviceChargesRowAtual, // Adicionar SERVICE_CHARGES USD
@@ -2661,21 +2690,58 @@
             return total;
         }
         
-        // Função para calcular peso_liq_total_kg quando peso_liq_lbs mudar
+        // Função para calcular peso_liq_total_kg quando peso mudar
         function calcularPesoLiqTotalKg(rowId) {
-            const pesoLiqLbs = MoneyUtils.parseMoney($(`#peso_liq_lbs-${rowId}`).val()) || 0;
-            const pesoLiquidoTotalCabecalho = MoneyUtils.parseMoney($('#peso_liquido_total_cabecalho').val()) || 0;
+            // Verificar se está em modo Kg ou LBS
+            const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
+            const quantidade = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
+            let pesoLiqTotalKg = 0;
             
-            if (pesoLiqLbs > 0 && pesoLiquidoTotalCabecalho > 0) {
-                const pesoLiqTotalKg = pesoLiqLbs * pesoLiquidoTotalCabecalho;
-                $(`#peso_liq_total_kg-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqTotalKg, 6));
+            if (tipoPeso === 'kg') {
+                // Modo KG: peso_liq_kg é o peso TOTAL em KG
+                const pesoLiqKg = MoneyUtils.parseMoney($(`#peso_liq_kg-${rowId}`).val()) || 0;
                 
-                // Calcular peso_liq_unit = peso_liq_total_kg / quantidade
-                const quantidade = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
-                if (quantidade > 0) {
-                    const pesoLiqUnit = pesoLiqTotalKg / quantidade;
-                    $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit, 6));
+                if (pesoLiqKg > 0) {
+                    // peso_liq_total_kg = peso_liq_kg (já é o total)
+                    pesoLiqTotalKg = pesoLiqKg;
+                    
+                    // Calcular peso_liquido_unitario = peso_liq_kg / quantidade
+                    if (quantidade > 0) {
+                        const pesoLiqUnit = pesoLiqKg / quantidade;
+                        $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit, 6));
+                    }
+                } else {
+                    // Se peso_liq_kg está vazio, tentar calcular a partir de peso_liquido_unitario
+                    const pesoLiqUnit = MoneyUtils.parseMoney($(`#peso_liquido_unitario-${rowId}`).val()) || 0;
+                    if (quantidade > 0 && pesoLiqUnit > 0) {
+                        pesoLiqTotalKg = quantidade * pesoLiqUnit;
+                        // Atualizar peso_liq_kg também
+                        $(`#peso_liq_kg-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqTotalKg, 6));
+                    } else {
+                        return; // Não calcular se não houver valores
+                    }
                 }
+            } else {
+                // Modo LBS: usar peso_liq_lbs * fator_conversao (peso_liquido_total_cabecalho)
+                const pesoLiqLbs = MoneyUtils.parseMoney($(`#peso_liq_lbs-${rowId}`).val()) || 0;
+                const $campoCabecalho = $('#peso_liquido_total_cabecalho');
+                const fatorConversao = MoneyUtils.parseMoney($campoCabecalho.val()) || 0;
+                
+                if (pesoLiqLbs > 0 && fatorConversao > 0) {
+                    pesoLiqTotalKg = pesoLiqLbs * fatorConversao;
+                    
+                    // Calcular peso_liq_unit = peso_liq_total_kg / quantidade
+                    if (quantidade > 0) {
+                        const pesoLiqUnit = pesoLiqTotalKg / quantidade;
+                        $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit, 6));
+                    }
+                } else {
+                    return; // Não calcular se não houver valores
+                }
+            }
+            
+            if (pesoLiqTotalKg > 0) {
+                $(`#peso_liq_total_kg-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqTotalKg, 6));
                 
                 // Recalcular fator peso
                 const totalPesoLiq = calcularPesoTotal();
@@ -2838,6 +2904,8 @@
 
         function recalcularFatorPeso(totalPeso, currentRowId) {
             // Para aéreo, usar peso_liq_total_kg ao invés de peso_liquido_total
+            // IMPORTANTE: O fator peso é sempre calculado normalmente (peso da linha / peso total do processo)
+            // independente do modo (Kg ou LBS). Apenas o campo peso_liquido_total_cabecalho fica 1 no modo Kg.
             let fator = 0;
             $('.pesoLiqTotalKg').each(function() {
                 const rowId = $(this).data('row');
@@ -3142,8 +3210,9 @@
             const vlrIpi = bcIpi * impostos.ipi;
             let reducao = 1;
 
-            if ($(`#reducao-${rowId}`).val() && MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) > 0) {
-                reducao = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+            // Usar parseMoney ao invés de parsePercentage, pois redução é uma fração decimal (ex: 0,46315789)
+            if ($(`#reducao-${rowId}`).val() && MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) > 0) {
+                reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
             }
             const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
                 despesas) / ((1 - impostos.icms));
@@ -3306,9 +3375,7 @@
             
             // Campos específicos do transporte aéreo - formatar com 2 casas decimais
             $(`#delivery_fee-${rowId}`).val(MoneyUtils.formatMoney(valores.deliveryFeeRow || 0, 2));
-            $(`#delivery_fee_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.deliveryFeeBrl || 0, 2));
             $(`#collect_fee-${rowId}`).val(MoneyUtils.formatMoney(valores.collectFeeRow || 0, 2));
-            $(`#collect_fee_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.collectFeeBrl || 0, 2));
             $(`#thc_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.thcUsd || 0, 2));
             $(`#thc_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow || 0, 2));
             $(`#vlr_cfr_unit-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfUnit || 0, 7));
@@ -3489,7 +3556,8 @@
             const valor = MoneyUtils.parsePercentage($(`#icms_reduzido_percent-${rowId}`).val());
             const icmsPercent = MoneyUtils.parsePercentage($(`#icms_percent-${rowId}`).val())
             const novoReducao = valor / icmsPercent
-            $(`#reducao-${rowId}`).val(MoneyUtils.formatPercentage(novoReducao));
+            // Usar formatMoney com 8 casas decimais para maior precisão no cálculo de BC ICMS REDUZIDO
+            $(`#reducao-${rowId}`).val(MoneyUtils.formatMoney(novoReducao, 8));
         }
 
         // Debounce para evitar múltiplos recálculos
@@ -3830,20 +3898,51 @@
                 const diferenca_cambial_fob = MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val()) || 0; // BS23
                 
                 // BQ23 = SUM(BE23:BP23)-(BE23+BF23+BG23+BM23+BP23)
-                // Para simplificar, vamos usar a despesa_desembaraco como aproximação de BQ23
-                // (mas na verdade BQ23 é a soma de outras despesas específicas)
-                const despesasAdicionais = despesa_desembaraco; // Aproximação - pode precisar ajuste
+                // Usar despesa_desembaraco calculada (que é a DESP. DESEMBARAÇO)
+                // Primeiro atualizar o campo DOM com o valor calculado
+                $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2));
+                
+                // Usar o valor calculado diretamente (não ler do DOM para garantir precisão)
+                // IMPORTANTE: Garantir que despesa_desembaraco seja usado no cálculo
+                // Verificar se o valor é válido (não NaN, não undefined, não null)
+                const despesasAdicionais = (despesa_desembaraco !== null && despesa_desembaraco !== undefined && !isNaN(despesa_desembaraco)) 
+                    ? despesa_desembaraco 
+                    : 0;
                 
                 const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0; // AS23
                 
                 // BT23 = (((BA23+BQ23+BR23+BS23)-AS23)/G23)
+                // Fórmula: (Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete - ICMS reduzido) ÷ Quantidade
+                // IMPORTANTE: ICMS reduzido é subtraído APENAS quando nacionalização é Santa Catarina
+                // GARANTIR que despesasAdicionais (despesa_desembaraco) seja incluído no cálculo
+                const nacionalizacao = getNacionalizacaoAtual();
+                const icmsReduzidoParaSubtrair = (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') ? vlrIcmsReduzido : 0;
+                
+                // Calcular o numerador primeiro para garantir precisão
+                const numerador = (vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete + diferenca_cambial_fob) - icmsReduzidoParaSubtrair;
                 const custo_unitario_final = qquantidade > 0 
-                    ? ((vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete + diferenca_cambial_fob) - vlrIcmsReduzido) / qquantidade 
+                    ? numerador / qquantidade 
                     : 0;
+                
+                // Debug para primeira linha
+                if (i === 0) {
+                    console.log('🔍 DEBUG CUSTO UNITÁRIO FINAL - Linha 1');
+                    console.log('Valores usados no cálculo:');
+                    console.log(`  VLR TOTAL NF C/ICMS-ST: ${vlrTotalNfComIcms.toFixed(2)}`);
+                    console.log(`  Desp. Desembaraço: ${despesasAdicionais.toFixed(2)}`);
+                    console.log(`  Dif. Cambial Frete: ${diferenca_cambial_frete.toFixed(2)}`);
+                    console.log(`  Dif. Cambial FOB: ${diferenca_cambial_fob.toFixed(2)}`);
+                    console.log(`  ICMS Reduzido: ${vlrIcmsReduzido.toFixed(2)}`);
+                    console.log(`  Nacionalização: ${nacionalizacao}`);
+                    console.log(`  ICMS Reduzido (subtrair): ${icmsReduzidoParaSubtrair.toFixed(2)}`);
+                    console.log(`  Numerador: ${numerador.toFixed(2)}`);
+                    console.log(`  Quantidade: ${qquantidade}`);
+                    console.log(`  Custo Unit. Final: ${custo_unitario_final.toFixed(2)}`);
+                }
 
                 // BU23 = BT23*G23
                 const custo_total_final = custo_unitario_final * qquantidade;
-                $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2));
+                // O campo desp_desenbaraco já foi atualizado acima
                 $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2));
                 $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2));
                 
@@ -3854,6 +3953,8 @@
                     debugStore[i].custoTotalFinal = custo_total_final;
                     debugStore[i].vlrTotalNfComIcms = vlrTotalNfComIcms;
                     debugStore[i].diferencaCambialFrete = diferenca_cambial_frete;
+                    debugStore[i].diferencaCambialFob = diferenca_cambial_fob;
+                    debugStore[i].vlrIcmsReduzido = vlrIcmsReduzido;
                 }
             }
         }
@@ -3950,7 +4051,15 @@
             let lengthOptions = $('#productsBody tr').length;
             let newIndex = lengthOptions;
 
-            let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
+            // Obter moedas atuais
+            let moedaFrete = $('#frete_internacional_moeda').val();
+            let moedaSeguro = $('#seguro_internacional_moeda').val();
+            let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
+            let moedaProcesso = 'USD'; // Nova variável
+            // let moedaProcesso = $('#moeda_processo').val(); // Nova variável
+            
+            // Gerar select de produtos
+            let select = `<select data-row="${newIndex}" class="custom-select selectProduct w-100 select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
         <option selected disabled>Selecione uma opção</option>`;
 
             for (let produto of products) {
@@ -3958,37 +4067,55 @@
             }
             select += '</select>';
 
-            // Obter moedas atuais
-            let moedaFrete = $('#frete_internacional_moeda').val();
-            let moedaSeguro = $('#seguro_internacional_moeda').val();
-            let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
-            let moedaProcesso = 'USD'; // Nova variável
-            // let moedaProcesso = $('#moeda_processo').val(); // Nova variável
             // Gerar colunas condicionais
             let colunaFreteMoeda = '';
             let colunaSeguroMoeda = '';
             let colunaAcrescimoMoeda = '';
+            let colunaFOBUnit = '';
+            let colunaFOBTotalMoeda = '';
 
             if (moedaFrete && moedaFrete !== 'USD') {
                 colunaFreteMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_moeda_estrangeira]" id="frete_moeda_estrangeira-${newIndex}" value=""></td>`;
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][frete_moeda_estrangeira]" id="frete_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
             if (moedaSeguro && moedaSeguro !== 'USD') {
                 colunaSeguroMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_moeda_estrangeira]" id="seguro_moeda_estrangeira-${newIndex}" value=""></td>`;
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][seguro_moeda_estrangeira]" id="seguro_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 colunaAcrescimoMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acrescimo_moeda_estrangeira]" id="acrescimo_moeda_estrangeira-${newIndex}" value=""></td>`;
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][acrescimo_moeda_estrangeira]" id="acrescimo_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
-            let colunasFOB = getColunasFOBCondicionais(newIndex, moedaProcesso);
+            // Colunas FOB condicionais
+            if (moedaProcesso == 'USD') {
+                colunaFOBUnit = `<td><input data-row="${newIndex}" type="text" class="form-control fobUnitario moneyReal7" name="produtos[${newIndex}][fob_unit_usd]" id="fob_unit_usd-${newIndex}" value=""></td>`;
+            } else {
+                colunaFOBUnit = `<td><input data-row="${newIndex}" type="text" class="form-control fobUnitarioMoedaEstrangeira moneyReal7" name="produtos[${newIndex}][fob_unit_moeda_estrangeira]" id="fob_unit_moeda_estrangeira-${newIndex}" value=""></td>`;
+            }
+
+            if (moedaProcesso != 'USD') {
+                colunaFOBTotalMoeda = `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_moeda_estrangeira]" id="fob_total_moeda_estrangeira-${newIndex}" value=""></td>`;
+            }
+
+            // Verificar tipo de peso atual
+            const tipoPesoAtual = $('input[name="tipo_peso_aereo"]:checked').val();
+            let campoPeso = '';
+            if (tipoPesoAtual === 'kg') {
+                campoPeso = `
+            <input data-row="${newIndex}" type="text" class="form-control pesoLiqKg moneyReal" name="produtos[${newIndex}][peso_liq_kg]" id="peso_liq_kg-${newIndex}" value="">
+            <input type="hidden" name="produtos[${newIndex}][peso_liq_lbs]" id="peso_liq_lbs-${newIndex}" value="">`;
+            } else {
+                campoPeso = `
+            <input data-row="${newIndex}" type="text" class="form-control pesoLiqLbs moneyReal" name="produtos[${newIndex}][peso_liq_lbs]" id="peso_liq_lbs-${newIndex}" value="">
+            <input type="hidden" name="produtos[${newIndex}][peso_liq_kg]" id="peso_liq_kg-${newIndex}" value="">`;
+            }
 
             let tr = `<tr class="linhas-input" id="row-${newIndex}">
         <td class="d-flex align-items-center justify-content-center">
-            <div class="btn-group" role="group">
+            <div class="d-flex align-items-center gap-2">
                 <button type="button" class="btn btn-danger removeLine btn-sm btn-remove" data-id="${newIndex}">
                     <i class="fas fa-trash-alt"></i>
                 </button>
@@ -4002,105 +4129,92 @@
         <input type="hidden" name="produtos[${newIndex}][processo_produto_id]" id="processo_produto_id-${newIndex}" value="">
         
         <td>${select}</td>
-        <td><input data-row="${newIndex}" type="text" step="1" class="form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]" id="item-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][origem]" id="origem-${newIndex}" value=""></td>
         <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
-        <td><input type="text" class="form-control" name="produtos[${newIndex}][codigo_giiro]" id="codigo_giiro-${newIndex}" value=""></td>
         <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][ncm]" id="ncm-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal pesoLiqLbs" name="produtos[${newIndex}][peso_liq_lbs]" id="peso_liq_lbs-${newIndex}" value=""></td>
+        <td>${campoPeso}</td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][peso_liquido_unitario]" id="peso_liquido_unitario-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal pesoLiqTotalKg" readonly name="produtos[${newIndex}][peso_liq_total_kg]" id="peso_liq_total_kg-${newIndex}" value=""></td>
+        <td class="td-peso-liq-total-kg"><input data-row="${newIndex}" type="text" class="form-control pesoLiqTotalKg moneyReal" readonly name="produtos[${newIndex}][peso_liq_total_kg]" id="peso_liq_total_kg-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fator_peso]" id="fator_peso-${newIndex}" value=""></td>
-        ${colunasFOB}
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7 fobUnitario" name="produtos[${newIndex}][fob_unit_usd]" id="fob_unit_usd-${newIndex}" value=""></td>
+        ${colunaFOBUnit}
+        ${colunaFOBTotalMoeda}
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
-        
-        <!-- FRETE -->
         ${colunaFreteMoeda}
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
-        
-        <!-- SEGURO -->
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
         ${colunaSeguroMoeda}
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>
-        
-        <!-- ACRÉSCIMO -->
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>
         ${colunaAcrescimoMoeda}
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
-        
-        <!-- VLR CFR e SERVICE CHARGES -->
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][vlr_cfr_unit]" id="vlr_cfr_unit-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][vlr_cfr_total]" id="vlr_cfr_total-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges]" id="service_charges-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges_brl]" id="service_charges_brl-${newIndex}" value=""></td>
-        
-        <!-- Resto das colunas permanecem iguais -->
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][thc_usd]" id="thc_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][thc_brl]" id="thc_brl-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_aduaneiro_usd]" id="valor_aduaneiro_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_aduaneiro_brl]" id="valor_aduaneiro_brl-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][ii_percent]" id="ii_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][ipi_percent]" id="ipi_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][pis_percent]" id="pis_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][cofins_percent]" id="cofins_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2" name="produtos[${newIndex}][icms_percent]" id="icms_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control percentage2 icms_reduzido_percent" name="produtos[${newIndex}][icms_reduzido_percent]" id="icms_reduzido_percent-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][reducao]" id="reducao-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_ii]" id="valor_ii-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][base_ipi]" id="base_ipi-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_ipi]" id="valor_ipi-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][base_pis_cofins]" id="base_pis_cofins-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_pis]" id="valor_pis-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_cofins]" id="valor_cofins-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][despesa_aduaneira]" id="despesa_aduaneira-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][base_icms_sem_reducao]" id="base_icms_sem_reducao-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_icms_sem_reducao]" id="valor_icms_sem_reducao-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][base_icms_reduzido]" id="base_icms_reduzido-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_icms_reduzido]" id="valor_icms_reduzido-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_unit_nf]" id="valor_unit_nf-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_total_nf]" id="valor_total_nf-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_total_nf_sem_icms_st]" id="valor_total_nf_sem_icms_st-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][base_icms_st]" id="base_icms_st-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control percentage" name="produtos[${newIndex}][mva]" id="mva-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control percentage" name="produtos[${newIndex}][icms_st]" id="icms_st-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_icms_st]" id="valor_icms_st-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][valor_total_nf_com_icms_st]" id="valor_total_nf_com_icms_st-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fator_valor_fob]" id="fator_valor_fob-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fator_tx_siscomex]" id="fator_tx_siscomex-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal7" name="produtos[${newIndex}][multa]" id="multa-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control percentage2" name="produtos[${newIndex}][tx_def_li]" id="tx_def_li-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][taxa_siscomex]" id="taxa_siscomex-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][outras_taxas_agente]" id="outras_taxas_agente-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][liberacao_bl]" id="liberacao_bl-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desconsolidacao]" id="desconsolidacao-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][isps_code]" id="isps_code-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][handling]" id="handling-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][capatazia]" id="capatazia-${newIndex}" value=""></td>
-        ${getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][tx_correcao_lacre]" id="tx_correcao_lacre-${newIndex}" value=""></td>' : ''}
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][afrmm]" id="afrmm-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][armazenagem_sts]" id="armazenagem_sts-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][frete_dta_sts_ana]" id="frete_dta_sts_ana-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][sda]" id="sda-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_sts]" id="rep_sts-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][armaz_ana]" id="armaz_ana-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][lavagem_container]" id="lavagem_container-${newIndex}" value=""></td>
-        ${getNacionalizacaoAtual() !== 'santos' ? '<td data-campo="rep_anapolis"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_anapolis]" id="rep_anapolis-${newIndex}" value=""></td><td data-campo="desp_anapolis"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_anapolis]" id="desp_anapolis-${newIndex}" value=""></td><td data-campo="correios"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][correios]" id="correios-${newIndex}" value=""></td>' : ''}
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][li_dta_honor_nix]" id="li_dta_honor_nix-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][honorarios_nix]" id="honorarios_nix-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][diferenca_cambial_fob]" id="diferenca_cambial_fob-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][custo_unitario_final]" id="custo_unitario_final-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][custo_total_final]" id="custo_total_final-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][vlr_cfr_unit]" id="vlr_cfr_unit-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][vlr_cfr_total]" id="vlr_cfr_total-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_aduaneiro_usd]" id="valor_aduaneiro_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_aduaneiro_brl]" id="valor_aduaneiro_brl-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control percentage2" name="produtos[${newIndex}][ii_percent]" id="ii_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control percentage2" name="produtos[${newIndex}][ipi_percent]" id="ipi_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control percentage2" name="produtos[${newIndex}][pis_percent]" id="pis_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control percentage2" name="produtos[${newIndex}][cofins_percent]" id="cofins_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control percentage2" name="produtos[${newIndex}][icms_percent]" id="icms_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control percentage2 icms_reduzido_percent" name="produtos[${newIndex}][icms_reduzido_percent]" id="icms_reduzido_percent-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal8" readonly name="produtos[${newIndex}][reducao]" id="reducao-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_ii]" id="valor_ii-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][base_ipi]" id="base_ipi-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_ipi]" id="valor_ipi-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][base_pis_cofins]" id="base_pis_cofins-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_pis]" id="valor_pis-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_cofins]" id="valor_cofins-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][despesa_aduaneira]" id="despesa_aduaneira-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][base_icms_sem_reducao]" id="base_icms_sem_reducao-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_icms_sem_reducao]" id="valor_icms_sem_reducao-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][base_icms_reduzido]" id="base_icms_reduzido-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_icms_reduzido]" id="valor_icms_reduzido-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_unit_nf]" id="valor_unit_nf-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_total_nf]" id="valor_total_nf-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_total_nf_sem_icms_st]" id="valor_total_nf_sem_icms_st-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][base_icms_st]" id="base_icms_st-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control percentage" name="produtos[${newIndex}][mva]" id="mva-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control percentage" name="produtos[${newIndex}][icms_st]" id="icms_st-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_icms_st]" id="valor_icms_st-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][valor_total_nf_com_icms_st]" id="valor_total_nf_com_icms_st-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal" readonly name="produtos[${newIndex}][fator_valor_fob]" id="fator_valor_fob-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal" readonly name="produtos[${newIndex}][fator_tx_siscomex]" id="fator_tx_siscomex-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" name="produtos[${newIndex}][multa]" id="multa-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control percentage2" name="produtos[${newIndex}][tx_def_li]" id="tx_def_li-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][taxa_siscomex]" id="taxa_siscomex-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][outras_taxas_agente]" id="outras_taxas_agente-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][delivery_fee]" id="delivery_fee-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][collect_fee]" id="collect_fee-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][desconsolidacao]" id="desconsolidacao-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][handling]" id="handling-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][dai]" id="dai-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][dape]" id="dape-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][correios]" id="correios-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][li_dta_honor_nix]" id="li_dta_honor_nix-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][honorarios_nix]" id="honorarios_nix-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][diferenca_cambial_fob]" id="diferenca_cambial_fob-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][custo_unitario_final]" id="custo_unitario_final-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][custo_total_final]" id="custo_total_final-${newIndex}" value=""></td>
     </tr>`;
 
             $('#productsBody').append(tr);
+
+            // Ajustar visibilidade do campo peso_liq_total_kg baseado no tipo de peso
+            if (tipoPesoAtual === 'kg') {
+                $(`#row-${newIndex} .td-peso-liq-total-kg`).hide();
+            } else {
+                $(`#row-${newIndex} .td-peso-liq-total-kg`).show();
+            }
 
             $(`#produto_id-${newIndex}`).select2({
                 width: '100%'
@@ -4122,17 +4236,348 @@
             }
             
             // Event listeners para cálculos de peso aéreo
-            $(document).on('keyup change', '.pesoLiqLbs', function() {
+            $(document).on('keyup change', '.pesoLiqLbs, .pesoLiqKg', function() {
+                const rowId = $(this).data('row');
+                calcularPesoLiqTotalKg(rowId);
+            });
+            
+            // Event listener para peso_liquido_unitario (modo KG)
+            $(document).on('keyup change', '[id^="peso_liquido_unitario-"]', function() {
+                const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
+                if (tipoPeso === 'kg') {
+                    const rowId = $(this).data('row');
+                    calcularPesoLiqTotalKg(rowId);
+                }
+            });
+            
+            // Event listener para quantidade (recalcular quando quantidade mudar)
+            $(document).on('keyup change', '[id^="quantidade-"]', function() {
                 const rowId = $(this).data('row');
                 calcularPesoLiqTotalKg(rowId);
             });
             
             $(document).on('keyup change', '#peso_liquido_total_cabecalho', function() {
-                // Recalcular todos os peso_liq_total_kg quando o cabeçalho mudar
-                $('.pesoLiqLbs').each(function() {
-                    const rowId = $(this).data('row');
-                    calcularPesoLiqTotalKg(rowId);
-                });
+                // Recalcular todos os peso_liq_total_kg quando o cabeçalho mudar (apenas se estiver em modo LBS)
+                const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
+                if (tipoPeso === 'lbs') {
+                    $('.pesoLiqLbs').each(function() {
+                        const rowId = $(this).data('row');
+                        calcularPesoLiqTotalKg(rowId);
+                    });
+                }
+            });
+            
+            // Função para salvar apenas o tipo_peso
+            async function salvarTipoPeso() {
+                try {
+                    const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('tipo_peso_aereo', tipoPeso || 'lbs');
+                    
+                    const url = '{{ route("processo.salvar.cabecalho.inputs.aereo", $processo->id ?? 0) }}';
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('Tipo peso salvo com sucesso:', tipoPeso);
+                    } else {
+                        console.error('Erro ao salvar tipo peso:', data.error);
+                    }
+                } catch (error) {
+                    console.error('Erro ao salvar tipo peso:', error);
+                }
+            }
+            
+            // Função para salvar produtos automaticamente e recarregar página
+            async function salvarProdutosEAutomaticamente() {
+                try {
+                    // Primeiro, salvar o cabeçalho (incluindo tipo_peso)
+                    const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
+                    const formDataCabecalho = new FormData();
+                    formDataCabecalho.append('_token', '{{ csrf_token() }}');
+                    formDataCabecalho.append('tipo_peso_aereo', tipoPeso || 'lbs');
+                    
+                    // Adicionar outros campos do cabeçalho
+                    const camposCabecalho = [
+                        'peso_liquido_total_cabecalho',
+                        'outras_taxas_agente',
+                        'delivery_fee',
+                        'collect_fee',
+                        'desconsolidacao',
+                        'handling',
+                        'dai',
+                        'dape',
+                        'correios',
+                        'li_dta_honor_nix',
+                        'honorarios_nix',
+                        'diferenca_cambial_frete',
+                        'diferenca_cambial_fob'
+                    ];
+                    
+                    camposCabecalho.forEach(campo => {
+                        let valor;
+                        if (campo === 'peso_liquido_total_cabecalho') {
+                            const $campo = $(`#${campo}`);
+                            if ($campo.is(':hidden') || $campo.closest('th').is(':hidden')) {
+                                valor = 1;
+                            } else {
+                                valor = MoneyUtils.parseMoney($campo.val());
+                            }
+                        } else {
+                            valor = MoneyUtils.parseMoney($(`#${campo}`).val());
+                        }
+                        formDataCabecalho.append(campo, valor !== null && valor !== undefined ? valor : '0');
+                    });
+                    
+                    const urlCabecalho = '{{ route("processo.salvar.cabecalho.inputs.aereo", $processo->id ?? 0) }}';
+                    await fetch(urlCabecalho, {
+                        method: 'POST',
+                        body: formDataCabecalho
+                    });
+                    
+                    // Coletar dados dos produtos
+                    const produtos = [];
+                    $('#productsBody tr').each(function(index) {
+                        const produto = {};
+                        let hasData = false;
+                        
+                        $(this).find('input, select, textarea').each(function() {
+                            const name = $(this).attr('name');
+                            if (name && name.includes('produtos[') && name.includes(']')) {
+                                const start = name.indexOf('produtos[') + 9;
+                                const end = name.indexOf(']', start);
+                                const fieldName = name.substring(end + 2, name.length - 1);
+                                
+                                if (start !== -1 && end !== -1) {
+                                    let value = $(this).val();
+                                    if (value === '' || value === null || value === undefined) {
+                                        value = '';
+                                    }
+                                    if (typeof value === 'string' && value.includes('%')) {
+                                        value = value.replace('%', '').trim();
+                                    }
+                                    produto[fieldName] = value;
+                                    hasData = true;
+                                }
+                            }
+                        });
+                        
+                        if (hasData && produto.produto_id && produto.produto_id !== '') {
+                            if (!produto.processo_produto_id) {
+                                produto.processo_produto_id = '';
+                            }
+                            produtos.push(produto);
+                        }
+                    });
+                    
+                    if (produtos.length === 0) {
+                        // Se não houver produtos, apenas recarregar a página
+                        window.location.reload();
+                        return;
+                    }
+                    
+                    // Salvar produtos em blocos de 5
+                    const blocos = [];
+                    for (let i = 0; i < produtos.length; i += 5) {
+                        blocos.push(produtos.slice(i, i + 5));
+                    }
+                    
+                    // Salvar cada bloco
+                    for (let i = 0; i < blocos.length; i++) {
+                        const blocoProdutos = blocos[i];
+                        const formData = new FormData();
+                        formData.append('_token', '{{ csrf_token() }}');
+                        formData.append('_method', 'PUT');
+                        formData.append('tipo_processo', 'aereo');
+                        formData.append('salvar_apenas_produtos', 'true');
+                        
+                        blocoProdutos.forEach((produto, index) => {
+                            Object.keys(produto).forEach(campo => {
+                                if (produto[campo] !== undefined && produto[campo] !== null) {
+                                    formData.append(`produtos[${index}][${campo}]`, produto[campo]);
+                                }
+                            });
+                        });
+                        
+                        const response = await fetch('/processo/{{ $processo->id ?? 0 }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`Erro ao salvar bloco ${i + 1}`);
+                        }
+                    }
+                    
+                    // Recarregar a página após salvar todos os produtos
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Erro ao salvar produtos automaticamente:', error);
+                    // Mesmo com erro, recarregar a página para corrigir o totalizador
+                    window.location.reload();
+                }
+            }
+            
+            // Armazenar o tipo de peso anterior para conversão
+            let tipoPesoAnteriorAereo = $('input[name="tipo_peso_aereo"]:checked').val() || 'lbs';
+            
+            // Controlar visibilidade do campo peso_liquido_total_cabecalho e label da coluna baseado no tipo de peso
+            $(document).on('change', 'input[name="tipo_peso_aereo"]', function() {
+                const tipoPeso = $(this).val();
+                const tipoPesoAnterior = tipoPesoAnteriorAereo;
+                tipoPesoAnteriorAereo = tipoPeso; // Atualizar para próxima mudança
+                const $thPesoLiquidoTotal = $('#th-peso-liquido-total');
+                const $inputPesoLiquidoTotal = $('#peso_liquido_total_cabecalho');
+                const $thPesoLiqLabel = $('#th-peso-liq-label');
+                
+                if (tipoPeso === 'kg') {
+                    // Modo Kg: ocultar o campo de fator de conversão e atualizar label
+                    $thPesoLiquidoTotal.hide();
+                    $thPesoLiqLabel.text('PESO LIQ. KG');
+                    $inputPesoLiquidoTotal.val('1,00000');
+                    // Ocultar coluna PESO LIQ TOTAL KG
+                    $('#th-peso-liq-total-kg').hide();
+                    $('.td-peso-liq-total-kg').hide();
+                    
+                    // Trocar campos: ocultar peso_liq_lbs e mostrar peso_liq_kg
+                    // Trocar campos: ocultar peso_liq_lbs e mostrar peso_liq_kg
+                    $('input[id^="peso_liq_lbs-"], input[id^="peso_liq_kg-"]').each(function() {
+                        const rowId = $(this).data('row');
+                        if (!rowId) return; // Pular se não tiver rowId
+                        
+                        const $campoLbs = $(`#peso_liq_lbs-${rowId}`);
+                        const $campoKg = $(`#peso_liq_kg-${rowId}`);
+                        
+                        // Se estava em LBS, converter o valor para KG
+                        if (tipoPesoAnterior === 'lbs' && $campoLbs.length) {
+                            const fatorConversao = MoneyUtils.parseMoney($inputPesoLiquidoTotal.val()) || 0.453592;
+                            const valorLbs = MoneyUtils.parseMoney($campoLbs.val()) || 0;
+                            if (valorLbs > 0 && fatorConversao > 0 && $campoKg.length) {
+                                const valorKg = valorLbs * fatorConversao;
+                                $campoKg.val(MoneyUtils.formatMoney(valorKg, 6));
+                            }
+                        }
+                        
+                        // Ocultar campo LBS (apenas se for type="text" e estiver visível)
+                        if ($campoLbs.length && $campoLbs.attr('type') === 'text' && $campoLbs.is(':visible')) {
+                            $campoLbs.hide();
+                        }
+                        // Mostrar campo KG (apenas se for type="text")
+                        if ($campoKg.length && $campoKg.attr('type') === 'text') {
+                            $campoKg.show();
+                            $campoKg.removeAttr('readonly');
+                        }
+                        
+                        calcularPesoLiqTotalKg(rowId);
+                    });
+                } else {
+                    // Modo LBS: mostrar o campo de fator de conversão e atualizar label
+                    $thPesoLiquidoTotal.show();
+                    $thPesoLiqLabel.text('PESO LIQ. LBS');
+                    // Mostrar coluna PESO LIQ TOTAL KG
+                    $('#th-peso-liq-total-kg').show();
+                    $('.td-peso-liq-total-kg').show();
+                    // Restaurar o valor original se necessário
+                    if ($inputPesoLiquidoTotal.val() === '1,00000' || $inputPesoLiquidoTotal.val() === '1.00000') {
+                        // Se estava em 1 (modo Kg), restaurar valor do banco ou padrão
+                        const valorOriginal = '{{ number_format($processo->peso_liquido ?? 0.453592, 5, ',', '.') }}';
+                        if (valorOriginal && valorOriginal !== '0,00000') {
+                            $inputPesoLiquidoTotal.val(valorOriginal);
+                        } else {
+                            $inputPesoLiquidoTotal.val('0,45360'); // Valor padrão de conversão LBS para KG
+                        }
+                    }
+                    
+                    const fatorConversao = MoneyUtils.parseMoney($inputPesoLiquidoTotal.val()) || 0.453592;
+                    
+                    // Trocar campos: mostrar peso_liq_lbs e ocultar peso_liq_kg
+                    // Percorrer todas as linhas para garantir que todos os campos sejam atualizados
+                    $('input[id^="peso_liq_lbs-"], input[id^="peso_liq_kg-"]').each(function() {
+                        const rowId = $(this).data('row');
+                        if (!rowId) return; // Pular se não tiver rowId
+                        
+                        const $campoKg = $(`#peso_liq_kg-${rowId}`);
+                        const $campoLbs = $(`#peso_liq_lbs-${rowId}`);
+                        
+                        // Se estava em KG, converter o valor para LBS
+                        if (tipoPesoAnterior === 'kg' && fatorConversao > 0 && $campoKg.length) {
+                            const valorKg = MoneyUtils.parseMoney($campoKg.val()) || 0;
+                            if (valorKg > 0 && $campoLbs.length) {
+                                const valorLbs = valorKg / fatorConversao;
+                                $campoLbs.val(MoneyUtils.formatMoney(valorLbs, 6));
+                            }
+                        }
+                        
+                        // Ocultar campo KG (apenas se for type="text" e estiver visível)
+                        if ($campoKg.length && $campoKg.attr('type') === 'text' && $campoKg.is(':visible')) {
+                            $campoKg.hide();
+                        }
+                        // Mostrar campo LBS (apenas se for type="text")
+                        if ($campoLbs.length && $campoLbs.attr('type') === 'text') {
+                            $campoLbs.show();
+                            $campoLbs.removeAttr('readonly');
+                        }
+                        
+                        calcularPesoLiqTotalKg(rowId);
+                    });
+                }
+                
+                // Salvar o tipo_peso quando mudar
+                salvarTipoPeso();
+                
+                // Salvar produtos automaticamente e recarregar página
+                salvarProdutosEAutomaticamente();
+            });
+            
+            // Inicializar visibilidade e label ao carregar a página
+            $(document).ready(function() {
+                const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val() || 'lbs';
+                tipoPesoAnteriorAereo = tipoPeso; // Inicializar variável global
+                const $thPesoLiqLabel = $('#th-peso-liq-label');
+                if (tipoPeso === 'kg') {
+                    $('#th-peso-liquido-total').hide();
+                    $('#peso_liquido_total_cabecalho').val('1,00000');
+                    $thPesoLiqLabel.text('PESO LIQ. KG');
+                    // Ocultar coluna PESO LIQ TOTAL KG
+                    $('#th-peso-liq-total-kg').hide();
+                    $('.td-peso-liq-total-kg').hide();
+                    // Mostrar campos KG (type="text") e ocultar campos LBS (type="text")
+                    $('input[id^="peso_liq_kg-"]').each(function() {
+                        if ($(this).attr('type') === 'text') {
+                            $(this).show();
+                        }
+                    });
+                    $('input[id^="peso_liq_lbs-"]').each(function() {
+                        if ($(this).attr('type') === 'text') {
+                            $(this).hide();
+                        }
+                    });
+                } else {
+                    $('#th-peso-liquido-total').show();
+                    $thPesoLiqLabel.text('PESO LIQ. LBS');
+                    // Mostrar coluna PESO LIQ TOTAL KG
+                    $('#th-peso-liq-total-kg').show();
+                    $('.td-peso-liq-total-kg').show();
+                    // Mostrar campos LBS (type="text") e ocultar campos KG (type="text")
+                    $('input[id^="peso_liq_lbs-"]').each(function() {
+                        if ($(this).attr('type') === 'text') {
+                            $(this).show();
+                        }
+                    });
+                    $('input[id^="peso_liq_kg-"]').each(function() {
+                        if ($(this).attr('type') === 'text') {
+                            $(this).hide();
+                        }
+                    });
+                }
             });
             
             $(document).on('keyup change', '[id^="quantidade-"]', function() {
@@ -4242,7 +4687,7 @@
                     const separador = document.createElement('tr');
                     separador.className = 'separador-adicao';
                     separador.innerHTML =
-                        `<td colspan="100" style="background-color: #000 !important; height: 5px; padding: 0;"></td>`;
+                        `<td colspan="100" style="background-color: #000 !important; height: 2px; padding: 0;"></td>`;
                     tbody.appendChild(separador);
                 }
 
@@ -4275,7 +4720,7 @@
     .separador-adicao td {
         background-color: #000 !important;
         border: none !important;
-        height: 5px;
+        height: 2px;
         padding: 0 !important;
     }
     .separador-adicao:hover {

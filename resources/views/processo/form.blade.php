@@ -801,6 +801,31 @@
                 }
             });
 
+            // Dinheiro com 8 casas decimais (para fator de redução ICMS - maior precisão)
+            $('.moneyReal8').on('blur', function() {
+                let val = $(this).val();
+                if (val) {
+                    val = val.trim().replace('%', '').trim();
+                    if (val.includes(',')) {
+                        val = val.replace(/\./g, '').replace(',', '.');
+                    } else {
+                        val = val.replace(',', '.');
+                    }
+                    let numero = parseFloat(val);
+                    if (!isNaN(numero)) {
+                        let formatado = numero.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 8,
+                            maximumFractionDigits: 8
+                        });
+                        $(this).val(formatado);
+                    } else {
+                        $(this).val('');
+                    }
+                } else {
+                    $(this).val('');
+                }
+            });
+
             // Percentuais (7 casas decimais igual migration)
             $('.percentage').on('blur', function() {
                 let val = $(this).val();
@@ -2014,8 +2039,9 @@
             const vlrIpi = bcIpi * impostos.ipi;
             let reducao = 1;
 
-            if ($(`#reducao-${rowId}`).val() && MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) > 0) {
-                reducao = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+            // Usar parseMoney ao invés de parsePercentage, pois redução é uma fração decimal (ex: 0,46315789)
+            if ($(`#reducao-${rowId}`).val() && MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) > 0) {
+                reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
             }
             const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
                 despesas) / ((1 - impostos.icms));
@@ -2214,7 +2240,8 @@
             const valor = MoneyUtils.parsePercentage($(`#icms_reduzido_percent-${rowId}`).val());
             const icmsPercent = MoneyUtils.parsePercentage($(`#icms_percent-${rowId}`).val())
             const novoReducao = valor / icmsPercent
-            $(`#reducao-${rowId}`).val(MoneyUtils.formatPercentage(novoReducao));
+            // Usar formatMoney com 8 casas decimais para maior precisão no cálculo de BC ICMS REDUZIDO
+            $(`#reducao-${rowId}`).val(MoneyUtils.formatMoney(novoReducao, 8));
         }
 
         // Debounce para evitar múltiplos recálculos
@@ -2667,7 +2694,7 @@
                     const separador = document.createElement('tr');
                     separador.className = 'separador-adicao';
                     separador.innerHTML =
-                        `<td colspan="100" style="background-color: #000 !important; height: 5px; padding: 0;"></td>`;
+                        `<td colspan="100" style="background-color: #000 !important; height: 2px; padding: 0;"></td>`;
                     tbody.appendChild(separador);
                 }
 
@@ -2700,7 +2727,7 @@
     .separador-adicao td {
         background-color: #000 !important;
         border: none !important;
-        height: 5px;
+        height: 2px;
         padding: 0 !important;
     }
     .separador-adicao:hover {

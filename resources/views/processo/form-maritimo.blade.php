@@ -556,7 +556,7 @@
             const despComp = dados.despesasComponentes || {};
             const detailDespesaExpr = (globais?.nacionalizacao === 'santos')
                 ? `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Honorários NIX', despComp.honorarios_nix, 2)}`
-                : `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Armazenagem STS', despComp.armazenagem_sts, 2)} + ${formatComponent('Frete DTA STS/ANA', despComp.frete_dta_sts_ana, 2)} + ${formatComponent('Honorários NIX', despComp.honorarios_nix, 2)}`;
+                : `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Armazenagem Porto', despComp.armazenagem_sts, 2)} + ${formatComponent('Frete DTA', despComp.frete_dta_sts_ana, 2)} + ${formatComponent('Honorários NIX', despComp.honorarios_nix, 2)}`;
             const detailDespesa = formatCalcDetail(despesaAduaneiraVal, [detailDespesaExpr], 2);
             const numeradorBcIcms = valorAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despesaAduaneiraVal;
             const fatorIcmsDivisor = 1 - toNumber(dados.aliquotaIcms);
@@ -731,7 +731,7 @@
                 armaz_ana: 0,
                 lavagem_container: 0,
                 rep_anapolis: 0,
-                desp_anapolis: 0,
+                // desp_anapolis: 0, // Removido - coluna oculta e não considerada no cálculo
                 correios: 0,
                 li_dta_honor_nix: 0,
                 honorarios_nix: 0,
@@ -941,15 +941,15 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.isps_code, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.capatazia, 2)}</td>
-        ${getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' : ''}
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.afrmm, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armazenagem_sts, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.sda, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_sts, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armaz_ana, 2)}</td>
+        ${getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' : ''}
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.lavagem_container, 2)}</td>
-        ${getNacionalizacaoAtual() !== 'santos' ? '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td><td data-campo="desp_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis, 2) + '</td><td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' : ''}
+        ${getNacionalizacaoAtual() !== 'santos' ? '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td><td data-campo="desp_anapolis" style="display: none; font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis || 0, 2) + '</td><td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' : ''}
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>
@@ -1256,6 +1256,17 @@
                 if (val && val.trim() !== '') {
                     const numero = normalizeNumericValue(val);
                     $(this).val(formatTruncatedNumber(numero, 7));
+                } else {
+                    $(this).val('');
+                }
+            });
+
+            // Dinheiro com 8 casas decimais (para fator de redução ICMS - maior precisão)
+            $('.moneyReal8').on('blur', function() {
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 8));
                 } else {
                     $(this).val('');
                 }
@@ -2089,7 +2100,8 @@
                         dolar);
                     diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                     const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar) : 0;
-                    const reducaoPercent = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+                    // Usar parseMoney pois redução é uma fração decimal (ex: 0,46315789), não uma porcentagem
+                    const reducaoPercent = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
                     const custoUnitarioFinal = MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0;
                     const custoTotalFinal = MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || (custoUnitarioFinal * quantidadeAtual);
 
@@ -2244,12 +2256,12 @@
             }
         }
 
-        const CAMPOS_EXCLUSIVOS_ANAPOLIS = ['rep_anapolis', 'desp_anapolis', 'correios'];
+        const CAMPOS_EXCLUSIVOS_ANAPOLIS = ['rep_anapolis', 'correios']; // desp_anapolis removido - coluna oculta e não considerada no cálculo
         const CAMPO_CORRECAO_LACRE = 'tx_correcao_lacre';
         const CAMPOS_EXTERNOS_BASE = [
             'outras_taxas_agente', 'liberacao_bl', 'desconsolidacao', 'isps_code', 'handling', 'capatazia',
-            'tx_correcao_lacre', 'afrmm', 'armazenagem_sts', 'frete_dta_sts_ana', 'sda', 'rep_sts', 'armaz_ana',
-            'lavagem_container', 'rep_anapolis', 'desp_anapolis', 'correios', 'li_dta_honor_nix', 'honorarios_nix'
+            'afrmm', 'armazenagem_sts', 'frete_dta_sts_ana', 'sda', 'rep_sts', 'armaz_ana',
+            'tx_correcao_lacre', 'lavagem_container', 'rep_anapolis', 'correios', 'li_dta_honor_nix', 'honorarios_nix' // desp_anapolis removido - coluna oculta
         ];
 
         function getNacionalizacaoAtual() {
@@ -2305,7 +2317,7 @@
                 }
             });
 
-            $('th[data-campo="rep_anapolis"], th[data-campo="desp_anapolis"], th[data-campo="correios"]').each(function() {
+            $('th[data-campo="rep_anapolis"], th[data-campo="correios"]').each(function() { // desp_anapolis removido
                 if (mostrarCamposAnapolis) {
                     $(this).show();
                 } else {
@@ -2322,7 +2334,7 @@
                 }
             });
 
-            $('td[data-campo="rep_anapolis"], td[data-campo="desp_anapolis"], td[data-campo="correios"]').each(function() {
+            $('td[data-campo="rep_anapolis"], td[data-campo="correios"]').each(function() { // desp_anapolis removido
                 if (mostrarCamposAnapolis) {
                     $(this).show();
                 } else {
@@ -2778,8 +2790,9 @@
             const vlrIpi = bcIpi * impostos.ipi;
             let reducao = 1;
 
-            if ($(`#reducao-${rowId}`).val() && MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) > 0) {
-                reducao = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+            // Usar parseMoney ao invés de parsePercentage, pois redução é uma fração decimal (ex: 0,46315789)
+            if ($(`#reducao-${rowId}`).val() && MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) > 0) {
+                reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
             }
             const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
                 despesas) / ((1 - impostos.icms));
@@ -3061,7 +3074,8 @@
             const valor = MoneyUtils.parsePercentage($(`#icms_reduzido_percent-${rowId}`).val());
             const icmsPercent = MoneyUtils.parsePercentage($(`#icms_percent-${rowId}`).val())
             const novoReducao = valor / icmsPercent
-            $(`#reducao-${rowId}`).val(MoneyUtils.formatPercentage(novoReducao));
+            // Usar formatMoney com 8 casas decimais para maior precisão no cálculo de BC ICMS REDUZIDO
+            $(`#reducao-${rowId}`).val(MoneyUtils.formatMoney(novoReducao, 8));
         }
 
         // Debounce para evitar múltiplos recálculos
@@ -3510,15 +3524,15 @@
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][isps_code]" id="isps_code-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][handling]" id="handling-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][capatazia]" id="capatazia-${newIndex}" value=""></td>
-        ${getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][tx_correcao_lacre]" id="tx_correcao_lacre-${newIndex}" value=""></td>' : ''}
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][afrmm]" id="afrmm-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][armazenagem_sts]" id="armazenagem_sts-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][frete_dta_sts_ana]" id="frete_dta_sts_ana-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][sda]" id="sda-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_sts]" id="rep_sts-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][armaz_ana]" id="armaz_ana-${newIndex}" value=""></td>
+        ${getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][tx_correcao_lacre]" id="tx_correcao_lacre-${newIndex}" value=""></td>' : ''}
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][lavagem_container]" id="lavagem_container-${newIndex}" value=""></td>
-        ${getNacionalizacaoAtual() !== 'santos' ? '<td data-campo="rep_anapolis"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_anapolis]" id="rep_anapolis-${newIndex}" value=""></td><td data-campo="desp_anapolis"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_anapolis]" id="desp_anapolis-${newIndex}" value=""></td><td data-campo="correios"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][correios]" id="correios-${newIndex}" value=""></td>' : ''}
+        ${getNacionalizacaoAtual() !== 'santos' ? '<td data-campo="rep_anapolis"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][rep_anapolis]" id="rep_anapolis-${newIndex}" value=""></td><td data-campo="desp_anapolis" style="display: none;"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_anapolis]" id="desp_anapolis-${newIndex}" value=""></td><td data-campo="correios"><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][correios]" id="correios-${newIndex}" value=""></td>' : ''}
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][li_dta_honor_nix]" id="li_dta_honor_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][honorarios_nix]" id="honorarios_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
@@ -3612,7 +3626,7 @@
                     const separador = document.createElement('tr');
                     separador.className = 'separador-adicao';
                     separador.innerHTML =
-                        `<td colspan="100" style="background-color: #000 !important; height: 5px; padding: 0;"></td>`;
+                        `<td colspan="100" style="background-color: #000 !important; height: 2px; padding: 0;"></td>`;
                     tbody.appendChild(separador);
                 }
 
@@ -3645,7 +3659,7 @@
     .separador-adicao td {
         background-color: #000 !important;
         border: none !important;
-        height: 5px;
+        height: 2px;
         padding: 0 !important;
     }
     .separador-adicao:hover {

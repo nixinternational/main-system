@@ -51,7 +51,7 @@
                                 $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
                                 $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
                                 $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
-                                $colspanBeforeMiddleRow = 13; // Colunas fixas iniciais (Ações até FATOR PESO, incluindo ORIGEM, CODIGO GIIRO e PESO LIQ. LBS)
+                                $colspanBeforeMiddleRow = 12; // Colunas fixas iniciais (Ações até FATOR PESO, incluindo ORIGEM e PESO LIQ. LBS) - CODIGO GIIRO removido
 
                                 // Colunas FOB
                                 if ($moedaProcesso == 'USD') {
@@ -93,20 +93,36 @@
 
                             <th style="background-color: #fff"> </th>
                             @php
-                                // Calcular quantas colunas existem antes do PESO LIQ TOTAL
-                                // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + CODIGO GIIRO (1) + NCM (1) + QUANTD (1) + PESO LIQ. LBS (1) + PESO LIQ. UNIT (1) = 12 colunas
-                                $colspanAntesPesoLiq = 11; // Ações até PESO LIQ. UNIT (antes do PESO LIQ TOTAL)
+                                // Calcular quantas colunas existem antes do PESO LIQ (onde ficará o select)
+                                // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + NCM (1) + QUANTD (1) = 9 colunas
+                                $colspanAntesPesoLiq = 9; // Ações até QUANTD (antes do PESO LIQ)
+                                // Calcular quantas colunas existem antes do PESO LIQ TOTAL (fator de conversão)
+                                // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + NCM (1) + QUANTD (1) + PESO LIQ. (1) + PESO LIQ. UNIT (1) = 11 colunas
+                                $colspanAntesPesoLiqTotal = 11; // Ações até PESO LIQ. UNIT (antes do PESO LIQ TOTAL)
                             @endphp
                             <th colspan="{{ $colspanAntesPesoLiq }}"></th>
-                            <th class="middleRowInputTh">
+                            <th class="middleRowInputTh" id="th-peso-tipo" style="background-color: #B6A909 !important;">
+                                <div class="d-flex align-items-center justify-content-center gap-3" style="padding: 5px;">
+                                    <label class="mb-0" style="color: #fff; font-weight: bold;">
+                                        <input type="radio" name="tipo_peso_aereo" id="tipo_peso_lbs" value="lbs" {{ ($processo->tipo_peso ?? 'lbs') === 'lbs' ? 'checked' : '' }} style="margin-right: 5px;">
+                                        LBS
+                                    </label>
+                                    <label class="mb-0" style="color: #fff; font-weight: bold;">
+                                        <input type="radio" name="tipo_peso_aereo" id="tipo_peso_kg" value="kg" {{ ($processo->tipo_peso ?? 'lbs') === 'kg' ? 'checked' : '' }} style="margin-right: 5px;">
+                                        Kg
+                                    </label>
+                                </div>
+                            </th>
+                            <th colspan="2"></th>
+                            <th class="middleRowInputTh" id="th-peso-liquido-total" style="background-color: #B6A909 !important;">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="peso_liquido_total_cabecalho" id="peso_liquido_total_cabecalho"
                                     value="{{ number_format($processo->peso_liquido ?? 0, 5, ',', '.') }}">
                             </th>
-                            <th colspan="{{ $colspanBeforeMiddleRow - $colspanAntesPesoLiq - 1 }}"></th>
+                            <th colspan="{{ $colspanBeforeMiddleRow - $colspanAntesPesoLiqTotal - 2 }}"></th>
 
                             @php
-                                // Ordem: OUTRAS TX AGENTE, DELIVERY FEE, DELIVERY FEE R$, COLLECT FEE, COLLECT FEE R$, DESCONS., HANDLING, DAI, HONORÁRIOS NIX, DAPE, CORREIOS, LI+DTA+HONOR.NIX
+                                // Ordem: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
                                 $campos = [
                                     'outras_taxas_agente',
                                     'delivery_fee',
@@ -114,10 +130,10 @@
                                     'desconsolidacao',
                                     'handling',
                                     'dai',
-                                    'honorarios_nix', // Acima do DAPE conforme solicitado
                                     'dape',
                                     'correios',
                                     'li_dta_honor_nix',
+                                    'honorarios_nix', // Movido para depois de LI+DTA+HONOR.NIX
                                 ];
                                 $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
@@ -136,25 +152,11 @@
                                     value="{{ number_format($processo->delivery_fee ?? 0, 5, ',', '.') }}">
                             </th>
                             
-                            {{-- DELIVERY FEE R$ --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="delivery_fee_brl" id="delivery_fee_brl"
-                                    value="{{ number_format($processo->delivery_fee_brl ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
                             {{-- COLLECT FEE --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="collect_fee" id="collect_fee"
                                     value="{{ number_format($processo->collect_fee ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- COLLECT FEE R$ --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="collect_fee_brl" id="collect_fee_brl"
-                                    value="{{ number_format($processo->collect_fee_brl ?? 0, 5, ',', '.') }}">
                             </th>
                             
                             {{-- DESCONSOLIDAÇÃO --}}
@@ -178,13 +180,6 @@
                                     value="{{ number_format($processo->dai ?? 0, 5, ',', '.') }}">
                             </th>
                             
-                            {{-- HONORÁRIOS NIX --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="honorarios_nix" id="honorarios_nix"
-                                    value="{{ number_format($processo->honorarios_nix ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
                             {{-- DAPE --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
@@ -204,6 +199,13 @@
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="li_dta_honor_nix" id="li_dta_honor_nix"
                                     value="{{ number_format($processo->li_dta_honor_nix ?? 0, 5, ',', '.') }}">
+                            </th>
+                            
+                            {{-- HONORÁRIOS NIX --}}
+                            <th class="middleRowInputTh">
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                    name="honorarios_nix" id="honorarios_nix"
+                                    value="{{ number_format($processo->honorarios_nix ?? 0, 5, ',', '.') }}">
                             </th>
 
                             @php
@@ -235,12 +237,11 @@
                             <th>ITEM</th>
                             <th>ORIGEM</th>
                             <th>CODIGO</th>
-                            <th>CODIGO GIIRO</th>
                             <th>NCM</th>
                             <th>QUANTD</th>
-                            <th>PESO LIQ. LBS</th>
+                            <th id="th-peso-liq-label">PESO LIQ.</th>
                             <th>PESO LIQ. UNIT</th>
-                            <th>PESO LIQ TOTAL KG</th>
+                            <th id="th-peso-liq-total-kg">PESO LIQ TOTAL KG</th>
                             <th>FATOR PESO</th>
                             <!-- COLUNAS FOB CONDICIONAIS -->
                             <!-- COLUNAS FOB CONDICIONAIS -->
@@ -328,16 +329,14 @@
                             <th>TAXA SISCOMEX</th>
                             <th>OUTRAS TX AGENTE</th>
                             <th>DELIVERY FEE</th>
-                            <th>DELIVERY FEE R$</th>
                             <th>COLLECT FEE</th>
-                            <th>COLLECT FEE R$</th>
-                            <th>DESCONS.</th>
+                            <th>Desconsolidação</th>
                             <th>HANDLING</th>
                             <th>DAI</th>
-                            <th>HONORÁRIOS NIX</th>
                             <th>DAPE</th>
                             <th>CORREIOS</th>
                             <th>LI+DTA+HONOR.NIX</th>
+                            <th>HONORÁRIOS NIX</th>
                             <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
                             <th>DIF. CAMBIAL FRETE</th>
                             <th>DIF.CAMBIAL FOB</th>
@@ -413,12 +412,6 @@
                                 </td>
 
                                 <td>
-                                    <input type="text" class="form-control"
-                                        name="produtos[{{ $index }}][codigo_giiro]" id="codigo_giiro-{{ $index }}"
-                                        value="{{ $processoProduto->codigo_giiro ?? '' }}">
-                                </td>
-
-                                <td>
                                     <input type="text" class=" form-control" readonly
                                         name="produtos[{{ $index }}][ncm]" id="ncm-{{ $index }}"
                                         value="{{ $processoProduto->produto->ncm }}">
@@ -431,13 +424,37 @@
                                         value="{{ $processoProduto->quantidade ? number_format($processoProduto->quantidade, 5, ',', '.') : '' }}"
                                         id="quantidade-{{ $index }}">
                                 </td>
-
+                                
                                 <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control pesoLiqLbs moneyReal"
-                                        name="produtos[{{ $index }}][peso_liq_lbs]"
-                                        id="peso_liq_lbs-{{ $index }}"
-                                        value="{{ $processoProduto->peso_liq_lbs ? number_format($processoProduto->peso_liq_lbs, 6, ',', '.') : '' }}">
+                                    @php
+                                        $tipoPeso = $processo->tipo_peso ?? 'lbs';
+                                        $isKg = $tipoPeso === 'kg';
+                                    @endphp
+                                    @if($isKg)
+                                        {{-- Modo KG: usar peso_liq_kg --}}
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control pesoLiqKg moneyReal"
+                                            name="produtos[{{ $index }}][peso_liq_kg]"
+                                            id="peso_liq_kg-{{ $index }}"
+                                            value="{{ $processoProduto->peso_liq_kg ? number_format($processoProduto->peso_liq_kg, 6, ',', '.') : '' }}">
+                                        {{-- Campo oculto para peso_liq_lbs (para manter compatibilidade) --}}
+                                        <input type="hidden" 
+                                            name="produtos[{{ $index }}][peso_liq_lbs]"
+                                            id="peso_liq_lbs-{{ $index }}"
+                                            value="{{ $processoProduto->peso_liq_lbs ? number_format($processoProduto->peso_liq_lbs, 6, ',', '.') : '' }}">
+                                    @else
+                                        {{-- Modo LBS: usar peso_liq_lbs --}}
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control pesoLiqLbs moneyReal"
+                                            name="produtos[{{ $index }}][peso_liq_lbs]"
+                                            id="peso_liq_lbs-{{ $index }}"
+                                            value="{{ $processoProduto->peso_liq_lbs ? number_format($processoProduto->peso_liq_lbs, 6, ',', '.') : '' }}">
+                                        {{-- Campo oculto para peso_liq_kg (para manter compatibilidade) --}}
+                                        <input type="hidden" 
+                                            name="produtos[{{ $index }}][peso_liq_kg]"
+                                            id="peso_liq_kg-{{ $index }}"
+                                            value="{{ $processoProduto->peso_liq_kg ? number_format($processoProduto->peso_liq_kg, 6, ',', '.') : '' }}">
+                                    @endif
                                 </td>
 
                                 <td>
@@ -448,7 +465,7 @@
                                         value="{{ $processoProduto->peso_liquido_unitario ? number_format($processoProduto->peso_liquido_unitario, 6, ',', '.') : '' }}">
                                 </td>
 
-                                <td>
+                                <td class="td-peso-liq-total-kg">
                                     <input data-row="{{ $index }}" type="text"
                                         class="form-control pesoLiqTotalKg moneyReal" readonly
                                         name="produtos[{{ $index }}][peso_liq_total_kg]"
@@ -680,10 +697,10 @@
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal8" readonly
                                         name="produtos[{{ $index }}][reducao]"
                                         id="reducao-{{ $index }}"
-                                        value="{{ $processoProduto->reducao ? number_format($processoProduto->reducao, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->reducao ? number_format($processoProduto->reducao, 8, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -895,25 +912,9 @@
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][delivery_fee_brl]"
-                                        id="delivery_fee_brl-{{ $index }}"
-                                        value="{{ $processoProduto->delivery_fee_brl ? number_format($processoProduto->delivery_fee_brl, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
                                         name="produtos[{{ $index }}][collect_fee]"
                                         id="collect_fee-{{ $index }}"
                                         value="{{ $processoProduto->collect_fee ? number_format($processoProduto->collect_fee, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][collect_fee_brl]"
-                                        id="collect_fee_brl-{{ $index }}"
-                                        value="{{ $processoProduto->collect_fee_brl ? number_format($processoProduto->collect_fee_brl, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -944,14 +945,6 @@
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][honorarios_nix]"
-                                        id="honorarios_nix-{{ $index }}"
-                                        value="{{ $processoProduto->honorarios_nix ? number_format($processoProduto->honorarios_nix, 7, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
                                         name="produtos[{{ $index }}][dape]"
                                         id="dape-{{ $index }}"
                                         value="{{ $processoProduto->dape ? number_format($processoProduto->dape, 7, ',', '.') : '' }}">
@@ -971,6 +964,14 @@
                                         name="produtos[{{ $index }}][li_dta_honor_nix]"
                                         id="li_dta_honor_nix-{{ $index }}"
                                         value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 7, ',', '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][honorarios_nix]"
+                                        id="honorarios_nix-{{ $index }}"
+                                        value="{{ $processoProduto->honorarios_nix ? number_format($processoProduto->honorarios_nix, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -1216,7 +1217,7 @@
                         const produto = {};
                         let hasData = false;
 
-                        // Coletar todos os campos da linha
+                        // Coletar todos os campos da linha (incluindo readonly)
                         $(this).find('input, select, textarea').each(function() {
                             const name = $(this).attr('name');
                             if (name && name.includes('produtos[') && name.includes(']')) {
@@ -1229,7 +1230,7 @@
                                 if (start !== -1 && end !== -1) {
                                     let value = $(this).val();
 
-                                    // Tratar campos vazios
+                                    // Tratar campos vazios - mas sempre incluir o campo
                                     if (value === '' || value === null || value === undefined) {
                                         value = '';
                                     }
@@ -1239,8 +1240,15 @@
                                         value = value.replace('%', '').trim();
                                     }
 
+                                    // Sempre adicionar o campo ao produto, mesmo que vazio
+                                    // IMPORTANTE: Campos de peso devem sempre ser incluídos, mesmo vazios
                                     produto[fieldName] = value;
                                     hasData = true;
+                                    
+                                    // Debug para campos de peso
+                                    if (['peso_liq_lbs', 'peso_liq_total_kg', 'peso_liquido_unitario'].includes(fieldName)) {
+                                        console.log(`Campo ${fieldName} coletado para linha ${rowIndex}:`, value, 'Tipo:', typeof value);
+                                    }
                                 }
                             }
                         });
@@ -1250,6 +1258,17 @@
                             // Garantir que temos um processo_produto_id (pode ser vazio para novos)
                             if (!produto.processo_produto_id) {
                                 produto.processo_produto_id = '';
+                            }
+
+                            // Garantir que campos de peso sempre estejam presentes (mesmo que vazios)
+                            if (!produto.hasOwnProperty('peso_liq_lbs')) {
+                                produto.peso_liq_lbs = '';
+                            }
+                            if (!produto.hasOwnProperty('peso_liq_total_kg')) {
+                                produto.peso_liq_total_kg = '';
+                            }
+                            if (!produto.hasOwnProperty('peso_liquido_unitario')) {
+                                produto.peso_liquido_unitario = '';
                             }
 
                             produtos.push(produto);
@@ -1287,25 +1306,39 @@
                             'peso_liquido_total_cabecalho',
                             'outras_taxas_agente',
                             'delivery_fee',
-                            'delivery_fee_brl',
                             'collect_fee',
-                            'collect_fee_brl',
                             'desconsolidacao',
                             'handling',
                             'dai',
-                            'honorarios_nix',
                             'dape',
                             'correios',
                             'li_dta_honor_nix',
+                            'honorarios_nix',
                             'diferenca_cambial_frete',
                             'diferenca_cambial_fob'
                         ];
 
                         for (let campo of campos) {
-                            const valor = MoneyUtils.parseMoney($(`#${campo}`).val());
+                            let valor;
+                            if (campo === 'peso_liquido_total_cabecalho') {
+                                // Para peso_liquido_total_cabecalho, verificar se está oculto (modo Kg)
+                                const $campo = $(`#${campo}`);
+                                if ($campo.is(':hidden') || $campo.closest('th').is(':hidden')) {
+                                    // Se estiver oculto, usar valor 1 (fator de conversão para Kg)
+                                    valor = 1;
+                                } else {
+                                    valor = MoneyUtils.parseMoney($campo.val());
+                                }
+                            } else {
+                                valor = MoneyUtils.parseMoney($(`#${campo}`).val());
+                            }
                             // Sempre enviar o valor, mesmo que seja 0 ou vazio
                             formData.append(campo, valor !== null && valor !== undefined ? valor : '0');
                         }
+                        
+                        // Adicionar tipo_peso_aereo
+                        const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
+                        formData.append('tipo_peso_aereo', tipoPeso || 'lbs');
                         
                         const url = '{{ route("processo.salvar.cabecalho.inputs.aereo", $processo->id ?? 0) }}';
                         console.log('Enviando cabecalhoInputs para:', url);
@@ -1339,6 +1372,7 @@
                         const formData = new FormData();
                         formData.append('_token', '{{ csrf_token() }}');
                         formData.append('_method', 'PUT');
+                        formData.append('tipo_processo', 'aereo');
                         formData.append('bloco_indice', indiceBloco);
                         formData.append('total_blocos', this.blocos.length);
                         formData.append('salvar_apenas_produtos', 'true');
@@ -1348,8 +1382,13 @@
                         // Adicionar produtos do bloco
                         blocoProdutos.forEach((produto, index) => {
                             Object.keys(produto).forEach(campo => {
-                                // Verificar se o valor não é undefined ou null
-                                if (produto[campo] !== undefined && produto[campo] !== null) {
+                                // Sempre enviar o campo, mesmo que seja vazio (para campos de peso)
+                                // Campos de peso devem ser sempre enviados para garantir que sejam salvos
+                                const camposPeso = ['peso_liq_lbs', 'peso_liq_total_kg', 'peso_liquido_unitario', 'peso_liquido_total'];
+                                if (camposPeso.includes(campo)) {
+                                    // Sempre enviar campos de peso, mesmo que vazios
+                                    formData.append(`produtos[${index}][${campo}]`, produto[campo] !== undefined && produto[campo] !== null ? produto[campo] : '');
+                                } else if (produto[campo] !== undefined && produto[campo] !== null) {
                                     formData.append(`produtos[${index}][${campo}]`, produto[campo]);
                                 }
                             });
@@ -1861,9 +1900,9 @@
 
         /* Separador de adição */
         .separador-adicao td {
-            background-color: #b7aa09 !important;
+            background-color: #000 !important;
             border: none !important;
-            height: 5px;
+            height: 2px;
             padding: 0 !important;
         }
 

@@ -561,10 +561,10 @@
 
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal8" readonly
                                         name="produtos[{{ $index }}][reducao]"
                                         id="reducao-{{ $index }}"
-                                        value="{{ $processoProduto->reducao ? number_format($processoProduto->reducao, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->reducao ? number_format($processoProduto->reducao, 8, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -1153,6 +1153,7 @@
                         const formData = new FormData();
                         formData.append('_token', '{{ csrf_token() }}');
                         formData.append('_method', 'PUT');
+                        formData.append('tipo_processo', 'maritimo');
                         formData.append('bloco_indice', indiceBloco);
                         formData.append('total_blocos', this.blocos.length);
                         formData.append('salvar_apenas_produtos', 'true');
@@ -1703,9 +1704,9 @@
 
         /* Separador de adição */
         .separador-adicao td {
-            background-color: #b7aa09 !important;
+            background-color: #000 !important;
             border: none !important;
-            height: 5px;
+            height: 2px;
             padding: 0 !important;
         }
 

@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ProcessoAereo extends Model
+class ProcessoRodoviario extends Model
 {
     use HasFactory;
     
-    protected $table = 'processo_aereos';
+    protected $table = 'processo_rodoviarios';
     
     protected $fillable = [
         'codigo_interno',
@@ -23,10 +23,6 @@ class ProcessoAereo extends Model
         'acrescimo_frete',
         'valor_cif',
         'taxa_dolar',
-        'delivery_fee',
-        'delivery_fee_brl',
-        'collect_fee',
-        'collect_fee_brl',
         'service_charges',
         'service_charges_moeda',
         'service_charges_usd',
@@ -80,7 +76,15 @@ class ProcessoAereo extends Model
         'info_complementar_nf',
         'multa',
         'thc_capatazia',
-        'tipo_peso',
+        // Campos específicos rodoviário
+        'desp_fronteira',
+        'das_fronteira',
+        'armazenagem',
+        'frete_foz_gyn',
+        'rep_fronteira',
+        'armaz_anapolis',
+        'mov_anapolis',
+        'rep_anapolis',
     ];
 
     protected $casts = [
@@ -92,9 +96,9 @@ class ProcessoAereo extends Model
         return $this->hasOne(Cliente::class, 'id', 'cliente_id');
     }
 
-    public function processoAereoProdutos()
+    public function processoRodoviarioProdutos()
     {
-        return $this->hasMany(ProcessoAereoProduto::class, 'processo_aereo_id')->orderBy('created_at', 'asc');
+        return $this->hasMany(ProcessoRodoviarioProduto::class, 'processo_rodoviario_id')->orderBy('created_at', 'asc');
     }
 
     public function fornecedor()
@@ -102,3 +106,4 @@ class ProcessoAereo extends Model
         return $this->belongsTo(Fornecedor::class);
     }
 }
+
