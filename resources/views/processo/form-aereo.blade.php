@@ -1038,7 +1038,7 @@
             
             // DESP. DESEMBARAÇO, DIF. CAMBIAL FRETE, DIF.CAMBIAL FOB, CUSTO UNIT FINAL, CUSTO TOTAL FINAL
             tr += `<td data-field="desp-desembaraco" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>`;
-            tr += `<td data-field="dif-cambial-frete" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(validarDiferencaCambialFrete(totais.diferenca_cambial_frete), 2)}</td>`;
+            tr += `<td data-field="dif-cambial-frete" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(validarDiferencaCambialFrete(totais.diferenca_cambial_frete), 4)}</td>`;
             tr += `<td data-field="dif-cambial-fob" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>`;
             tr += '<td data-field="custo-unit-final"></td>'; // CUSTO UNIT FINAL (vazio - é unitário, não é somado)
             tr += `<td data-field="custo-total-final" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 2)}</td>`;
@@ -1350,6 +1350,17 @@
                 }
             });
             $('.cotacao').on('blur', function() {
+                const val = $(this).val();
+                if (val && val.trim() !== '') {
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 4));
+                } else {
+                    $(this).val('');
+                }
+            });
+
+            // Dinheiro com 4 casas decimais
+            $('.moneyReal4').on('blur', function() {
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
                     const numero = normalizeNumericValue(val);
@@ -2508,7 +2519,7 @@
                 if (diferenca_cambial_frete === 0 || isNaN(diferenca_cambial_frete) || !isFinite(diferenca_cambial_frete) || diferenca_cambial_frete < 0) {
                     $(`#diferenca_cambial_frete-${rowId}`).val('');
                 } else {
-                    $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_frete, 2));
+                    $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_frete, 4));
                 }
                 $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob, 2));
 
@@ -3412,7 +3423,7 @@
             if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
                 $(`#diferenca_cambial_frete-${rowId}`).val('');
             } else {
-                $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferencaCambialFreteValidada, 2));
+                $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferencaCambialFreteValidada, 4));
             }
             $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob, 2));
 
@@ -4201,7 +4212,7 @@
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][li_dta_honor_nix]" id="li_dta_honor_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][honorarios_nix]" id="honorarios_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal4" name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][diferenca_cambial_fob]" id="diferenca_cambial_fob-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][custo_unitario_final]" id="custo_unitario_final-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][custo_total_final]" id="custo_total_final-${newIndex}" value=""></td>

@@ -93,12 +93,12 @@
 
                             <th style="background-color: #fff"> </th>
                             @php
-                                // Calcular quantas colunas existem antes do PESO LIQ (onde ficará o select)
+                                // Calcular quantas colunas existem antes do PESO LIQ (onde ficará o select Lbs/Kg)
                                 // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + NCM (1) + QUANTD (1) = 9 colunas
-                                $colspanAntesPesoLiq = 9; // Ações até QUANTD (antes do PESO LIQ)
-                                // Calcular quantas colunas existem antes do PESO LIQ TOTAL (fator de conversão)
-                                // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + NCM (1) + QUANTD (1) + PESO LIQ. (1) + PESO LIQ. UNIT (1) = 11 colunas
-                                $colspanAntesPesoLiqTotal = 11; // Ações até PESO LIQ. UNIT (antes do PESO LIQ TOTAL)
+                                $colspanAntesPesoLiq = 8; // Ações até QUANTD (antes do PESO LIQ)
+                                // Calcular quantas colunas existem antes do PESO LIQ. UNIT (onde ficará o fator de conversão)
+                                // Ações (1) + PRODUTO (1) + DESCRIÇÃO (1) + ADIÇÃO (1) + ITEM (1) + ORIGEM (1) + CODIGO (1) + NCM (1) + QUANTD (1) + PESO LIQ. (1) = 10 colunas
+                                $colspanAntesPesoLiqUnit = 8; // Ações até PESO LIQ. (antes do PESO LIQ. UNIT)
                             @endphp
                             <th colspan="{{ $colspanAntesPesoLiq }}"></th>
                             <th class="middleRowInputTh" id="th-peso-tipo" style="background-color: #B6A909 !important;">
@@ -113,13 +113,13 @@
                                     </label>
                                 </div>
                             </th>
-                            <th colspan="2"></th>
+                            
                             <th class="middleRowInputTh" id="th-peso-liquido-total" style="background-color: #B6A909 !important;">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="peso_liquido_total_cabecalho" id="peso_liquido_total_cabecalho"
                                     value="{{ number_format($processo->peso_liquido ?? 0, 5, ',', '.') }}">
                             </th>
-                            <th colspan="{{ $colspanBeforeMiddleRow - $colspanAntesPesoLiqTotal - 2 }}"></th>
+                            <th colspan="{{ $colspanBeforeMiddleRow - $colspanAntesPesoLiqUnit - 2 }}"></th>
 
                             @php
                                 // Ordem: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
@@ -984,10 +984,10 @@
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal4"
                                         name="produtos[{{ $index }}][diferenca_cambial_frete]"
                                         id="diferenca_cambial_frete-{{ $index }}"
-                                        value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 7, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 4, ',', '.') : '' }}">
                                 </td>
 
                                 <td>

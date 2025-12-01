@@ -55,11 +55,11 @@
         }
 
         .table-products td {
-            /* text-align: center; */
+            
             vertical-align: middle;
         }
 
-        /* Removido sticky da primeira coluna - agora o cabeçalho inteiro será fixo */
+        
         .table-dados-complementares td:first-child,
         .table-dados-basicos td:first-child {
             color: var(--theme-text) !important;
@@ -75,19 +75,19 @@
             color: white
         }
 
-        /* Fixa o cabeçalho inteiro durante scroll vertical */
+        
         .table-products thead th {
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
-        /* Ajusta a segunda linha do cabeçalho (middleRow) */
+        
         .table-products thead tr.middleRow th {
             background-color: transparent;
         }
 
-        /* Estilos para a barra de scroll extra acima do cabeçalho */
+        
         .table-products-wrapper {
             position: relative;
             width: 100%;
@@ -138,13 +138,13 @@
             background-color: #B6A909 !important;
         }
 
-        /* Estilo para o botão de remover */
+        
         .btn-remove {
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
         }
 
-        /* Ajuste para o sticky funcionar corretamente */
+        
         table tbody tr {
             position: relative;
         }
@@ -166,7 +166,7 @@
         .dados-basicos th,
         .dados-basicos td {
             border: 1px solid #000;
-            /* padding: 5px 8px; */
+            
         }
 
         .dados-basicos th {
@@ -194,7 +194,7 @@
         }
 
         .info-complementares .linha {
-            /* margin-bottom: 5px; */
+            
         }
 
         .info-complementares .bold {
@@ -436,7 +436,7 @@
                     formatDebugMoney(globais.taxaSiscomexProcesso, 2),
                     'Valor calculado automaticamente baseado no número de adições únicas do processo, usando faixas progressivas.',
                     (function() {
-                        // Calcular detalhes do cálculo da taxa SISCOMEX usando a mesma lógica da função
+
                         const valores = $('input[name^="produtos["][name$="[adicao]"]')
                             .map(function() {
                                 return $(this).val();
@@ -455,7 +455,7 @@
                         if (quantidade === 0) {
                             detalhes.push(`Total: ${formatRawValue(totalCalculado, 2)}`);
                         } else {
-                            // Definição das faixas progressivas (mesma lógica da função calcularTaxaSiscomex)
+
                             const faixas = [
                                 { limite: 2, valor: 38.56, inicio: 0, descricao: 'Adições 1-2' },
                                 { limite: 3, valor: 30.85, inicio: 2, descricao: 'Adições 3-5' },
@@ -465,7 +465,7 @@
                                 { limite: Infinity, valor: 3.86, inicio: 50, descricao: 'Adições acima de 50' }
                             ];
                             
-                            // Calcula progressivamente faixa por faixa
+
                             faixas.forEach(faixa => {
                                 let adicoesNaFaixa;
                                 if (faixa.limite === Infinity) {
@@ -551,12 +551,12 @@
             const fatorMva = 1 + (dados.mva || 0);
             const quantidadeSafe = quantidade > 0 ? quantidade : 1;
             const formulaDespesa = (globais?.nacionalizacao === 'santos')
-                ? 'Multa + (Valor Aduaneiro BRL × % DEF/L.I.) + Taxa SISCOMEX da linha + AFRMM + Honorários NIX.'
-                : 'Multa + (Valor Aduaneiro BRL × % DEF/L.I.) + Taxa SISCOMEX da linha + AFRMM + Armazenagem STS + Frete DTA STS/ANA + Honorários NIX.';
+                ? 'Multa + (Valor Aduaneiro BRL × % DEF/L.I.) + Taxa SISCOMEX da linha + AFRMM + Honorários.'
+                : 'Multa + (Valor Aduaneiro BRL × % DEF/L.I.) + Taxa SISCOMEX da linha + AFRMM + Armazenagem STS + Frete DTA STS/ANA + Honorários.';
             const despComp = dados.despesasComponentes || {};
             const detailDespesaExpr = (globais?.nacionalizacao === 'santos')
-                ? `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Honorários NIX', despComp.honorarios_nix, 2)}`
-                : `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Armazenagem Porto', despComp.armazenagem_sts, 2)} + ${formatComponent('Frete DTA', despComp.frete_dta_sts_ana, 2)} + ${formatComponent('Honorários NIX', despComp.honorarios_nix, 2)}`;
+                ? `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Honorários', despComp.honorarios_nix, 2)}`
+                : `${formatComponent('Multa', despComp.multa, 2)} + ${formatComponent('% DEF/L.I.', despComp.txDefLi, 2)} + ${formatComponent('Taxa SISCOMEX', despComp.taxaSiscomex, 2)} + ${formatComponent('AFRMM', despComp.afrmm, 2)} + ${formatComponent('Armazenagem Porto', despComp.armazenagem_sts, 2)} + ${formatComponent('Frete DTA', despComp.frete_dta_sts_ana, 2)} + ${formatComponent('Honorários', despComp.honorarios_nix, 2)}`;
             const detailDespesa = formatCalcDetail(despesaAduaneiraVal, [detailDespesaExpr], 2);
             const numeradorBcIcms = valorAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despesaAduaneiraVal;
             const fatorIcmsDivisor = 1 - toNumber(dados.aliquotaIcms);
@@ -588,6 +588,27 @@
                 buildRow('VLR PIS', formatDebugMoney(dados.vlrPis, 2), 'BC PIS/COFINS × Alíquota PIS.', formatCalcDetail(vlrPis, [formatComponent('BC PIS/COFINS', bcPisCofinsVal, 2), '×', formatComponent('Alíquota PIS', dados.aliquotaPis, 4)], 2)),
                 buildRow('VLR COFINS', formatDebugMoney(dados.vlrCofins, 2), 'BC PIS/COFINS × Alíquota COFINS.', formatCalcDetail(vlrCofins, [formatComponent('BC PIS/COFINS', bcPisCofinsVal, 2), '×', formatComponent('Alíquota COFINS', dados.aliquotaCofins, 4)], 2)),
                 buildRow('Desp. Aduaneira', formatDebugMoney(dados.despesaAduaneira, 2), `${formulaDespesa} [Nacionalização: ${(globais?.nacionalizacao || '').toUpperCase()}]`, detailDespesa),
+                buildRow('Desp. Desembaraço', formatDebugMoney(dados.despesaDesembaraco ?? 0, 2), 
+                    'Parte 1 (Campos Externos + Multa + Taxa DEF + Taxa SISCOMEX) - Parte 2 (Multa + Taxa DEF + Taxa SISCOMEX + Capatazia + AFRMM + Honorários).',
+                    (function() {
+                        if (!dados.despesaDesembaracoDetalhes) return '-';
+                        const det = dados.despesaDesembaracoDetalhes;
+                        const camposExternosStr = Object.entries(det.camposExternos || {})
+                            .map(([campo, valor]) => formatComponent(campo, valor, 2))
+                            .join(' + ');
+                        const parte1Expr = camposExternosStr + 
+                            (camposExternosStr ? ' + ' : '') +
+                            formatComponent('Multa', det.multa, 2) + ' + ' +
+                            formatComponent('Taxa DEF', det.taxaDef, 2) + ' + ' +
+                            formatComponent('Taxa SISCOMEX', det.taxaSiscomex, 2);
+                        const parte2Expr = formatComponent('Multa', det.multa, 2) + ' + ' +
+                            formatComponent('Taxa DEF', det.taxaDef, 2) + ' + ' +
+                            formatComponent('Taxa SISCOMEX', det.taxaSiscomex, 2) + ' + ' +
+                            formatComponent('Capatazia', det.capatazia, 2) + ' + ' +
+                            formatComponent('AFRMM', det.afrmm, 2) + ' + ' +
+                            formatComponent('Honorários', det.honorariosNix, 2);
+                        return `(${parte1Expr}) - (${parte2Expr}) = ${formatRawValue(dados.despesaDesembaraco ?? 0, 2)}`;
+                    })()),
                 buildRow('BC ICMS s/Redução', formatDebugMoney(dados.bcIcmsSemReducao, 2), '[(Base + II + IPI + PIS + COFINS + Despesas)] ÷ (1 - % ICMS).', formatCalcDetail(bcIcmsSemReducaoVal, ['(', formatComponent('Valor Aduaneiro BRL', valorAduaneiroBrl, 2), '+', formatComponent('II', vlrII, 2), '+', formatComponent('IPI', vlrIpi, 2), '+', formatComponent('PIS', vlrPis, 2), '+', formatComponent('COFINS', vlrCofins, 2), '+', formatComponent('Despesas Aduaneiras', despesaAduaneiraVal, 2), ')', '÷', formatComponent('(1 - % ICMS)', fatorIcmsDivisor, 4)], 2)),
                 buildRow('VLR ICMS s/Redução', formatDebugMoney(dados.vlrIcmsSemReducao, 2), 'BC ICMS s/Redução × % ICMS.', formatCalcDetail(vlrIcmsSemReducaoVal, [formatComponent('BC ICMS s/Redução', bcIcmsSemReducaoVal, 2), '×', formatComponent('% ICMS', dados.aliquotaIcms, 4)], 2)),
                 buildRow('BC ICMS reduzido', formatDebugMoney(dados.bcIcmsReduzido, 2), 'Resultado de BC ICMS após aplicar o percentual de redução.', formatCalcDetail(bcIcmsReduzidoVal, [formatComponent('BC ICMS s/Redução', bcIcmsSemReducaoVal, 2), '×', formatComponent('Fator Redução', fatorReducaoAplicado, 4)], 2)),
@@ -599,7 +620,13 @@
                 buildRow('VLR Total NF s/ICMS ST', formatDebugMoney(dados.vlrTotalNfSemIcms, 2), 'VLR Total Prod. NF + IPI + PIS + COFINS + Desp. Aduaneira + VLR ICMS reduzido.', formatCalcDetail(vlrTotalNfSemIcmsVal, [formatComponent('VLR Total Prod. NF', vlrTotalProdNfVal, 2), '+', formatComponent('IPI', vlrIpi, 2), '+', formatComponent('PIS', vlrPis, 2), '+', formatComponent('COFINS', vlrCofins, 2), '+', formatComponent('Desp. Aduaneira', despesaAduaneiraVal, 2), '+', formatComponent('VLR ICMS reduzido', vlrIcmsReduzidoVal, 2)], 2)),
                 buildRow('BC ICMS-ST', formatDebugMoney(dados.baseIcmsSt, 2), 'VLR Total NF s/ICMS ST × (1 + MVA).', formatCalcDetail(baseIcmsStVal, [formatComponent('VLR Total NF s/ICMS ST', vlrTotalNfSemIcmsVal, 2), '×', formatComponent('(1 + MVA)', fatorMva, 4)], 2)),
                 buildRow('VLR ICMS-ST', formatDebugMoney(dados.valorIcmsSt, 2), 'Base ICMS-ST × % ICMS-ST - VLR ICMS reduzido (quando aplicável).', icmsStPercent > 0 ? formatCalcDetail(vlrIcmsStVal, ['(', formatComponent('BC ICMS-ST', baseIcmsStVal, 2), '×', formatComponent('% ICMS-ST', icmsStPercent, 4), ')', '-', formatComponent('VLR ICMS reduzido', vlrIcmsReduzidoVal, 2)], 2) : 'Percentual ICMS-ST não informado.'),
-                buildRow('Custo Unit. Final', formatDebugMoney(dados.custoUnitarioFinal, 2), '[(Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete) - ICMS reduzido] ÷ Quantidade.', formatCalcDetail(dados.custoUnitarioFinal, ['(', formatComponent('Total NF c/ICMS', dados.vlrTotalNfComIcms ?? dados.vlrTotalNfSemIcms ?? vlrTotalNfSemIcmsVal, 2), '+', formatComponent('Desp. Desembaraço', dados.despesaDesembaraco ?? 0, 2), '+', formatComponent('Dif. Cambial FOB', dados.diferencaCambialFob, 2), '+', formatComponent('Dif. Cambial Frete', dados.diferencaCambialFrete, 2), '-', formatComponent('ICMS reduzido', vlrIcmsReduzidoVal, 2), ')', '÷', formatComponent('Quantidade', quantidadeSafe, 4)], 2)),
+                buildRow('Custo Unit. Final', formatDebugMoney(dados.custoUnitarioFinal, 2), 
+                    (globais?.nacionalizacao === 'santos')
+                        ? '(Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete) ÷ Quantidade.'
+                        : '[(Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete) - ICMS reduzido] ÷ Quantidade.',
+                    (globais?.nacionalizacao === 'santos')
+                        ? formatCalcDetail(dados.custoUnitarioFinal, ['(', formatComponent('Total NF c/ICMS', dados.vlrTotalNfComIcms ?? dados.vlrTotalNfSemIcms ?? vlrTotalNfSemIcmsVal, 2), '+', formatComponent('Desp. Desembaraço', dados.despesaDesembaraco ?? 0, 2), '+', formatComponent('Dif. Cambial FOB', dados.diferencaCambialFob, 2), '+', formatComponent('Dif. Cambial Frete', dados.diferencaCambialFrete, 2), ')', '÷', formatComponent('Quantidade', quantidadeSafe, 4)], 2)
+                        : formatCalcDetail(dados.custoUnitarioFinal, ['(', formatComponent('Total NF c/ICMS', dados.vlrTotalNfComIcms ?? dados.vlrTotalNfSemIcms ?? vlrTotalNfSemIcmsVal, 2), '+', formatComponent('Desp. Desembaraço', dados.despesaDesembaraco ?? 0, 2), '+', formatComponent('Dif. Cambial FOB', dados.diferencaCambialFob, 2), '+', formatComponent('Dif. Cambial Frete', dados.diferencaCambialFrete, 2), '-', formatComponent('ICMS reduzido', vlrIcmsReduzidoVal, 2), ')', '÷', formatComponent('Quantidade', quantidadeSafe, 4)], 2)),
                 buildRow('Custo Total Final', formatDebugMoney(dados.custoTotalFinal, 2), 'Custo unitário final × Quantidade.', formatCalcDetail(dados.custoTotalFinal, [formatComponent('Custo Unit. Final', dados.custoUnitarioFinal, 2), '×', formatComponent('Quantidade', quantidade, 4)], 2))
             ];
             if (globais && globais.fobTotalProcesso) {
@@ -731,7 +758,7 @@
                 armaz_ana: 0,
                 lavagem_container: 0,
                 rep_anapolis: 0,
-                // desp_anapolis: 0, // Removido - coluna oculta e não considerada no cálculo
+
                 correios: 0,
                 li_dta_honor_nix: 0,
                 honorarios_nix: 0,
@@ -741,7 +768,7 @@
                 custo_total_final: 0
             };
 
-            // Calcular médias para fatores
+
             let fatorPesoSum = 0;
             let fatorValorFobSum = 0;
             let fatorTxSiscomexSum = 0;
@@ -750,9 +777,9 @@
             
             rows.each(function() {
                 const rowId = this.id.replace('row-', '')
-                // Somar valores
+
                 Object.keys(totais).forEach(campo => {
-                    // Para service_charges, se a moeda não for USD, usar service_charges_moeda_estrangeira
+
                     if (campo === 'service_charges' && moedaServiceCharges && moedaServiceCharges !== 'USD') {
                         const elemento = $(`#service_charges_moeda_estrangeira-${rowId}`);
                         if (elemento.length > 0) {
@@ -760,22 +787,22 @@
                             totais[campo] += valor;
                         }
                     } else {
-                        // Para campos externos, usar valores brutos armazenados (não formatados) para precisão máxima
+
                         if (window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos[campo] && 
                             window.valoresBrutosCamposExternos[campo][rowId] !== undefined) {
-                            // Usar valor bruto (não formatado) para cálculo preciso
+
                             let valor = window.valoresBrutosCamposExternos[campo][rowId] || 0;
-                            // Validar diferenca_cambial_frete antes de somar
+
                             if (campo === 'diferenca_cambial_frete') {
                                 valor = validarDiferencaCambialFrete(valor);
                             }
                             totais[campo] += valor;
                         } else {
-                            // Fallback: usar valor formatado se valor bruto não estiver disponível
+
                             const elemento = $(`#${campo}-${rowId}`);
                             if (elemento.length > 0) {
                                 let valor = MoneyUtils.parseMoney(elemento.val()) || 0;
-                                // Validar diferenca_cambial_frete antes de somar
+
                                 if (campo === 'diferenca_cambial_frete') {
                                     valor = validarDiferencaCambialFrete(valor);
                                 }
@@ -785,33 +812,33 @@
                     }
                 });
 
-                // Acumular para médias
+
                 fatorPesoSum += MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
                 fatorValorFobSum += MoneyUtils.parseMoney($(`#fator_valor_fob-${rowId}`).val()) || 0;
                 fatorTxSiscomexSum += MoneyUtils.parseMoney($(`#fator_tx_siscomex-${rowId}`).val()) || 0;
             });
             
-            // Atualizar peso líquido total do processo
+
             atualizarPesoLiquidoTotal(totais.peso_liquido_total);
 
-            // Atualizar o TFOOT
+
             const tfoot = $('#resultado-totalizadores');
 
-            // Limpar e criar nova linha de totais
+
             tfoot.empty();
             let tr = '<tr><td colspan="7" style="text-align: right; font-weight: bold;">TOTAIS:</td>';
 
-            // QUANTIDADE
+
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.quantidade, 2)}</td>`;
 
-            // PESO LIQ. UNIT (vazio)
+
             tr += '<td></td>';
 
-            // PESO LIQ TOTAL
+
             tr +=
                 `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liquido_total, 2)}</td>`;
 
-            // FATOR PESO (média)
+
             tr +=
                 `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorPesoSum, 2)}</td>`;
 
@@ -832,7 +859,7 @@
             tr +=
                 `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_brl, 2)}</td>`;
 
-            // COLUNAS FRETE
+
             const moedaFrete = $('#frete_internacional_moeda').val();
             if (moedaFrete && moedaFrete !== 'USD') {
                 let totalFreteMoeda = 0;
@@ -849,16 +876,16 @@
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
 
-            // COLUNAS CFR (após FRETE)
-            tr += `<td></td>`; // VLR CFR UNIT não é somado (é unitário)
+
+            tr += `<td></td>`; 
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
             
-            // COLUNAS SERVICE CHARGES (após CFR)
+
             if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
                 tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 2)}</td>`;
             }
             
-            // Para service_charges USD, precisamos somar o campo service_charges (que é USD) quando a moeda não for USD
+
             let totalServiceChargesUSD = 0;
             if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
                 rows.each(function() {
@@ -872,7 +899,7 @@
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalServiceChargesUSD, 2)}</td>`;
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 2)}</td>`;
 
-            // COLUNAS ACRÉSCIMO (após SERVICE CHARGES)
+
             const moedaAcrescimo = $('#acrescimo_frete_moeda').val();
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 let totalAcrescimoMoeda = 0;
@@ -890,7 +917,7 @@
             tr +=
                 `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 2)}</td>`;
 
-            // COLUNAS SEGURO (após ACRÉSCIMO)
+
             const moedaSeguro = $('#seguro_internacional_moeda').val();
             if (moedaSeguro && moedaSeguro !== 'USD') {
                 let totalSeguroMoeda = 0;
@@ -905,7 +932,7 @@
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
 
-            // Continuar com as demais colunas...
+
             tr += `
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_usd, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_brl, 2)}</td>
@@ -980,19 +1007,19 @@
             let moedaProcesso = $('#moeda_processo').val();
 
 
-            // Atualizar títulos das colunas
+
             atualizarTitulosColunas(moedaFrete, moedaSeguro, moedaAcrescimo, moedaProcesso);
 
-            // Mostrar/ocultar colunas baseado na moeda do processo
+
             if (moedaProcesso && moedaProcesso !== 'USD') {
-                // Mostrar colunas da moeda estrangeira
+
                 $('[id*="fob_unit_moeda_estrangeira-"]').closest('td').show();
                 $('[id*="fob_total_moeda_estrangeira-"]').closest('td').show();
 
-                // Ocultar colunas USD
+
                 $('[id*="fob_unit_usd-"]').closest('td').hide();
 
-                // Atualizar títulos
+
                 $('th').each(function() {
                     let texto = $(this).text();
                     if (texto.includes('FOB UNIT')) {
@@ -1003,14 +1030,14 @@
                     }
                 });
             } else {
-                // Mostrar colunas USD
+
                 $('[id*="fob_unit_usd-"]').closest('td').show();
 
-                // Ocultar colunas da moeda estrangeira
+
                 $('[id*="fob_unit_moeda_estrangeira-"]').closest('td').hide();
                 $('[id*="fob_total_moeda_estrangeira-"]').closest('td').hide();
 
-                // Atualizar títulos
+
                 $('th').each(function() {
                     let texto = $(this).text();
                     if (texto.includes('FOB UNIT')) {
@@ -1022,7 +1049,7 @@
                 });
             }
 
-            // Mostrar/ocultar colunas de frete
+
             if (moedaFrete && moedaFrete !== 'USD') {
                 $('[id*="frete_moeda_estrangeira-"]').closest('td').show();
                 $('th').each(function() {
@@ -1035,7 +1062,7 @@
                 $('[id*="frete_moeda_estrangeira-"]').closest('td').hide();
             }
 
-            // Mostrar/ocultar colunas de seguro
+
             if (moedaSeguro && moedaSeguro !== 'USD') {
                 $('[id*="seguro_moeda_estrangeira-"]').closest('td').show();
                 $('th').each(function() {
@@ -1048,7 +1075,7 @@
                 $('[id*="seguro_moeda_estrangeira-"]').closest('td').hide();
             }
 
-            // Mostrar/ocultar colunas de acréscimo
+
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 $('[id*="acrescimo_moeda_estrangeira-"]').closest('td').show();
                 $('th').each(function() {
@@ -1061,7 +1088,7 @@
                 $('[id*="acrescimo_moeda_estrangeira-"]').closest('td').hide();
             }
             
-            // Mostrar/ocultar colunas de service_charges
+
             const moedaServiceCharges = $('#service_charges_moeda').val();
             if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
                 $('[id*="service_charges_moeda_estrangeira-"]').closest('td').show();
@@ -1085,10 +1112,10 @@
             let cotacaoMoeda = cotacaoProcesso[moedaProcesso]?.venda ?? 0;
             let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
 
-            // VERIFICAR SE AS COTAÇÕES SÃO VÁLIDAS
+
             if (!cotacaoMoeda || cotacaoMoeda === 0 || !cotacaoUSD || cotacaoUSD === 0) {
                 console.warn(`Cotações inválidas para conversão: ${moedaProcesso} = ${cotacaoMoeda}, USD = ${cotacaoUSD}`);
-                return valor; // Retorna o valor original se não puder converter
+                return valor; 
             }
 
             return valor * (cotacaoMoeda / cotacaoUSD);
@@ -1103,10 +1130,10 @@
             let cotacaoMoeda = cotacaoProcesso[moedaProcesso]?.venda ?? 0;
             let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
 
-            // VERIFICAR SE AS COTAÇÕES SÃO VÁLIDAS
+
             if (!cotacaoMoeda || cotacaoMoeda === 0 || !cotacaoUSD || cotacaoUSD === 0) {
                 console.warn(`Cotações inválidas para conversão: ${moedaProcesso} = ${cotacaoMoeda}, USD = ${cotacaoUSD}`);
-                return valor; // Retorna o valor original se não puder converter
+                return valor; 
             }
 
             return valor * (cotacaoUSD / cotacaoMoeda);
@@ -1134,44 +1161,44 @@
             const moedaEmUSD = cotacaoMoeda / cotacaoUSD;
             return total * moedaEmUSD;
         }
-        // Modifique a função que atualiza os campos FOB
+
         function atualizarCamposFOB(rowId, valores) {
             let moedaProcesso = $('#moeda_processo').val();
             let quantidade = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
-            // Garantir que os valores são válidos
+
             if (isNaN(valores.fobUnitario)) valores.fobUnitario = 0;
             if (isNaN(valores.fobTotal)) valores.fobTotal = 0;
             if (isNaN(valores.dolar)) valores.dolar = 1;
 
-            // Calcular totais
+
             let fobTotalUSD = valores.fobTotal;
             let fobTotalBRL = valores.fobTotal * valores.dolar;
 
             if (moedaProcesso && moedaProcesso !== 'USD') {
-                // Calcular valores na moeda do processo
+
                 let fobTotalMoedaEstrangeira = valores.fobUnitarioMoedaEstrangeira * quantidade;
 
-                // Atualizar campos da moeda estrangeira
-                // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.fobUnitarioMoedaEstrangeira, 7));
+
+
                 $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira, 7));
 
-                // Para moeda diferente de USD, o fobTotalUSD já está convertido na função obterValoresBase
+
             } else {
-                // Moeda é USD - atualizar campo USD diretamente
+
                 const $campoFobUsd = $(`#fob_unit_usd-${rowId}`);
-                // Evitar sobrescrever enquanto o usuário digita (formatação fica apenas no blur)
+
                 if (!$campoFobUsd.is(':focus')) {
                     $campoFobUsd.val(MoneyUtils.formatMoney(valores.fobUnitario, 7));
                 }
             }
 
-            // Valores totais (sempre em USD e BRL)
+
             $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotalUSD, 7));
             $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotalBRL, 7));
         }
-        // Função para atualizar títulos
+
         function atualizarTitulosColunas(moedaFrete, moedaSeguro, moedaAcrescimo, moedaProcesso) {
-            // Atualizar títulos dinamicamente se necessário
+
             $('th').each(function() {
                 let texto = $(this).text();
 
@@ -1196,7 +1223,7 @@
                         $(this).hide();
                     }
                 }
-                // Novos para FOB
+
                 if (texto.includes('FOB UNIT') && !texto.includes('USD') && !texto.includes('R$')) {
                     if (moedaProcesso && moedaProcesso !== 'USD') {
                         $(this).text(`FOB UNIT ${moedaProcesso}`).show();
@@ -1216,7 +1243,7 @@
 
         $(document).ready(function() {
             reordenarLinhas();
-            // Chamar quando as moedas mudarem
+
             $('#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda, #service_charges_moeda, #moeda_processo')
                 .on('change', function() {
                     setTimeout(atualizarVisibilidadeColunasMoeda, 100);
@@ -1230,7 +1257,7 @@
                     $(this).val('');
                 }
             });
-            // Dinheiro com 2 casas decimais
+
             $('.moneyReal2').on('blur', function() {
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
@@ -1250,7 +1277,7 @@
                 }
             });
 
-            // Dinheiro com 7 casas decimais (usando mesma lógica do moneyReal2 para consistência)
+
             $('.moneyReal7').on('blur', function() {
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
@@ -1261,7 +1288,7 @@
                 }
             });
 
-            // Dinheiro com 8 casas decimais (para fator de redução ICMS - maior precisão)
+
             $('.moneyReal8').on('blur', function() {
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
@@ -1272,7 +1299,7 @@
                 }
             });
 
-            // Percentuais (7 casas decimais igual migration)
+
             $('.percentage').on('blur', function() {
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
@@ -1295,18 +1322,18 @@
                 width: '100%'
             });
 
-            // Listener para SERVICE_CHARGES do processo - recalcular todos os produtos
+
             $('#service_charges').on('blur change input', function() {
-                // Converter imediatamente quando o valor mudar
+
                 convertToUSDAndBRL('service_charges');
-                // Recalcular toda a tabela quando service_charges do processo mudar
+
                 setTimeout(function() {
                     recalcularTodaTabela();
                 }, 100);
             });
 
             $('form').on('submit', function(e) {
-                // Atualizar peso líquido antes de enviar
+
                 const pesoLiquidoTotal = calcularPesoTotal();
                 $('#peso_liquido').val(MoneyUtils.formatMoney(pesoLiquidoTotal, 4));
                 
@@ -1321,12 +1348,12 @@
             });
 
             $('#recalcularTabela').on('click', function() {
-                // Mostrar indicador de carregamento
+
                 const btn = $(this);
                 const originalText = btn.html();
                 btn.html('<i class="fas fa-spinner fa-spin"></i> Calculando...').prop('disabled', true);
 
-                // Pequeno delay para permitir a atualização visual do botão
+
                 setTimeout(function() {
                     try {
                         recalcularTodaTabela();
@@ -1341,15 +1368,15 @@
                             title: 'Erro ao recalcular tabela'
                         });
                     } finally {
-                        // Restaurar o botão
+
                         btn.html(originalText).prop('disabled', false);
                     }
                 }, 100);
             });
 
-            // Removido recalcularTodaTabela() ao carregar a página para melhorar performance
+
             
-            // Inicializar valores brutos dos campos externos ao carregar a página
+
             if (window.valoresBrutosCamposExternos === undefined) {
                 window.valoresBrutosCamposExternos = {};
             }
@@ -1368,7 +1395,7 @@
 
         });
 
-        // Função para obter símbolo da moeda
+
         function getCurrencySymbol(codigoMoeda) {
             const symbols = {
                 'USD': '$',
@@ -1391,20 +1418,20 @@
             return symbols[codigoMoeda] || codigoMoeda;
         }
 
-        // Função para atualizar símbolo da moeda no input
+
         function updateCurrencySymbol(inputId) {
             const codigoMoeda = $(`#${inputId}_moeda`).val();
             const symbol = getCurrencySymbol(codigoMoeda);
             $(`#${inputId}_symbol`).text(symbol || '-');
         }
 
-        // Função para converter valor: moeda original -> USD -> BRL
+
         function convertToUSDAndBRL(inputId) {
             const cotacoes = getCotacaoesProcesso();
             const valor = MoneyUtils.parseMoney($(`#${inputId}`).val()) || 0;
             const codigoMoeda = $(`#${inputId}_moeda`).val();
             
-            // Primeiro tentar pegar a cotação do campo, depois do objeto de cotações
+
             let cotacaoMoeda = MoneyUtils.parseMoney($(`#cotacao_${inputId}`).val());
             
             if (!cotacaoMoeda || cotacaoMoeda === 0) {
@@ -1427,32 +1454,32 @@
             let valorBRL = 0;
             const cotacaoUSD = (cotacoes && cotacoes['USD']) ? cotacoes['USD'].venda : 1;
 
-            // Se a moeda já for USD
+
             if (codigoMoeda === 'USD') {
                 valorUSD = valor;
                 valorBRL = valor * cotacaoUSD;
             } else {
-                // Se não tem cotação, não pode converter
+
                 if (!cotacaoMoeda || cotacaoMoeda === 0) {
                     $(`#${inputId}_usd`).val('');
                     $(`#${inputId}_brl`).val('');
                     return;
                 }
 
-                // Converter de moeda original para BRL primeiro
+
                 valorBRL = valor * cotacaoMoeda;
                 
-                // Converter de BRL para USD: valor BRL / cotação USD
+
                 if (cotacaoUSD > 0) {
                     valorUSD = valorBRL / cotacaoUSD;
                 }
             }
 
-            // Atualizar campos
+
             const usdField = $(`#${inputId}_usd`);
             const brlField = $(`#${inputId}_brl`);
             
-            // Atualizar campos com máxima precisão (7 casas decimais)
+
             if (usdField.length) {
                 usdField.val(MoneyUtils.formatMoney(valorUSD, 2));
             }
@@ -1463,7 +1490,7 @@
         }
 
         function updateValorReal(inputId, spanId, automatic = true) {
-            // Esta função é mantida para compatibilidade, mas agora usamos convertToUSDAndBRL
+
             convertToUSDAndBRL(inputId);
         };
 
@@ -1481,7 +1508,7 @@
                 nome,
                 valor
             })
-            // Atualizar símbolo da moeda se existir o elemento
+
             if ($(`#description_moeda_${inputId}`).length) {
                 $(`#description_moeda_${inputId}`).text(`Taxa: ${nome}`);
             }
@@ -1490,12 +1517,12 @@
                 let convertido = dolar[codigoMoeda].venda;
                 $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 4));
                 
-                // Log apenas para service_charges quando setar a cotação
+
                 if (inputId === 'service_charges') {
                     console.log(`Cotação setada para service_charges: ${codigoMoeda} = ${convertido}`);
                 }
 
-                // Tentar obter a data da cotação
+
                 if (dolar[codigoMoeda].data) {
                     try {
                         const data = new Date(dolar[codigoMoeda].data);
@@ -1506,11 +1533,11 @@
                             $(`#data_moeda_${inputId}`).val(formatada);
                         }
                     } catch (e) {
-                        // Erro silencioso
+
                     }
                 }
             } else {
-                // Se não encontrou a cotação
+
                 if (inputId === 'service_charges') {
                     console.log(`Cotação NÃO encontrada para service_charges. Moeda: ${codigoMoeda}, Cotações disponíveis:`, Object.keys(dolar || {}));
                 }
@@ -1539,7 +1566,7 @@
                 '#productsBody input, #productsBody select, #productsBody textarea, #productsBody .form-control',
                 function(e) {
                     if (!initialInputs.has(e.target)) {
-                        return; // Ignora inputs criados dinamicamente
+                        return; 
                     }
                     $('#avisoProcessoAlterado').removeClass('d-none');
                     const rowId = $(this).data('row');
@@ -1566,7 +1593,7 @@
                 updateValorCotacao('acrescimo_frete', 'cotacao_acrescimo_frete');
                 updateValorCotacao('service_charges', 'cotacao_service_charges');
                 
-                // Garantir que a conversão seja feita após atualizar a cotação
+
                 setTimeout(function() {
                     convertToUSDAndBRL('frete_internacional');
                     convertToUSDAndBRL('seguro_internacional');
@@ -1575,13 +1602,13 @@
                 }, 100);
             });
             
-            // Listener específico para service_charges_moeda - FORÇAR CONVERSÃO
+
             $('#service_charges_moeda').on('select2:select', function(e) {
                 const moeda = $(this).val();
                 updateCurrencySymbol('service_charges');
-                // Forçar atualização da cotação
+
                 updateValorCotacao('service_charges', 'cotacao_service_charges');
-                // Aguardar e FORÇAR conversão
+
                 setTimeout(function() {
                     convertToUSDAndBRL('service_charges');
                     atualizarVisibilidadeColunasMoeda();
@@ -1589,7 +1616,7 @@
                 }, 200);
             });
             
-            // Listener para cotacao_service_charges - FORÇAR CONVERSÃO quando cotação mudar
+
             $('#cotacao_service_charges').on('blur change input', function() {
                 setTimeout(function() {
                     convertToUSDAndBRL('service_charges');
@@ -1616,16 +1643,16 @@
                 let cotacaoMoeda = cotacaoProcesso[moeda]?.venda ?? 0;
                 let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
 
-                // sempre mostra a cotação em BRL
+
                 $('#display_cotacao').val(MoneyUtils.formatMoney(cotacaoMoeda, 4));
 
                 if (moeda && moeda !== 'USD') {
-                    // Moeda -> USD
+
                     let moedaEmUSD = cotacaoMoeda / cotacaoUSD;
                     $('#moeda_processo_usd').val(MoneyUtils.formatMoney(moedaEmUSD, 4));
                     $('#visualizacaoMoedaDolar').removeClass('d-none').addClass('col-12');
 
-                    // cria/atualiza versão USD
+
                     cotacaoProcesso[`${moeda}_USD`] = {
                         nome: `${cotacaoProcesso[moeda].nome} em USD`,
                         data: cotacaoProcesso[moeda].data || (() => {
@@ -1641,13 +1668,13 @@
                     $('#moeda_processo_usd').val('');
                 }
 
-                // atualiza o hidden sempre
+
                 $('#cotacao_moeda_processo').val(JSON.stringify(cotacaoProcesso));
 
-                // ADICIONAR ESTA LINHA PARA ATUALIZAR A VISIBILIDADE DAS COLUNAS
+
                 setTimeout(atualizarVisibilidadeColunasMoeda, 100);
 
-                // ADICIONAR ESTA LINHA PARA RECALCULAR A TABELA COM A NOVA MOEDA
+
                 setTimeout(recalcularTodaTabela, 200);
 
                 $('#formProcesso').submit();
@@ -1661,7 +1688,7 @@
                 let moeda = $('#moeda_processo').val();
                 let data = $('#data_cotacao_processo').val();
 
-                // se a moeda não existir, cria
+
                 if (!cotacaoProcesso[moeda]) {
                     cotacaoProcesso[moeda] = {
                         nome: moeda,
@@ -1675,7 +1702,7 @@
                     cotacaoProcesso[moeda].compra = cotacaoMoedaFloat;
                 }
 
-                // atualiza a data
+
                 if (data) {
                     let [dia, mes, ano] = data.split('/');
                     cotacaoProcesso[moeda].data = `${mes}/${dia}/${ano}`;
@@ -1685,7 +1712,7 @@
                         `${String(hoje.getMonth()+1).padStart(2,'0')}/${String(hoje.getDate()).padStart(2,'0')}/${hoje.getFullYear()}`;
                 }
 
-                // se não for USD, cria/atualiza versão moeda -> USD
+
                 if (moeda && moeda !== 'USD') {
                     let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
 
@@ -1705,29 +1732,29 @@
                     $('#moeda_processo_usd').val('');
                 }
 
-                // persiste tudo no hidden
+
                 $('#cotacao_moeda_processo').val(JSON.stringify(cotacaoProcesso));
             });
 
-            // Atualizar símbolos e conversões quando a moeda mudar
+
             $(document).on('change', '#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda, #service_charges_moeda', function() {
                 const inputId = this.id.replace('_moeda', '');
                 updateCurrencySymbol(inputId);
                 updateValorCotacao(inputId, `cotacao_${inputId}`);
-                // Aguardar um pouco para garantir que a cotação foi atualizada
+
                 setTimeout(function() {
                     convertToUSDAndBRL(inputId);
                 }, 150);
             });
 
-            // Atualizar conversões quando o valor mudar
+
             $('#frete_internacional, #seguro_internacional, #acrescimo_frete, #service_charges').trigger('change');
             $(document).on('change', '#frete_internacional, #seguro_internacional, #acrescimo_frete, #service_charges', function() {
                 const inputId = this.id;
                 convertToUSDAndBRL(inputId);
             });
 
-            // Atualizar conversões quando a cotação mudar
+
             $(document).on('change', '#cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete, #cotacao_service_charges', function() {
                 let inputId = '';
                 if (this.id === 'cotacao_frete_internacional') {
@@ -1744,7 +1771,7 @@
                 }
             });
 
-            // Inicializar símbolos ao carregar a página
+
             setTimeout(function() {
                 updateCurrencySymbol('frete_internacional');
                 updateCurrencySymbol('seguro_internacional');
@@ -1774,7 +1801,7 @@
         })
 
         function showDeleteConfirmation(documentId) {
-            const deleteUrl = '/destroy-produto-processo/' + documentId; // Ajuste a URL conforme necessário
+            const deleteUrl = '/destroy-produto-processo/' + documentId; 
 
             Swal.fire({
                 title: 'Você tem certeza que deseja excluir este registro?',
@@ -1806,19 +1833,19 @@
             parsePercentage: function(value) {
                 if (!value || value === "") return 0;
 
-                // Converter para string e remover espaços
+
                 let stringValue = value.toString().trim();
 
-                // Remover o símbolo de porcentagem se existir
+
                 stringValue = stringValue.replace(/%/g, '');
 
-                // Substituir vírgula por ponto para decimal
+
                 stringValue = stringValue.replace(',', '.');
 
-                // Remover espaços extras que possam ter sobrado
+
                 stringValue = stringValue.replace(/\s/g, '');
 
-                // Converter para float e dividir por 100 para obter a fração
+
                 const parsedValue = parseFloat(stringValue) || 0;
 
                 return parsedValue / 100;
@@ -1857,7 +1884,7 @@
             parseMoney: function(value) {
                 if (value === null || value === undefined || value === "") return 0;
 
-                // Se já for número, retorna direto
+
                 if (typeof value === "number") {
                     return value;
                 }
@@ -1867,12 +1894,12 @@
                 }
 
 
-                // Se for string, trata a formatação
-                let cleanValue = value.toString()
-                    .replace(/\./g, '') // Remove todos os pontos
-                    .replace(/,/g, '.'); // Substitui vírgula por ponto
 
-                // Remover caracteres não numéricos exceto ponto decimal
+                let cleanValue = value.toString()
+                    .replace(/\./g, '') 
+                    .replace(/,/g, '.'); 
+
+
                 cleanValue = cleanValue.replace(/[^\d.]/g, '');
 
                 return parseFloat(cleanValue) || 0;
@@ -1883,15 +1910,15 @@
                 if (!isFinite(num)) return '0';
                 
                 let processedValue;
-                // Para valores monetários (decimals <= 2), usar arredondamento
-                // Para fatores (decimals > 2), usar truncamento
+
+
                 if (decimals <= 2) {
                     processedValue = Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
                 } else {
                     processedValue = this.truncate(num, decimals);
                 }
                 
-                // Formatar para exibição
+
                 return processedValue.toLocaleString('pt-BR', {
                     minimumFractionDigits: decimals,
                     maximumFractionDigits: decimals
@@ -1899,26 +1926,26 @@
             },
             
             formatMoneyExato: function(value) {
-                // Formatação SEM ARREDONDAMENTO - mantém EXATAMENTE o valor calculado
+
                 const num = normalizeNumericValue(value);
                 if (!isFinite(num)) return '0';
                 
-                // Usar toFixed com muitas casas decimais para evitar notação científica
-                // e depois remover zeros à direita desnecessários
+
+
                 let str = num.toFixed(20);
                 
-                // Remover zeros à direita desnecessários (mas manter todas as casas significativas)
+
                 str = str.replace(/\.?0+$/, '');
                 
-                // Separar parte inteira e decimal
+
                 let parts = str.split('.');
                 let integerPart = parts[0];
                 let decimalPart = parts[1] || '';
                 
-                // Formatar parte inteira com separadores de milhar
+
                 integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                 
-                // Se houver parte decimal, adicionar vírgula
+
                 if (decimalPart) {
                     return `${integerPart},${decimalPart}`;
                 }
@@ -1929,7 +1956,7 @@
 
 
         function recalcularTodaTabela() {
-            // Proteção contra recálculos simultâneos
+
             if (isRecalculating) {
                 return;
             }
@@ -1938,13 +1965,13 @@
             
             const rows = $('.linhas-input');
             const moedasOBject = getCotacaoesProcesso();
-            // Garantir máxima precisão na obtenção do dólar
+
             let moedaDolar = moedasOBject['USD']?.venda;
             if (!moedaDolar || moedaDolar === null || moedaDolar === undefined) {
                 const cotacaoFrete = $(`#cotacao_frete_internacional`).val();
                 moedaDolar = cotacaoFrete ? cotacaoFrete.replace(',', '.') : 1;
             }
-            // Se já for número, usar direto; senão, parsear com máxima precisão
+
             const dolar = typeof moedaDolar === 'number' ? moedaDolar : MoneyUtils.parseMoney(moedaDolar);
             const totalPesoLiq = calcularPesoTotal();
             const taxaSisComex = calcularTaxaSiscomex();
@@ -1961,7 +1988,7 @@
                 acrescimoProcessoUSD,
                 serviceChargesProcessoUSD
             };
-            // PRIMEIRA PASSADA: Atualizar FOBs e calcular novo FOB Total Geral
+
             let fobTotalGeralAtualizado = 0;
             const fobTotaisPorLinha = {};
 
@@ -1977,7 +2004,7 @@
                     const fatorPesoRow = recalcularFatorPeso(totalPesoLiq, rowId);
                     const fobTotal = fobUnitario * quantidade;
 
-                    // Armazena os valores para usar depois
+
                     fobTotaisPorLinha[rowId] = {
                         fobTotal,
                         fobUnitario,
@@ -1996,14 +2023,14 @@
 
                     fobTotalGeralAtualizado += fobTotal;
 
-                    // Atualiza campos básicos
+
                     $(`#peso_liquido_unitario-${rowId}`).val(pesoTotal / (quantidade || 1));
                     $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal, 7));
                     $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar, 7));
                 }
             });
 
-            // SEGUNDA PASSADA: Calcular fatores e atualizar campos que dependem do FOB Total Geral atualizado
+
             rows.each(function() {
                 const rowId = this.id.toString().replace('row-', '');
                 if (rowId) {
@@ -2015,14 +2042,14 @@
                     const fatorPesoRow = linha.fatorPesoRow;
                     const pesoTotal = linha.pesoTotal;
                     
-                    // Garantir que quantidade está disponível para os cálculos
+
                     const quantidadeAtual = quantidade || MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
 
-                    // AGORA calcula o fator com o FOB Total Geral atualizado
+
                     const fatorVlrFob_AX = fobTotal / (fobTotalGeralAtualizado || 1);
                     $(`#fator_valor_fob-${rowId}`).val(MoneyUtils.formatMoney(fatorVlrFob_AX, 6));
 
-                    // Resto dos cálculos usando o FOB Total Geral ATUALIZADO
+
                     const moedaFrete = $('#frete_internacional_moeda').val();
                     let valorFreteInternacional = MoneyUtils.parseMoney($('#frete_internacional').val());
                     let valorFreteInternacionalDolar = 0;
@@ -2042,23 +2069,23 @@
                     const thc_capataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val());
                     const thcRow = thc_capataziaBase * fatorPesoRow;
                     
-                    // Calcular SERVICE_CHARGES seguindo a mesma lógica do cálculo por linha
+
                     const serviceChargesBaseRow = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
                     const serviceChargesRowAtual = serviceChargesBaseRow * fatorPesoRow;
 
-                    // Calcular VLR_CRF_TOTAL = FOB_TOTAL_USD + FRETE_INT_USD
+
                     const vlrCrfTotal = fobTotal + freteUsdInt;
-                    // Calcular VLR_CRF_UNIT = VLR_CRF_TOTAL / QUANTIDADE
+
                     const vlrCrfUnit = quantidadeAtual > 0 ? vlrCrfTotal / quantidadeAtual : 0;
 
-                    // IMPORTANTE: Usar fobTotalGeralAtualizado aqui
+
                     const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeralAtualizado);
 
 
                     const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeralAtualizado, dolar);
                     const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
                         seguroIntUsdRow, thcRow, dolar, vlrCrfTotal, serviceChargesRowAtual);
-                    // Multiplicação exata sem arredondamento - manter precisão máxima
+
                     const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
 
                     const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
@@ -2079,16 +2106,16 @@
 
                     const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#mva-${rowId}`).val()) : 0;
                     
-                    // Calcular base_icms_st usando a fórmula: valor_total_nf_sem_icms * (1 + MVA)
-                    // NOTA: parsePercentage já retorna a fração (ex: 45.5% vira 0.455)
+
+
                     const valorTotalNfSemIcms = totais.vlrTotalNfSemIcms || 0;
                     let base_icms_st = 0;
                     
                     if (mva > 0 && valorTotalNfSemIcms > 0) {
-                        // MVA já vem como fração de parsePercentage (ex: 0.455 para 45,5%)
+
                         base_icms_st = valorTotalNfSemIcms * (1 + mva);
                     } else {
-                        // Se não há MVA, base_icms_st é igual ao valor_total_nf_sem_icms
+
                         base_icms_st = valorTotalNfSemIcms;
                     }
                     
@@ -2100,10 +2127,29 @@
                         dolar);
                     diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                     const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar) : 0;
-                    // Usar parseMoney pois redução é uma fração decimal (ex: 0,46315789), não uma porcentagem
+
                     const reducaoPercent = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
                     const custoUnitarioFinal = MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0;
                     const custoTotalFinal = MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || (custoUnitarioFinal * quantidadeAtual);
+
+                    const camposExternos = getCamposExternos();
+                    let desp_desenbaraco_parte_1 = 0;
+                    for (let campo of camposExternos) {
+                        const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
+                        const valorDistribuido = window.valoresBrutosCamposExternos[campo]?.[rowId] ?? (valorCampo * fatorVlrFob_AX);
+                        desp_desenbaraco_parte_1 += valorDistribuido;
+                    }
+                    const multaDesp = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
+                    const vlrAduaneiroBrlDesp = vlrAduaneiroBrl;
+                    const txDefLiPercentDesp = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) : 0;
+                    const taxa_def_desp = vlrAduaneiroBrlDesp * txDefLiPercentDesp;
+                    const taxa_siscomex_desp = taxaSiscomexUnitaria_BB || 0;
+                    desp_desenbaraco_parte_1 += multaDesp + taxa_def_desp + taxa_siscomex_desp;
+                    const capatazia_desp = $(`#capatazia-${rowId}`).val() ? MoneyUtils.parseMoney($(`#capatazia-${rowId}`).val()) : 0;
+                    const afrmm_desp = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
+                    const honorarios_nix_desp = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0;
+                    const desp_desenbaraco_parte_2 = multaDesp + taxa_def_desp + taxa_siscomex_desp + capatazia_desp + afrmm_desp + honorarios_nix_desp;
+                    const despesaDesembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
 
                     addDebugEntry(rowId, {
                         freteUsd: freteUsdInt,
@@ -2151,7 +2197,24 @@
                         vlrIcmsSt,
                         valorIcmsSt: vlrIcmsSt,
                         custoUnitarioFinal,
-                        custoTotalFinal
+                        custoTotalFinal,
+                        despesaDesembaraco,
+                        despesaDesembaracoParte1: desp_desenbaraco_parte_1,
+                        despesaDesembaracoParte2: desp_desenbaraco_parte_2,
+                        despesaDesembaracoDetalhes: {
+                            camposExternos: camposExternos.reduce((acc, campo) => {
+                                const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
+                                const valorDistribuido = window.valoresBrutosCamposExternos[campo]?.[rowId] ?? (valorCampo * fatorVlrFob_AX);
+                                acc[campo] = valorDistribuido;
+                                return acc;
+                            }, {}),
+                            multa: multaDesp,
+                            taxaDef: taxa_def_desp,
+                            taxaSiscomex: taxa_siscomex_desp,
+                            capatazia: capatazia_desp,
+                            afrmm: afrmm_desp,
+                            honorariosNix: honorarios_nix_desp
+                        }
                     });
 
                     atualizarCampos(rowId, {
@@ -2177,7 +2240,7 @@
                         vlrIcmsSt,
                         base_icms_st,
                         fatorPesoRow,
-                        fobTotalGeral: fobTotalGeralAtualizado, // Usar o valor atualizado
+                        fobTotalGeral: fobTotalGeralAtualizado, 
                         fobUnitario,
                         diferenca_cambial_frete,
                         diferenca_cambial_fob
@@ -2186,8 +2249,8 @@
             });
 
             atualizarCamposCabecalho();
-            atualizarTotaisGlobais(fobTotalGeralAtualizado, dolar); // Usar o valor atualizado
-            atualizarFatoresFob(); // Atualizar fatores FOB após todos os cálculos
+            atualizarTotaisGlobais(fobTotalGeralAtualizado, dolar); 
+            atualizarFatoresFob(); 
             atualizarTotalizadores();
             setDebugGlobals({
                 ...globaisProcesso,
@@ -2195,7 +2258,7 @@
                 nacionalizacao: getNacionalizacaoAtual()
             });
             
-            // Liberar flag após conclusão
+
             setTimeout(() => {
                 isRecalculating = false;
             }, 50);
@@ -2244,7 +2307,7 @@
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
 
-                // Se o valor for inválido ou negativo, não mostra nada no campo, caso contrário formata
+
                 if (diferenca_cambial_frete === 0 || isNaN(diferenca_cambial_frete) || !isFinite(diferenca_cambial_frete) || diferenca_cambial_frete < 0) {
                     $(`#diferenca_cambial_frete-${rowId}`).val('');
                 } else {
@@ -2256,12 +2319,12 @@
             }
         }
 
-        const CAMPOS_EXCLUSIVOS_ANAPOLIS = ['rep_anapolis', 'correios']; // desp_anapolis removido - coluna oculta e não considerada no cálculo
+        const CAMPOS_EXCLUSIVOS_ANAPOLIS = ['rep_anapolis', 'correios']; 
         const CAMPO_CORRECAO_LACRE = 'tx_correcao_lacre';
         const CAMPOS_EXTERNOS_BASE = [
             'outras_taxas_agente', 'liberacao_bl', 'desconsolidacao', 'isps_code', 'handling', 'capatazia',
             'afrmm', 'armazenagem_sts', 'frete_dta_sts_ana', 'sda', 'rep_sts', 'armaz_ana',
-            'tx_correcao_lacre', 'lavagem_container', 'rep_anapolis', 'correios', 'li_dta_honor_nix', 'honorarios_nix' // desp_anapolis removido - coluna oculta
+            'tx_correcao_lacre', 'lavagem_container', 'rep_anapolis', 'correios', 'li_dta_honor_nix', 'honorarios_nix' 
         ];
 
         function getNacionalizacaoAtual() {
@@ -2308,7 +2371,7 @@
             const mostrarCamposAnapolis = nacionalizacao !== 'santos';
             const mostrarTxCorrecao = nacionalizacao === 'santos';
 
-            // Ocultar/mostrar colunas no cabeçalho (middleRow)
+
             $('th[data-campo="tx_correcao_lacre"]').each(function() {
                 if (mostrarTxCorrecao) {
                     $(this).show();
@@ -2317,7 +2380,7 @@
                 }
             });
 
-            $('th[data-campo="rep_anapolis"], th[data-campo="correios"]').each(function() { // desp_anapolis removido
+            $('th[data-campo="rep_anapolis"], th[data-campo="correios"]').each(function() { 
                 if (mostrarCamposAnapolis) {
                     $(this).show();
                 } else {
@@ -2325,7 +2388,7 @@
                 }
             });
 
-            // Ocultar/mostrar colunas nas linhas
+
             $('td[data-campo="tx_correcao_lacre"]').each(function() {
                 if (mostrarTxCorrecao) {
                     $(this).show();
@@ -2334,7 +2397,7 @@
                 }
             });
 
-            $('td[data-campo="rep_anapolis"], td[data-campo="correios"]').each(function() { // desp_anapolis removido
+            $('td[data-campo="rep_anapolis"], td[data-campo="correios"]').each(function() { 
                 if (mostrarCamposAnapolis) {
                     $(this).show();
                 } else {
@@ -2342,7 +2405,7 @@
                 }
             });
 
-            // Manter compatibilidade com classes antigas
+
             toggleColunas('.coluna-anapolis', mostrarCamposAnapolis);
             toggleColunas('.coluna-tx-correcao-lacre', mostrarTxCorrecao);
 
@@ -2393,7 +2456,7 @@
             $select.prop('disabled', true);
 
             try {
-                // Salvar a nacionalização primeiro
+
                 const formData = new FormData();
                 formData.append('_token', '{{ csrf_token() }}');
                 formData.append('_method', 'PUT');
@@ -2408,7 +2471,7 @@
                     throw new Error('Não foi possível salvar a nacionalização.');
                 }
 
-                // Recarregar a página para que as colunas sumam completamente
+
                 window.location.reload();
             } catch (error) {
                 console.error('Erro ao atualizar nacionalização:', error);
@@ -2430,7 +2493,7 @@
                 'diferenca_cambial_frete', 'diferenca_cambial_fob'
             ];
         }
-        // Função para obter valores base com a nova lógica
+
         function obterValoresBase(rowId) {
             let moedaProcesso = $('#moeda_processo').val();
             let fobUnitario;
@@ -2440,24 +2503,24 @@
             let quantidade = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
 
             if (moedaProcesso && moedaProcesso !== 'USD') {
-                // Se tem moeda estrangeira, usar o valor dela como base
+
                 fobUnitarioMoedaEstrangeira = MoneyUtils.parseMoney($(`#fob_unit_moeda_estrangeira-${rowId}`).val()) || 0;
 
                 if (fobUnitarioMoedaEstrangeira > 0) {
-                    // Converter da moeda estrangeira para USD
+
                     fobUnitario = converterMoedaProcessoParaUSD(fobUnitarioMoedaEstrangeira, moedaProcesso);
                 } else {
-                    // Se não tem valor na moeda estrangeira, tentar usar USD como fallback
+
                     fobUnitario = MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val()) || 0;
-                    // E converter USD para moeda estrangeira
+
                     if (fobUnitario > 0) {
                         fobUnitarioMoedaEstrangeira = converterUSDParaMoedaProcesso(fobUnitario, moedaProcesso);
                     }
                 }
             } else {
-                // Moeda é USD - usar valor direto
+
                 fobUnitario = MoneyUtils.parseMoney($(`#fob_unit_usd-${rowId}`).val()) || 0;
-                fobUnitarioMoedaEstrangeira = fobUnitario; // Para USD, são iguais
+                fobUnitarioMoedaEstrangeira = fobUnitario; 
             }
 
             if (isNaN(fobUnitario)) fobUnitario = 0;
@@ -2484,9 +2547,9 @@
             const rowId = $(this).data('row');
             const valor = $(this).val();
 
-            // Só calcular se o valor for válido e não estiver vazio
+
             if (valor && valor.trim() !== '' && !isNaN(MoneyUtils.parseMoney(valor))) {
-                // Pequeno delay para garantir que o usuário terminou de digitar
+
                 clearTimeout(window.fobMoedaTimeout);
                 window.fobMoedaTimeout = setTimeout(() => {
                     debouncedRecalcular();
@@ -2494,7 +2557,7 @@
             }
         });
 
-        // E também no fobUnitario normal
+
         $(document).on('keyup', '.fobUnitario', function(e) {
             const rowId = $(this).data('row');
             const valor = $(this).val();
@@ -2541,7 +2604,7 @@
         $(document).on('change keyup', '.fobUnitarioMoedaEstrangeira, .fobUnitario', function(e) {
             const rowId = $(this).data('row');
             if (rowId != null) {
-                // Pequeno delay para garantir processamento
+
                 setTimeout(() => {
                     const {
                         pesoTotal,
@@ -2553,7 +2616,7 @@
 
                     let cotacaoProcesso = getCotacaoesProcesso();
 
-                    // Usar a cotação específica do seguro, não do frete
+
                     let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
                     atualizarCamposFOB(rowId, {
                         fobUnitarioMoedaEstrangeira: fobUnitarioMoedaEstrangeira,
@@ -2586,7 +2649,7 @@
         }
 
         function atualizarPesoLiquidoTotal(pesoTotal) {
-            // Atualizar o campo peso_liquido no formulário
+
             const pesoLiquidoElement = $('#peso_liquido');
             if (pesoLiquidoElement.length > 0) {
                 pesoLiquidoElement.val(MoneyUtils.formatMoney(pesoTotal, 4));
@@ -2610,11 +2673,11 @@
             if (moedaSeguro && moedaSeguro !== 'USD') {
                 let cotacaoProcesso = getCotacaoesProcesso();
 
-                // Usar a cotação específica do seguro, não do frete
+
                 let cotacaoMoedaSeguro = MoneyUtils.parseMoney($('#cotacao_seguro_internacional').val());
                 let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
 
-                // Se não temos cotação específica, usar a cotação padrão da moeda
+
                 if (!cotacaoMoedaSeguro && cotacaoProcesso[moedaSeguro]) {
                     cotacaoMoedaSeguro = cotacaoProcesso[moedaSeguro].venda;
                 }
@@ -2623,7 +2686,7 @@
                     let moedaEmUSD = cotacaoMoedaSeguro / cotacaoUSD;
                     valorSeguroInternacionalDolar = total * moedaEmUSD;
                 } else {
-                    // Fallback: usar cotação 1:1 se não encontrada
+
                     valorSeguroInternacionalDolar = total;
                 }
             } else {
@@ -2645,11 +2708,11 @@
             if (moedaFrete && moedaFrete !== 'USD') {
                 let cotacaoProcesso = getCotacaoesProcesso();
 
-                // Usar a cotação específica do acréscimo de frete, se houver
+
                 let cotacaoMoedaFrete = MoneyUtils.parseMoney($('#cotacao_acrescimo_frete').val());
                 let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
 
-                // Se não tem cotação específica, usar a cotação padrão da moeda
+
                 if (!cotacaoMoedaFrete && cotacaoProcesso[moedaFrete]) {
                     cotacaoMoedaFrete = cotacaoProcesso[moedaFrete].venda;
                 }
@@ -2658,7 +2721,7 @@
                     let moedaEmUSD = cotacaoMoedaFrete / cotacaoUSD;
                     valorFreteUSD = base * moedaEmUSD;
                 } else {
-                    // Fallback 1:1
+
                     valorFreteUSD = base;
                 }
             } else {
@@ -2670,32 +2733,32 @@
 
 
         function calcularValorAduaneiro(fob, frete, acrescimo, seguro, thc, dolar, vlrCrfTotal = 0, serviceCharges = 0) {
-            // Função para validar e converter valores com máxima precisão
+
             const parseSafe = (value, defaultValue = 0) => {
                 if (value === null || value === undefined) return defaultValue;
-                // Se já for número, usar direto para manter precisão
+
                 if (typeof value === 'number') {
                     return isNaN(value) || !isFinite(value) ? defaultValue : value;
                 }
-                // Se for string, parsear com máxima precisão
+
                 const num = parseFloat(value);
                 return isNaN(num) || !isFinite(num) ? defaultValue : num;
             };
 
-            // Valor aduaneiro considera apenas: vlr_crf_total, service_charges_usd, acresc_frete_usd, seguro_usd e thc_usd
-            // Usar valores exatos sem arredondamento durante cálculos
-            const safeAcrescimo = parseSafe(acrescimo); // acresc_frete_usd
-            const safeSeguro = parseSafe(seguro); // seguro_usd
-            const safeThc = parseSafe(thc); // thc em BRL
-            const safeDolar = parseSafe(dolar, 1);
-            const safeVlrCrfTotal = parseSafe(vlrCrfTotal); // vlr_crf_total
-            const safeServiceCharges = parseSafe(serviceCharges); // service_charges_usd
 
-            // THC precisa ser convertido de BRL para USD
-            // Usar divisão exata sem arredondamento
+
+            const safeAcrescimo = parseSafe(acrescimo); 
+            const safeSeguro = parseSafe(seguro); 
+            const safeThc = parseSafe(thc); 
+            const safeDolar = parseSafe(dolar, 1);
+            const safeVlrCrfTotal = parseSafe(vlrCrfTotal); 
+            const safeServiceCharges = parseSafe(serviceCharges); 
+
+
+
             const thcUsd = safeDolar > 0 ? safeThc / safeDolar : 0;
 
-            // Soma exata sem arredondamento - manter precisão máxima
+
             return safeVlrCrfTotal + safeServiceCharges + safeAcrescimo + safeSeguro + thcUsd;
         }
 
@@ -2711,8 +2774,8 @@
         }
 
         function validarDiferencaCambialFrete(valor) {
-            // Valida e trata o valor de diferença cambial frete
-            // Retorna 0 se o valor for inválido (NaN, null, undefined, Infinity) ou negativo
+
+
             if (valor === null || valor === undefined || isNaN(valor) || !isFinite(valor) || valor < 0) {
                 return 0;
             }
@@ -2721,42 +2784,34 @@
 
         function calcularDespesas(rowId, fatorVlrFob_AX, fatorSiscomex, taxaSiscomexUnit, vlrAduaneiroBrl = null) {
             const multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
-            
-            // tx_def_li é uma porcentagem, precisa calcular sobre uma base
-            // Vamos usar o valor aduaneiro BRL como base
-            // Se não foi passado como parâmetro, tenta ler do DOM
+
             if (vlrAduaneiroBrl === null) {
                 vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
             }
             const txDefLiPercent = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) : 0;
             const txDefLi = vlrAduaneiroBrl * txDefLiPercent;
             
-            // Taxa SISCOMEX da linha (já vem como parâmetro taxaSiscomexUnit)
             const taxaSiscomex = taxaSiscomexUnit || 0;
             
-            // AFrmm
+
             const afrmm = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
             
-            // Armazenagem STS
             let armazenagem_sts = $('#armazenagem_sts-' + rowId).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' +
                     rowId).val()) :
                 0;
             
-            // Frete DTA STS/GYN
             let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + rowId).val() ? MoneyUtils.parseMoney($('#frete_dta_sts_ana-' +
                         rowId)
                     .val()) :
                 0;
             
-            // Honorários NIX
-            const honorarios_nix = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0;
+            const honorarios_nix_raw = $(`#honorarios_nix-${rowId}`).val();
+            const honorarios_nix = honorarios_nix_raw ? MoneyUtils.parseMoney(honorarios_nix_raw) : 0;
 
             let despesas = multa + txDefLi + taxaSiscomex;
             if (getNacionalizacaoAtual() === 'santos') {
-                // Para santos: multa + txdefli + txsiscomex + afrmm + honorarios
                 despesas += afrmm + honorarios_nix;
             } else {
-                // Para outros: manter cálculo atual
                 despesas += afrmm + armazenagem_sts + frete_dta_sts_ana + honorarios_nix;
             }
 
@@ -2790,7 +2845,7 @@
             const vlrIpi = bcIpi * impostos.ipi;
             let reducao = 1;
 
-            // Usar parseMoney ao invés de parsePercentage, pois redução é uma fração decimal (ex: 0,46315789)
+
             if ($(`#reducao-${rowId}`).val() && MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) > 0) {
                 reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
             }
@@ -2834,7 +2889,7 @@
             let moedaFrete = $('#frete_internacional_moeda').val();
             let moedaSeguro = $('#seguro_internacional_moeda').val();
             let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
-            let moedaProcesso = $('#moeda_processo').val(); // Nova variável
+            let moedaProcesso = $('#moeda_processo').val(); 
 
             if (moedaFrete && moedaFrete !== 'USD') {
                 let valorFreteMoedaEstrangeira = MoneyUtils.parseMoney($('#frete_internacional').val()) * valores
@@ -2857,7 +2912,7 @@
             $(`#seguro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow, 2));
             $(`#seguro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.seguroIntUsdRow * valores.dolar, 2));
 
-            // Acréscimo - valor na moeda estrangeira original
+
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 let valorAcrescimoMoedaEstrangeira = MoneyUtils.parseMoney($('#acrescimo_frete').val()) * valores
                     .fatorVlrFob_AX;
@@ -2873,21 +2928,21 @@
                 }
 
                 if (cotacaoMoedaProcesso) {
-                    // Converter de USD para a moeda estrangeira
+
                     let fobUnitMoedaEstrangeira = valores.fobUnitario * (cotacaoMoedaProcesso / cotacaoUSD);
                     let fobTotalMoedaEstrangeira = valores.fobTotal * (cotacaoMoedaProcesso / cotacaoUSD);
-                    // $(`#fob_unit_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobUnitMoedaEstrangeira));
+
                     $(`#fob_total_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(fobTotalMoedaEstrangeira, 7));
                 }
             }
             $(`#acresc_frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow, 2));
             $(`#acresc_frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.acrescimoFreteUsdRow * valores.dolar, 2));
             
-            // Calcular e atualizar VLR_CRF_TOTAL e VLR_CRF_UNIT
+
             if (valores.vlrCrfTotal !== undefined) {
                 $(`#vlr_crf_total-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfTotal, 2));
             } else {
-                // Fallback: calcular se não foi passado
+
                 const fobTotal = valores.fobTotal || MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
                 const freteUsd = valores.freteUsdInt || MoneyUtils.parseMoney($(`#frete_usd-${rowId}`).val()) || 0;
                 const vlrCrfTotal = fobTotal + freteUsd;
@@ -2897,20 +2952,20 @@
             if (valores.vlrCrfUnit !== undefined) {
                 $(`#vlr_crf_unit-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfUnit, 2));
             } else {
-                // Fallback: calcular se não foi passado
+
                 const vlrCrfTotal = MoneyUtils.parseMoney($(`#vlr_crf_total-${rowId}`).val()) || 0;
                 const quantidade = valores.quantidade || MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
                 const vlrCrfUnit = quantidade > 0 ? vlrCrfTotal / quantidade : 0;
                 $(`#vlr_crf_unit-${rowId}`).val(MoneyUtils.formatMoney(vlrCrfUnit, 2));
             }
             
-            // Calcular SERVICE_CHARGES rateado do processo (não mais editável por produto)
+
             let moedaServiceCharges = $('#service_charges_moeda').val();
             if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
                 if (valores.serviceChargesMoedaEstrangeira !== undefined) {
                     $(`#service_charges_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesMoedaEstrangeira, 2));
                 } else {
-                    // Fallback: calcular se não foi passado
+
                     const serviceChargesBase = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
                     const fatorPesoRow = valores.fatorPesoRow || MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
                     const serviceChargesMoedaEstrangeira = serviceChargesBase * fatorPesoRow;
@@ -2921,7 +2976,7 @@
             if (valores.serviceChargesRow !== undefined) {
                 $(`#service_charges-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesRow, 2));
             } else {
-                // Fallback: calcular se não foi passado
+
                 const serviceChargesBase = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
                 const fatorPesoRow = valores.fatorPesoRow || MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
                 const serviceChargesRow = serviceChargesBase * fatorPesoRow;
@@ -2931,7 +2986,7 @@
             if (valores.serviceChargesBrl !== undefined) {
                 $(`#service_charges_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.serviceChargesBrl, 2));
             } else {
-                // Fallback: calcular se não foi passado
+
                 const serviceChargesRow = MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
                 const serviceChargesBrl = serviceChargesRow * valores.dolar;
                 $(`#service_charges_brl-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesBrl, 2));
@@ -2957,16 +3012,16 @@
             $(`#valor_unit_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrUnitProdutNf, 2));
             $(`#valor_total_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalProdutoNf, 2));
             $(`#valor_total_nf_sem_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalNfSemIcms, 2));
-            // NOTA: valor_total_nf_com_icms_st será atualizado após calcular o vlrIcmsSt (veja mais abaixo)
+
             
             $(`#base_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.base_icms_st, 2));
             $(`#valor_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSt, 2));
             
-            // Recalcular valor_total_nf_com_icms_st com o vlrIcmsSt calculado
+
             const valorTotalNfComIcmsStRecalculado = valores.totais.vlrTotalNfSemIcms + (valores.vlrIcmsSt || 0);
             $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado, 2));
 
-            // Validar e tratar diferenca_cambial_frete antes de exibir
+
             const diferencaCambialFreteValidada = validarDiferencaCambialFrete(valores.diferenca_cambial_frete);
             if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
                 $(`#diferenca_cambial_frete-${rowId}`).val('');
@@ -2991,7 +3046,7 @@
             const taxaSiscomexDebug = toNumber(debugGlobals?.taxaSiscomexProcesso);
             const taxaSiscomex = taxaSiscomexDebug || calcularTaxaSiscomex() || 0;
 
-            // Preferir dados calculados via debug (mesma base do modal)
+
             let dadosFob = getDebugFobData();
 
             if (!dadosFob.length) {
@@ -3043,19 +3098,19 @@
             atualizarTotalizadores();
         });
         
-        // Atualizar valores brutos quando campos externos forem editados manualmente
+
         $(document).on('blur', '[id$="-0"], [id$="-1"], [id$="-2"], [id$="-3"], [id$="-4"], [id$="-5"], [id$="-6"], [id$="-7"], [id$="-8"], [id$="-9"]', function() {
             const campoId = $(this).attr('id');
             if (campoId) {
-                // Extrair nome do campo e rowId (formato: campo-rowId)
+
                 const match = campoId.match(/^(.+?)-(\d+)$/);
                 if (match) {
                     const campo = match[1];
                     const rowId = parseInt(match[2]);
-                    // Verificar se é um campo externo
+
                     const camposExternos = getCamposExternos();
                     if (camposExternos.includes(campo)) {
-                        // Atualizar valor bruto quando campo for editado manualmente
+
                         const valor = MoneyUtils.parseMoney($(this).val()) || 0;
                         if (!window.valoresBrutosCamposExternos[campo]) {
                             window.valoresBrutosCamposExternos[campo] = [];
@@ -3074,11 +3129,11 @@
             const valor = MoneyUtils.parsePercentage($(`#icms_reduzido_percent-${rowId}`).val());
             const icmsPercent = MoneyUtils.parsePercentage($(`#icms_percent-${rowId}`).val())
             const novoReducao = valor / icmsPercent
-            // Usar formatMoney com 8 casas decimais para maior precisão no cálculo de BC ICMS REDUZIDO
+
             $(`#reducao-${rowId}`).val(MoneyUtils.formatMoney(novoReducao, 8));
         }
 
-        // Debounce para evitar múltiplos recálculos
+
         let recalcularTimeout = null;
         let isRecalculating = false;
 
@@ -3093,7 +3148,7 @@
             }, 300);
         }
 
-        // Event listeners para multa e tx_def_li - apenas no blur para evitar loops
+
         $(document).on('blur', '[id^="multa-"]', function() {
             const rowId = $(this).data('row');
             if (rowId != null) {
@@ -3108,7 +3163,7 @@
             }
         });
 
-        // Debounce para atualizar campos cambiais
+
         let atualizarCambialTimeout = null;
         function debouncedAtualizarCambial() {
             clearTimeout(atualizarCambialTimeout);
@@ -3130,32 +3185,42 @@
             processarMudancaNacionalizacao(this);
         });
 
-        // Armazenar valores brutos (não formatados) para cálculo preciso do totalizador
+
         window.valoresBrutosCamposExternos = window.valoresBrutosCamposExternos || {};
 
         function atualizarCamposCabecalho() {
             const campos = getCamposExternos()
             const lengthTable = $('.linhas-input').length
 
-            // Usar a função centralizada em vez de calcular manualmente
+
             let fobTotalGeral = calcularFobTotalGeral();
 
-            // Para cada campo externo, garantir que a soma total seja exatamente igual ao valor do cabeçalho
+
             for (let campo of campos) {
-                const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
+                const campoElement = $(`#${campo}`);
+                if (campoElement.length === 0) {
+                    continue;
+                }
+                const valorCampo = MoneyUtils.parseMoney(campoElement.val()) || 0;
                 if (valorCampo === 0) {
-                    // Se o valor for zero, limpar todos os campos
                     for (let i = 0; i < lengthTable; i++) {
-                        $(`#${campo}-${i}`).val('');
-                        // Limpar valor bruto também
-                        if (window.valoresBrutosCamposExternos[campo]) {
-                            window.valoresBrutosCamposExternos[campo][i] = 0;
+                        const valorLinha = MoneyUtils.parseMoney($(`#${campo}-${i}`).val()) || 0;
+                        if (valorLinha > 0) {
+                            if (!window.valoresBrutosCamposExternos[campo]) {
+                                window.valoresBrutosCamposExternos[campo] = [];
+                            }
+                            window.valoresBrutosCamposExternos[campo][i] = valorLinha;
+                        } else {
+                            $(`#${campo}-${i}`).val('');
+                            if (window.valoresBrutosCamposExternos[campo]) {
+                                window.valoresBrutosCamposExternos[campo][i] = 0;
+                            }
                         }
                     }
                     continue;
                 }
 
-                // Inicializar array de valores brutos para este campo
+
                 if (!window.valoresBrutosCamposExternos[campo]) {
                     window.valoresBrutosCamposExternos[campo] = [];
                 }
@@ -3163,135 +3228,153 @@
                 let somaDistribuida = 0;
                 const valoresPorLinha = [];
                 
-                // Primeira passada: distribuir para todas as linhas exceto a última
-                // Arredondar para cima, mas garantir que não ultrapasse o total
+
+
                 for (let i = 0; i < lengthTable - 1; i++) {
                     const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
                     const fatorVlrFob_AX = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
                     
                     const valorCalculado = valorCampo * fatorVlrFob_AX;
-                    // Arredondar para cima com 2 casas decimais
+
                     const valorArredondado = Math.ceil(valorCalculado * 100) / 100;
                     
-                    // Verificar se não ultrapassa o valor total disponível
+
                     const valorDisponivel = valorCampo - somaDistribuida;
                     const valorFinal = Math.min(valorArredondado, valorDisponivel);
                     
                     valoresPorLinha[i] = valorFinal;
                     somaDistribuida += valorFinal;
                     
-                    // Armazenar valor bruto (não formatado) para cálculo preciso do totalizador
+
                     window.valoresBrutosCamposExternos[campo][i] = valorFinal;
                     
-                    // Formatar com 2 casas decimais para exibição
+
                     $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valorFinal, 2));
                 }
                 
-                // Segunda passada: ajustar a última linha para que a soma total seja EXATAMENTE igual ao valor do cabeçalho
+
                 const ultimaLinha = lengthTable - 1;
                 
-                // Recalcular somaDistribuida usando os valores brutos armazenados para máxima precisão
+
                 let somaDistribuidaRecalculada = 0;
                 for (let i = 0; i < lengthTable - 1; i++) {
-                    // Usar valor bruto armazenado (já foi atualizado acima)
+
                     somaDistribuidaRecalculada += window.valoresBrutosCamposExternos[campo][i] || 0;
                 }
                 
-                // Última linha recebe EXATAMENTE a diferença (garantir que não falte nenhum centavo)
-                // Usar subtração direta para máxima precisão
+
+
                 let valorUltimaLinha = valorCampo - somaDistribuidaRecalculada;
                 
-                // Garantir que o valor da última linha não seja negativo
+
                 if (valorUltimaLinha < 0) {
-                    // Se der negativo, redistribuir proporcionalmente (sem arredondar para cima)
+
                     const fatorAjuste = valorCampo / somaDistribuidaRecalculada;
                     somaDistribuidaRecalculada = 0;
                     for (let i = 0; i < lengthTable - 1; i++) {
                         if (valoresPorLinha[i] !== undefined) {
                             valoresPorLinha[i] = valoresPorLinha[i] * fatorAjuste;
-                            // Truncar para 2 casas (não arredondar para cima quando redistribuindo)
+
                             valoresPorLinha[i] = Math.floor(valoresPorLinha[i] * 100) / 100;
                             somaDistribuidaRecalculada += valoresPorLinha[i];
                             
-                            // Atualizar valor bruto
+
                             window.valoresBrutosCamposExternos[campo][i] = valoresPorLinha[i];
                             
                             $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valoresPorLinha[i], 2));
                         }
                     }
-                    // Última linha recebe a diferença exata (recalcular com máxima precisão)
+
                     valorUltimaLinha = valorCampo - somaDistribuidaRecalculada;
                 }
                 
-                // Atribuir o valor exato na última linha (preservar todas as casas decimais necessárias)
+
                 valoresPorLinha[ultimaLinha] = valorUltimaLinha;
                 
-                // Armazenar valor bruto da última linha (valor exato, não formatado)
-                // Garantir que seja exatamente a diferença para que a soma total seja exata
+
+
                 window.valoresBrutosCamposExternos[campo][ultimaLinha] = valorUltimaLinha;
                 
-                // Verificação final: garantir que a soma seja exata
+
                 let somaFinal = 0;
                 for (let i = 0; i < lengthTable; i++) {
                     somaFinal += window.valoresBrutosCamposExternos[campo][i] || 0;
                 }
                 
-                // Se ainda houver diferença (mesmo que mínima), ajustar a última linha
+
                 const diferencaFinal = valorCampo - somaFinal;
                 if (Math.abs(diferencaFinal) > 0.000001) {
                     window.valoresBrutosCamposExternos[campo][ultimaLinha] += diferencaFinal;
                     valorUltimaLinha += diferencaFinal;
                 }
                 
-                // Formatar preservando o valor exato - usar formatMoneyExato para manter precisão máxima
-                // Isso garante que a soma total seja exatamente igual ao valor do cabeçalho
+
+
                 $(`#${campo}-${ultimaLinha}`).val(MoneyUtils.formatMoneyExato(valorUltimaLinha));
             }
             
-            // Recalcular desp_desenbaraco para todas as linhas (lógica do marítimo)
+
             for (let i = 0; i < lengthTable; i++) {
                 const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
                 const fatorVlrFob_AX = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
                 let desp_desenbaraco_parte_1 = 0
 
-                for (let campo of campos) {
-                    // Usar valor bruto armazenado quando disponível
-                    const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
-                    const valorDistribuido = window.valoresBrutosCamposExternos[campo]?.[i] ?? (valorCampo * fatorVlrFob_AX);
-                    desp_desenbaraco_parte_1 += valorDistribuido;
-                }
-
-                let taxa_siscomex = $(`#taxa_siscomex-${i}`).val() ? MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) :
-                    0
+                let taxa_siscomex = $(`#taxa_siscomex-${i}`).val() ? MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) : 0
                 let multa = $(`#multa-${i}`).val() ? MoneyUtils.parseMoney($(`#multa-${i}`).val()) : 0
-                // tx_def_li é uma porcentagem, calcular sobre valor aduaneiro BRL
+
                 const vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${i}`).val()) || 0;
                 const txDefLiPercent = $(`#tx_def_li-${i}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${i}`).val()) : 0;
                 let taxa_def = vlrAduaneiroBrl * txDefLiPercent;
 
-                desp_desenbaraco_parte_1 += multa + taxa_def + taxa_siscomex;
-
                 let capatazia = $('#capatazia-' + i).val() ? MoneyUtils.parseMoney($('#capatazia-' + i).val()) : 0
                 let afrmm = $('#afrmm-' + i).val() ? MoneyUtils.parseMoney($('#afrmm-' + i).val()) : 0
-                let armazenagem_sts = $('#armazenagem_sts-' + i).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' + i)
-                    .val()) : 0
-                let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + i).val() ? MoneyUtils.parseMoney($('#frete_dta_sts_ana-' +
-                        i)
-                    .val()) : 0
-                let honorarios_nix = $('#honorarios_nix-' + i).val() ? MoneyUtils.parseMoney($('#honorarios_nix-' + i)
-                    .val()) : 0
+                let armazenagem_sts = $('#armazenagem_sts-' + i).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' + i).val()) : 0
+                let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + i).val() ? MoneyUtils.parseMoney($('#frete_dta_sts_ana-' + i).val()) : 0
+                let honorarios_nix = $('#honorarios_nix-' + i).val() ? MoneyUtils.parseMoney($('#honorarios_nix-' + i).val()) : 0
 
-                let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + honorarios_nix
+                const nacionalizacao = getNacionalizacaoAtual();
+                
+                if (nacionalizacao !== 'santos') {
+                    let outras_taxas_agente = $('#outras_taxas_agente-' + i).val() ? MoneyUtils.parseMoney($('#outras_taxas_agente-' + i).val()) : 0
+                    let liberacao_bl = $('#liberacao_bl-' + i).val() ? MoneyUtils.parseMoney($('#liberacao_bl-' + i).val()) : 0
+                    let desconsolidacao = $('#desconsolidacao-' + i).val() ? MoneyUtils.parseMoney($('#desconsolidacao-' + i).val()) : 0
+                    let isps_code = $('#isps_code-' + i).val() ? MoneyUtils.parseMoney($('#isps_code-' + i).val()) : 0
+                    let handling = $('#handling-' + i).val() ? MoneyUtils.parseMoney($('#handling-' + i).val()) : 0
+                    let sda = $('#sda-' + i).val() ? MoneyUtils.parseMoney($('#sda-' + i).val()) : 0
+                    let rep_sts = $('#rep_sts-' + i).val() ? MoneyUtils.parseMoney($('#rep_sts-' + i).val()) : 0
+                    let desp_anapolis = $('#desp_anapolis-' + i).val() ? MoneyUtils.parseMoney($('#desp_anapolis-' + i).val()) : 0
+                    let rep_anapolis = $('#rep_anapolis-' + i).val() ? MoneyUtils.parseMoney($('#rep_anapolis-' + i).val()) : 0
+                    let correios = $('#correios-' + i).val() ? MoneyUtils.parseMoney($('#correios-' + i).val()) : 0
+                    let li_dta_honor_nix = $('#li_dta_honor_nix-' + i).val() ? MoneyUtils.parseMoney($('#li_dta_honor_nix-' + i).val()) : 0
 
-                let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2
+                    desp_desenbaraco_parte_1 = multa + taxa_def + taxa_siscomex + outras_taxas_agente + liberacao_bl + 
+                        desconsolidacao + isps_code + handling + capatazia + afrmm + armazenagem_sts + 
+                        frete_dta_sts_ana + sda + rep_sts + desp_anapolis + rep_anapolis + correios + 
+                        li_dta_honor_nix + honorarios_nix;
+
+                    let desp_desenbaraco_parte_2 = taxa_siscomex + capatazia + afrmm + honorarios_nix;
+                    let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                } else {
+                    for (let campo of campos) {
+                        const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
+                        const valorDistribuido = window.valoresBrutosCamposExternos[campo]?.[i] ?? (valorCampo * fatorVlrFob_AX);
+                        desp_desenbaraco_parte_1 += valorDistribuido;
+                    }
+
+                    desp_desenbaraco_parte_1 += multa + taxa_def + taxa_siscomex;
+
+                    let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + honorarios_nix;
+                    let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                }
                 const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
                 let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0
                 const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val())
                 let diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val());
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const diferenca_cambial_fob = MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val());
-                const custo_unitario_final = ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob +
-                        diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade
+                const custo_unitario_final = getNacionalizacaoAtual() === 'santos' 
+                    ? (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete) / qquantidade
+                    : ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade
 
                 const custo_total_final = custo_unitario_final * qquantidade
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2))
@@ -3299,7 +3382,7 @@
                 $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2))
             }
 
-            // Atualizar totalizadores após recalcular campos externos
+
             atualizarTotalizadores();
         }
 
@@ -3331,63 +3414,63 @@
         })
 
         function calcularTaxaSiscomex() {
-            // Pega os valores dos inputs de adição
+
             const valores = $('input[name^="produtos["][name$="[adicao]"]')
                 .map(function() {
                     return $(this).val();
                 })
                 .get();
 
-            // Remove vazios e duplicatas
+
             const unicos = [...new Set(valores.filter(v => v !== ""))];
             const quantidade = unicos.length;
 
-            // Taxa base de registro DI
+
             const valorRegistroDI = 115.67;
 
-            // Se não houver adições, retorna apenas a taxa de registro
+
             if (quantidade === 0) {
                 return valorRegistroDI;
             }
 
-            // Definição das faixas progressivas
-            // Cada faixa tem: { limite: número máximo de adições na faixa, valor: valor por adição, inicio: adição inicial da faixa }
+
+
             const faixas = [
-                { limite: 2, valor: 38.56, inicio: 0 },      // Adições 1-2: R$ 38,56 cada
-                { limite: 3, valor: 30.85, inicio: 2 },      // Adições 3-5: R$ 30,85 cada
-                { limite: 5, valor: 23.14, inicio: 5 },      // Adições 6-10: R$ 23,14 cada
-                { limite: 10, valor: 15.42, inicio: 10 },   // Adições 11-20: R$ 15,42 cada
-                { limite: 30, valor: 7.71, inicio: 20 },     // Adições 21-50: R$ 7,71 cada
-                { limite: Infinity, valor: 3.86, inicio: 50 } // Adições acima de 50: R$ 3,86 cada
+                { limite: 2, valor: 38.56, inicio: 0 },      
+                { limite: 3, valor: 30.85, inicio: 2 },      
+                { limite: 5, valor: 23.14, inicio: 5 },      
+                { limite: 10, valor: 15.42, inicio: 10 },   
+                { limite: 30, valor: 7.71, inicio: 20 },     
+                { limite: Infinity, valor: 3.86, inicio: 50 } 
             ];
 
-            // Inicia com a taxa base
+
             let total = valorRegistroDI;
 
-            // Calcula progressivamente faixa por faixa
+
             faixas.forEach(faixa => {
-                // Calcula quantas adições desta faixa devem ser consideradas
-                // Para faixas com limite finito: min(max(x - inicio, 0), limite)
-                // Para faixa com limite infinito: max(x - inicio, 0)
+
+
+
                 let adicoesNaFaixa;
                 if (faixa.limite === Infinity) {
-                    // Faixa sem limite superior: todas as adições acima do início
+
                     adicoesNaFaixa = Math.max(quantidade - faixa.inicio, 0);
                 } else {
-                    // Faixa com limite: não ultrapassa o limite da faixa
+
                     adicoesNaFaixa = Math.min(
                         Math.max(quantidade - faixa.inicio, 0),
                         faixa.limite
                     );
                 }
                 
-                // Adiciona o valor desta faixa ao total
+
                 if (adicoesNaFaixa > 0) {
                     total += adicoesNaFaixa * faixa.valor;
                 }
             });
 
-            return total; // Retornar valor exato sem arredondar
+            return total; 
         }
 
 
@@ -3403,13 +3486,13 @@
             }
             select += '</select>';
 
-            // Obter moedas atuais
+
             let moedaFrete = $('#frete_internacional_moeda').val();
             let moedaSeguro = $('#seguro_internacional_moeda').val();
             let moedaAcrescimo = $('#acrescimo_frete_moeda').val();
-            let moedaProcesso = 'USD'; // Nova variável
-            // let moedaProcesso = $('#moeda_processo').val(); // Nova variável
-            // Gerar colunas condicionais
+            let moedaProcesso = 'USD'; 
+
+
             let colunaFreteMoeda = '';
             let colunaSeguroMoeda = '';
             let colunaAcrescimoMoeda = '';
@@ -3563,7 +3646,7 @@
                 $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
             }
             
-            // Atualizar peso líquido quando a página carregar
+
             setTimeout(function() {
                 const pesoLiquidoTotal = calcularPesoTotal();
                 if (pesoLiquidoTotal > 0) {
@@ -3588,26 +3671,26 @@
             const tbody = document.getElementById('productsBody');
             const linhas = Array.from(tbody.querySelectorAll('tr:not(.separador-adicao)'));
 
-            // Primeiro remove todos os separadores existentes
+
             document.querySelectorAll('.separador-adicao').forEach(el => el.remove());
 
             if (linhas.length === 0) return;
 
-            // Ordenar as linhas por adição e depois por item
+
             linhas.sort((a, b) => {
                 const adicaoA = parseFloat(a.querySelector('input[name*="[adicao]"]').value) || 0;
                 const adicaoB = parseFloat(b.querySelector('input[name*="[adicao]"]').value) || 0;
 
                 if (adicaoA !== adicaoB) {
-                    return adicaoA - adicaoB; // primeiro pela adição
+                    return adicaoA - adicaoB; 
                 }
 
                 const itemA = parseFloat(a.querySelector('input[name*="[item]"]').value) || 0;
                 const itemB = parseFloat(b.querySelector('input[name*="[item]"]').value) || 0;
-                return itemA - itemB; // depois pelo item
+                return itemA - itemB; 
             });
 
-            // Agrupar linhas por adição
+
             const grupos = {};
             linhas.forEach(linha => {
                 const adicao = parseFloat(linha.querySelector('input[name*="[adicao]"]').value) || 0;
@@ -3615,12 +3698,12 @@
                 grupos[adicao].push(linha);
             });
 
-            // Limpar o tbody
+
             while (tbody.firstChild) {
                 tbody.removeChild(tbody.firstChild);
             }
 
-            // Adicionar linhas com separadores
+
             Object.keys(grupos).sort((a, b) => a - b).forEach((adicao, index) => {
                 if (index > 0) {
                     const separador = document.createElement('tr');
@@ -3638,9 +3721,9 @@
 
 
 
-        // Atualizar a função reordenarLinhas para usar os separadores
+
         function reordenarLinhas() {
-            // Se já estiver reordenando, ignora
+
             if (reordenando) return;
 
             reordenando = true;
@@ -3653,7 +3736,7 @@
             reordenando = false;
         }
 
-        // Adicionar CSS para os separadores
+
         const style = document.createElement('style');
         style.textContent = `
     .separador-adicao td {

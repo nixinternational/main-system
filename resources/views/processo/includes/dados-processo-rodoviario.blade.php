@@ -193,7 +193,7 @@
                        <label for="nacionalizacao" class="form-label">Local de Nacionalização</label>
                        <select class="custom-select" name="nacionalizacao" id="nacionalizacao">
                            <option value="santa_catarina" {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'selected' : '' }}>Santa Catarina</option>
-                           <option value="outros" {{ $nacionalizacaoSelecionada === 'outros' ? 'selected' : '' }}>Outros</option>
+                           <option value="outros" {{ $nacionalizacaoSelecionada === 'outros' ? 'selected' : '' }}>Geral</option>
                        </select>
                    </div>
                </div>
