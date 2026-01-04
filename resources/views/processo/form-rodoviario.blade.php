@@ -4339,5 +4339,93 @@
 
         $(document).on('change', 'input[name*="[adicao]"]', reordenarLinhas);
         $(document).on('click', '.btn-reordenar', reordenarLinhas);
+        
+        // Botão para salvar campos do cabeçalho
+        $('#btnSalvarCabecalho').on('click', async function() {
+            const btn = $(this);
+            const originalText = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Salvando...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                
+                // Campos do cabeçalho que devem ser salvos
+                let campos = [
+                    'outras_taxas_agente',
+                    'desconsolidacao',
+                    'handling',
+                    'dai',
+                    'dape',
+                    'correios',
+                    'li_dta_honor_nix',
+                    'honorarios_nix',
+                    'desp_fronteira',
+                    'das_fronteira',
+                    'armazenagem',
+                    'frete_foz_gyn',
+                    'rep_fronteira',
+                    'armaz_anapolis',
+                    'mov_anapolis',
+                    'rep_anapolis',
+                    'diferenca_cambial_frete',
+                    'diferenca_cambial_fob',
+                    'opcional_1_valor',
+                    'opcional_1_descricao',
+                    'opcional_1_compoe_despesas',
+                    'opcional_2_valor',
+                    'opcional_2_descricao',
+                    'opcional_2_compoe_despesas'
+                ];
+
+                for (let campo of campos) {
+                    let valor;
+                    if (campo === 'opcional_1_compoe_despesas' || campo === 'opcional_2_compoe_despesas') {
+                        valor = $(`#${campo}`).is(':checked') ? '1' : '0';
+                    } else if (campo === 'opcional_1_descricao' || campo === 'opcional_2_descricao') {
+                        valor = $(`#${campo}`).val() || '';
+                    } else {
+                        const $campo = $(`#${campo}`);
+                        if ($campo.length) {
+                            valor = MoneyUtils.parseMoney($campo.val());
+                        } else {
+                            valor = 0;
+                        }
+                    }
+                    // Sempre enviar o valor, mesmo que seja 0 ou vazio
+                    formData.append(campo, valor !== null && valor !== undefined ? valor : (campo.includes('descricao') ? '' : '0'));
+                }
+                
+                const url = '{{ route("processo.salvar.cabecalho.inputs.rodoviario", $processo->id ?? 0) }}';
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: data.message || 'Campos do cabeçalho salvos com sucesso!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    throw new Error(data.error || 'Erro ao salvar campos do cabeçalho');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar cabecalhoInputs:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: error.message || 'Erro ao salvar campos do cabeçalho. Tente novamente.',
+                });
+            } finally {
+                btn.prop('disabled', false).html(originalText);
+            }
+        });
     </script>
 @endsection

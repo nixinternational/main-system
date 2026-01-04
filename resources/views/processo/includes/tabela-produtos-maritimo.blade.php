@@ -17,6 +17,9 @@
                 <button type="button" class="btn btn-secondary btn-reordenar">
                     <i class="fas fa-sort me-2"></i>Reordenar por Adição/Item
                 </button>
+                <button type="button" class="btn btn-success" id="btnSalvarCabecalho">
+                    <i class="fas fa-save me-2"></i>Salvar Campos do Cabeçalho
+                </button>
             </div>
             <div class="table-products-wrapper">
                 <!-- Barra de scroll horizontal extra acima do cabeçalho -->
@@ -160,12 +163,8 @@
                                 </th>
                             @endforeach
 
-                            @php
-                                // Colunas restantes após os campos da middleRow
-                                $colspanAfterMiddleRow = 1; // DESP. DESEMBARAÇO até CUSTO TOTAL FINAL
-                            @endphp
-
-                            <th colspan="{{ $colspanAfterMiddleRow }}"></th>
+                            {{-- DESP. DESEMBARAÇO (campo calculado, sem input no cabeçalho) --}}
+                            <th></th>
 
                             @foreach ($camposCambiais as $campoCambial)
                                 <th class="middleRowInputTh">
@@ -174,7 +173,66 @@
                                         value="{{ number_format($processo->$campoCambial ?? 0, 5, ',', '.') }}">
                                 </th>
                             @endforeach
-                            <th colspan="3"></th>
+                            
+                            {{-- OPCIONAL 1 --}}
+                            <th class="middleRowInputTh" style="vertical-align: top; padding: 5px;">
+                                <div style="display: flex; flex-direction: column; gap: 5px; min-width: 150px;">
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <input type="checkbox" 
+                                            name="opcional_1_compoe_despesas" 
+                                            id="opcional_1_compoe_despesas"
+                                            {{ ($processo->opcional_1_compoe_despesas ?? false) ? 'checked' : '' }}
+                                            style="margin: 0; width: auto;">
+                                        <label for="opcional_1_compoe_despesas" style="margin: 0; font-size: 11px; color: #fff; font-weight: normal;">
+                                            Compõe valor das despesas aduaneiras?
+                                        </label>
+                                    </div>
+                                    <input type="text" 
+                                        class="form-control opcional-descricao" 
+                                        name="opcional_1_descricao" 
+                                        id="opcional_1_descricao"
+                                        placeholder="Insira a descrição nessa caixa"
+                                        value="{{ $processo->opcional_1_descricao ?? 'Opcional 1' }}"
+                                        style="font-size: 11px; padding: 4px;">
+                                    <input type="text" 
+                                        class="form-control cabecalhoInputs moneyReal opcional-valor" 
+                                        name="opcional_1_valor" 
+                                        id="opcional_1_valor"
+                                        value="{{ number_format($processo->opcional_1_valor ?? 0, 5, ',', '.') }}"
+                                        style="font-size: 12px; padding: 4px;">
+                                </div>
+                            </th>
+                            
+                            {{-- OPCIONAL 2 --}}
+                            <th class="middleRowInputTh" style="vertical-align: top; padding: 5px;">
+                                <div style="display: flex; flex-direction: column; gap: 5px; min-width: 150px;">
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <input type="checkbox" 
+                                            name="opcional_2_compoe_despesas" 
+                                            id="opcional_2_compoe_despesas"
+                                            {{ ($processo->opcional_2_compoe_despesas ?? false) ? 'checked' : '' }}
+                                            style="margin: 0; width: auto;">
+                                        <label for="opcional_2_compoe_despesas" style="margin: 0; font-size: 11px; color: #fff; font-weight: normal;">
+                                            Compõe valor das despesas aduaneiras?
+                                        </label>
+                                    </div>
+                                    <input type="text" 
+                                        class="form-control opcional-descricao" 
+                                        name="opcional_2_descricao" 
+                                        id="opcional_2_descricao"
+                                        placeholder="Insira a descrição nessa caixa"
+                                        value="{{ $processo->opcional_2_descricao ?? 'Opcional 2' }}"
+                                        style="font-size: 11px; padding: 4px;">
+                                    <input type="text" 
+                                        class="form-control cabecalhoInputs moneyReal opcional-valor" 
+                                        name="opcional_2_valor" 
+                                        id="opcional_2_valor"
+                                        value="{{ number_format($processo->opcional_2_valor ?? 0, 5, ',', '.') }}"
+                                        style="font-size: 12px; padding: 4px;">
+                                </div>
+                            </th>
+                            
+                            <th colspan="2"></th>
                         </tr>
                         <tr>
                             <th class="d-flex align-items-center justify-content-center"
@@ -312,6 +370,8 @@
                             <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
                             <th>DIF. CAMBIAL FRETE</th>
                             <th>DIF.CAMBIAL FOB</th>
+                            <th id="th-opcional-1-descricao">{{ 'OPCIONAL 1' }}</th>
+                            <th id="th-opcional-2-descricao">{{ 'OPCIONAL 2' }}</th>
                             <th>CUSTO UNIT FINAL</th>
                             <th>CUSTO TOTAL FINAL</th>
                         </tr>
@@ -1027,7 +1087,7 @@
                                         class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][diferenca_cambial_frete]"
                                         id="diferenca_cambial_frete-{{ $index }}"
-                                        value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 2, ',' , '.') : '' }}">
+                                        value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 4, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -1035,7 +1095,23 @@
                                         class=" form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][diferenca_cambial_fob]"
                                         id="diferenca_cambial_fob-{{ $index }}"
-                                        value="{{ $processoProduto->diferenca_cambial_fob ? number_format($processoProduto->diferenca_cambial_fob, 2, ',' , '.') : '' }}">
+                                        value="{{ $processoProduto->diferenca_cambial_fob ? number_format($processoProduto->diferenca_cambial_fob, 4, ',' , '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal" readonly
+                                        name="produtos[{{ $index }}][opcional_1_valor]"
+                                        id="opcional_1_valor-{{ $index }}"
+                                        value="{{ $processoProduto->opcional_1_valor ? number_format($processoProduto->opcional_1_valor, 2, ',' , '.') : '' }}">
+                                </td>
+
+                                <td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal" readonly
+                                        name="produtos[{{ $index }}][opcional_2_valor]"
+                                        id="opcional_2_valor-{{ $index }}"
+                                        value="{{ $processoProduto->opcional_2_valor ? number_format($processoProduto->opcional_2_valor, 2, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>

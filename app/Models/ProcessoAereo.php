@@ -81,10 +81,17 @@ class ProcessoAereo extends Model
         'multa',
         'thc_capatazia',
         'tipo_peso',
+        'opcional_1_valor',
+        'opcional_1_descricao',
+        'opcional_1_compoe_despesas',
+        'opcional_2_valor',
+        'opcional_2_descricao',
+        'opcional_2_compoe_despesas',
     ];
 
     protected $casts = [
-        'cotacao_moeda_processo' => 'json'
+        'cotacao_moeda_processo' => 'json',
+        'diferenca_cambial_frete' => 'decimal:4',
     ];
     
     public function cliente()

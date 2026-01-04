@@ -17,6 +17,9 @@
                 <button type="button" class="btn btn-secondary btn-reordenar">
                     <i class="fas fa-sort me-2"></i>Reordenar por Adição/Item
                 </button>
+                <button type="button" class="btn btn-success" id="btnSalvarCabecalho">
+                    <i class="fas fa-save me-2"></i>Salvar Campos do Cabeçalho
+                </button>
             </div>
             <div class="table-products-wrapper">
                 <!-- Barra de scroll horizontal extra acima do cabeçalho -->

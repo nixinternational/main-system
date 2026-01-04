@@ -106,12 +106,17 @@ class ProcessoAereoProduto extends Model
         'thc_usd',
         'thc_brl',
         'codigo_giiro',
+        'opcional_1_valor',
+        'opcional_2_valor',
     ];
     
     protected $casts = [
         'frete_moeda_estrangeira' => 'decimal:7',
         'seguro_moeda_estrangeira' => 'decimal:7',
         'acrescimo_moeda_estrangeira' => 'decimal:7',
+        'diferenca_cambial_frete' => 'decimal:4',
+        'fob_unit_usd' => 'decimal:7',
+        'fob_unit_moeda_estrangeira' => 'decimal:7',
     ];
     
     public function produto()

@@ -119,6 +119,10 @@ Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class
         ->middleware('permission.map:processo_extras')
         ->name('processo.produto.destroy');
     
+    // Rota para salvar apenas os campos do cabeçalho (cabecalhoInputs) do processo marítimo
+    Route::post('/processo/{id}/salvar-cabecalho-inputs-maritimo', [ProcessoController::class, 'salvarCabecalhoInputsMaritimo'])
+        ->middleware('permission.map:processo')
+        ->name('processo.salvar.cabecalho.inputs.maritimo');
     // Rota para salvar apenas os campos do cabeçalho (cabecalhoInputs) do processo aéreo
     Route::post('/processo/{id}/salvar-cabecalho-inputs-aereo', [ProcessoController::class, 'salvarCabecalhoInputsAereo'])
         ->middleware('permission.map:processo')

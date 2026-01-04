@@ -816,6 +816,8 @@ class ProcessoController extends Controller
                             'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
                             'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
                             'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                            'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
+                            'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
                             'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
                             'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
                             "descricao" => $produto['descricao'],
@@ -922,6 +924,8 @@ class ProcessoController extends Controller
                             'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
                             'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
                             'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                            'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
+                            'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
                             'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
                             'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
                             "descricao" => $produto['descricao'],
@@ -1017,6 +1021,8 @@ class ProcessoController extends Controller
                                 'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
                                 'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
                                 'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                                'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
+                                'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
                                 'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
                                 'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
                                 "descricao" => $produto['descricao'],
@@ -1065,15 +1071,28 @@ class ProcessoController extends Controller
                 'li_dta_honor_nix',
                 'honorarios_nix',
                 'diferenca_cambial_frete',
-                'diferenca_cambial_fob'
+                'diferenca_cambial_fob',
+                'opcional_1_valor',
+                'opcional_1_descricao',
+                'opcional_1_compoe_despesas',
+                'opcional_2_valor',
+                'opcional_2_descricao',
+                'opcional_2_compoe_despesas'
             ];
             
             foreach ($camposComuns as $campo) {
                 // Sempre incluir o campo no array quando enviado, mesmo que seja 0 ou vazio
                 if ($request->has($campo)) {
-                    $valor = $this->parseMoneyToFloat($request->$campo);
-                    // Se o valor for null (campo vazio), salvar como 0
-                    $dadosProcesso[$campo] = $valor !== null ? $valor : 0;
+                    // Campos booleanos e strings são tratados separadamente
+                    if (in_array($campo, ['opcional_1_compoe_despesas', 'opcional_2_compoe_despesas'])) {
+                        $dadosProcesso[$campo] = $request->$campo == 'on' || $request->$campo == '1' || $request->$campo === true;
+                    } elseif (in_array($campo, ['opcional_1_descricao', 'opcional_2_descricao'])) {
+                        $dadosProcesso[$campo] = $request->$campo;
+                    } else {
+                        $valor = $this->parseMoneyToFloat($request->$campo);
+                        // Se o valor for null (campo vazio), salvar como 0
+                        $dadosProcesso[$campo] = $valor !== null ? $valor : 0;
+                    }
                 }
             }
             
@@ -1481,14 +1500,27 @@ class ProcessoController extends Controller
                 'li_dta_honor_nix',
                 'honorarios_nix',
                 'diferenca_cambial_frete',
-                'diferenca_cambial_fob'
+                'diferenca_cambial_fob',
+                'opcional_1_valor',
+                'opcional_1_descricao',
+                'opcional_1_compoe_despesas',
+                'opcional_2_valor',
+                'opcional_2_descricao',
+                'opcional_2_compoe_despesas'
             ];
             
             foreach ($camposCabecalho as $campo) {
                 if ($request->has($campo)) {
-                    $valor = $this->parseMoneyToFloat($request->$campo);
-                    // Se o valor for null (campo vazio), salvar como 0
-                    $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
+                    // Campos booleanos e strings são tratados separadamente
+                    if (in_array($campo, ['opcional_1_compoe_despesas', 'opcional_2_compoe_despesas'])) {
+                        $dadosCabecalho[$campo] = $request->$campo == 'on' || $request->$campo == '1' || $request->$campo === true;
+                    } elseif (in_array($campo, ['opcional_1_descricao', 'opcional_2_descricao'])) {
+                        $dadosCabecalho[$campo] = $request->$campo;
+                    } else {
+                        $valor = $this->parseMoneyToFloat($request->$campo);
+                        // Se o valor for null (campo vazio), salvar como 0
+                        $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
+                    }
                 }
             }
             
@@ -1536,6 +1568,103 @@ class ProcessoController extends Controller
     }
 
     /**
+     * Salvar apenas os campos do cabeçalho (cabecalhoInputs) do processo marítimo
+     */
+    public function salvarCabecalhoInputsMaritimo(Request $request, $id)
+    {
+        try {
+            $processo = Processo::findOrFail($id);
+            $this->ensureClienteAccess($processo->cliente_id);
+            
+            DB::beginTransaction();
+            
+            // Preparar dados do cabeçalho
+            $dadosCabecalho = [];
+            
+            // Campos do cabeçalho que devem ser salvos
+            $camposCabecalho = [
+                'outras_taxas_agente',
+                'liberacao_bl',
+                'desconsolidacao',
+                'isps_code',
+                'handling',
+                'afrmm',
+                'armazenagem_sts',
+                'frete_dta_sts_ana',
+                'sda',
+                'rep_sts',
+                'armaz_ana',
+                'lavagem_container',
+                'rep_anapolis',
+                'desp_anapolis',
+                'correios',
+                'li_dta_honor_nix',
+                'honorarios_nix',
+                'diferenca_cambial_frete',
+                'diferenca_cambial_fob',
+                'opcional_1_valor',
+                'opcional_1_descricao',
+                'opcional_1_compoe_despesas',
+                'opcional_2_valor',
+                'opcional_2_descricao',
+                'opcional_2_compoe_despesas'
+            ];
+            
+            foreach ($camposCabecalho as $campo) {
+                if ($request->has($campo)) {
+                    // Campos booleanos e strings são tratados separadamente
+                    if (in_array($campo, ['opcional_1_compoe_despesas', 'opcional_2_compoe_despesas'])) {
+                        $dadosCabecalho[$campo] = $request->$campo == 'on' || $request->$campo == '1' || $request->$campo === true;
+                    } elseif (in_array($campo, ['opcional_1_descricao', 'opcional_2_descricao'])) {
+                        $dadosCabecalho[$campo] = $request->$campo;
+                    } else {
+                        $valor = $this->parseMoneyToFloat($request->$campo);
+                        // Se o valor for null (campo vazio), salvar como 0
+                        $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
+                    }
+                }
+            }
+            
+            // Tratar capatazia separadamente (vem do campo readonly que lê thc_capatazia)
+            if ($request->has('capatazia')) {
+                $dadosCabecalho['thc_capatazia'] = $this->parseMoneyToFloat($request->capatazia) ?? 0;
+            }
+            
+            // Atualizar peso_liquido se peso_liquido_total_cabecalho foi enviado
+            if ($request->has('peso_liquido_total_cabecalho')) {
+                $pesoLiquido = $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho);
+                if ($pesoLiquido !== null) {
+                    $dadosCabecalho['peso_liquido'] = $pesoLiquido;
+                }
+            }
+            
+            // Atualizar no banco
+            if (!empty($dadosCabecalho)) {
+                Processo::where('id', $id)->update($dadosCabecalho);
+                \Log::info('CabecalhoInputs salvos para Processo ID: ' . $id, ['dadosCabecalho' => $dadosCabecalho]);
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Campos do cabeçalho salvos com sucesso!',
+                'dados' => $dadosCabecalho
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erro ao salvar cabecalhoInputs do Processo ' . $id . ': ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Erro ao salvar campos do cabeçalho: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Salvar apenas os campos do cabeçalho (cabecalhoInputs) do processo rodoviário
      */
     public function salvarCabecalhoInputsRodoviario(Request $request, $id)
@@ -1568,14 +1697,27 @@ class ProcessoController extends Controller
                 'mov_anapolis',
                 'rep_anapolis',
                 'diferenca_cambial_frete',
-                'diferenca_cambial_fob'
+                'diferenca_cambial_fob',
+                'opcional_1_valor',
+                'opcional_1_descricao',
+                'opcional_1_compoe_despesas',
+                'opcional_2_valor',
+                'opcional_2_descricao',
+                'opcional_2_compoe_despesas'
             ];
             
             foreach ($camposCabecalho as $campo) {
                 if ($request->has($campo)) {
-                    $valor = $this->parseMoneyToFloat($request->$campo);
-                    // Se o valor for null (campo vazio), salvar como 0
-                    $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
+                    // Campos booleanos e strings são tratados separadamente
+                    if (in_array($campo, ['opcional_1_compoe_despesas', 'opcional_2_compoe_despesas'])) {
+                        $dadosCabecalho[$campo] = $request->$campo == 'on' || $request->$campo == '1' || $request->$campo === true;
+                    } elseif (in_array($campo, ['opcional_1_descricao', 'opcional_2_descricao'])) {
+                        $dadosCabecalho[$campo] = $request->$campo;
+                    } else {
+                        $valor = $this->parseMoneyToFloat($request->$campo);
+                        // Se o valor for null (campo vazio), salvar como 0
+                        $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
+                    }
                 }
             }
             

@@ -754,6 +754,8 @@
                 desp_desenbaraco: 0,
                 diferenca_cambial_frete: 0,
                 diferenca_cambial_fob: 0,
+                opcional_1_valor: 0,
+                opcional_2_valor: 0,
                 custo_total_final: 0
             };
 
@@ -1040,6 +1042,8 @@
             tr += `<td data-field="desp-desembaraco" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>`;
             tr += `<td data-field="dif-cambial-frete" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(validarDiferencaCambialFrete(totais.diferenca_cambial_frete), 4)}</td>`;
             tr += `<td data-field="dif-cambial-fob" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>`;
+            tr += `<td data-field="opcional-1-valor" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_1_valor || 0, 7)}</td>`;
+            tr += `<td data-field="opcional-2-valor" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_2_valor || 0, 7)}</td>`;
             tr += '<td data-field="custo-unit-final"></td>'; // CUSTO UNIT FINAL (vazio - é unitário, não é somado)
             tr += `<td data-field="custo-total-final" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 2)}</td>`;
             
@@ -1365,8 +1369,19 @@
                 if (val && val.trim() !== '') {
                     const numero = normalizeNumericValue(val);
                     $(this).val(formatTruncatedNumber(numero, 4));
+                    // Marcar como editado manualmente se o campo for diferenca_cambial_frete
+                    if ($(this).attr('id') && $(this).attr('id').includes('diferenca_cambial_frete')) {
+                        $(this).data('editado-manual', true);
+                    }
                 } else {
                     $(this).val('');
+                }
+            });
+            
+            // Marcar campo diferenca_cambial_frete como editado manualmente quando o usuário digitar
+            $(document).on('input keyup', '[id*="diferenca_cambial_frete"]', function() {
+                if ($(this).val() && $(this).val().trim() !== '') {
+                    $(this).data('editado-manual', true);
                 }
             });
 
@@ -2515,11 +2530,25 @@
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
 
-                // Se o valor for inválido ou negativo, não mostra nada no campo, caso contrário formata
-                if (diferenca_cambial_frete === 0 || isNaN(diferenca_cambial_frete) || !isFinite(diferenca_cambial_frete) || diferenca_cambial_frete < 0) {
-                    $(`#diferenca_cambial_frete-${rowId}`).val('');
-                } else {
-                    $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_frete, 4));
+                // Não sobrescrever o campo se o usuário estiver editando (focado) ou se foi editado manualmente
+                const campoDiferencaCambialFrete = $(`#diferenca_cambial_frete-${rowId}`);
+                const foiEditadoManual = campoDiferencaCambialFrete.data('editado-manual') === true;
+                const valorAtualCampo = campoDiferencaCambialFrete.val();
+                const valorAtualParseado = valorAtualCampo ? MoneyUtils.parseMoney(valorAtualCampo) : null;
+                
+                // Se o campo já tem um valor salvo (diferente de vazio), marcar como editado manualmente para preservar
+                if (valorAtualParseado !== null && valorAtualParseado !== 0 && !foiEditadoManual) {
+                    campoDiferencaCambialFrete.data('editado-manual', true);
+                }
+                
+                // Só recalcular se o campo não estiver focado E não foi editado manualmente E não tem valor salvo
+                if (!campoDiferencaCambialFrete.is(':focus') && !foiEditadoManual && (!valorAtualCampo || valorAtualCampo.trim() === '')) {
+                    // Se o valor for inválido ou negativo, não mostra nada no campo, caso contrário formata
+                    if (diferenca_cambial_frete === 0 || isNaN(diferenca_cambial_frete) || !isFinite(diferenca_cambial_frete) || diferenca_cambial_frete < 0) {
+                        campoDiferencaCambialFrete.val('');
+                    } else {
+                        campoDiferencaCambialFrete.val(MoneyUtils.formatMoney(diferenca_cambial_frete, 4));
+                    }
                 }
                 $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob, 2));
 
@@ -3192,6 +3221,20 @@
 
             // AO23 = BE23+BF23+BG23+BM23+BP23 (DESP. ADUANEIRA)
             let despesas = multa + txDefLi + taxaSiscomex + dai + honorarios_nix;
+            
+            // Adicionar campos opcionais se checkbox marcado
+            const opcional1Compoe = $('#opcional_1_compoe_despesas').is(':checked');
+            const opcional2Compoe = $('#opcional_2_compoe_despesas').is(':checked');
+            
+            const opcional1Valor = $(`#opcional_1_valor-${rowId}`).val() ? MoneyUtils.parseMoney($(`#opcional_1_valor-${rowId}`).val()) : 0;
+            const opcional2Valor = $(`#opcional_2_valor-${rowId}`).val() ? MoneyUtils.parseMoney($(`#opcional_2_valor-${rowId}`).val()) : 0;
+            
+            if (opcional1Compoe) {
+                despesas += opcional1Valor;
+            }
+            if (opcional2Compoe) {
+                despesas += opcional2Valor;
+            }
 
             return {
                 total: despesas,
@@ -3200,7 +3243,9 @@
                     txDefLi, // BF23
                     taxaSiscomex, // BG23
                     dai, // BM23
-                    honorarios_nix // BP23
+                    honorarios_nix, // BP23
+                    opcional1: opcional1Compoe ? opcional1Valor : 0,
+                    opcional2: opcional2Compoe ? opcional2Valor : 0
                 },
                 tipoCalculo: 'aereo'
             };
@@ -3419,11 +3464,25 @@
             $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado, 2));
 
             // Validar e tratar diferenca_cambial_frete antes de exibir
-            const diferencaCambialFreteValidada = validarDiferencaCambialFrete(valores.diferenca_cambial_frete);
-            if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
-                $(`#diferenca_cambial_frete-${rowId}`).val('');
-            } else {
-                $(`#diferenca_cambial_frete-${rowId}`).val(MoneyUtils.formatMoney(diferencaCambialFreteValidada, 4));
+            // Não sobrescrever o campo se o usuário estiver editando (focado) ou se foi editado manualmente
+            const campoDiferencaCambialFrete = $(`#diferenca_cambial_frete-${rowId}`);
+            const foiEditadoManual = campoDiferencaCambialFrete.data('editado-manual') === true;
+            const valorAtualCampo = campoDiferencaCambialFrete.val();
+            const valorAtualParseado = valorAtualCampo ? MoneyUtils.parseMoney(valorAtualCampo) : null;
+            
+            // Se o campo já tem um valor salvo (diferente de vazio), marcar como editado manualmente para preservar
+            if (valorAtualParseado !== null && valorAtualParseado !== 0 && !foiEditadoManual) {
+                campoDiferencaCambialFrete.data('editado-manual', true);
+            }
+            
+            // Só recalcular se o campo não estiver focado E não foi editado manualmente E não tem valor salvo
+            if (!campoDiferencaCambialFrete.is(':focus') && !foiEditadoManual && (!valorAtualCampo || valorAtualCampo.trim() === '')) {
+                const diferencaCambialFreteValidada = validarDiferencaCambialFrete(valores.diferenca_cambial_frete);
+                if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
+                    campoDiferencaCambialFrete.val('');
+                } else {
+                    campoDiferencaCambialFrete.val(MoneyUtils.formatMoney(diferencaCambialFreteValidada, 4));
+                }
             }
             $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob, 2));
 
@@ -3536,6 +3595,16 @@
             // Quando o cabeçalho mudar, recalcular distribuição
             atualizarFatoresFob();
             atualizarCamposCabecalho(); // Isso já chama atualizarTotalizadores() no final
+        });
+        
+        // Listeners para campos opcionais
+        $('.opcional-valor').on('change keyup', function() {
+            ratearCamposOpcionais();
+            recalcularTodaTabela();
+        });
+        
+        $('#opcional_1_compoe_despesas, #opcional_2_compoe_despesas').on('change', function() {
+            recalcularTodaTabela();
         });
         
         // Atualizar valores brutos quando campos das linhas forem editados manualmente
@@ -3762,6 +3831,72 @@
 
             // Atualizar totalizadores após recalcular campos externos
             atualizarTotalizadores();
+            
+            // Ratear campos opcionais
+            ratearCamposOpcionais();
+        }
+        
+        // Função para ratear campos opcionais (Opcional 1 e Opcional 2)
+        function ratearCamposOpcionais() {
+            const lengthTable = $('.linhas-input').length;
+            let fobTotalGeral = calcularFobTotalGeral();
+            
+            // Processar Opcional 1 e Opcional 2
+            for (let num = 1; num <= 2; num++) {
+                const campoValor = `opcional_${num}_valor`;
+                const valorCampo = MoneyUtils.parseMoney($(`#${campoValor}`).val()) || 0;
+                
+                if (valorCampo === 0) {
+                    // Se o valor for zero, limpar todos os campos
+                    for (let i = 0; i < lengthTable; i++) {
+                        $(`#${campoValor}-${i}`).val('');
+                    }
+                    continue;
+                }
+                
+                let somaDistribuida = 0;
+                const valoresPorLinha = [];
+                
+                // Primeira passada: distribuir para todas as linhas exceto a última
+                for (let i = 0; i < lengthTable - 1; i++) {
+                    const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
+                    const fator = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
+                    
+                    const valorCalculado = valorCampo * fator;
+                    const valorArredondado = Math.ceil(valorCalculado * 100) / 100;
+                    
+                    const valorDisponivel = valorCampo - somaDistribuida;
+                    const valorFinal = Math.min(valorArredondado, valorDisponivel);
+                    
+                    valoresPorLinha[i] = valorFinal;
+                    somaDistribuida += valorFinal;
+                    
+                    $(`#${campoValor}-${i}`).val(MoneyUtils.formatMoney(valorFinal, 7));
+                }
+                
+                // Última linha recebe a diferença exata
+                const ultimaLinha = lengthTable - 1;
+                let somaRecalculada = 0;
+                for (let i = 0; i < lengthTable - 1; i++) {
+                    somaRecalculada += valoresPorLinha[i] || 0;
+                }
+                
+                let valorUltimaLinha = valorCampo - somaRecalculada;
+                if (valorUltimaLinha < 0) {
+                    const fatorAjuste = valorCampo / somaRecalculada;
+                    somaRecalculada = 0;
+                    for (let i = 0; i < lengthTable - 1; i++) {
+                        if (valoresPorLinha[i] !== undefined) {
+                            valoresPorLinha[i] = Math.floor(valoresPorLinha[i] * fatorAjuste * 100) / 100;
+                            somaRecalculada += valoresPorLinha[i];
+                            $(`#${campoValor}-${i}`).val(MoneyUtils.formatMoney(valoresPorLinha[i], 7));
+                        }
+                    }
+                    valorUltimaLinha = valorCampo - somaRecalculada;
+                }
+                
+                $(`#${campoValor}-${ultimaLinha}`).val(MoneyUtils.formatMoney(valorUltimaLinha, 7));
+            }
         }
         
         // Função separada para calcular DESP. DESEMBARAÇO (processo aéreo)
@@ -3822,7 +3957,21 @@
 
                 const desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + daiSubtracao + honorariosSubtracao;
                 
-                const despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                // Adicionar campos opcionais se checkbox marcado
+                const opcional1Compoe = $('#opcional_1_compoe_despesas').is(':checked');
+                const opcional2Compoe = $('#opcional_2_compoe_despesas').is(':checked');
+                const opcional1Valor = $(`#opcional_1_valor-${i}`).val() ? MoneyUtils.parseMoney($(`#opcional_1_valor-${i}`).val()) : 0;
+                const opcional2Valor = $(`#opcional_2_valor-${i}`).val() ? MoneyUtils.parseMoney($(`#opcional_2_valor-${i}`).val()) : 0;
+                
+                let despesasAdicionaisOpcionais = 0;
+                if (opcional1Compoe) {
+                    despesasAdicionaisOpcionais += opcional1Valor;
+                }
+                if (opcional2Compoe) {
+                    despesasAdicionaisOpcionais += opcional2Valor;
+                }
+                
+                const despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2 + despesasAdicionaisOpcionais;
                 
                 // Debug organizado para primeira linha
                 if (i === 29) {
@@ -4214,6 +4363,8 @@
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal4" name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][diferenca_cambial_fob]" id="diferenca_cambial_fob-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][opcional_1_valor]" id="opcional_1_valor-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][opcional_2_valor]" id="opcional_2_valor-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][custo_unitario_final]" id="custo_unitario_final-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][custo_total_final]" id="custo_total_final-${newIndex}" value=""></td>
     </tr>`;
@@ -4266,6 +4417,38 @@
                 const rowId = $(this).data('row');
                 calcularPesoLiqTotalKg(rowId);
             });
+            
+            // Marcar campos diferenca_cambial_frete que já têm valores salvos como editados manualmente
+            $('[id*="diferenca_cambial_frete"]').each(function() {
+                const valor = $(this).val();
+                if (valor && valor.trim() !== '') {
+                    const valorParseado = MoneyUtils.parseMoney(valor);
+                    if (valorParseado !== null && valorParseado !== 0) {
+                        $(this).data('editado-manual', true);
+                    }
+                }
+            });
+            
+            // Marcar campos diferenca_cambial_frete que já têm valores salvos como editados manualmente
+            // Isso deve ser feito ANTES de recalcular para preservar os valores salvos
+            $('[id*="diferenca_cambial_frete"]').each(function() {
+                const valor = $(this).val();
+                if (valor && valor.trim() !== '') {
+                    const valorParseado = MoneyUtils.parseMoney(valor);
+                    if (valorParseado !== null && valorParseado !== 0) {
+                        $(this).data('editado-manual', true);
+                    }
+                }
+            });
+            
+            // Chamar totalizador ao carregar a página
+            setTimeout(function() {
+                if ($('#productsBody tr:not(.separador-adicao)').length > 0) {
+                    recalcularTodaTabela();
+                } else {
+                    atualizarTotalizadores();
+                }
+            }, 1000);
             
             $(document).on('keyup change', '#peso_liquido_total_cabecalho', function() {
                 // Recalcular todos os peso_liq_total_kg quando o cabeçalho mudar (apenas se estiver em modo LBS)
@@ -4742,5 +4925,102 @@
 
         $(document).on('change', 'input[name*="[adicao]"]', reordenarLinhas);
         $(document).on('click', '.btn-reordenar', reordenarLinhas);
+        
+        // Botão para salvar campos do cabeçalho
+        $('#btnSalvarCabecalho').on('click', async function() {
+            const btn = $(this);
+            const originalText = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Salvando...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                
+                // Campos do cabeçalho que devem ser salvos
+                let campos = [
+                    'outras_taxas_agente',
+                    'delivery_fee',
+                    'delivery_fee_brl',
+                    'collect_fee',
+                    'collect_fee_brl',
+                    'desconsolidacao',
+                    'handling',
+                    'dai',
+                    'dape',
+                    'correios',
+                    'li_dta_honor_nix',
+                    'honorarios_nix',
+                    'diferenca_cambial_frete',
+                    'diferenca_cambial_fob',
+                    'opcional_1_valor',
+                    'opcional_1_descricao',
+                    'opcional_1_compoe_despesas',
+                    'opcional_2_valor',
+                    'opcional_2_descricao',
+                    'opcional_2_compoe_despesas'
+                ];
+
+                for (let campo of campos) {
+                    let valor;
+                    if (campo === 'opcional_1_compoe_despesas' || campo === 'opcional_2_compoe_despesas') {
+                        valor = $(`#${campo}`).is(':checked') ? '1' : '0';
+                    } else if (campo === 'opcional_1_descricao' || campo === 'opcional_2_descricao') {
+                        valor = $(`#${campo}`).val() || '';
+                    } else {
+                        const $campo = $(`#${campo}`);
+                        if ($campo.length) {
+                            valor = MoneyUtils.parseMoney($campo.val());
+                        } else {
+                            valor = 0;
+                        }
+                    }
+                    // Sempre enviar o valor, mesmo que seja 0 ou vazio
+                    formData.append(campo, valor !== null && valor !== undefined ? valor : (campo.includes('descricao') ? '' : '0'));
+                }
+                
+                // Adicionar tipo_peso_aereo se existir
+                const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
+                if (tipoPeso) {
+                    formData.append('tipo_peso_aereo', tipoPeso);
+                }
+                
+                // Adicionar peso_liquido_total_cabecalho se existir
+                const pesoLiquidoTotal = $('#peso_liquido_total_cabecalho').val();
+                if (pesoLiquidoTotal !== undefined) {
+                    const pesoLiquido = $('#peso_liquido_total_cabecalho').is(':hidden') ? 1 : MoneyUtils.parseMoney(pesoLiquidoTotal);
+                    formData.append('peso_liquido_total_cabecalho', pesoLiquido !== null ? pesoLiquido : 0);
+                }
+                
+                const url = '{{ route("processo.salvar.cabecalho.inputs.aereo", $processo->id ?? 0) }}';
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: data.message || 'Campos do cabeçalho salvos com sucesso!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    throw new Error(data.error || 'Erro ao salvar campos do cabeçalho');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar cabecalhoInputs:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: error.message || 'Erro ao salvar campos do cabeçalho. Tente novamente.',
+                });
+            } finally {
+                btn.prop('disabled', false).html(originalText);
+            }
+        });
     </script>
 @endsection

@@ -703,7 +703,20 @@
         function atualizarTotalizadores() {
 
             const rows = $('#productsBody tr:not(.separador-adicao)');
-            if (rows.length === 0) return;
+            
+            // Sempre criar o totalizador, mesmo sem linhas
+            const tfoot = $('#resultado-totalizadores');
+            if (tfoot.length === 0) {
+                console.error('Elemento #resultado-totalizadores não encontrado!');
+                return;
+            }
+            
+            if (rows.length === 0) {
+                // Se não houver linhas, criar totalizador vazio
+                tfoot.empty();
+                tfoot.append('<tr><td colspan="100" style="text-align: center; font-weight: bold;">Nenhum produto cadastrado</td></tr>');
+                return;
+            }
 
             let totais = {
                 quantidade: 0,
@@ -765,6 +778,8 @@
                 desp_desenbaraco: 0,
                 diferenca_cambial_frete: 0,
                 diferenca_cambial_fob: 0,
+                opcional_1_valor: 0,
+                opcional_2_valor: 0,
                 custo_total_final: 0
             };
 
@@ -821,11 +836,14 @@
 
             atualizarPesoLiquidoTotal(totais.peso_liquido_total);
 
-
-            const tfoot = $('#resultado-totalizadores');
-
-
-            tfoot.empty();
+            // tfoot já foi obtido no início da função, garantir que está vazio antes de adicionar
+            if (tfoot.length > 0) {
+                tfoot.empty();
+            } else {
+                console.error('Elemento #resultado-totalizadores não encontrado antes de criar totalizador!');
+                return;
+            }
+            
             let tr = '<tr><td colspan="7" style="text-align: right; font-weight: bold;">TOTAIS:</td>';
 
 
@@ -982,11 +1000,24 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(validarDiferencaCambialFrete(totais.diferenca_cambial_frete), 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_1_valor || 0, 2)}</td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_2_valor || 0, 2)}</td>
         <td></td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 2)}</td>
     </tr>`;
 
-            tfoot.append(tr);
+            try {
+                if (tfoot.length === 0) {
+                    console.error('Elemento #resultado-totalizadores não encontrado ao tentar adicionar totalizador!');
+                    return;
+                }
+                // tfoot já foi esvaziado anteriormente, apenas adicionar o conteúdo
+                tfoot.append(tr);
+            } catch (error) {
+                console.error('Erro ao adicionar totalizador:', error);
+                console.error('tfoot:', tfoot);
+                console.error('tr length:', tr ? tr.length : 'tr é null/undefined');
+            }
         }
 
         function getCotacaoesProcesso() {
@@ -2814,6 +2845,20 @@
             } else {
                 despesas += afrmm + armazenagem_sts + frete_dta_sts_ana + honorarios_nix;
             }
+            
+            // Adicionar campos opcionais se checkbox marcado
+            const opcional1Compoe = $('#opcional_1_compoe_despesas').is(':checked');
+            const opcional2Compoe = $('#opcional_2_compoe_despesas').is(':checked');
+            
+            const opcional1Valor = $(`#opcional_1_valor-${rowId}`).val() ? MoneyUtils.parseMoney($(`#opcional_1_valor-${rowId}`).val()) : 0;
+            const opcional2Valor = $(`#opcional_2_valor-${rowId}`).val() ? MoneyUtils.parseMoney($(`#opcional_2_valor-${rowId}`).val()) : 0;
+            
+            if (opcional1Compoe) {
+                despesas += opcional1Valor;
+            }
+            if (opcional2Compoe) {
+                despesas += opcional2Valor;
+            }
 
             return {
                 total: despesas,
@@ -2824,7 +2869,9 @@
                     afrmm,
                     armazenagem_sts,
                     frete_dta_sts_ana,
-                    honorarios_nix
+                    honorarios_nix,
+                    opcional1: opcional1Compoe ? opcional1Valor : 0,
+                    opcional2: opcional2Compoe ? opcional2Valor : 0
                 },
                 tipoCalculo: getNacionalizacaoAtual()
             };
@@ -3098,6 +3145,107 @@
             atualizarTotalizadores();
         });
         
+        // Listeners para campos opcionais
+        $(document).on('change keyup', '.opcional-valor', function() {
+            ratearCamposOpcionais();
+            recalcularTodaTabela();
+        });
+        
+        $(document).on('change', '#opcional_1_compoe_despesas, #opcional_2_compoe_despesas', function() {
+            recalcularTodaTabela();
+        });
+        
+        // Botão para salvar campos do cabeçalho
+        $('#btnSalvarCabecalho').on('click', async function() {
+            const btn = $(this);
+            const originalText = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Salvando...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                
+                // Campos do cabeçalho que devem ser salvos
+                let campos = [
+                    'outras_taxas_agente',
+                    'liberacao_bl',
+                    'desconsolidacao',
+                    'isps_code',
+                    'handling',
+                    'capatazia',
+                    'afrmm',
+                    'armazenagem_sts',
+                    'frete_dta_sts_ana',
+                    'sda',
+                    'rep_sts',
+                    'armaz_ana',
+                    'lavagem_container',
+                    'rep_anapolis',
+                    'desp_anapolis',
+                    'correios',
+                    'li_dta_honor_nix',
+                    'honorarios_nix',
+                    'diferenca_cambial_frete',
+                    'diferenca_cambial_fob',
+                    'opcional_1_valor',
+                    'opcional_1_descricao',
+                    'opcional_1_compoe_despesas',
+                    'opcional_2_valor',
+                    'opcional_2_descricao',
+                    'opcional_2_compoe_despesas'
+                ];
+
+                for (let campo of campos) {
+                    let valor;
+                    if (campo === 'opcional_1_compoe_despesas' || campo === 'opcional_2_compoe_despesas') {
+                        valor = $(`#${campo}`).is(':checked') ? '1' : '0';
+                    } else if (campo === 'opcional_1_descricao' || campo === 'opcional_2_descricao') {
+                        valor = $(`#${campo}`).val() || '';
+                    } else {
+                        // Para capatazia, ler do campo readonly
+                        const $campo = $(`#${campo}`);
+                        if ($campo.length) {
+                            valor = MoneyUtils.parseMoney($campo.val());
+                        } else {
+                            valor = 0;
+                        }
+                    }
+                    // Sempre enviar o valor, mesmo que seja 0 ou vazio
+                    formData.append(campo, valor !== null && valor !== undefined ? valor : (campo.includes('descricao') ? '' : '0'));
+                }
+                
+                const url = '{{ route("processo.salvar.cabecalho.inputs.maritimo", $processo->id ?? 0) }}';
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: data.message || 'Campos do cabeçalho salvos com sucesso!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    throw new Error(data.error || 'Erro ao salvar campos do cabeçalho');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar cabecalhoInputs:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: error.message || 'Erro ao salvar campos do cabeçalho. Tente novamente.',
+                });
+            } finally {
+                btn.prop('disabled', false).html(originalText);
+            }
+        });
+        
 
         $(document).on('blur', '[id$="-0"], [id$="-1"], [id$="-2"], [id$="-3"], [id$="-4"], [id$="-5"], [id$="-6"], [id$="-7"], [id$="-8"], [id$="-9"]', function() {
             const campoId = $(this).attr('id');
@@ -3334,6 +3482,9 @@
 
                 const nacionalizacao = getNacionalizacaoAtual();
                 
+                // Declarar despesa_desembaraco antes dos blocos condicionais
+                let despesa_desembaraco = 0;
+                
                 if (nacionalizacao !== 'santos') {
                     let outras_taxas_agente = $('#outras_taxas_agente-' + i).val() ? MoneyUtils.parseMoney($('#outras_taxas_agente-' + i).val()) : 0
                     let liberacao_bl = $('#liberacao_bl-' + i).val() ? MoneyUtils.parseMoney($('#liberacao_bl-' + i).val()) : 0
@@ -3353,7 +3504,7 @@
                         li_dta_honor_nix + honorarios_nix;
 
                     let desp_desenbaraco_parte_2 = taxa_siscomex + capatazia + afrmm + honorarios_nix;
-                    let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
                 } else {
                     for (let campo of campos) {
                         const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
@@ -3364,7 +3515,7 @@
                     desp_desenbaraco_parte_1 += multa + taxa_def + taxa_siscomex;
 
                     let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + honorarios_nix;
-                    let despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
                 }
                 const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
                 let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0
@@ -3372,9 +3523,24 @@
                 let diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val());
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const diferenca_cambial_fob = MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val());
+                
+                // Adicionar campos opcionais se checkbox marcado
+                const opcional1Compoe = $('#opcional_1_compoe_despesas').is(':checked');
+                const opcional2Compoe = $('#opcional_2_compoe_despesas').is(':checked');
+                const opcional1Valor = $(`#opcional_1_valor-${i}`).val() ? MoneyUtils.parseMoney($(`#opcional_1_valor-${i}`).val()) : 0;
+                const opcional2Valor = $(`#opcional_2_valor-${i}`).val() ? MoneyUtils.parseMoney($(`#opcional_2_valor-${i}`).val()) : 0;
+                
+                let despesasAdicionais = 0;
+                if (opcional1Compoe) {
+                    despesasAdicionais += opcional1Valor;
+                }
+                if (opcional2Compoe) {
+                    despesasAdicionais += opcional2Valor;
+                }
+                
                 const custo_unitario_final = getNacionalizacaoAtual() === 'santos' 
-                    ? (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete) / qquantidade
-                    : ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade
+                    ? (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionais) / qquantidade
+                    : ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionais) - vlrIcmsReduzido) / qquantidade
 
                 const custo_total_final = custo_unitario_final * qquantidade
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2))
@@ -3384,6 +3550,72 @@
 
 
             atualizarTotalizadores();
+            
+            // Ratear campos opcionais
+            ratearCamposOpcionais();
+        }
+        
+        // Função para ratear campos opcionais (Opcional 1 e Opcional 2)
+        function ratearCamposOpcionais() {
+            const lengthTable = $('.linhas-input').length;
+            let fobTotalGeral = calcularFobTotalGeral();
+            
+            // Processar Opcional 1 e Opcional 2
+            for (let num = 1; num <= 2; num++) {
+                const campoValor = `opcional_${num}_valor`;
+                const valorCampo = MoneyUtils.parseMoney($(`#${campoValor}`).val()) || 0;
+                
+                if (valorCampo === 0) {
+                    // Se o valor for zero, limpar todos os campos
+                    for (let i = 0; i < lengthTable; i++) {
+                        $(`#${campoValor}-${i}`).val('');
+                    }
+                    continue;
+                }
+                
+                let somaDistribuida = 0;
+                const valoresPorLinha = [];
+                
+                // Primeira passada: distribuir para todas as linhas exceto a última
+                for (let i = 0; i < lengthTable - 1; i++) {
+                    const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
+                    const fator = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
+                    
+                    const valorCalculado = valorCampo * fator;
+                    const valorArredondado = Math.ceil(valorCalculado * 100) / 100;
+                    
+                    const valorDisponivel = valorCampo - somaDistribuida;
+                    const valorFinal = Math.min(valorArredondado, valorDisponivel);
+                    
+                    valoresPorLinha[i] = valorFinal;
+                    somaDistribuida += valorFinal;
+                    
+                    $(`#${campoValor}-${i}`).val(MoneyUtils.formatMoney(valorFinal, 2));
+                }
+                
+                // Última linha recebe a diferença exata
+                const ultimaLinha = lengthTable - 1;
+                let somaRecalculada = 0;
+                for (let i = 0; i < lengthTable - 1; i++) {
+                    somaRecalculada += valoresPorLinha[i] || 0;
+                }
+                
+                let valorUltimaLinha = valorCampo - somaRecalculada;
+                if (valorUltimaLinha < 0) {
+                    const fatorAjuste = valorCampo / somaRecalculada;
+                    somaRecalculada = 0;
+                    for (let i = 0; i < lengthTable - 1; i++) {
+                        if (valoresPorLinha[i] !== undefined) {
+                            valoresPorLinha[i] = Math.floor(valoresPorLinha[i] * fatorAjuste * 100) / 100;
+                            somaRecalculada += valoresPorLinha[i];
+                            $(`#${campoValor}-${i}`).val(MoneyUtils.formatMoney(valoresPorLinha[i], 2));
+                        }
+                    }
+                    valorUltimaLinha = valorCampo - somaRecalculada;
+                }
+                
+                $(`#${campoValor}-${ultimaLinha}`).val(MoneyUtils.formatMoney(valorUltimaLinha, 2));
+            }
         }
 
         $(document).on('click', '.removeLine', function() {
@@ -3493,23 +3725,31 @@
             let moedaProcesso = 'USD'; 
 
 
+            let moedaServiceCharges = $('#service_charges_moeda').val();
+            
             let colunaFreteMoeda = '';
             let colunaSeguroMoeda = '';
             let colunaAcrescimoMoeda = '';
+            let colunaServiceChargesMoeda = '';
 
             if (moedaFrete && moedaFrete !== 'USD') {
                 colunaFreteMoeda =
                     `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_moeda_estrangeira]" id="frete_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
-            if (moedaSeguro && moedaSeguro !== 'USD') {
-                colunaSeguroMoeda =
-                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_moeda_estrangeira]" id="seguro_moeda_estrangeira-${newIndex}" value=""></td>`;
+            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                colunaServiceChargesMoeda =
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges_moeda_estrangeira]" id="service_charges_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
             if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
                 colunaAcrescimoMoeda =
                     `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acrescimo_moeda_estrangeira]" id="acrescimo_moeda_estrangeira-${newIndex}" value=""></td>`;
+            }
+
+            if (moedaSeguro && moedaSeguro !== 'USD') {
+                colunaSeguroMoeda =
+                    `<td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_moeda_estrangeira]" id="seguro_moeda_estrangeira-${newIndex}" value=""></td>`;
             }
 
             let colunasFOB = getColunasFOBCondicionais(newIndex, moedaProcesso);
@@ -3540,7 +3780,6 @@
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal pesoLiqTotal" name="produtos[${newIndex}][peso_liquido_total]" id="peso_liquido_total-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][fator_peso]" id="fator_peso-${newIndex}" value=""></td>
         ${colunasFOB}
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7 fobUnitario" name="produtos[${newIndex}][fob_unit_usd]" id="fob_unit_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
         
@@ -3549,21 +3788,24 @@
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
         
-        <!-- SEGURO -->
-        ${colunaSeguroMoeda}
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>
+        <!-- VLR CFR - Após FRETE -->
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_unit]" id="vlr_crf_unit-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_total]" id="vlr_crf_total-${newIndex}" value=""></td>
         
-        <!-- ACRÉSCIMO -->
+        <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
+        ${colunaServiceChargesMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges]" id="service_charges-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges_brl]" id="service_charges_brl-${newIndex}" value=""></td>
+        
+        <!-- ACRÉSCIMO - Colunas condicionais (após SERVICE CHARGES) -->
         ${colunaAcrescimoMoeda}
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
         
-        <!-- VLR CFR e SERVICE CHARGES -->
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_total]" id="vlr_crf_total-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_unit]" id="vlr_crf_unit-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges]" id="service_charges-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges_brl]" id="service_charges_brl-${newIndex}" value=""></td>
+        <!-- SEGURO - Colunas condicionais (após ACRÉSCIMO) -->
+        ${colunaSeguroMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>
         
         <!-- Resto das colunas permanecem iguais -->
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][thc_usd]" id="thc_usd-${newIndex}" value=""></td>
@@ -3621,6 +3863,8 @@
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][diferenca_cambial_fob]" id="diferenca_cambial_fob-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][opcional_1_valor]" id="opcional_1_valor-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][opcional_2_valor]" id="opcional_2_valor-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][custo_unitario_final]" id="custo_unitario_final-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][custo_total_final]" id="custo_total_final-${newIndex}" value=""></td>
     </tr>`;
@@ -3660,6 +3904,15 @@
             }
 
             atualizarVisibilidadeNacionalizacao();
+            
+            // Chamar totalizador ao carregar a página
+            setTimeout(function() {
+                if ($('#productsBody tr:not(.separador-adicao)').length > 0) {
+                    recalcularTodaTabela();
+                } else {
+                    atualizarTotalizadores();
+                }
+            }, 1000);
 
         })
         $('.nav-link').on('click', function(e) {

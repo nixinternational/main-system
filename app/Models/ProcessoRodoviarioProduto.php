@@ -91,6 +91,8 @@ class ProcessoRodoviarioProduto extends Model
         'desp_desenbaraco',
         'diferenca_cambial_frete',
         'diferenca_cambial_fob',
+        'opcional_1_valor',
+        'opcional_2_valor',
         'custo_unitario_final',
         'custo_total_final',
         'descricao',
