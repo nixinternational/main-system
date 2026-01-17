@@ -107,39 +107,62 @@
 
                             @php
                                 $nacionalizacaoAtual = $processo->nacionalizacao ?? 'outros';
-                                $campos = [
-                                    'outras_taxas_agente',
-                                    'liberacao_bl',
-                                    'desconsolidacao',
-                                    'isps_code',
-                                    'handling',
-                                    'capatazia',
-                                ];
                                 
-                                $campos[] = 'afrmm';
-                                $campos[] = 'armazenagem_sts';
-                                $campos[] = 'frete_dta_sts_ana';
-                                $campos[] = 'sda';
-                                $campos[] = 'rep_sts';
-                                $campos[] = 'armaz_ana';
-                                
-                                // Adicionar tx_correcao_lacre apenas se nacionalizacao = santos (movido para depois de armaz_ana)
-                                if ($nacionalizacaoAtual === 'santos') {
-                                    $campos[] = 'tx_correcao_lacre';
+                            
+                                // Ordem específica para Anápolis
+                                if ($nacionalizacaoAtual === 'anapolis') {
+                                    $campos = [
+                                        'outras_taxas_agente',
+                                        'liberacao_bl',
+                                        'desconsolidacao',
+                                        'isps_code',
+                                        'handling',
+                                        'capatazia',
+                                        'afrmm',
+                                        'armazenagem_sts',
+                                        'frete_dta_sts_ana',
+                                        'sda',
+                                        'rep_sts',
+                                        'desp_anapolis',
+                                        'rep_anapolis',
+                                        'correios',
+                                        'li_dta_honor_nix',
+                                        'honorarios_nix',
+                                    ];
+                                } else {
+                                    // Ordem padrão para outros tipos de nacionalização
+                                    $campos = [
+                                        'outras_taxas_agente',
+                                        'liberacao_bl',
+                                        'desconsolidacao',
+                                        'isps_code',
+                                        'handling',
+                                        'capatazia',
+                                    ];
+                                    
+                                    $campos[] = 'afrmm';
+                                    $campos[] = 'armazenagem_sts';
+                                    $campos[] = 'frete_dta_sts_ana';
+                                    $campos[] = 'sda';
+                                    $campos[] = 'rep_sts';
+                                    $campos[] = 'armaz_ana';
+                                    
+                                    // Adicionar tx_correcao_lacre apenas se nacionalizacao = santos
+                                    if ($nacionalizacaoAtual === 'santos') {
+                                        $campos[] = 'tx_correcao_lacre';
+                                    }
+                                    
+                                    $campos[] = 'lavagem_container';
+                                    
+                                    // Adicionar campos de anapolis apenas se nacionalizacao != santos
+                                    if ($nacionalizacaoAtual !== 'santos') {
+                                        $campos[] = 'rep_anapolis';
+                                        $campos[] = 'correios';
+                                    }
+                                    
+                                    $campos[] = 'li_dta_honor_nix';
+                                    $campos[] = 'honorarios_nix';
                                 }
-                                
-                                $campos[] = 'lavagem_container';
-                                
-                                // Adicionar campos de anapolis apenas se nacionalizacao != santos
-                                // NOTA: desp_anapolis foi removido dos cálculos (oculto)
-                                if ($nacionalizacaoAtual !== 'santos') {
-                                    $campos[] = 'rep_anapolis';
-                                    // $campos[] = 'desp_anapolis'; // Removido - coluna oculta e não considerada no cálculo
-                                    $campos[] = 'correios';
-                                }
-                                
-                                $campos[] = 'li_dta_honor_nix';
-                                $campos[] = 'honorarios_nix';
                                 
                                 $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
@@ -150,6 +173,7 @@
                                 <th class="middleRowInputTh" data-campo="{{ $campo }}" 
                                     @if ($campo === 'tx_correcao_lacre' && $nacionalizacaoAtual !== 'santos') style="display: none;" 
                                     @elseif (in_array($campo, ['rep_anapolis', 'desp_anapolis', 'correios']) && $nacionalizacaoAtual === 'santos') style="display: none;" 
+                                    @elseif ($campo === 'desp_anapolis' && $nacionalizacaoAtual === 'anapolis') style="display: block;" 
                                     @endif>
                                     @if ($campo == 'capatazia')
                                         <input type="text" class="form-control moneyReal" name="{{ $campo }}"
@@ -344,29 +368,50 @@
                             <th>MULTA</th>
                             <th>TX DEF. LI</th>
                             <th>TAXA SISCOMEX</th>
-                            <th>OUTRAS TX AGENTE</th>
-                            <th>LIBERAÇÃO BL</th>
-                            <th>DESCONS.</th>
-                            <th>ISPS CODE</th>
-                            <th>HANDLING</th>
-                            <th>CAPATAZIA</th>
-                            <th>AFRMM</th>
-                            <th>ARMAZENAGEM PORTO</th>
-                            <th>FRETE DTA</th>
-                            <th>S.D.A</th>
-                            <th>REP. PORTO</th>
-                            <th>ARMAZENAGEM EADI</th>
-                            @if ($nacionalizacaoAtual === 'santos')
-                                <th data-campo="tx_correcao_lacre">TX CORREÇÃO LACRE</th>
-                            @endif
-                            <th>LAVAGEM CONT</th>
-                            @if ($nacionalizacaoAtual !== 'santos')
-                                <th data-campo="rep_anapolis">REP. EADI</th>
-                                <th data-campo="desp_anapolis" style="display: none;">DESP. ANÁPOLIS</th>
+                            @if ($nacionalizacaoAtual === 'anapolis')
+                                {{-- Ordem específica para Anápolis --}}
+                                <th>OUTRAS TX AGENTE</th>
+                                <th>LIBERAÇÃO BL</th>
+                                <th>DESCONS.</th>
+                                <th>ISPS CODE</th>
+                                <th>HANDLING</th>
+                                <th>CAPATAZIA</th>
+                                <th>AFRMM</th>
+                                <th>ARMAZENAGEM STS</th>
+                                <th>FRETE STS/GYN</th>
+                                <th>S.D.A</th>
+                                <th>REP.STS</th>
+                                <th data-campo="desp_anapolis">DESP. ANAPOLIS</th>
+                                <th data-campo="rep_anapolis">REP. ANA</th>
                                 <th data-campo="correios">CORREIOS</th>
+                                <th>LI+DTA+HONOR.NIX</th>
+                                <th>HONORÁRIOS NIX</th>
+                            @else
+                                {{-- Ordem padrão para outros tipos --}}
+                                <th>OUTRAS TX AGENTE</th>
+                                <th>LIBERAÇÃO BL</th>
+                                <th>DESCONS.</th>
+                                <th>ISPS CODE</th>
+                                <th>HANDLING</th>
+                                <th>CAPATAZIA</th>
+                                <th>AFRMM</th>
+                                <th>ARMAZENAGEM PORTO</th>
+                                <th>FRETE DTA</th>
+                                <th>S.D.A</th>
+                                <th>REP. PORTO</th>
+                                <th>ARMAZENAGEM EADI</th>
+                                @if ($nacionalizacaoAtual === 'santos')
+                                    <th data-campo="tx_correcao_lacre">TX CORREÇÃO LACRE</th>
+                                @endif
+                                <th>LAVAGEM CONT</th>
+                                @if ($nacionalizacaoAtual !== 'santos')
+                                    <th data-campo="rep_anapolis">REP. EADI</th>
+                                    <th data-campo="desp_anapolis" style="display: none;">DESP. ANÁPOLIS</th>
+                                    <th data-campo="correios">CORREIOS</th>
+                                @endif
+                                <th>LI+DTA+HONOR.NIX</th>
+                                <th>HONORÁRIOS NIX</th>
                             @endif
-                            <th>LI+DTA+HONOR.NIX</th>
-                            <th>HONORÁRIOS NIX</th>
                             <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
                             <th>DIF. CAMBIAL FRETE</th>
                             <th>DIF.CAMBIAL FOB</th>
@@ -920,159 +965,89 @@
                                         value="{{ $processoProduto->taxa_siscomex ? number_format($processoProduto->taxa_siscomex, 2, ',' , '.') : '' }}">
                                 </td>
 
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][outras_taxas_agente]"
-                                        id="outras_taxas_agente-{{ $index }}"
-                                        value="{{ $processoProduto->outras_taxas_agente ? number_format($processoProduto->outras_taxas_agente, 2, ',' , '.') : '' }}">
-                                </td>
+                                @php
+                                    // Definir ordem dos campos baseado na nacionalização
+                                    if ($nacionalizacaoAtual === 'anapolis') {
+                                        $camposTbody = [
+                                            'outras_taxas_agente',
+                                            'liberacao_bl',
+                                            'desconsolidacao',
+                                            'isps_code',
+                                            'handling',
+                                            'capatazia',
+                                            'afrmm',
+                                            'armazenagem_sts',
+                                            'frete_dta_sts_ana',
+                                            'sda',
+                                            'rep_sts',
+                                            'desp_anapolis',
+                                            'rep_anapolis',
+                                            'correios',
+                                            'li_dta_honor_nix',
+                                            'honorarios_nix'
+                                        ];
+                                    } else {
+                                        $camposTbody = [
+                                            'outras_taxas_agente',
+                                            'liberacao_bl',
+                                            'desconsolidacao',
+                                            'isps_code',
+                                            'handling',
+                                            'capatazia',
+                                            'afrmm',
+                                            'armazenagem_sts',
+                                            'frete_dta_sts_ana',
+                                            'sda',
+                                            'rep_sts',
+                                            'armaz_ana',
+                                        ];
+                                        if ($nacionalizacaoAtual === 'santos') {
+                                            $camposTbody[] = 'tx_correcao_lacre';
+                                        }
+                                        $camposTbody[] = 'lavagem_container';
+                                        if ($nacionalizacaoAtual !== 'santos') {
+                                            $camposTbody[] = 'rep_anapolis';
+                                            $camposTbody[] = 'desp_anapolis';
+                                            $camposTbody[] = 'correios';
+                                        }
+                                        $camposTbody[] = 'li_dta_honor_nix';
+                                        $camposTbody[] = 'honorarios_nix';
+                                    }
+                                @endphp
 
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][liberacao_bl]"
-                                        id="liberacao_bl-{{ $index }}"
-                                        value="{{ $processoProduto->liberacao_bl ? number_format($processoProduto->liberacao_bl, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][desconsolidacao]"
-                                        id="desconsolidacao-{{ $index }}"
-                                        value="{{ $processoProduto->desconsolidacao ? number_format($processoProduto->desconsolidacao, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][isps_code]"
-                                        id="isps_code-{{ $index }}"
-                                        value="{{ $processoProduto->isps_code ? number_format($processoProduto->isps_code, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][handling]"
-                                        id="handling-{{ $index }}"
-                                        value="{{ $processoProduto->handling ? number_format($processoProduto->handling, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][capatazia]"
-                                        id="capatazia-{{ $index }}"
-                                        value="{{ $processoProduto->capatazia ? number_format($processoProduto->capatazia, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][afrmm]" id="afrmm-{{ $index }}"
-                                        value="{{ $processoProduto->afrmm ? number_format($processoProduto->afrmm, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][armazenagem_sts]"
-                                        id="armazenagem_sts-{{ $index }}"
-                                        value="{{ $processoProduto->armazenagem_sts ? number_format($processoProduto->armazenagem_sts, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][frete_dta_sts_ana]"
-                                        id="frete_dta_sts_ana-{{ $index }}"
-                                        value="{{ $processoProduto->frete_dta_sts_ana ? number_format($processoProduto->frete_dta_sts_ana, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][sda]" id="sda-{{ $index }}"
-                                        value="{{ $processoProduto->sda ? number_format($processoProduto->sda, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][rep_sts]"
-                                        id="rep_sts-{{ $index }}"
-                                        value="{{ $processoProduto->rep_sts ? number_format($processoProduto->rep_sts, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][armaz_ana]"
-                                        id="armaz_ana-{{ $index }}"
-                                        value="{{ $processoProduto->armaz_ana ? number_format($processoProduto->armaz_ana, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                @if ($nacionalizacaoAtual === 'santos')
-                                    <td data-campo="tx_correcao_lacre">
-                                        <input type="text" data-row="{{ $index }}"
-                                            class=" form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][tx_correcao_lacre]"
-                                            id="tx_correcao_lacre-{{ $index }}"
-                                            value="{{ $processoProduto->tx_correcao_lacre ? number_format($processoProduto->tx_correcao_lacre, 2, ',' , '.') : '' }}">
-                                    </td>
-                                @endif
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][lavagem_container]"
-                                        id="lavagem_container-{{ $index }}"
-                                        value="{{ $processoProduto->lavagem_container ? number_format($processoProduto->lavagem_container, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                @if ($nacionalizacaoAtual !== 'santos')
-                                    <td data-campo="rep_anapolis">
-                                        <input type="text" data-row="{{ $index }}"
-                                            class=" form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][rep_anapolis]"
-                                            id="rep_anapolis-{{ $index }}"
-                                            value="{{ $processoProduto->rep_anapolis ? number_format($processoProduto->rep_anapolis, 2, ',' , '.') : '' }}">
-                                    </td>
-
-                                    <td data-campo="desp_anapolis" style="display: none;">
-                                        <input type="text" data-row="{{ $index }}"
-                                            class=" form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][desp_anapolis]"
-                                            id="desp_anapolis-{{ $index }}"
-                                            value="{{ $processoProduto->desp_anapolis ? number_format($processoProduto->desp_anapolis, 2, ',' , '.') : '' }}">
-                                    </td>
-
-                                    <td data-campo="correios">
-                                        <input type="text" data-row="{{ $index }}"
-                                            class=" form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][correios]"
-                                            id="correios-{{ $index }}"
-                                            value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 2, ',' , '.') : '' }}">
-                                    </td>
-                                @endif
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][li_dta_honor_nix]"
-                                        id="li_dta_honor_nix-{{ $index }}"
-                                        value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][honorarios_nix]"
-                                        id="honorarios_nix-{{ $index }}"
-                                        value="{{ $processoProduto->honorarios_nix ? number_format($processoProduto->honorarios_nix, 2, ',' , '.') : '' }}">
-                                </td>
+                                @foreach ($camposTbody as $campoTbody)
+                                    @php
+                                        $mostrarCampo = true;
+                                        $dataCampo = '';
+                                        $styleDisplay = '';
+                                        
+                                        if ($campoTbody === 'tx_correcao_lacre' && $nacionalizacaoAtual !== 'santos') {
+                                            $mostrarCampo = false;
+                                        } elseif ($campoTbody === 'desp_anapolis') {
+                                            $dataCampo = 'data-campo="desp_anapolis"';
+                                            // Ocultar apenas se não for Anápolis
+                                            if ($nacionalizacaoAtual !== 'anapolis') {
+                                                $styleDisplay = 'style="display: none;"';
+                                            }
+                                        } elseif (in_array($campoTbody, ['rep_anapolis', 'correios'])) {
+                                            $dataCampo = 'data-campo="' . $campoTbody . '"';
+                                        }
+                                        
+                                        $valorCampo = isset($processoProduto->$campoTbody) && $processoProduto->$campoTbody 
+                                            ? number_format($processoProduto->$campoTbody, 2, ',' , '.') 
+                                            : '';
+                                    @endphp
+                                    
+                                    @if ($mostrarCampo)
+                                        <td {!! $dataCampo !!} {!! $styleDisplay !!}>
+                                            <input type="text" data-row="{{ $index }}"
+                                                class=" form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][{{ $campoTbody }}]"
+                                                id="{{ $campoTbody }}-{{ $index }}"
+                                                value="{{ $valorCampo }}">
+                                        </td>
+                                    @endif
+                                @endforeach
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
