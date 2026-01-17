@@ -1518,6 +1518,9 @@
             if (brlField.length) {
                 brlField.val(MoneyUtils.formatMoney(valorBRL, 2));
             }
+            
+            // Recalcular valores CPT quando os valores USD mudarem
+            calcularValoresCPT();
         }
 
         function updateValorReal(inputId, spanId, automatic = true) {
@@ -1742,6 +1745,9 @@
                     cotacaoProcesso[moeda].data =
                         `${String(hoje.getMonth()+1).padStart(2,'0')}/${String(hoje.getDate()).padStart(2,'0')}/${hoje.getFullYear()}`;
                 }
+                
+                // Recalcular valores CPT quando a cotação mudar
+                calcularValoresCPT();
 
 
                 if (moeda && moeda !== 'USD') {
@@ -2283,6 +2289,7 @@
             atualizarTotaisGlobais(fobTotalGeralAtualizado, dolar); 
             atualizarFatoresFob(); 
             atualizarTotalizadores();
+            calcularValoresCPT();
             setDebugGlobals({
                 ...globaisProcesso,
                 fobTotalProcesso: fobTotalGeralAtualizado,
@@ -2396,6 +2403,89 @@
             }
         }
 
+        function calcularValoresCPT() {
+            const nacionalizacao = getNacionalizacaoAtual();
+            const tipoProcesso = '{{ $tipoProcesso ?? "maritimo" }}';
+            
+            // Só calcular se for Anápolis e processo marítimo
+            if (nacionalizacao !== 'anapolis' || tipoProcesso !== 'maritimo') {
+                $('#campos-cpt-anapolis').hide();
+                return;
+            }
+            
+            // Verificar se os campos existem
+            if ($('#campos-cpt-anapolis').length === 0) {
+                return;
+            }
+            
+            // Mostrar os campos
+            $('#campos-cpt-anapolis').show();
+            
+            // Obter valores totais do processo
+            const rows = $('#productsBody tr:not(.separador-adicao)');
+            
+            // Calcular valor total FOB USD
+            let valorTotalFobUsd = 0;
+            rows.each(function() {
+                const rowId = this.id.replace('row-', '');
+                const fobTotalUsd = MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
+                valorTotalFobUsd += fobTotalUsd;
+            });
+            
+            // Calcular valor total Service Charges USD
+            let valorTotalServiceChargesUsd = 0;
+            const moedaServiceCharges = $('#service_charges_moeda').val();
+            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                rows.each(function() {
+                    const rowId = this.id.replace('row-', '');
+                    const serviceChargesUsd = MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
+                    valorTotalServiceChargesUsd += serviceChargesUsd;
+                });
+            } else {
+                valorTotalServiceChargesUsd = MoneyUtils.parseMoney($('#service_charges_usd').val()) || 0;
+            }
+            
+            // Obter frete internacional total USD
+            const freteInternacionalTotalUsd = MoneyUtils.parseMoney($('#frete_internacional_usd').val()) || 0;
+            
+            // Obter seguro internacional total USD
+            const seguroInternacionalTotalUsd = MoneyUtils.parseMoney($('#seguro_internacional_usd').val()) || 0;
+            
+            // Obter acréscimo frete dolar
+            const acrescimoFreteDolar = MoneyUtils.parseMoney($('#acrescimo_frete_usd').val()) || 0;
+            
+            // Calcular Valor CPT USD
+            const valorCptUsd = valorTotalFobUsd + valorTotalServiceChargesUsd + freteInternacionalTotalUsd + 
+                              seguroInternacionalTotalUsd + acrescimoFreteDolar;
+            
+            // Obter cotação do dólar do processo
+            const cotacoesProcesso = getCotacaoesProcesso();
+            let cotacaoDolarProcesso = 1;
+            if (cotacoesProcesso && cotacoesProcesso['USD'] && cotacoesProcesso['USD'].venda) {
+                cotacaoDolarProcesso = cotacoesProcesso['USD'].venda;
+            } else {
+                // Tentar obter do campo dolarHoje ou display_cotacao
+                const dolarHoje = $('#dolarHoje').val();
+                if (dolarHoje) {
+                    try {
+                        const dolarObj = JSON.parse(dolarHoje);
+                        if (dolarObj['USD'] && dolarObj['USD'].venda) {
+                            cotacaoDolarProcesso = dolarObj['USD'].venda;
+                        }
+                    } catch (e) {
+                        // Se não conseguir parsear, usar 1 como padrão
+                    }
+                }
+            }
+            
+            // Calcular Valor CPT BRL
+            const valorCptBrl = valorCptUsd * cotacaoDolarProcesso;
+            
+            // Atualizar os campos
+            $('#valor_cpt_usd').val(MoneyUtils.formatMoney(valorCptUsd, 2));
+            $('#valor_cpt_brl').val(MoneyUtils.formatMoney(valorCptBrl, 2));
+        }
+
         function atualizarVisibilidadeNacionalizacao(options = {}) {
             const { recalcular = false } = options;
             const nacionalizacao = getNacionalizacaoAtual();
@@ -2445,6 +2535,9 @@
             } else {
                 limparCamposEspecificos(CAMPOS_EXCLUSIVOS_ANAPOLIS);
             }
+            
+            // Atualizar visibilidade e calcular valores CPT
+            calcularValoresCPT();
             
             if (recalcular) {
                 debouncedRecalcular();
@@ -3143,6 +3236,7 @@
             atualizarFatoresFob();
             atualizarCamposCabecalho();
             atualizarTotalizadores();
+            calcularValoresCPT();
         });
         
         // Listeners para campos opcionais
@@ -3550,6 +3644,7 @@
 
 
             atualizarTotalizadores();
+            calcularValoresCPT();
             
             // Ratear campos opcionais
             ratearCamposOpcionais();
@@ -3912,6 +4007,7 @@
                 } else {
                     atualizarTotalizadores();
                 }
+                calcularValoresCPT();
             }, 1000);
 
         })

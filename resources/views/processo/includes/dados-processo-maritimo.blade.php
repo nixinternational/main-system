@@ -152,6 +152,26 @@
                    </div>
                </div>
 
+               <!-- Campos CPT para Anápolis -->
+               <div class="row mt-3" id="campos-cpt-anapolis" style="display: none;">
+                   <div class="col-md-6">
+                       <label for="valor_cpt_usd" class="form-label">Valor CPT USD</label>
+                       <div class="input-group">
+                           <span class="input-group-text">USD</span>
+                           <input type="text" readonly class="form-control moneyReal" 
+                               name="valor_cpt_usd" id="valor_cpt_usd" value="">
+                       </div>
+                   </div>
+                   <div class="col-md-6">
+                       <label for="valor_cpt_brl" class="form-label">Valor CPT BRL</label>
+                       <div class="input-group">
+                           <span class="input-group-text">R$</span>
+                           <input type="text" readonly class="form-control moneyReal" 
+                               name="valor_cpt_brl" id="valor_cpt_brl" value="">
+                       </div>
+                   </div>
+               </div>
+
                <div class="row mt-1">
 
 

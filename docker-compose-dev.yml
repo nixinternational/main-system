@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: nix_international
       POSTGRES_PASSWORD: nix_international_develop
     ports:
-      - "54321:5432"
+      - "54322:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,7 +25,7 @@ services:
       context: .
     container_name: nix_app
     ports:
-      - "9000:9000"
+      - "8080:9000"
     networks:
       - rede-aplicacao
     env_file:

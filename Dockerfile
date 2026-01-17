@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Node.js e Yarn
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g yarn
 
@@ -39,7 +39,7 @@ RUN npm install
 RUN npm run build
 
 # Etapa 2: Node (frontend)
-FROM node:18-alpine AS npm
+FROM node:20-alpine AS npm
 WORKDIR /app
 COPY --from=composer /build .
 
