@@ -22,6 +22,7 @@
                                 <th>{!! sortable('codigo_interno', 'Processo', 'processo-cliente') !!}</th>
                                 <th>{!! sortable('descricao', 'Descrição', 'processo-cliente') !!}</th>
                                 <th>Tipo</th>
+                                <th>Nacionalização</th>
                                 <th>{!! sortable('canal', 'Canal', 'processo-cliente') !!}</th>
                                 <th>{!! sortable('status', 'Status', 'processo-cliente') !!}</th>
                                 <th class="text-center text-white">Ações</th>
@@ -43,6 +44,19 @@
                                             $tipoInfo = $tiposMap[$tipo] ?? $tiposMap['maritimo'];
                                         @endphp
                                         <span class="badge {{ $tipoInfo['cor'] }}">{{ $tipoInfo['nome'] }}</span>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $nacionalizacaoMap = [
+                                                'santos' => 'Santos',
+                                                'anapolis' => 'Anápolis',
+                                                'santa_catarina' => 'Santa Catarina',
+                                                'outros' => 'Outros',
+                                            ];
+                                            $nacionalizacao = $processo->nacionalizacao ?? 'outros';
+                                            $nacionalizacaoTexto = $nacionalizacaoMap[$nacionalizacao] ?? ucfirst($nacionalizacao);
+                                        @endphp
+                                        {{ $nacionalizacaoTexto }}
                                     </td>
                                     <td>
                                         @php

@@ -129,6 +129,27 @@
                                         'li_dta_honor_nix',
                                         'honorarios_nix',
                                     ];
+                                } elseif ($nacionalizacaoAtual === 'santa_catarina') {
+                                    // Ordem específica para Santa Catarina
+                                    $campos = [
+                                        'multa_complem',
+                                        'dif_impostos',
+                                        'outras_taxas_agente',
+                                        'liberacao_bl',
+                                        'desconsolidacao',
+                                        'isps_code',
+                                        'handling',
+                                        'capatazia',
+                                        'afrmm',
+                                        'armazenagem_porto',
+                                        'frete_rodoviario',
+                                        'dif_frete_rodoviario',
+                                        'sda',
+                                        'rep_porto',
+                                        'tx_correcao_lacre',
+                                        'li_dta_honor_nix',
+                                        'honorarios_nix',
+                                    ];
                                 } else {
                                     // Ordem padrão para outros tipos de nacionalização
                                     $campos = [
@@ -164,17 +185,24 @@
                                     $campos[] = 'honorarios_nix';
                                 }
                                 
+                                // Filtrar campos baseado na nacionalização para garantir que apenas os corretos sejam exibidos
+                                $campos = array_values(array_filter($campos, function($campo) use ($nacionalizacaoAtual) {
+                                    // tx_correcao_lacre: apenas para santos e santa_catarina
+                                    if ($campo === 'tx_correcao_lacre') {
+                                        return in_array($nacionalizacaoAtual, ['santos', 'santa_catarina']);
+                                    }
+                                    // rep_anapolis, desp_anapolis, correios: não para santos
+                                    if (in_array($campo, ['rep_anapolis', 'desp_anapolis', 'correios'])) {
+                                        return $nacionalizacaoAtual !== 'santos';
+                                    }
+                                    return true;
+                                }));
+                                
                                 $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
 
-
-
                             @foreach ($campos as $campo)
-                                <th class="middleRowInputTh" data-campo="{{ $campo }}" 
-                                    @if ($campo === 'tx_correcao_lacre' && $nacionalizacaoAtual !== 'santos') style="display: none;" 
-                                    @elseif (in_array($campo, ['rep_anapolis', 'desp_anapolis', 'correios']) && $nacionalizacaoAtual === 'santos') style="display: none;" 
-                                    @elseif ($campo === 'desp_anapolis' && $nacionalizacaoAtual === 'anapolis') style="display: block;" 
-                                    @endif>
+                                <th class="middleRowInputTh" data-campo="{{ $campo }}">
                                     @if ($campo == 'capatazia')
                                         <input type="text" class="form-control moneyReal" name="{{ $campo }}"
                                             id="{{ $campo }}" readonly
@@ -386,6 +414,25 @@
                                 <th data-campo="correios">CORREIOS</th>
                                 <th>LI+DTA+HONOR.NIX</th>
                                 <th>HONORÁRIOS NIX</th>
+                            @elseif ($nacionalizacaoAtual === 'santa_catarina')
+                                {{-- Ordem específica para Santa Catarina --}}
+                                <th>MULTA COMPLEM</th>
+                                <th>DIF IMPOSTOS</th>
+                                <th>OUTRAS TX AGENTE</th>
+                                <th>LIBERAÇÃO BL</th>
+                                <th>DESCONS.</th>
+                                <th>ISPS CODE</th>
+                                <th>HANDLING</th>
+                                <th>CAPATAZIA</th>
+                                <th>AFRMM</th>
+                                <th>ARMAZENAGEM PORTO</th>
+                                <th>FRETE RODOVIARIO</th>
+                                <th>DIF FRETE RODOVIARIO</th>
+                                <th>S.D.A</th>
+                                <th>REP.PORTO</th>
+                                <th>TX CORREÇÃO LACRE</th>
+                                <th>LI+DTA+HONOR.NIX</th>
+                                <th>HONORÁRIOS NIX</th>
                             @else
                                 {{-- Ordem padrão para outros tipos --}}
                                 <th>OUTRAS TX AGENTE</th>
@@ -400,9 +447,7 @@
                                 <th>S.D.A</th>
                                 <th>REP. PORTO</th>
                                 <th>ARMAZENAGEM EADI</th>
-                                @if ($nacionalizacaoAtual === 'santos')
-                                    <th data-campo="tx_correcao_lacre">TX CORREÇÃO LACRE</th>
-                                @endif
+                             
                                 <th>LAVAGEM CONT</th>
                                 @if ($nacionalizacaoAtual !== 'santos')
                                     <th data-campo="rep_anapolis">REP. EADI</th>
@@ -500,7 +545,7 @@
                                         class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][peso_liquido_unitario]"
                                         id="peso_liquido_unitario-{{ $index }}"
-                                        value="{{ $processoProduto->peso_liquido_unitario ? number_format($processoProduto->peso_liquido_unitario, 5, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->peso_liquido_unitario ? number_format((float)$processoProduto->peso_liquido_unitario, 6, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -595,7 +640,7 @@
                                         class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][vlr_crf_unit]"
                                         id="vlr_crf_unit-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_crf_unit ? number_format($processoProduto->vlr_crf_unit, 2, ',' , '.') : '' }}">
+                                        value="{{ $processoProduto->vlr_crf_unit ? number_format((float)$processoProduto->vlr_crf_unit, 4, ',' , '.') : '' }}">
                                 </td>
 
                                 <td>
@@ -603,7 +648,7 @@
                                         class="form-control moneyReal" readonly
                                         name="produtos[{{ $index }}][vlr_crf_total]"
                                         id="vlr_crf_total-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_crf_total ? number_format($processoProduto->vlr_crf_total, 2, ',' , '.') : '' }}">
+                                        value="{{ $processoProduto->vlr_crf_total ? number_format((float)$processoProduto->vlr_crf_total, 4, ',' , '.') : '' }}">
                                 </td>
 
                                 <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
@@ -986,6 +1031,27 @@
                                             'li_dta_honor_nix',
                                             'honorarios_nix'
                                         ];
+                                    } elseif ($nacionalizacaoAtual === 'santa_catarina') {
+                                        // Ordem específica para Santa Catarina
+                                        $camposTbody = [
+                                            'multa_complem',
+                                            'dif_impostos',
+                                            'outras_taxas_agente',
+                                            'liberacao_bl',
+                                            'desconsolidacao',
+                                            'isps_code',
+                                            'handling',
+                                            'capatazia',
+                                            'afrmm',
+                                            'armazenagem_porto',
+                                            'frete_rodoviario',
+                                            'dif_frete_rodoviario',
+                                            'sda',
+                                            'rep_porto',
+                                            'tx_correcao_lacre',
+                                            'li_dta_honor_nix',
+                                            'honorarios_nix'
+                                        ];
                                     } else {
                                         $camposTbody = [
                                             'outras_taxas_agente',
@@ -1021,7 +1087,7 @@
                                         $dataCampo = '';
                                         $styleDisplay = '';
                                         
-                                        if ($campoTbody === 'tx_correcao_lacre' && $nacionalizacaoAtual !== 'santos') {
+                                        if ($campoTbody === 'tx_correcao_lacre' && $nacionalizacaoAtual !== 'santos' && $nacionalizacaoAtual !== 'santa_catarina') {
                                             $mostrarCampo = false;
                                         } elseif ($campoTbody === 'desp_anapolis') {
                                             $dataCampo = 'data-campo="desp_anapolis"';

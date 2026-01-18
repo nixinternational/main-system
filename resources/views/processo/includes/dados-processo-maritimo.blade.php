@@ -147,6 +147,7 @@
                        <select class="custom-select" name="nacionalizacao" id="nacionalizacao">
                            <option value="santos" {{ $nacionalizacaoSelecionada === 'santos' ? 'selected' : '' }}>Porto de Santos</option>
                            <option value="anapolis" {{ $nacionalizacaoSelecionada === 'anapolis' ? 'selected' : '' }}>Anápolis</option>
+                           <option value="santa_catarina" {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'selected' : '' }}>Santa Catarina</option>
                            <option value="outros" {{ $nacionalizacaoSelecionada === 'outros' ? 'selected' : '' }}>Geral</option>
                        </select>
                    </div>

@@ -277,6 +277,8 @@
         let products = JSON.parse($('#productsClient').val());
         let debugStore = {};
         let debugGlobals = {};
+        let contadorRecalculos = 0;
+        let contadorEventosCampos = 0;
 
         function resetDebugStore() {
             debugStore = {};
@@ -720,7 +722,6 @@
             // Sempre criar o totalizador, mesmo sem linhas
             const tfoot = $('#resultado-totalizadores');
             if (tfoot.length === 0) {
-                console.error('Elemento #resultado-totalizadores não encontrado!');
                 return;
             }
             
@@ -767,6 +768,8 @@
                 valor_icms_st: 0,
                 valor_total_nf_com_icms_st: 0,
                 multa: 0,
+                multa_complem: 0,
+                dif_impostos: 0,
                 tx_def_li: 0,
                 taxa_siscomex: 0,
                 outras_taxas_agente: 0,
@@ -778,9 +781,13 @@
                 tx_correcao_lacre: 0,
                 afrmm: 0,
                 armazenagem_sts: 0,
+                armazenagem_porto: 0,
                 frete_dta_sts_ana: 0,
+                frete_rodoviario: 0,
+                dif_frete_rodoviario: 0,
                 sda: 0,
                 rep_sts: 0,
+                rep_porto: 0,
                 armaz_ana: 0,
                 lavagem_container: 0,
                 rep_anapolis: 0,
@@ -865,7 +872,6 @@
             if (tfoot.length > 0) {
                 tfoot.empty();
             } else {
-                console.error('Elemento #resultado-totalizadores não encontrado antes de criar totalizador!');
                 return;
             }
             
@@ -921,7 +927,7 @@
 
 
             tr += `<td></td>`; 
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 4)}</td>`;
             
 
             if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
@@ -1005,22 +1011,61 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.multa, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.tx_def_li, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.taxa_siscomex, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.liberacao_bl, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desconsolidacao, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.isps_code, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.capatazia, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.afrmm, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.armazenagem_sts, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.sda, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_sts, 2)}</td>
-        ${getNacionalizacaoAtual() === 'anapolis' ? '<td data-campo="desp_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis || 0, 2) + '</td><td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td><td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' : ''}
-        ${getNacionalizacaoAtual() !== 'anapolis' ? '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armaz_ana, 2) + '</td>' : ''}
-        ${getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' : ''}
-        ${getNacionalizacaoAtual() !== 'anapolis' ? '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.lavagem_container, 2) + '</td>' : ''}
-        ${getNacionalizacaoAtual() !== 'santos' && getNacionalizacaoAtual() !== 'anapolis' ? '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td><td data-campo="desp_anapolis" style="display: none; font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis || 0, 2) + '</td><td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' : ''}
+        ${getNacionalizacaoAtual() === 'santa_catarina' ? 
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.taxa_siscomex, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.multa_complem || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.dif_impostos || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.isps_code, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.handling, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.capatazia, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.afrmm, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armazenagem_porto || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.frete_rodoviario || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.dif_frete_rodoviario || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.sda, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_porto || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
+        : getNacionalizacaoAtual() === 'anapolis' ?
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.isps_code, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.handling, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.capatazia, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.afrmm, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armazenagem_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.sda, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_sts, 2) + '</td>' +
+            '<td data-campo="desp_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis || 0, 2) + '</td>' +
+            '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td>' +
+            '<td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
+        :
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.isps_code, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.handling, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.capatazia, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.afrmm, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armazenagem_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.sda, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_sts, 2) + '</td>' +
+            (getNacionalizacaoAtual() !== 'anapolis' ? '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armaz_ana, 2) + '</td>' : '') +
+            (getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' : '') +
+            (getNacionalizacaoAtual() !== 'anapolis' ? '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.lavagem_container, 2) + '</td>' : '') +
+            (getNacionalizacaoAtual() !== 'santos' && getNacionalizacaoAtual() !== 'anapolis' ? '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td><td data-campo="desp_anapolis" style="display: none; font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis || 0, 2) + '</td><td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' : '') +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
+        }
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>
@@ -1034,15 +1079,12 @@
 
             try {
                 if (tfoot.length === 0) {
-                    console.error('Elemento #resultado-totalizadores não encontrado ao tentar adicionar totalizador!');
                     return;
                 }
                 // tfoot já foi esvaziado anteriormente, apenas adicionar o conteúdo
                 tfoot.append(tr);
             } catch (error) {
-                console.error('Erro ao adicionar totalizador:', error);
-                console.error('tfoot:', tfoot);
-                console.error('tr length:', tr ? tr.length : 'tr é null/undefined');
+                // Erro silencioso ao adicionar totalizador
             }
         }
 
@@ -1171,7 +1213,6 @@
 
 
             if (!cotacaoMoeda || cotacaoMoeda === 0 || !cotacaoUSD || cotacaoUSD === 0) {
-                console.warn(`Cotações inválidas para conversão: ${moedaProcesso} = ${cotacaoMoeda}, USD = ${cotacaoUSD}`);
                 return valor; 
             }
 
@@ -1189,7 +1230,6 @@
 
 
             if (!cotacaoMoeda || cotacaoMoeda === 0 || !cotacaoUSD || cotacaoUSD === 0) {
-                console.warn(`Cotações inválidas para conversão: ${moedaProcesso} = ${cotacaoMoeda}, USD = ${cotacaoUSD}`);
                 return valor; 
             }
 
@@ -1382,10 +1422,7 @@
             $('#service_charges').on('blur change input', function() {
 
                 convertToUSDAndBRL('service_charges');
-
-                setTimeout(function() {
-                    recalcularTodaTabela();
-                }, 100);
+                agendarRecalculo(150);
             });
 
             $('form').on('submit', function(e) {
@@ -1418,7 +1455,6 @@
                             title: 'Tabela recalculada com sucesso!'
                         });
                     } catch (error) {
-                        console.error('Erro ao recalcular tabela:', error);
                         Toast.fire({
                             icon: 'error',
                             title: 'Erro ao recalcular tabela'
@@ -1657,7 +1693,7 @@
                 setTimeout(function() {
                     convertToUSDAndBRL('service_charges');
                     atualizarVisibilidadeColunasMoeda();
-                    recalcularTodaTabela();
+                    agendarRecalculo(200);
                 }, 200);
             });
             
@@ -1665,7 +1701,7 @@
             $('#cotacao_service_charges').on('blur change input', function() {
                 setTimeout(function() {
                     convertToUSDAndBRL('service_charges');
-                    setTimeout(recalcularTodaTabela, 100);
+                    agendarRecalculo(150);
                 }, 50);
             });
 
@@ -1720,7 +1756,7 @@
                 setTimeout(atualizarVisibilidadeColunasMoeda, 100);
 
 
-                setTimeout(recalcularTodaTabela, 200);
+                agendarRecalculo(200);
 
                 $('#formProcesso').submit();
 
@@ -2009,6 +2045,8 @@
                 return;
             }
             isRecalculating = true;
+            contadorRecalculos++;
+            console.log('Recálculo executado #' + contadorRecalculos + ' | Eventos de campos: ' + contadorEventosCampos);
             resetDebugStore();
             
             // Inicializar ou limpar valores brutos por linha para garantir precisão máxima
@@ -2075,7 +2113,8 @@
                     fobTotalGeralAtualizado += fobTotal;
 
 
-                    $(`#peso_liquido_unitario-${rowId}`).val(pesoTotal / (quantidade || 1));
+                    const pesoLiqUnit = pesoTotal / (quantidade || 1);
+                    $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit, 6));
                     $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotal, 7));
                     $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotal * dolar, 7));
                 }
@@ -2137,18 +2176,52 @@
                         }
                     }
 
-
-                    const vlrCrfTotal = fobTotal + freteUsdInt;
+                    const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeralAtualizado);
+                    const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeralAtualizado, dolar);
+                    
+                    // Calcular CRF Total - para Santa Catarina inclui service charges e acréscimo frete
+                    const nacionalizacao = getNacionalizacaoAtual();
+                    let vlrCrfTotal;
+                    if (nacionalizacao === 'santa_catarina') {
+                        vlrCrfTotal = fobTotal + freteUsdInt + serviceChargesRowAtualUSD + acrescimoFreteUsdRow;
+                    } else {
+                        vlrCrfTotal = fobTotal + freteUsdInt;
+                    }
 
                     const vlrCrfUnit = quantidadeAtual > 0 ? vlrCrfTotal / quantidadeAtual : 0;
-
-
-                    const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeralAtualizado);
-
-
-                    const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeralAtualizado, dolar);
-                    const vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
-                        seguroIntUsdRow, thcRow, dolar, vlrCrfTotal, serviceChargesRowAtual);
+                    
+                    // Debug CRF - apenas para row 10
+                    if (rowId == 10) {
+                        console.log(`=== CRF - Row ${rowId} ===`);
+                        console.log('Nacionalização:', nacionalizacao);
+                        console.log('FOB Total:', fobTotal);
+                        console.log('Frete USD Int:', freteUsdInt);
+                        if (nacionalizacao === 'santa_catarina') {
+                            console.log('Service Charges USD:', serviceChargesRowAtualUSD);
+                            console.log('Acréscimo Frete USD:', acrescimoFreteUsdRow);
+                        }
+                        console.log('Quantidade Atual:', quantidadeAtual);
+                        console.log('VLR CRF Total (calculado):', vlrCrfTotal);
+                        console.log('VLR CRF Unit (calculado):', vlrCrfUnit);
+                        console.log('========================');
+                    }
+                    
+                    // Calcular Valor Aduaneiro - para Santa Catarina é apenas CRF Total + Seguro + THC USD
+                    let vlrAduaneiroUsd;
+                    if (nacionalizacao === 'santa_catarina') {
+                        const thcUsd = dolar > 0 ? thcRow / dolar : 0;
+                        vlrAduaneiroUsd = vlrCrfTotal + seguroIntUsdRow + thcUsd;
+                        if (rowId == 10) {
+                            console.log(`[Valor Aduaneiro - Santa Catarina] Row ${rowId}:`);
+                            console.log('  VLR CRF Total:', vlrCrfTotal);
+                            console.log('  Seguro Int USD:', seguroIntUsdRow);
+                            console.log('  THC USD:', thcUsd);
+                            console.log('  Valor Aduaneiro USD:', vlrAduaneiroUsd);
+                        }
+                    } else {
+                        vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
+                            seguroIntUsdRow, thcRow, dolar, vlrCrfTotal, serviceChargesRowAtual);
+                    }
 
                     const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
 
@@ -2492,6 +2565,27 @@
             'honorarios_nix'
         ];
 
+        // Ordem específica para Santa Catarina
+        const CAMPOS_EXTERNOS_SANTA_CATARINA = [
+            'multa_complem',
+            'dif_impostos',
+            'outras_taxas_agente',
+            'liberacao_bl',
+            'desconsolidacao',
+            'isps_code',
+            'handling',
+            'capatazia',
+            'afrmm',
+            'armazenagem_porto',
+            'frete_rodoviario',
+            'dif_frete_rodoviario',
+            'sda',
+            'rep_porto',
+            'tx_correcao_lacre',
+            'li_dta_honor_nix',
+            'honorarios_nix'
+        ];
+
         function getNacionalizacaoAtual() {
             const valor = $('#nacionalizacao').val();
             return (valor ? valor.toLowerCase() : 'outros');
@@ -2503,6 +2597,11 @@
             // Se for Anápolis, usar ordem específica
             if (nacionalizacao === 'anapolis') {
                 return CAMPOS_EXTERNOS_ANAPOLIS;
+            }
+            
+            // Se for Santa Catarina, usar ordem específica
+            if (nacionalizacao === 'santa_catarina') {
+                return CAMPOS_EXTERNOS_SANTA_CATARINA;
             }
             
             // Para outros tipos, filtrar da ordem base
@@ -2541,8 +2640,8 @@
             const nacionalizacao = getNacionalizacaoAtual();
             const tipoProcesso = '{{ $tipoProcesso ?? "maritimo" }}';
             
-            // Só calcular se for Anápolis e processo marítimo
-            if (nacionalizacao !== 'anapolis' || tipoProcesso !== 'maritimo') {
+            // Só calcular se for Anápolis ou Santa Catarina e processo marítimo
+            if ((nacionalizacao !== 'anapolis' && nacionalizacao !== 'santa_catarina') || tipoProcesso !== 'maritimo') {
                 $('#campos-cpt-anapolis').hide();
                 return;
             }
@@ -2623,7 +2722,7 @@
             const { recalcular = false } = options;
             const nacionalizacao = getNacionalizacaoAtual();
             const mostrarCamposAnapolis = nacionalizacao !== 'santos';
-            const mostrarTxCorrecao = nacionalizacao === 'santos';
+            const mostrarTxCorrecao = nacionalizacao === 'santos' || nacionalizacao === 'santa_catarina';
 
 
             $('th[data-campo="tx_correcao_lacre"]').each(function() {
@@ -2731,7 +2830,6 @@
 
                 window.location.reload();
             } catch (error) {
-                console.error('Erro ao atualizar nacionalização:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro ao atualizar nacionalização',
@@ -3090,24 +3188,6 @@
                 despesas += opcional2Valor;
             }
 
-            // Debug: console.log apenas para função calcularDespesas e apenas para rowId == 8
-            if (rowId == 8) {
-                console.log('=== DESP. ADUANEIRA - Row ' + rowId + ' ===');
-                console.log('Nacionalização:', nacionalizacao);
-                console.log('Multa:', multa);
-                console.log('Valor Aduaneiro BRL:', vlrAduaneiroBrl);
-                console.log('TX DEF/L.I. %:', txDefLiPercent);
-                console.log('TX DEF/L.I. (calculado):', txDefLi);
-                console.log('Taxa SISCOMEX:', taxaSiscomex);
-                console.log('AFRMM:', afrmm);
-                console.log('Armazenagem STS:', armazenagem_sts);
-                console.log('Frete STS/GYN:', frete_dta_sts_ana);
-                console.log('Honorários NIX:', honorarios_nix);
-                console.log('Opcional 1 (compoe:', opcional1Compoe, ', valor:', opcional1Valor, ')');
-                console.log('Opcional 2 (compoe:', opcional2Compoe, ', valor:', opcional2Valor, ')');
-                console.log('Total DESP. ADUANEIRA:', despesas);
-                console.log('==============================');
-            }
 
             return {
                 total: despesas,
@@ -3180,7 +3260,7 @@
 
         function atualizarCampos(rowId, valores) {
 
-            $(`#peso_liquido_unitario-${rowId}`).val(valores.pesoLiqUnit);
+            $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(valores.pesoLiqUnit || 0, 6));
 
             let moedaFrete = $('#frete_internacional_moeda').val();
             let moedaSeguro = $('#seguro_internacional_moeda').val();
@@ -3234,23 +3314,54 @@
             
 
             if (valores.vlrCrfTotal !== undefined) {
-                $(`#vlr_crf_total-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfTotal, 2));
+                const valorFormatado = MoneyUtils.formatMoney(valores.vlrCrfTotal, 4);
+                if (rowId == 10) {
+                    console.log(`[atualizarCampos] Row ${rowId} - VLR CRF Total (de valores):`, valores.vlrCrfTotal, '→ Formatado:', valorFormatado);
+                }
+                $(`#vlr_crf_total-${rowId}`).val(valorFormatado);
             } else {
 
                 const fobTotal = valores.fobTotal || MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
                 const freteUsd = valores.freteUsdInt || MoneyUtils.parseMoney($(`#frete_usd-${rowId}`).val()) || 0;
-                const vlrCrfTotal = fobTotal + freteUsd;
-                $(`#vlr_crf_total-${rowId}`).val(MoneyUtils.formatMoney(vlrCrfTotal, 2));
+                const nacionalizacao = getNacionalizacaoAtual();
+                let vlrCrfTotal;
+                if (nacionalizacao === 'santa_catarina') {
+                    const serviceChargesUsd = MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
+                    const acrescimoFreteUsd = valores.acrescimoFreteUsdRow || MoneyUtils.parseMoney($(`#acresc_frete_usd-${rowId}`).val()) || 0;
+                    vlrCrfTotal = fobTotal + freteUsd + serviceChargesUsd + acrescimoFreteUsd;
+                    if (rowId == 10) {
+                        console.log(`[atualizarCampos] Row ${rowId} - VLR CRF Total (recalculado - Santa Catarina):`, vlrCrfTotal);
+                        console.log('  FOB Total:', fobTotal);
+                        console.log('  Frete USD:', freteUsd);
+                        console.log('  Service Charges USD:', serviceChargesUsd);
+                        console.log('  Acréscimo Frete USD:', acrescimoFreteUsd);
+                    }
+                } else {
+                    vlrCrfTotal = fobTotal + freteUsd;
+                }
+                const valorFormatado = MoneyUtils.formatMoney(vlrCrfTotal, 4);
+                if (rowId == 10) {
+                    console.log(`[atualizarCampos] Row ${rowId} - VLR CRF Total (recalculado):`, vlrCrfTotal, '→ Formatado:', valorFormatado);
+                }
+                $(`#vlr_crf_total-${rowId}`).val(valorFormatado);
             }
             
             if (valores.vlrCrfUnit !== undefined) {
-                $(`#vlr_crf_unit-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfUnit, 2));
+                const valorFormatado = MoneyUtils.formatMoney(valores.vlrCrfUnit, 4);
+                if (rowId == 10) {
+                    console.log(`[atualizarCampos] Row ${rowId} - VLR CRF Unit (de valores):`, valores.vlrCrfUnit, '→ Formatado:', valorFormatado);
+                }
+                $(`#vlr_crf_unit-${rowId}`).val(valorFormatado);
             } else {
 
                 const vlrCrfTotal = MoneyUtils.parseMoney($(`#vlr_crf_total-${rowId}`).val()) || 0;
                 const quantidade = valores.quantidade || MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
                 const vlrCrfUnit = quantidade > 0 ? vlrCrfTotal / quantidade : 0;
-                $(`#vlr_crf_unit-${rowId}`).val(MoneyUtils.formatMoney(vlrCrfUnit, 2));
+                const valorFormatado = MoneyUtils.formatMoney(vlrCrfUnit, 4);
+                if (rowId == 10) {
+                    console.log(`[atualizarCampos] Row ${rowId} - VLR CRF Unit (recalculado):`, vlrCrfUnit, '→ Formatado:', valorFormatado);
+                }
+                $(`#vlr_crf_unit-${rowId}`).val(valorFormatado);
             }
             
 
@@ -3390,19 +3501,17 @@
             atualizarFatoresFob();
             atualizarCamposCabecalho();
             // Recalcular toda a tabela para atualizar valores brutos usados no totalizador
-            // recalcularTodaTabela() já chama atualizarTotalizadores() internamente
-            recalcularTodaTabela();
-            calcularValoresCPT();
+            agendarRecalculo();
         });
         
         // Listeners para campos opcionais
         $(document).on('change keyup', '.opcional-valor', function() {
             ratearCamposOpcionais();
-            recalcularTodaTabela();
+            agendarRecalculo();
         });
         
         $(document).on('change', '#opcional_1_compoe_despesas, #opcional_2_compoe_despesas', function() {
-            recalcularTodaTabela();
+            agendarRecalculo();
         });
         
         // Botão para salvar campos do cabeçalho
@@ -3485,7 +3594,6 @@
                     throw new Error(data.error || 'Erro ao salvar campos do cabeçalho');
                 }
             } catch (error) {
-                console.error('Erro ao salvar cabecalhoInputs:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro!',
@@ -3534,16 +3642,21 @@
 
         let recalcularTimeout = null;
         let isRecalculating = false;
+        const RECALC_DEBOUNCE_MS = 300;
 
-        function debouncedRecalcular() {
+        function agendarRecalculo(delay = RECALC_DEBOUNCE_MS) {
             if (isRecalculating) return;
-            
+            contadorEventosCampos++;
             clearTimeout(recalcularTimeout);
             recalcularTimeout = setTimeout(() => {
                 if (!isRecalculating) {
                     recalcularTodaTabela();
                 }
-            }, 300);
+            }, delay);
+        }
+
+        function debouncedRecalcular() {
+            agendarRecalculo();
         }
 
 
@@ -3956,10 +4069,21 @@
             return total; 
         }
 
+        function obterProximoNumeroItem() {
+            let maiorItem = 0;
+            $('[id^="item-"]').each(function() {
+                const valorItem = parseInt($(this).val()) || 0;
+                if (valorItem > maiorItem) {
+                    maiorItem = valorItem;
+                }
+            });
+            return maiorItem + 1;
+        }
 
         $(document).on('click', '.addProduct', function() {
             let lengthOptions = $('#productsBody tr').length;
             let newIndex = lengthOptions;
+            let proximoItem = obterProximoNumeroItem();
 
             let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
         <option selected disabled>Selecione uma opção</option>`;
@@ -4023,7 +4147,7 @@
         <td>${select}</td>
         <td><input data-row="${newIndex}" type="text" step="1" class="form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]" id="item-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]" id="item-${newIndex}" value="${proximoItem}"></td>
         <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
         <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][ncm]" id="ncm-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
@@ -4114,6 +4238,25 @@
                 html += '<td data-campo="desp_anapolis"><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][desp_anapolis]" id="desp_anapolis-' + newIndex + '" value=""></td>';
                 html += '<td data-campo="rep_anapolis"><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][rep_anapolis]" id="rep_anapolis-' + newIndex + '" value=""></td>';
                 html += '<td data-campo="correios"><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][correios]" id="correios-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
+            } else if (nacionalizacao === 'santa_catarina') {
+                // Ordem específica para Santa Catarina
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][multa_complem]" id="multa_complem-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][dif_impostos]" id="dif_impostos-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][outras_taxas_agente]" id="outras_taxas_agente-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][liberacao_bl]" id="liberacao_bl-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][desconsolidacao]" id="desconsolidacao-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][isps_code]" id="isps_code-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][handling]" id="handling-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][capatazia]" id="capatazia-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][afrmm]" id="afrmm-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][armazenagem_porto]" id="armazenagem_porto-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][frete_rodoviario]" id="frete_rodoviario-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][dif_frete_rodoviario]" id="dif_frete_rodoviario-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][sda]" id="sda-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][rep_porto]" id="rep_porto-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][tx_correcao_lacre]" id="tx_correcao_lacre-' + newIndex + '" value=""></td>';
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
             } else {
