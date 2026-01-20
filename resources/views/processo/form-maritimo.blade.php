@@ -409,7 +409,18 @@
                     });
                 } else {
                     // Fallback: usar valores dos inputs (comportamento original)
+                    const isSantaCatarina = getNacionalizacaoAtual() === 'santa_catarina';
                     Object.keys(totais).forEach(campo => {
+                        // Para Santa Catarina, calcular multa_complem e dif_impostos da tabela de multa
+                        if (isSantaCatarina && campo === 'multa_complem') {
+                            totais[campo] += obterMultaComplementarPorAdicaoItemProduto(rowId);
+                            return;
+                        }
+                        if (isSantaCatarina && campo === 'dif_impostos') {
+                            totais[campo] += obterDiferencaImpostosPorAdicaoItemProduto(rowId);
+                            return;
+                        }
+                        
                         if (campo === 'service_charges' && moedaServiceCharges && moedaServiceCharges !== 'USD') {
                             const elemento = $(`#service_charges_moeda_estrangeira-${rowId}`);
                             if (elemento.length > 0) {
@@ -505,7 +516,7 @@
 
 
             tr += `<td></td>`; 
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 4)}</td>`;
+            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
             
 
             if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
@@ -590,7 +601,6 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.tx_def_li, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.taxa_siscomex, 2)}</td>
         ${getNacionalizacaoAtual() === 'santa_catarina' ? 
-            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.taxa_siscomex, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.multa_complem || 0, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.dif_impostos || 0, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
@@ -644,8 +654,6 @@
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
         }
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2)}</td>
-        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(validarDiferencaCambialFrete(totais.diferenca_cambial_frete), 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>
@@ -1826,22 +1834,60 @@
 
                     const camposExternos = getCamposExternos();
                     let desp_desenbaraco_parte_1 = 0;
-                    for (let campo of camposExternos) {
-                        const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
-                        const valorDistribuido = window.valoresBrutosCamposExternos[campo]?.[rowId] ?? (valorCampo * fatorVlrFob_AX);
-                        desp_desenbaraco_parte_1 += valorDistribuido;
-                    }
+                    let desp_desenbaraco_parte_2 = 0;
+                    let despesaDesembaraco = 0;
+                    
                     const multaDesp = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
                     const vlrAduaneiroBrlDesp = vlrAduaneiroBrl;
                     const txDefLiPercentDesp = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) : 0;
                     const taxa_def_desp = vlrAduaneiroBrlDesp * txDefLiPercentDesp;
                     const taxa_siscomex_desp = taxaSiscomexUnitaria_BB || 0;
-                    desp_desenbaraco_parte_1 += multaDesp + taxa_def_desp + taxa_siscomex_desp;
                     const capatazia_desp = $(`#capatazia-${rowId}`).val() ? MoneyUtils.parseMoney($(`#capatazia-${rowId}`).val()) : 0;
                     const afrmm_desp = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
                     const honorarios_nix_desp = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0;
-                    const desp_desenbaraco_parte_2 = multaDesp + taxa_def_desp + taxa_siscomex_desp + capatazia_desp + afrmm_desp + honorarios_nix_desp;
-                    const despesaDesembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    
+                    const nacionalizacaoDesp = getNacionalizacaoAtual();
+                    
+                    if (nacionalizacaoDesp === 'santa_catarina') {
+                        // Fórmula específica para Santa Catarina
+                        const multa_complem_desp = MoneyUtils.parseMoney($(`#multa_complem-${rowId}`).val()) || 0;
+                        const dif_impostos_desp = MoneyUtils.parseMoney($(`#dif_impostos-${rowId}`).val()) || 0;
+                        const outras_taxas_agente_desp = MoneyUtils.parseMoney($(`#outras_taxas_agente-${rowId}`).val()) || 0;
+                        const liberacao_bl_desp = MoneyUtils.parseMoney($(`#liberacao_bl-${rowId}`).val()) || 0;
+                        const desconsolidacao_desp = MoneyUtils.parseMoney($(`#desconsolidacao-${rowId}`).val()) || 0;
+                        const isps_code_desp = MoneyUtils.parseMoney($(`#isps_code-${rowId}`).val()) || 0;
+                        const handling_desp = MoneyUtils.parseMoney($(`#handling-${rowId}`).val()) || 0;
+                        const armazenagem_porto_desp = MoneyUtils.parseMoney($(`#armazenagem_porto-${rowId}`).val()) || 0;
+                        const frete_rodoviario_desp = MoneyUtils.parseMoney($(`#frete_rodoviario-${rowId}`).val()) || 0;
+                        const dif_frete_rodoviario_desp = MoneyUtils.parseMoney($(`#dif_frete_rodoviario-${rowId}`).val()) || 0;
+                        const sda_desp = MoneyUtils.parseMoney($(`#sda-${rowId}`).val()) || 0;
+                        const rep_porto_desp = MoneyUtils.parseMoney($(`#rep_porto-${rowId}`).val()) || 0;
+                        const tx_correcao_lacre_desp = MoneyUtils.parseMoney($(`#tx_correcao_lacre-${rowId}`).val()) || 0;
+                        const li_dta_honor_nix_desp = MoneyUtils.parseMoney($(`#li_dta_honor_nix-${rowId}`).val()) || 0;
+                        
+                        // Parte 1: soma de todos os campos
+                        desp_desenbaraco_parte_1 = multaDesp + taxa_def_desp + taxa_siscomex_desp + multa_complem_desp + 
+                            dif_impostos_desp + outras_taxas_agente_desp + liberacao_bl_desp + desconsolidacao_desp + 
+                            isps_code_desp + handling_desp + capatazia_desp + afrmm_desp + armazenagem_porto_desp + 
+                            frete_rodoviario_desp + dif_frete_rodoviario_desp + sda_desp + rep_porto_desp + 
+                            tx_correcao_lacre_desp + li_dta_honor_nix_desp + honorarios_nix_desp;
+                        
+                        // Parte 2: campos a subtrair
+                        desp_desenbaraco_parte_2 = multaDesp + taxa_def_desp + taxa_siscomex_desp + capatazia_desp + 
+                            afrmm_desp + armazenagem_porto_desp + frete_rodoviario_desp + honorarios_nix_desp;
+                        
+                        despesaDesembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    } else {
+                        // Fórmula padrão para outras nacionalizações
+                        for (let campo of camposExternos) {
+                            const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
+                            const valorDistribuido = window.valoresBrutosCamposExternos[campo]?.[rowId] ?? (valorCampo * fatorVlrFob_AX);
+                            desp_desenbaraco_parte_1 += valorDistribuido;
+                        }
+                        desp_desenbaraco_parte_1 += multaDesp + taxa_def_desp + taxa_siscomex_desp;
+                        desp_desenbaraco_parte_2 = multaDesp + taxa_def_desp + taxa_siscomex_desp + capatazia_desp + afrmm_desp + honorarios_nix_desp;
+                        despesaDesembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    }
 
                     addDebugEntry(rowId, {
                         freteUsd: freteUsdInt,
@@ -1950,6 +1996,12 @@
                         valor_icms_st: vlrIcmsSt,
                         valor_total_nf_com_icms_st: totais.vlrTotalNfComIcms,
                         multa: multaDesp,
+                        multa_complem: getNacionalizacaoAtual() === 'santa_catarina' 
+                            ? obterMultaComplementarPorAdicaoItemProduto(rowId) 
+                            : (MoneyUtils.parseMoney($(`#multa_complem-${rowId}`).val()) || 0),
+                        dif_impostos: getNacionalizacaoAtual() === 'santa_catarina' 
+                            ? obterDiferencaImpostosPorAdicaoItemProduto(rowId) 
+                            : (MoneyUtils.parseMoney($(`#dif_impostos-${rowId}`).val()) || 0),
                         tx_def_li: taxa_def_desp,
                         taxa_siscomex: taxa_siscomex_desp,
                         outras_taxas_agente: (() => {
@@ -1972,9 +2024,13 @@
                         tx_correcao_lacre: MoneyUtils.parseMoney($(`#tx_correcao_lacre-${rowId}`).val()) || 0,
                         afrmm: afrmm_desp,
                         armazenagem_sts: MoneyUtils.parseMoney($(`#armazenagem_sts-${rowId}`).val()) || 0,
+                        armazenagem_porto: MoneyUtils.parseMoney($(`#armazenagem_porto-${rowId}`).val()) || 0,
                         frete_dta_sts_ana: MoneyUtils.parseMoney($(`#frete_dta_sts_ana-${rowId}`).val()) || 0,
+                        frete_rodoviario: MoneyUtils.parseMoney($(`#frete_rodoviario-${rowId}`).val()) || 0,
+                        dif_frete_rodoviario: MoneyUtils.parseMoney($(`#dif_frete_rodoviario-${rowId}`).val()) || 0,
                         sda: MoneyUtils.parseMoney($(`#sda-${rowId}`).val()) || 0,
                         rep_sts: MoneyUtils.parseMoney($(`#rep_sts-${rowId}`).val()) || 0,
+                        rep_porto: MoneyUtils.parseMoney($(`#rep_porto-${rowId}`).val()) || 0,
                         armaz_ana: MoneyUtils.parseMoney($(`#armaz_ana-${rowId}`).val()) || 0,
                         lavagem_container: MoneyUtils.parseMoney($(`#lavagem_container-${rowId}`).val()) || 0,
                         rep_anapolis: MoneyUtils.parseMoney($(`#rep_anapolis-${rowId}`).val()) || 0,
@@ -2023,6 +2079,7 @@
             atualizarCamposCabecalho();
             atualizarTotaisGlobais(fobTotalGeralAtualizado, dolar); 
             atualizarFatoresFob(); 
+            atualizarMultaProdutosPorMulta(); // Atualiza multa_complem e dif_impostos para Santa Catarina
             atualizarTotalizadores();
             calcularValoresCPT();
             setDebugGlobals({
@@ -2121,9 +2178,8 @@
         ];
 
         // Ordem específica para Santa Catarina
+        // multa_complem e dif_impostos são calculados automaticamente (não devem ser rateados)
         const CAMPOS_EXTERNOS_SANTA_CATARINA = [
-            'multa_complem',
-            'dif_impostos',
             'outras_taxas_agente',
             'liberacao_bl',
             'desconsolidacao',
@@ -2727,6 +2783,57 @@
             return multaEncontrada;
         }
 
+        function obterMultaComplementarPorAdicaoItemProduto(rowId) {
+            const adicao = limparNumero($(`#adicao-${rowId}`).val());
+            const item = limparNumero($(`#item-${rowId}`).val());
+            if (!adicao || !item) {
+                return 0;
+            }
+
+            let valorAduaneiroMultaEncontrado = 0;
+            $('#productsBodyMulta tr.linhas-input').each(function() {
+                const multaRowId = $(this).attr('id') ? $(this).attr('id').replace('row-multa-', '') : null;
+                if (!multaRowId) return;
+
+                const adicaoMulta = limparNumero($(`#adicao_multa-${multaRowId}`).val());
+                const itemMulta = limparNumero($(`#item_multa-${multaRowId}`).val());
+
+                if (adicaoMulta === adicao && itemMulta === item) {
+                    valorAduaneiroMultaEncontrado = MoneyUtils.parseMoney($(`#valor_aduaneiro_multa-${multaRowId}`).val()) || 0;
+                    return false;
+                }
+            });
+
+            return valorAduaneiroMultaEncontrado;
+        }
+
+        function obterDiferencaImpostosPorAdicaoItemProduto(rowId) {
+            const adicao = limparNumero($(`#adicao-${rowId}`).val());
+            const item = limparNumero($(`#item-${rowId}`).val());
+            if (!adicao || !item) {
+                return 0;
+            }
+
+            let somaRecalc = 0;
+            $('#productsBodyMulta tr.linhas-input').each(function() {
+                const multaRowId = $(this).attr('id') ? $(this).attr('id').replace('row-multa-', '') : null;
+                if (!multaRowId) return;
+
+                const adicaoMulta = limparNumero($(`#adicao_multa-${multaRowId}`).val());
+                const itemMulta = limparNumero($(`#item_multa-${multaRowId}`).val());
+
+                if (adicaoMulta === adicao && itemMulta === item) {
+                    const iiRecalc = MoneyUtils.parseMoney($(`#vlr_ii_recalc_multa-${multaRowId}`).val()) || 0;
+                    const ipiRecalc = MoneyUtils.parseMoney($(`#vlr_ipi_recalc_multa-${multaRowId}`).val()) || 0;
+                    const pisRecalc = MoneyUtils.parseMoney($(`#vlr_pis_recalc_multa-${multaRowId}`).val()) || 0;
+                    const cofinsRecalc = MoneyUtils.parseMoney($(`#vlr_cofins_recalc_multa-${multaRowId}`).val()) || 0;
+                    somaRecalc += iiRecalc + ipiRecalc + pisRecalc + cofinsRecalc;
+                }
+            });
+
+            return somaRecalc;
+        }
+
         function atualizarMultaProdutoPorMulta(rowId) {
             if (getNacionalizacaoAtual() !== 'santa_catarina') {
                 $(`#multa-${rowId}`).prop('readonly', false);
@@ -2735,6 +2842,26 @@
 
             const multaCalculada = obterMultaPorAdicaoItemProduto(rowId);
             $(`#multa-${rowId}`).prop('readonly', true).val(MoneyUtils.formatMoney(multaCalculada, 2));
+        }
+
+        function atualizarMultaComplementarProdutoPorMulta(rowId) {
+            if (getNacionalizacaoAtual() !== 'santa_catarina') {
+                $(`#multa_complem-${rowId}`).prop('readonly', false);
+                return;
+            }
+
+            const valorAduaneiroMulta = obterMultaComplementarPorAdicaoItemProduto(rowId);
+            $(`#multa_complem-${rowId}`).prop('readonly', true).val(MoneyUtils.formatMoney(valorAduaneiroMulta, 2));
+        }
+
+        function atualizarDiferencaImpostosProdutoPorMulta(rowId) {
+            if (getNacionalizacaoAtual() !== 'santa_catarina') {
+                $(`#dif_impostos-${rowId}`).prop('readonly', false);
+                return;
+            }
+
+            const difImpostos = obterDiferencaImpostosPorAdicaoItemProduto(rowId);
+            $(`#dif_impostos-${rowId}`).prop('readonly', true).val(MoneyUtils.formatMoney(difImpostos, 2));
         }
 
         function atualizarMultaProdutosPorMulta() {
@@ -2746,6 +2873,8 @@
                 const rowId = this.id.toString().replace('row-', '');
                 if (rowId) {
                     atualizarMultaProdutoPorMulta(rowId);
+                    atualizarMultaComplementarProdutoPorMulta(rowId);
+                    atualizarDiferencaImpostosProdutoPorMulta(rowId);
                 }
             });
         }
@@ -2843,12 +2972,13 @@
             };
         }
 
-        function calcularBcIcmsSemReducao(base, impostos, despesas) {
-            const bcIpi = base + (base * impostos.ii);
+        function calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas) {
+            const bcIpi = vlrAduaneiroBrl + (vlrAduaneiroBrl * impostos.ii);
             const vlrIpi = bcIpi * impostos.ipi;
-
-            const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
-                despesas) / (1 - impostos.icms);
+            const nacionalizacao = getNacionalizacaoAtual();
+            const divisor = nacionalizacao === 'santa_catarina' ? 0.96 : (1 - impostos.icms);
+            const resultado = (vlrAduaneiroBrl + (vlrAduaneiroBrl * impostos.ii) + vlrIpi + (vlrAduaneiroBrl * impostos.pis) + (vlrAduaneiroBrl * impostos.cofins) +
+                despesas) / divisor;
             return resultado;
         }
 
@@ -2856,9 +2986,18 @@
             atualizarReducao(rowId);
             const bcIpi = base + (base * impostos.ii);
             const vlrIpi = bcIpi * impostos.ipi;
+            const nacionalizacao = getNacionalizacaoAtual();
+            
+            // Para Santa Catarina, BC ICMS REDUZIDO = BC ICMS S/REDUÇÃO (divisor 0.96, sem aplicar redução)
+            if (nacionalizacao === 'santa_catarina') {
+                const divisor = 0.96;
+                const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
+                    despesas) / divisor;
+                return resultado;
+            }
+            
+            // Para outras nacionalizações, aplicar a redução normalmente
             let reducao = 1;
-
-
             if ($(`#reducao-${rowId}`).val() && MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) > 0) {
                 reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
             }
@@ -2878,6 +3017,7 @@
             const vlrTotalProdutoNf = base + vlrII;
             const vlrUnitProdutNf = vlrTotalProdutoNf / (quantidade || 1);
             const vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesas + vlrIcmsReduzido;
+        
             const vlrTotalNfComIcms = vlrTotalNfSemIcms + ($(`#valor_icms_st-${rowId}`).val() ? MoneyUtils.parseMoney($(
                 `#valor_icms_st-${rowId}`).val()) : 0);
             
@@ -3466,7 +3606,35 @@
                 // Declarar despesa_desembaraco antes dos blocos condicionais
                 let despesa_desembaraco = 0;
                 
-                if (nacionalizacao !== 'santos') {
+                if (nacionalizacao === 'santa_catarina') {
+                    // Fórmula específica para Santa Catarina
+                    let multa_complem = $('#multa_complem-' + i).val() ? MoneyUtils.parseMoney($('#multa_complem-' + i).val()) : 0
+                    let dif_impostos = $('#dif_impostos-' + i).val() ? MoneyUtils.parseMoney($('#dif_impostos-' + i).val()) : 0
+                    let outras_taxas_agente = $('#outras_taxas_agente-' + i).val() ? MoneyUtils.parseMoney($('#outras_taxas_agente-' + i).val()) : 0
+                    let liberacao_bl = $('#liberacao_bl-' + i).val() ? MoneyUtils.parseMoney($('#liberacao_bl-' + i).val()) : 0
+                    let desconsolidacao = $('#desconsolidacao-' + i).val() ? MoneyUtils.parseMoney($('#desconsolidacao-' + i).val()) : 0
+                    let isps_code = $('#isps_code-' + i).val() ? MoneyUtils.parseMoney($('#isps_code-' + i).val()) : 0
+                    let handling = $('#handling-' + i).val() ? MoneyUtils.parseMoney($('#handling-' + i).val()) : 0
+                    let armazenagem_porto = $('#armazenagem_porto-' + i).val() ? MoneyUtils.parseMoney($('#armazenagem_porto-' + i).val()) : 0
+                    let frete_rodoviario = $('#frete_rodoviario-' + i).val() ? MoneyUtils.parseMoney($('#frete_rodoviario-' + i).val()) : 0
+                    let dif_frete_rodoviario = $('#dif_frete_rodoviario-' + i).val() ? MoneyUtils.parseMoney($('#dif_frete_rodoviario-' + i).val()) : 0
+                    let sda = $('#sda-' + i).val() ? MoneyUtils.parseMoney($('#sda-' + i).val()) : 0
+                    let rep_porto = $('#rep_porto-' + i).val() ? MoneyUtils.parseMoney($('#rep_porto-' + i).val()) : 0
+                    let tx_correcao_lacre = $('#tx_correcao_lacre-' + i).val() ? MoneyUtils.parseMoney($('#tx_correcao_lacre-' + i).val()) : 0
+                    let li_dta_honor_nix = $('#li_dta_honor_nix-' + i).val() ? MoneyUtils.parseMoney($('#li_dta_honor_nix-' + i).val()) : 0
+
+                    // Parte 1: soma de todos os campos
+                    desp_desenbaraco_parte_1 = multa + taxa_def + taxa_siscomex + multa_complem + dif_impostos + 
+                        outras_taxas_agente + liberacao_bl + desconsolidacao + isps_code + handling + capatazia + 
+                        afrmm + armazenagem_porto + frete_rodoviario + dif_frete_rodoviario + sda + rep_porto + 
+                        tx_correcao_lacre + li_dta_honor_nix + honorarios_nix;
+
+                    // Parte 2: campos a subtrair
+                    let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + 
+                        armazenagem_porto + frete_rodoviario + honorarios_nix;
+                    
+                    despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                } else if (nacionalizacao !== 'santos') {
                     let outras_taxas_agente = $('#outras_taxas_agente-' + i).val() ? MoneyUtils.parseMoney($('#outras_taxas_agente-' + i).val()) : 0
                     let liberacao_bl = $('#liberacao_bl-' + i).val() ? MoneyUtils.parseMoney($('#liberacao_bl-' + i).val()) : 0
                     let desconsolidacao = $('#desconsolidacao-' + i).val() ? MoneyUtils.parseMoney($('#desconsolidacao-' + i).val()) : 0
@@ -3530,6 +3698,7 @@
             }
 
 
+            atualizarMultaProdutosPorMulta(); // Atualiza multa_complem e dif_impostos para Santa Catarina
             atualizarTotalizadores();
             calcularValoresCPT();
             
@@ -3616,7 +3785,10 @@
                 if (result.isConfirmed) {
                     const id = this.dataset.id
                     $(`#row-${id}`).remove();
-                    setTimeout(atualizarTotalizadores, 100);
+                    setTimeout(() => {
+                        atualizarMultaProdutosPorMulta();
+                        atualizarTotalizadores();
+                    }, 100);
 
                 } else {
                     Toast.fire({
@@ -3926,7 +4098,10 @@
             $(`#row-${newIndex} input, #row-${newIndex} select, #row-${newIndex} textarea`).each(function() {
                 initialInputs.add(this);
             });
-            setTimeout(atualizarTotalizadores, 100);
+            setTimeout(() => {
+                atualizarMultaProdutosPorMulta();
+                atualizarTotalizadores();
+            }, 100);
 
         });
 
@@ -3997,6 +4172,12 @@
                     atualizarTotalizadores();
                 }
                 calcularValoresCPT();
+                
+                // Chamar novamente após a tabela de multa estar carregada para garantir valores corretos
+                setTimeout(function() {
+                    atualizarMultaProdutosPorMulta();
+                    atualizarTotalizadores();
+                }, 500);
             }, 1000);
 
         })

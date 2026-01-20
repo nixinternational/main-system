@@ -1248,9 +1248,13 @@ class ProcessoController extends Controller
                 $dadosProcesso['tx_correcao_lacre'] = $this->parseMoneyToFloat($request->tx_correcao_lacre);
                 $dadosProcesso['afrmm'] = $this->parseMoneyToFloat($request->afrmm);
                 $dadosProcesso['armazenagem_sts'] = $this->parseMoneyToFloat($request->armazenagem_sts);
+                $dadosProcesso['armazenagem_porto'] = $this->parseMoneyToFloat($request->armazenagem_porto);
                 $dadosProcesso['frete_dta_sts_ana'] = $this->parseMoneyToFloat($request->frete_dta_sts_ana);
+                $dadosProcesso['frete_rodoviario'] = $this->parseMoneyToFloat($request->frete_rodoviario);
+                $dadosProcesso['dif_frete_rodoviario'] = $this->parseMoneyToFloat($request->dif_frete_rodoviario);
                 $dadosProcesso['sda'] = $this->parseMoneyToFloat($request->sda);
                 $dadosProcesso['rep_sts'] = $this->parseMoneyToFloat($request->rep_sts);
+                $dadosProcesso['rep_porto'] = $this->parseMoneyToFloat($request->rep_porto);
                 $dadosProcesso['armaz_ana'] = $this->parseMoneyToFloat($request->armaz_ana);
                 $dadosProcesso['lavagem_container'] = $this->parseMoneyToFloat($request->lavagem_container);
                 $dadosProcesso['rep_anapolis'] = $this->parseMoneyToFloat($request->rep_anapolis);

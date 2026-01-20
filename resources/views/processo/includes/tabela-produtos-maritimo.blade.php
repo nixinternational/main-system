@@ -100,6 +100,12 @@
 
                                 // Colunas dos fatores (FATOR VLR FOB até TAXA SISCOMEX)
                                 $colspanBeforeMiddleRow += 5; // FATOR VLR FOB até TAXA SISCOMEX
+
+                                // Em Santa Catarina, adicionar +2 para MULTA COMPLEM e DIF IMPOSTOS (calculados automaticamente)
+                                $nacionalizacaoTemp = $processo->nacionalizacao ?? 'outros';
+                                if ($nacionalizacaoTemp === 'santa_catarina') {
+                                    $colspanBeforeMiddleRow += 2;
+                                }
                             @endphp
 
                             <th style="background-color: #fff"> </th>
@@ -131,9 +137,8 @@
                                     ];
                                 } elseif ($nacionalizacaoAtual === 'santa_catarina') {
                                     // Ordem específica para Santa Catarina
+                                    // multa_complem e dif_impostos são calculados automaticamente via JS (não aparecem no cabeçalho de inputs)
                                     $campos = [
-                                        'multa_complem',
-                                        'dif_impostos',
                                         'outras_taxas_agente',
                                         'liberacao_bl',
                                         'desconsolidacao',
@@ -1427,6 +1432,7 @@
                         formData.append('total_blocos', this.blocos.length);
                         formData.append('salvar_apenas_produtos', 'true');
 
+                        // Campos do cabeçalho que devem ser salvos
                         let campos = [
                             'outras_taxas_agente',
                             'liberacao_bl',
@@ -1436,12 +1442,19 @@
                             'capatazia',
                             'afrmm',
                             'armazenagem_sts',
+                            'armazenagem_porto',
                             'frete_dta_sts_ana',
+                            'frete_rodoviario',
+                            'dif_frete_rodoviario',
                             'sda',
                             'rep_sts',
+                            'rep_porto',
                             'armaz_ana',
                             'lavagem_container',
                             'rep_anapolis',
+                            'desp_anapolis',
+                            'correios',
+                            'tx_correcao_lacre',
                             'li_dta_honor_nix',
                             'honorarios_nix',
                             'diferenca_cambial_frete',
@@ -1449,8 +1462,22 @@
                         ];
 
                         for (let campo of campos) {
-                            formData.append(campo, MoneyUtils.parseMoney($(`#${campo}`).val()))
+                            const $campo = $(`#${campo}`);
+                            if ($campo.length) {
+                                formData.append(campo, MoneyUtils.parseMoney($campo.val()) || 0);
+                            }
                         }
+
+                        // Campos opcionais com tratamento especial
+                        formData.append('opcional_1_valor', MoneyUtils.parseMoney($('#opcional_1_valor').val()) || 0);
+                        formData.append('opcional_1_descricao', $('#opcional_1_descricao').val() || '');
+                        formData.append('opcional_1_compoe_despesas', $('#opcional_1_compoe_despesas').is(':checked') ? '1' : '0');
+                        formData.append('opcional_2_valor', MoneyUtils.parseMoney($('#opcional_2_valor').val()) || 0);
+                        formData.append('opcional_2_descricao', $('#opcional_2_descricao').val() || '');
+                        formData.append('opcional_2_compoe_despesas', $('#opcional_2_compoe_despesas').is(':checked') ? '1' : '0');
+                        
+                        // Indicar que deve salvar os campos do cabeçalho também
+                        formData.append('salvar_cabecalho', 'true');
 
                         // Adicionar campos de service_charges do processo para preservar valores
                         const serviceChargesVal = $('#service_charges').val();

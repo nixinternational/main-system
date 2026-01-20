@@ -617,10 +617,8 @@
                 if (camposNaoTotalizaveis.includes(campo)) {
                     tr += '<td></td>';
                 } else if (totais[campo] !== undefined) {
-                    let decimais = 2;
-                    if (campo === 'reducao') decimais = 8;
-                    else if (campo === 'vlr_crf_total' || campo === 'vlr_crf_unit') decimais = 4;
-                    else if (campo === 'fob_total_usd' || campo === 'fob_total_brl') decimais = 7;
+                    let decimais = 2; // Totalizadores sempre com 2 casas decimais
+                    if (campo === 'quantidade') decimais = 0; // Quantidade é inteiro
                     tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais[campo], decimais)}</td>`;
                 } else {
                     tr += '<td></td>';
@@ -774,7 +772,7 @@
                 {name: 'item', type: 'number', class: 'form-control'},
                 {name: 'codigo', type: 'text', class: 'form-control', readonly: true},
                 {name: 'ncm', type: 'text', class: 'form-control', readonly: true},
-                {name: 'quantidade', type: 'text', class: 'form-control moneyReal'},
+                {name: 'quantidade', type: 'number', class: 'form-control'},
                 {name: 'peso_liquido_unitario', type: 'text', class: 'form-control moneyReal', readonly: true},
                 {name: 'peso_liquido_total', type: 'text', class: 'form-control moneyReal pesoLiqTotalMulta'},
                 {name: 'fator_peso', type: 'text', class: 'form-control moneyReal', readonly: true},
@@ -857,7 +855,15 @@
 
             $('#productsBodyMulta').append(tr);
             $(`#produto_multa_id-${newIndex}`).select2({ dropdownParent: $('#custom-tabs-three-multa') });
-            atualizarTotalizadoresMulta();
+            // Recalcular para preencher os campos automaticamente na nova linha
+            setTimeout(function() {
+                recalcularTodaTabelaMulta();
+                atualizarCardResumoMulta();
+                if (getNacionalizacaoAtual() === 'santa_catarina') {
+                    atualizarMultaProdutosPorMulta();
+                    debouncedRecalcular();
+                }
+            }, 100);
         });
 
         // Inicializar quando documento carregar (multa)

@@ -75,7 +75,7 @@
                     ['name' => 'item', 'label' => 'ITEM', 'class' => 'form-control', 'type' => 'number'],
                     ['name' => 'codigo', 'label' => 'CODIGO', 'class' => 'form-control', 'readonly' => true],
                     ['name' => 'ncm', 'label' => 'NCM', 'class' => 'form-control', 'readonly' => true],
-                    ['name' => 'quantidade', 'label' => 'QUANTD', 'class' => 'form-control moneyReal'],
+                    ['name' => 'quantidade', 'label' => 'QUANTD', 'class' => 'form-control', 'type' => 'number'],
                     ['name' => 'peso_liquido_unitario', 'label' => 'PESO LIQ. UNIT', 'class' => 'form-control moneyReal', 'readonly' => true],
                     ['name' => 'peso_liquido_total', 'label' => 'PESO LIQ TOTAL', 'class' => 'form-control moneyReal pesoLiqTotalMulta'],
                     ['name' => 'fator_peso', 'label' => 'FATOR PESO', 'class' => 'form-control moneyReal', 'readonly' => true],
@@ -254,13 +254,15 @@
                                                 $valor = $processoProdutoMulta->$campo ?? '';
                                             }
 
-                                            // Campos inteiros (adicao e item) não devem ser formatados
-                                            if (in_array($campo, ['adicao', 'item'])) {
+                                            // Campos inteiros (adicao, item, quantidade) não devem ser formatados com decimais
+                                            if (in_array($campo, ['adicao', 'item', 'quantidade'])) {
                                                 $valor = $valor !== '' && $valor !== null ? (int)$valor : '';
                                             } elseif (in_array($campo, $camposPercentuais, true)) {
                                                 $valor = $valor !== '' && $valor !== null ? number_format((float) $valor, 2, ',', '.') . ' %' : '';
                                             } elseif ($campo === 'peso_liquido_unitario') {
                                                 $valor = $valor !== '' && $valor !== null ? number_format((float) $valor, 6, ',', '.') : '';
+                                            } elseif ($campo === 'fator_peso') {
+                                                $valor = $valor !== '' && $valor !== null ? number_format((float) $valor, 8, ',', '.') : '';
                                             } elseif (is_numeric($valor)) {
                                                 $valor = number_format((float) $valor, 2, ',', '.');
                                             }
