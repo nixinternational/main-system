@@ -10,6 +10,7 @@ use App\Models\ProcessoAereoProduto;
 use App\Models\ProcessoRodoviario;
 use App\Models\ProcessoRodoviarioProduto;
 use App\Models\ProcessoProduto;
+use App\Models\ProcessoProdutoMulta;
 use App\Models\Fornecedor;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -456,6 +457,7 @@ class ProcessoController extends Controller
                     $processoModel->loadMissing([
                         'cliente.fornecedores',
                         'processoProdutos.produto.fornecedor',
+                        'processoProdutosMulta.produto.fornecedor',
                         'fornecedor'
                     ]);
                     $processoProdutosCollection = $processoModel->processoProdutos;
@@ -522,6 +524,17 @@ class ProcessoController extends Controller
                 }
             }
             $processoProdutos = $produtos;
+
+            $produtosMulta = [];
+            if ($processoModel instanceof Processo) {
+                $processoProdutosMultaCollection = $processoModel->processoProdutosMulta;
+                if ($processoProdutosMultaCollection && $processoProdutosMultaCollection->count() > 0) {
+                    foreach ($processoProdutosMultaCollection as $produtoMulta) {
+                        $produtosMulta[] = $this->parseModelFieldsFromModel($produtoMulta);
+                    }
+                }
+            }
+            $processoProdutosMulta = $produtosMulta;
             
             // Determinar a view baseada no tipo_processo
             $viewName = 'processo.form-' . $tipoProcesso;
@@ -537,6 +550,7 @@ class ProcessoController extends Controller
                 'productsClient',
                 'dolar',
                 'processoProdutos',
+                'processoProdutosMulta',
                 'moedasSuportadas',
                 'fornecedoresEsboco',
                 'podeSelecionarFornecedor',
@@ -1040,21 +1054,146 @@ class ProcessoController extends Controller
                 }
             }
 
-            // Atualizar peso líquido na tabela correta
-            // Se peso_liquido_total_cabecalho foi enviado, usar ele; caso contrário, usar a soma dos produtos
-            $pesoLiquidoFinal = $request->has('peso_liquido_total_cabecalho') 
-                ? $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho) 
-                : $pesoLiquidoTotal;
-            
-            if ($isAereo) {
-                ProcessoAereo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
-                $processoExistente = ProcessoAereo::find($id);
-            } elseif ($isRodoviario) {
-                ProcessoRodoviario::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
-                $processoExistente = ProcessoRodoviario::find($id);
+            if ($request->produtos_multa && count($request->produtos_multa) > 0) {
+                foreach ($request->produtos_multa as $produtoMulta) {
+                    if (!isset($produtoMulta['produto_id']) || empty($produtoMulta['produto_id'])) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Todos as linhas da multa devem ter um produto selecionado!'
+                        ]);
+                    }
+                }
+
+                $camposPercentuaisMulta = [
+                    'ii_percent',
+                    'ipi_percent',
+                    'pis_percent',
+                    'cofins_percent',
+                    'icms_percent',
+                    'icms_reduzido_percent',
+                    'ii_nova_ncm_percent',
+                    'ipi_nova_ncm_percent',
+                    'pis_nova_ncm_percent',
+                    'cofins_nova_ncm_percent',
+                ];
+
+                $camposNumericosMulta = [
+                    'quantidade',
+                    'peso_liquido_unitario',
+                    'peso_liquido_total',
+                    'fator_peso',
+                    'fob_unit_usd',
+                    'fob_total_usd',
+                    'fob_total_brl',
+                    'service_charges',
+                    'service_charges_brl',
+                    'frete_usd',
+                    'frete_brl',
+                    'acresc_frete_usd',
+                    'acresc_frete_brl',
+                    'vlr_crf_unit',
+                    'vlr_crf_total',
+                    'seguro_usd',
+                    'seguro_brl',
+                    'thc_usd',
+                    'thc_brl',
+                    'valor_aduaneiro_usd',
+                    'valor_aduaneiro_brl',
+                    'reducao',
+                    'valor_ii',
+                    'base_ipi',
+                    'valor_ipi',
+                    'base_pis_cofins',
+                    'valor_pis',
+                    'valor_cofins',
+                    'despesa_aduaneira',
+                    'vlr_ii_pos_despesa',
+                    'vlr_ipi_pos_despesa',
+                    'vlr_pis_pos_despesa',
+                    'vlr_cofins_pos_despesa',
+                    'vlr_ii_nova_ncm',
+                    'vlr_ipi_nova_ncm',
+                    'vlr_pis_nova_ncm',
+                    'vlr_cofins_nova_ncm',
+                    'vlr_ii_recalc',
+                    'vlr_ipi_recalc',
+                    'vlr_pis_recalc',
+                    'vlr_cofins_recalc',
+                    'valor_aduaneiro_multa',
+                    'ii_percent_aduaneiro',
+                    'ipi_percent_aduaneiro',
+                    'pis_percent_aduaneiro',
+                    'cofins_percent_aduaneiro',
+                ];
+
+                foreach ($request->produtos_multa as $produtoMulta) {
+                    // Limpar e converter adicao e item para inteiros
+                    $adicao = null;
+                    if (isset($produtoMulta['adicao']) && $produtoMulta['adicao'] !== '' && $produtoMulta['adicao'] !== null) {
+                        // Remover formatação (vírgulas, pontos, espaços) e converter para inteiro
+                        $adicaoLimpa = preg_replace('/[^0-9]/', '', (string)$produtoMulta['adicao']);
+                        $adicao = $adicaoLimpa !== '' ? (int)$adicaoLimpa : null;
+                    }
+                    
+                    $item = null;
+                    if (isset($produtoMulta['item']) && $produtoMulta['item'] !== '' && $produtoMulta['item'] !== null) {
+                        // Remover formatação (vírgulas, pontos, espaços) e converter para inteiro
+                        $itemLimpo = preg_replace('/[^0-9]/', '', (string)$produtoMulta['item']);
+                        $item = $itemLimpo !== '' ? (int)$itemLimpo : null;
+                    }
+                    
+                    $dadosMulta = [
+                        'processo_id' => $id,
+                        'produto_id' => $produtoMulta['produto_id'],
+                        'adicao' => $adicao,
+                        'item' => $item,
+                        'nova_ncm' => $produtoMulta['nova_ncm'] ?? null,
+                    ];
+
+                    foreach ($camposNumericosMulta as $campo) {
+                        $dadosMulta[$campo] = isset($produtoMulta[$campo]) && $produtoMulta[$campo] !== ''
+                            ? $this->parseMoneyToFloat($produtoMulta[$campo])
+                            : null;
+                    }
+
+                    foreach ($camposPercentuaisMulta as $campo) {
+                        $dadosMulta[$campo] = isset($produtoMulta[$campo]) && trim($produtoMulta[$campo]) !== ''
+                            ? $this->safePercentage($produtoMulta[$campo])
+                            : null;
+                    }
+
+                    ProcessoProdutoMulta::updateOrCreate(
+                        [
+                            'id' => $produtoMulta['processo_produto_multa_id'] ?? null,
+                            'processo_id' => $id ?? 0,
+                        ],
+                        $dadosMulta
+                    );
+                }
+            }
+
+            $salvarApenasMulta = $request->has('salvar_apenas_produtos_multa');
+
+            if (!$salvarApenasMulta) {
+                // Atualizar peso líquido na tabela correta
+                // Se peso_liquido_total_cabecalho foi enviado, usar ele; caso contrário, usar a soma dos produtos
+                $pesoLiquidoFinal = $request->has('peso_liquido_total_cabecalho') 
+                    ? $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho) 
+                    : $pesoLiquidoTotal;
+                
+                if ($isAereo) {
+                    ProcessoAereo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
+                    $processoExistente = ProcessoAereo::find($id);
+                } elseif ($isRodoviario) {
+                    ProcessoRodoviario::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
+                    $processoExistente = ProcessoRodoviario::find($id);
+                } else {
+                    Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
+                    $processoExistente = Processo::find($id);
+                }
             } else {
-                Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
-                $processoExistente = Processo::find($id);
+                $processoExistente = $processo;
             }
             
             // Campos comuns a ambos os tipos de processo
@@ -1243,6 +1382,17 @@ class ProcessoController extends Controller
                     'total_blocos' => $request->total_blocos ?? 1
                 ]);
             }
+            
+            // Retorno para requisições AJAX de produtos multa (salvamento por blocos)
+            if ($request->ajax() && $request->has('salvar_apenas_produtos_multa')) {
+                $produtosMultaProcessados = $request->produtos_multa ? count($request->produtos_multa) : 0;
+                return response()->json([
+                    'success' => true,
+                    'produtos_multa_processados' => $produtosMultaProcessados,
+                    'bloco' => $request->bloco_indice ?? 1,
+                    'total_blocos' => $request->total_blocos ?? 1
+                ]);
+            }
 
             // Retorno para requisições normais
             return response()->json(['success' => true]);
@@ -1253,7 +1403,7 @@ class ProcessoController extends Controller
             Log::error($e->getTraceAsString());
 
             // Retorno para requisições AJAX
-            if ($request->ajax() || $request->has('salvar_apenas_produtos')) {
+            if ($request->ajax() || $request->has('salvar_apenas_produtos') || $request->has('salvar_apenas_produtos_multa')) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Erro interno do servidor: ' . $e->getMessage()
@@ -1777,6 +1927,57 @@ class ProcessoController extends Controller
             return back()->with('messages', ['success' => ['Produto excluído com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluír o Produto !']]);
+        }
+    }
+
+    /**
+     * Exclui em lote os ProcessoProdutoMulta informados por id.
+     * Recebe: ids => [1,2,3]
+     */
+    public function batchDeleteMulta(Request $request)
+    {
+        $validator = \Validator::make($request->all(), [
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'min:1'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dados inválidos.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $ids = $request->input('ids', []);
+
+        $user = $request->user();
+        try {
+            $produtosMulta = ProcessoProdutoMulta::with('processo.cliente')->whereIn('id', $ids)->get();
+
+            foreach ($produtosMulta as $produtoMulta) {
+                $clienteId = $produtoMulta->processo->cliente_id ?? null;
+                if ($clienteId !== null && $user && !$user->canAccessCliente($clienteId)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cliente não autorizado para este usuário.',
+                    ], 403);
+                }
+            }
+
+            $deleted = ProcessoProdutoMulta::whereIn('id', $ids)->delete();
+
+            return response()->json([
+                'success' => true,
+                'deleted_count' => $deleted,
+                'deleted_ids' => $ids,
+            ]);
+        } catch (\Exception $ex) {
+            \Log::error('Erro ao excluir processo produtos multa: '.$ex->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao excluir produtos multa. Contate o administrador.',
+            ], 500);
         }
     }
     private function parsePercentageToFloat($value)

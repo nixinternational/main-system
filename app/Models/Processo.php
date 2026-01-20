@@ -108,6 +108,11 @@ class Processo extends Model
         return $this->hasMany(ProcessoProduto::class)->orderBy('created_at', 'asc');;
     }
 
+    public function processoProdutosMulta()
+    {
+        return $this->hasMany(ProcessoProdutoMulta::class)->orderBy('created_at', 'asc');
+    }
+
     public function fornecedor()
     {
         return $this->belongsTo(Fornecedor::class);

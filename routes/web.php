@@ -53,6 +53,10 @@ Route::middleware(['auth','check.ip'])->group(function () {
 Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class, 'batchDelete'])
     ->middleware('permission.map:processo_produto')
     ->name('processo.produtos.batchDelete');
+
+Route::post('/processo-produtos-multa/batch-delete', [ProcessoController::class, 'batchDeleteMulta'])
+    ->middleware('permission.map:processo_produto')
+    ->name('processo.produtos.multa.batchDelete');
     Route::get('/processo-criar/{cliente_id}', [ProcessoController::class, 'create'])
     ->middleware('permission.map:processo')
     ->name('processo.criar');

@@ -991,7 +991,8 @@
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7"
                                         name="produtos[{{ $index }}][multa]" id="multa-{{ $index }}"
-                                        value="{{ $processoProduto->multa ? number_format($processoProduto->multa, 2, ',' , '.') : '' }}">
+                                        value="{{ $processoProduto->multa ? number_format($processoProduto->multa, 2, ',' , '.') : '' }}"
+                                        {{ ($nacionalizacaoAtual ?? null) === 'santa_catarina' ? 'readonly' : '' }}>
                                 </td>
 
                                 <td>
