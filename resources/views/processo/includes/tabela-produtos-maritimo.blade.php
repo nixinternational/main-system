@@ -135,6 +135,24 @@
                                         'li_dta_honor_nix',
                                         'honorarios_nix',
                                     ];
+                                } elseif ($nacionalizacaoAtual === 'santos') {
+                                    // Ordem específica para Santos
+                                    $campos = [
+                                        'outras_taxas_agente',
+                                        'liberacao_bl',
+                                        'desconsolidacao',
+                                        'isps_code',
+                                        'handling',
+                                        'capatazia',
+                                        'afrmm',
+                                        'armazenagem_sts',
+                                        'frete_dta_sts_ana',
+                                        'sda',
+                                        'rep_sts',
+                                        'tx_correcao_lacre',
+                                        'li_dta_honor_nix',
+                                        'honorarios_nix',
+                                    ];
                                 } elseif ($nacionalizacaoAtual === 'santa_catarina') {
                                     // Ordem específica para Santa Catarina
                                     // multa_complem e dif_impostos são calculados automaticamente via JS (não aparecem no cabeçalho de inputs)
@@ -435,6 +453,22 @@
                                 <th>DIF FRETE RODOVIARIO</th>
                                 <th>S.D.A</th>
                                 <th>REP.PORTO</th>
+                                <th>TX CORREÇÃO LACRE</th>
+                                <th>LI+DTA+HONOR.NIX</th>
+                                <th>HONORÁRIOS NIX</th>
+                            @elseif ($nacionalizacaoAtual === 'santos')
+                                {{-- Ordem específica para Santos --}}
+                                <th>OUTRAS TX AGENTE</th>
+                                <th>LIBERAÇÃO BL</th>
+                                <th>DESCONS.</th>
+                                <th>ISPS CODE</th>
+                                <th>HANDLING</th>
+                                <th>CAPATAZIA</th>
+                                <th>AFRMM</th>
+                                <th>ARMAZENAGEM STS</th>
+                                <th>FRETE STS/GYN</th>
+                                <th>S.D.A</th>
+                                <th>REP.STS</th>
                                 <th>TX CORREÇÃO LACRE</th>
                                 <th>LI+DTA+HONOR.NIX</th>
                                 <th>HONORÁRIOS NIX</th>
@@ -1058,7 +1092,26 @@
                                             'li_dta_honor_nix',
                                             'honorarios_nix'
                                         ];
+                                    } elseif ($nacionalizacaoAtual === 'santos') {
+                                        // Ordem específica para Santos
+                                        $camposTbody = [
+                                            'outras_taxas_agente',
+                                            'liberacao_bl',
+                                            'desconsolidacao',
+                                            'isps_code',
+                                            'handling',
+                                            'capatazia',
+                                            'afrmm',
+                                            'armazenagem_sts',
+                                            'frete_dta_sts_ana',
+                                            'sda',
+                                            'rep_sts',
+                                            'tx_correcao_lacre',
+                                            'li_dta_honor_nix',
+                                            'honorarios_nix',
+                                        ];
                                     } else {
+                                        // Ordem padrão para outros tipos
                                         $camposTbody = [
                                             'outras_taxas_agente',
                                             'liberacao_bl',
@@ -1072,18 +1125,13 @@
                                             'sda',
                                             'rep_sts',
                                             'armaz_ana',
+                                            'lavagem_container',
+                                            'rep_anapolis',
+                                            'desp_anapolis',
+                                            'correios',
+                                            'li_dta_honor_nix',
+                                            'honorarios_nix',
                                         ];
-                                        if ($nacionalizacaoAtual === 'santos') {
-                                            $camposTbody[] = 'tx_correcao_lacre';
-                                        }
-                                        $camposTbody[] = 'lavagem_container';
-                                        if ($nacionalizacaoAtual !== 'santos') {
-                                            $camposTbody[] = 'rep_anapolis';
-                                            $camposTbody[] = 'desp_anapolis';
-                                            $camposTbody[] = 'correios';
-                                        }
-                                        $camposTbody[] = 'li_dta_honor_nix';
-                                        $camposTbody[] = 'honorarios_nix';
                                     }
                                 @endphp
 
@@ -1548,7 +1596,7 @@
 
                 async mostrarSucessoSweetAlert() {
                     await Swal.fire({
-                        title: '✅ Sucesso!',
+                        title: ' Sucesso!',
                         html: `
                 <div class="text-center">
                     <p class="lead">Todos os produtos foram salvos!</p>

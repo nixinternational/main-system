@@ -378,6 +378,7 @@
                 diferenca_cambial_fob: 0,
                 opcional_1_valor: 0,
                 opcional_2_valor: 0,
+                custo_unitario_final: 0,
                 custo_total_final: 0
             };
 
@@ -618,6 +619,53 @@
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
+        : getNacionalizacaoAtual() === 'santos' ?
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.isps_code, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.handling, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.capatazia, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.afrmm, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armazenagem_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.sda, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
+        : getNacionalizacaoAtual() === 'anapolis' ?
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.isps_code, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.handling, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.capatazia, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.afrmm, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armazenagem_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.sda, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_sts, 2) + '</td>' +
+            '<td data-campo="desp_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis || 0, 2) + '</td>' +
+            '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td>' +
+            '<td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
+        : getNacionalizacaoAtual() === 'santos' ?
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.isps_code, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.handling, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.capatazia, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.afrmm, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armazenagem_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.sda, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
         : getNacionalizacaoAtual() === 'anapolis' ?
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
@@ -636,6 +684,7 @@
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
         :
+            // Ordem padrão para outras nacionalizações
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
@@ -647,10 +696,11 @@
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.frete_dta_sts_ana, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.sda, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_sts, 2) + '</td>' +
-            (getNacionalizacaoAtual() !== 'anapolis' ? '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armaz_ana, 2) + '</td>' : '') +
-            (getNacionalizacaoAtual() === 'santos' ? '<td data-campo="tx_correcao_lacre" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tx_correcao_lacre, 2) + '</td>' : '') +
-            (getNacionalizacaoAtual() !== 'anapolis' ? '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.lavagem_container, 2) + '</td>' : '') +
-            (getNacionalizacaoAtual() !== 'santos' && getNacionalizacaoAtual() !== 'anapolis' ? '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td><td data-campo="desp_anapolis" style="display: none; font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis || 0, 2) + '</td><td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' : '') +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armaz_ana, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.lavagem_container, 2) + '</td>' +
+            '<td data-campo="rep_anapolis" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_anapolis, 2) + '</td>' +
+            '<td data-campo="desp_anapolis" style="display: none; font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desp_anapolis || 0, 2) + '</td>' +
+            '<td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
         }
@@ -659,7 +709,7 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_1_valor || 0, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_2_valor || 0, 2)}</td>
-        <td></td>
+        <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_unitario_final, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 2)}</td>
     </tr>`;
 
@@ -1828,9 +1878,7 @@
                     diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                     const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar) : 0;
 
-                    const reducaoPercent = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
-                    const custoUnitarioFinal = MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0;
-                    const custoTotalFinal = MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || (custoUnitarioFinal * quantidadeAtual);
+                    const reducaoPercent = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) || 0;
 
                     const camposExternos = getCamposExternos();
                     let desp_desenbaraco_parte_1 = 0;
@@ -1887,6 +1935,57 @@
                         desp_desenbaraco_parte_1 += multaDesp + taxa_def_desp + taxa_siscomex_desp;
                         desp_desenbaraco_parte_2 = multaDesp + taxa_def_desp + taxa_siscomex_desp + capatazia_desp + afrmm_desp + honorarios_nix_desp;
                         despesaDesembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    }
+                    
+                    // Calcular custo_unitario_final e custo_total_final (após calcular despesaDesembaraco)
+                    const vlrTotalNfComIcmsSt = totais.vlrTotalNfComIcms;
+                    
+                    // Adicionar campos opcionais se checkbox marcado
+                    const opcional1CompoeCalc = $('#opcional_1_compoe_despesas').is(':checked');
+                    const opcional2CompoeCalc = $('#opcional_2_compoe_despesas').is(':checked');
+                    const opcional1ValorCalc = MoneyUtils.parseMoney($(`#opcional_1_valor-${rowId}`).val()) || 0;
+                    const opcional2ValorCalc = MoneyUtils.parseMoney($(`#opcional_2_valor-${rowId}`).val()) || 0;
+                    
+                    let despesasAdicionaisCalc = 0;
+                    if (opcional1CompoeCalc) {
+                        despesasAdicionaisCalc += opcional1ValorCalc;
+                    }
+                    if (opcional2CompoeCalc) {
+                        despesasAdicionaisCalc += opcional2ValorCalc;
+                    }
+                    
+                    // Para Santos: (VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) / quantidade
+                    // Para outras: ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) - VLR ICMS REDUZIDO) / quantidade
+                    const custoUnitarioFinal = getNacionalizacaoAtual() === 'santos' 
+                        ? (quantidadeAtual > 0 ? (vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete) / quantidadeAtual : 0)
+                        : (quantidadeAtual > 0 ? ((vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionaisCalc) - vlrIcmsReduzido) / quantidadeAtual : 0);
+                    
+                    const custoTotalFinal = custoUnitarioFinal * quantidadeAtual;
+                    
+                    // Console.log para inspecionar cálculo da linha 6
+                    if (rowId == 6) {
+                        console.log('=== CÁLCULO CUSTO UNITÁRIO FINAL - ROW 6 ===');
+                        console.log('Nacionalização:', getNacionalizacaoAtual());
+                        console.log('vlrTotalNfComIcmsSt:', vlrTotalNfComIcmsSt);
+                        console.log('despesaDesembaraco:', despesaDesembaraco);
+                        console.log('diferenca_cambial_fob:', diferenca_cambial_fob);
+                        console.log('diferenca_cambial_frete:', diferenca_cambial_frete);
+                        console.log('despesasAdicionaisCalc:', despesasAdicionaisCalc);
+                        console.log('vlrIcmsReduzido:', vlrIcmsReduzido);
+                        console.log('quantidadeAtual:', quantidadeAtual);
+                        if (getNacionalizacaoAtual() === 'santos') {
+                            const soma = vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete;
+                            console.log('SOMA (Santos):', soma);
+                            console.log('Divisão por quantidade:', soma / quantidadeAtual);
+                        } else {
+                            const soma = vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionaisCalc;
+                            console.log('SOMA (Outras):', soma);
+                            console.log('Subtração vlrIcmsReduzido:', soma - vlrIcmsReduzido);
+                            console.log('Divisão por quantidade:', (soma - vlrIcmsReduzido) / quantidadeAtual);
+                        }
+                        console.log('custoUnitarioFinal:', custoUnitarioFinal);
+                        console.log('custoTotalFinal:', custoTotalFinal);
+                        console.log('==========================================');
                     }
 
                     addDebugEntry(rowId, {
@@ -2042,6 +2141,7 @@
                         diferenca_cambial_fob: diferenca_cambial_fob,
                         opcional_1_valor: MoneyUtils.parseMoney($(`#opcional_1_valor-${rowId}`).val()) || 0,
                         opcional_2_valor: MoneyUtils.parseMoney($(`#opcional_2_valor-${rowId}`).val()) || 0,
+                        custo_unitario_final: custoUnitarioFinal,
                         custo_total_final: custoTotalFinal
                     };
 
@@ -2071,7 +2171,9 @@
                         fobTotalGeral: fobTotalGeralAtualizado, 
                         fobUnitario,
                         diferenca_cambial_frete,
-                        diferenca_cambial_fob
+                        diferenca_cambial_fob,
+                        custoUnitarioFinal,
+                        custoTotalFinal
                     });
                 }
             });
@@ -2984,25 +3086,77 @@
 
         function calcularBcIcmsReduzido(rowId, base, impostos, despesas) {
             atualizarReducao(rowId);
-            const bcIpi = base + (base * impostos.ii);
-            const vlrIpi = bcIpi * impostos.ipi;
             const nacionalizacao = getNacionalizacaoAtual();
+            
+            // Tentar obter valores brutos para máxima precisão
+            const valoresBrutos = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId];
+            
+            let vlrAduaneiroBrl, vlrII, vlrIpi, vlrPis, vlrCofins, despAduaneira;
+            
+            if (valoresBrutos) {
+                // Usar valores brutos armazenados (sem perda de precisão)
+                vlrAduaneiroBrl = valoresBrutos.valor_aduaneiro_brl || base;
+                vlrII = valoresBrutos.valor_ii || (base * impostos.ii);
+                vlrIpi = valoresBrutos.valor_ipi || ((base + (base * impostos.ii)) * impostos.ipi);
+                vlrPis = valoresBrutos.valor_pis || (base * impostos.pis);
+                vlrCofins = valoresBrutos.valor_cofins || (base * impostos.cofins);
+                despAduaneira = valoresBrutos.despesa_aduaneira || despesas;
+            } else {
+                // Calcular valores diretamente (fallback)
+                vlrAduaneiroBrl = base;
+                vlrII = base * impostos.ii;
+                const bcIpi = base + vlrII;
+                vlrIpi = bcIpi * impostos.ipi;
+                vlrPis = base * impostos.pis;
+                vlrCofins = base * impostos.cofins;
+                despAduaneira = despesas;
+            }
             
             // Para Santa Catarina, BC ICMS REDUZIDO = BC ICMS S/REDUÇÃO (divisor 0.96, sem aplicar redução)
             if (nacionalizacao === 'santa_catarina') {
                 const divisor = 0.96;
-                const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
-                    despesas) / divisor;
+                const resultado = (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / divisor;
+                return resultado;
+            }
+            
+            // Para Santos, aplicar fórmula específica:
+            // =((vlrAduaneiro+vlrII+vlrIPI+vlrPIS+vlrCOFINS+despAduaneira)/(1-icmsReduzido))*(SE(reducao=0;1;reducao))
+            if (nacionalizacao === 'santos') {
+                // Usar valor bruto de redução armazenado (com todas as casas decimais)
+                let reducao = 1;
+                if (valoresBrutos && valoresBrutos.reducao !== undefined && valoresBrutos.reducao > 0) {
+                    reducao = valoresBrutos.reducao;
+                } else if ($(`#reducao-${rowId}`).val() && MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) > 0) {
+                    reducao = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+                }
+                if(rowId == 16) {
+                    console.log('=== VALORES BRUTOS (Santos) ===');
+                    console.log('reducao (BRUTO)', reducao);
+                    console.log('vlrAduaneiroBrl', vlrAduaneiroBrl);
+                    console.log('vlrII', vlrII);
+                    console.log('vlrIpi', vlrIpi);
+                    console.log('vlrPis', vlrPis);
+                    console.log('vlrCofins', vlrCofins);
+                    console.log('despAduaneira', despAduaneira);
+                    console.log('icms', impostos.icms);
+                    console.log('divisor (1 - icms)', (1 - impostos.icms));
+                    console.log('soma', (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira));
+                    console.log('divisao', ((vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / (1 - impostos.icms)));
+                    console.log('resultado final', ((vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / (1 - impostos.icms)) * (reducao === 0 ? 1 : reducao));
+                }
+                const resultado = ((vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / (1 - impostos.icms)) * (reducao === 0 ? 1 : reducao);
                 return resultado;
             }
             
             // Para outras nacionalizações, aplicar a redução normalmente
+            // Usar valor bruto de redução armazenado (com todas as casas decimais)
             let reducao = 1;
-            if ($(`#reducao-${rowId}`).val() && MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) > 0) {
-                reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
+            if (valoresBrutos && valoresBrutos.reducao !== undefined && valoresBrutos.reducao > 0) {
+                reducao = valoresBrutos.reducao;
+            } else if ($(`#reducao-${rowId}`).val() && MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) > 0) {
+                reducao = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
             }
-            const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
-                despesas) / ((1 - impostos.icms));
+            const resultado = (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / ((1 - impostos.icms));
 
             return resultado * reducao;
         }
@@ -3193,7 +3347,17 @@
             }
             $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob, 2));
 
-
+           if(rowId == 6) {
+            console.log('valores.custoUnitarioFinal', valores.custoUnitarioFinal);
+            console.log('valores.custoTotalFinal', valores.custoTotalFinal);
+            console.log(MoneyUtils.formatMoney(valores.custoUnitarioFinal, 2))
+           }
+            if (valores.custoUnitarioFinal !== undefined) {
+                $(`#custo_unitario_final-${rowId}`).val(MoneyUtils.formatMoney(valores.custoUnitarioFinal, 2));
+            }
+            if (valores.custoTotalFinal !== undefined) {
+                $(`#custo_total_final-${rowId}`).val(MoneyUtils.formatMoney(valores.custoTotalFinal, 2));
+            }
 
             atualizarFatoresFob()
         }
@@ -3394,7 +3558,16 @@
             const icmsPercent = MoneyUtils.parsePercentage($(`#icms_percent-${rowId}`).val())
             const novoReducao = valor / icmsPercent
 
-            $(`#reducao-${rowId}`).val(MoneyUtils.formatMoney(novoReducao, 8));
+            // Armazenar valor bruto de redução com máxima precisão
+            if (!window.valoresBrutosPorLinha) {
+                window.valoresBrutosPorLinha = {};
+            }
+            if (!window.valoresBrutosPorLinha[rowId]) {
+                window.valoresBrutosPorLinha[rowId] = {};
+            }
+            window.valoresBrutosPorLinha[rowId].reducao = novoReducao;
+
+            $(`#reducao-${rowId}`).val(MoneyUtils.formatPercentage(novoReducao , 2));
         }
 
 
@@ -3439,6 +3612,7 @@
             atualizarCambialTimeout = setTimeout(() => {
                 atualizarFatoresFob();
                 atualizarCamposCambial();
+                atualizarTotalizadores(); // Atualizar totalizadores após mudança nos campos cambiais
             }, 200);
         }
 
@@ -3667,7 +3841,7 @@
                     despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
                 }
                 const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
-                let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0
+                let qquantidade = MoneyUtils.parseMoney($(`#quantidade-${i}`).val()) || 0
                 const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val())
                 let diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val());
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
@@ -3687,10 +3861,13 @@
                     despesasAdicionais += opcional2Valor;
                 }
                 
+                // Para Santos: (VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) / quantidade
+                // Para outras: ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) - VLR ICMS REDUZIDO) / quantidade
                 const custo_unitario_final = getNacionalizacaoAtual() === 'santos' 
-                    ? (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionais) / qquantidade
-                    : ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionais) - vlrIcmsReduzido) / qquantidade
-
+                    ? (qquantidade > 0 ? (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete) / qquantidade : 0)
+                    : (qquantidade > 0 ? ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionais) - vlrIcmsReduzido) / qquantidade : 0)
+                console.log('custo_unitario_final', custo_unitario_final);
+                console.log('qquantidade', qquantidade);
                 const custo_total_final = custo_unitario_final * qquantidade
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2))
                 $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2))
@@ -3871,9 +4048,24 @@
         }
 
         $(document).on('click', '.addProduct', function() {
-            let lengthOptions = $('#productsBody tr').length;
-            let newIndex = lengthOptions;
-            let proximoItem = obterProximoNumeroItem();
+            // Desabilitar todos os botões de adicionar produto para evitar múltiplos cliques
+            const $btn = $(this);
+            const $allAddButtons = $('.addProduct');
+            
+            // Verificar se já está processando
+            if ($btn.prop('disabled') || $btn.data('processing')) {
+                return false;
+            }
+            
+            // Marcar como processando e desabilitar
+            $allAddButtons.prop('disabled', true).data('processing', true);
+            const originalHtml = $btn.html();
+            $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Adicionando...');
+            
+            try {
+                let lengthOptions = $('#productsBody tr').length;
+                let newIndex = lengthOptions;
+                let proximoItem = obterProximoNumeroItem();
 
             let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
         <option selected disabled>Selecione uma opção</option>`;
@@ -4101,7 +4293,25 @@
             setTimeout(() => {
                 atualizarMultaProdutosPorMulta();
                 atualizarTotalizadores();
+                
+                // Reabilitar botões após processamento
+                $allAddButtons.prop('disabled', false).data('processing', false);
+                $btn.html(originalHtml);
             }, 100);
+            
+            } catch (error) {
+                console.error('Erro ao adicionar produto:', error);
+                // Reabilitar botões em caso de erro
+                $allAddButtons.prop('disabled', false).data('processing', false);
+                $btn.html(originalHtml);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Erro ao adicionar produto. Tente novamente.',
+                    confirmButtonText: 'OK'
+                });
+            }
 
         });
 

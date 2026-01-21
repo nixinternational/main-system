@@ -75,6 +75,7 @@
                     ['name' => 'item', 'label' => 'ITEM', 'class' => 'form-control', 'type' => 'number'],
                     ['name' => 'codigo', 'label' => 'CODIGO', 'class' => 'form-control', 'readonly' => true],
                     ['name' => 'ncm', 'label' => 'NCM', 'class' => 'form-control', 'readonly' => true],
+                    ['name' => 'descricao', 'label' => 'DESCRIÇÃO', 'class' => 'form-control', 'readonly' => true],
                     ['name' => 'quantidade', 'label' => 'QUANTD', 'class' => 'form-control', 'type' => 'number'],
                     ['name' => 'peso_liquido_unitario', 'label' => 'PESO LIQ. UNIT', 'class' => 'form-control moneyReal', 'readonly' => true],
                     ['name' => 'peso_liquido_total', 'label' => 'PESO LIQ TOTAL', 'class' => 'form-control moneyReal pesoLiqTotalMulta'],
@@ -250,6 +251,8 @@
                                                 $valor = optional($processoProdutoMulta->produto)->codigo ?? '';
                                             } elseif ($campo === 'ncm') {
                                                 $valor = optional($processoProdutoMulta->produto)->ncm ?? '';
+                                            } elseif ($campo === 'descricao') {
+                                                $valor = optional($processoProdutoMulta->produto)->descricao ?? '';
                                             } else {
                                                 $valor = $processoProdutoMulta->$campo ?? '';
                                             }

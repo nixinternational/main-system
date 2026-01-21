@@ -1240,7 +1240,7 @@
 
                 async mostrarSucessoSweetAlert() {
                     await Swal.fire({
-                        title: '✅ Sucesso!',
+                        title: ' Sucesso!',
                         html: `
                 <div class="text-center">
                     <p class="lead">Todos os produtos foram salvos!</p>

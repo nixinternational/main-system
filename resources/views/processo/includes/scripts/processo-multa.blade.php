@@ -204,7 +204,7 @@
             const item = $(`#item_multa-${rowId}`).val();
 
             if (!produtoId || !adicao || !item) {
-                return;
+                return false; // Retorna false se não tiver dados suficientes
             }
 
             // Limpar valores não numéricos de adicao e item
@@ -212,7 +212,7 @@
             const itemLimpo = item.toString().replace(/[^0-9]/g, '');
 
             if (!adicaoLimpa || !itemLimpo) {
-                return;
+                return false;
             }
 
             // Procurar linha na tabela de produtos com mesmo produto_id, adicao e item
@@ -246,7 +246,9 @@
                     { origem: 'seguro_usd', destino: 'seguro_usd_multa' },
                     { origem: 'seguro_brl', destino: 'seguro_brl_multa' },
                     { origem: 'thc_usd', destino: 'thc_usd_multa' },
-                    { origem: 'thc_brl', destino: 'thc_brl_multa' }
+                    { origem: 'thc_brl', destino: 'thc_brl_multa' },
+                    { origem: 'service_charges', destino: 'service_charges_multa' },
+                    { origem: 'service_charges_brl', destino: 'service_charges_brl_multa' }
                 ];
 
                 camposParaCopiar.forEach(campo => {
@@ -258,25 +260,247 @@
                         $(`#${campo.destino}-${rowId}`).val(MoneyUtils.formatMoney(valorOrigem, 2));
                     }
                 });
+                return true; // Produto equivalente encontrado
             }
+            
+            return false; // Produto equivalente não encontrado
         }
 
+        // Variável para controlar avisos já exibidos por linha
+        const avisosExibidosMulta = {};
+
         // Verificar e copiar valores quando produto_id, adicao e item são preenchidos
-        function verificarECopiarValoresMulta(rowId) {
+        function verificarECopiarValoresMulta(rowId, mostrarAviso = true) {
             const produtoId = $(`#produto_multa_id-${rowId}`).val();
             const adicao = $(`#adicao_multa-${rowId}`).val();
             const item = $(`#item_multa-${rowId}`).val();
 
             if (produtoId && adicao && item) {
-                copiarValoresProdutosParaMulta(rowId);
+                const encontrado = copiarValoresProdutosParaMulta(rowId);
+                if (!encontrado && mostrarAviso) {
+                    // Criar chave única para esta linha
+                    const chaveAviso = `${rowId}-${produtoId}-${adicao}-${item}`;
+                    
+                    // Só mostrar aviso se ainda não foi exibido para esta combinação
+                    if (!avisosExibidosMulta[chaveAviso]) {
+                        avisosExibidosMulta[chaveAviso] = true;
+                        const produtoNome = $(`#produto_multa_id-${rowId} option:selected`).text() || 'Produto';
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Produto equivalente não encontrado',
+                            html: `A linha com produto <strong>${produtoNome}</strong>, adição <strong>${adicao}</strong> e item <strong>${item}</strong> não foi encontrada na tabela de produtos.<br><br>Os valores serão calculados automaticamente usando o fator peso/FOB desta linha.`,
+                            confirmButtonText: 'OK',
+                            timer: 5000,
+                            timerProgressBar: true
+                        });
+                    }
+                }
+                return encontrado;
             }
+            return false;
+        }
+
+        // Função para calcular Service Charges da tabela multa
+        function calcularServiceChargesMulta(rowId) {
+            const serviceChargesBase = MoneyUtils.parseMoney($('#service_charges').val()) || 0;
+            const moedaServiceCharges = $('#service_charges_moeda').val();
+            let serviceChargesTotalUSD = serviceChargesBase;
+            
+            // Converter para USD se necessário
+            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                const cotacoesProcesso = getCotacaoesProcesso();
+                const cotacaoServiceCharges = MoneyUtils.parseMoney($('#cotacao_service_charges').val()) || 0;
+                const cotacaoUSD = cotacoesProcesso['USD']?.venda ?? 1;
+                if (cotacaoServiceCharges > 0 && cotacaoUSD > 0) {
+                    const moedaEmUSD = cotacaoServiceCharges / cotacaoUSD;
+                    serviceChargesTotalUSD = serviceChargesBase * moedaEmUSD;
+                }
+            }
+
+            // Calcular fator peso da linha
+            const totalPesoLiq = calcularPesoTotalMulta();
+            const pesoLinha = MoneyUtils.parseMoney($(`#peso_liquido_total_multa-${rowId}`).val()) || 0;
+            const fatorPeso = totalPesoLiq > 0 ? pesoLinha / totalPesoLiq : 0;
+
+            const serviceChargesUSD = serviceChargesTotalUSD * fatorPeso;
+            const cotacoes = getCotacaoesProcesso();
+            const cotacaoUsd = cotacoes['USD']?.venda || 1;
+            const serviceChargesBrl = serviceChargesUSD * cotacaoUsd;
+
+            $(`#service_charges_multa-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesUSD, 2));
+            $(`#service_charges_brl_multa-${rowId}`).val(MoneyUtils.formatMoney(serviceChargesBrl, 2));
+        }
+
+        // Função para calcular Frete Internacional da tabela multa
+        function calcularFreteInternacionalMulta(rowId) {
+            const freteInternacionalBase = MoneyUtils.parseMoney($('#frete_internacional').val()) || 0;
+            const moedaFrete = $('#frete_internacional_moeda').val();
+            let freteInternacionalUSD = freteInternacionalBase;
+
+            // Converter para USD se necessário
+            if (moedaFrete && moedaFrete !== 'USD') {
+                const cotacoesProcesso = getCotacaoesProcesso();
+                const cotacaoFrete = MoneyUtils.parseMoney($('#cotacao_frete_internacional').val()) || 0;
+                const cotacaoUSD = cotacoesProcesso['USD']?.venda ?? 1;
+                if (cotacaoFrete > 0 && cotacaoUSD > 0) {
+                    const moedaEmUSD = cotacaoFrete / cotacaoUSD;
+                    freteInternacionalUSD = freteInternacionalBase * moedaEmUSD;
+                }
+            }
+
+            // Calcular fator peso da linha
+            const totalPesoLiq = calcularPesoTotalMulta();
+            const pesoLinha = MoneyUtils.parseMoney($(`#peso_liquido_total_multa-${rowId}`).val()) || 0;
+            const fatorPeso = totalPesoLiq > 0 ? pesoLinha / totalPesoLiq : 0;
+
+            const freteUSD = freteInternacionalUSD * fatorPeso;
+            const cotacoes = getCotacaoesProcesso();
+            const cotacaoUsd = cotacoes['USD']?.venda || 1;
+            const freteBrl = freteUSD * cotacaoUsd;
+
+            $(`#frete_usd_multa-${rowId}`).val(MoneyUtils.formatMoney(freteUSD, 2));
+            $(`#frete_brl_multa-${rowId}`).val(MoneyUtils.formatMoney(freteBrl, 2));
+        }
+
+        // Função para calcular Seguro Internacional da tabela multa
+        function calcularSeguroInternacionalMulta(rowId) {
+            const fobTotalMulta = MoneyUtils.parseMoney($(`#fob_total_usd_multa-${rowId}`).val()) || 0;
+            
+            // Calcular FOB total geral da tabela multa
+            let fobTotalGeralMulta = 0;
+            $('#productsBodyMulta tr.linhas-input').each(function() {
+                const rowIdMulta = $(this).attr('id') ? $(this).attr('id').replace('row-multa-', '') : null;
+                if (rowIdMulta) {
+                    fobTotalGeralMulta += MoneyUtils.parseMoney($(`#fob_total_usd_multa-${rowIdMulta}`).val()) || 0;
+                }
+            });
+
+            if (fobTotalGeralMulta === 0) {
+                $(`#seguro_usd_multa-${rowId}`).val(MoneyUtils.formatMoney(0, 2));
+                $(`#seguro_brl_multa-${rowId}`).val(MoneyUtils.formatMoney(0, 2));
+                return;
+            }
+
+            const seguroTotal = MoneyUtils.parseMoney($('#seguro_internacional').val()) || 0;
+            const moedaSeguro = $('#seguro_internacional_moeda').val();
+            let seguroTotalUSD = seguroTotal;
+
+            // Converter para USD se necessário
+            if (moedaSeguro && moedaSeguro !== 'USD') {
+                const cotacoesProcesso = getCotacaoesProcesso();
+                const cotacaoSeguro = MoneyUtils.parseMoney($('#cotacao_seguro_internacional').val()) || 0;
+                const cotacaoUSD = cotacoesProcesso['USD']?.venda ?? 1;
+                if (cotacaoSeguro > 0 && cotacaoUSD > 0) {
+                    const moedaEmUSD = cotacaoSeguro / cotacaoUSD;
+                    seguroTotalUSD = seguroTotal * moedaEmUSD;
+                }
+            }
+
+            // Proporcional ao FOB
+            const seguroUSD = (seguroTotalUSD / fobTotalGeralMulta) * fobTotalMulta;
+            const cotacoes = getCotacaoesProcesso();
+            const cotacaoUsd = cotacoes['USD']?.venda || 1;
+            const seguroBrl = seguroUSD * cotacaoUsd;
+
+            $(`#seguro_usd_multa-${rowId}`).val(MoneyUtils.formatMoney(seguroUSD, 2));
+            $(`#seguro_brl_multa-${rowId}`).val(MoneyUtils.formatMoney(seguroBrl, 2));
+        }
+
+        // Função para calcular Acréscimo Frete da tabela multa
+        function calcularAcrescimoFreteMulta(rowId) {
+            const fobTotalMulta = MoneyUtils.parseMoney($(`#fob_total_usd_multa-${rowId}`).val()) || 0;
+            
+            // Calcular FOB total geral da tabela multa
+            let fobTotalGeralMulta = 0;
+            $('#productsBodyMulta tr.linhas-input').each(function() {
+                const rowIdMulta = $(this).attr('id') ? $(this).attr('id').replace('row-multa-', '') : null;
+                if (rowIdMulta) {
+                    fobTotalGeralMulta += MoneyUtils.parseMoney($(`#fob_total_usd_multa-${rowIdMulta}`).val()) || 0;
+                }
+            });
+
+            if (fobTotalGeralMulta === 0) {
+                $(`#acresc_frete_usd_multa-${rowId}`).val(MoneyUtils.formatMoney(0, 2));
+                $(`#acresc_frete_brl_multa-${rowId}`).val(MoneyUtils.formatMoney(0, 2));
+                return;
+            }
+
+            const acrescimoFreteBase = MoneyUtils.parseMoney($('#acrescimo_frete').val()) || 0;
+            const moedaAcrescimo = $('#acrescimo_frete_moeda').val();
+            let acrescimoFreteUSD = acrescimoFreteBase;
+
+            // Converter para USD se necessário
+            if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                const cotacoesProcesso = getCotacaoesProcesso();
+                const cotacaoAcrescimo = MoneyUtils.parseMoney($('#cotacao_acrescimo_frete').val()) || 0;
+                const cotacaoUSD = cotacoesProcesso['USD']?.venda ?? 1;
+                if (cotacaoAcrescimo > 0 && cotacaoUSD > 0) {
+                    const moedaEmUSD = cotacaoAcrescimo / cotacaoUSD;
+                    acrescimoFreteUSD = acrescimoFreteBase * moedaEmUSD;
+                }
+            }
+
+            // Proporcional ao FOB
+            const acrescFreteUSD = (acrescimoFreteUSD / fobTotalGeralMulta) * fobTotalMulta;
+            const cotacoes = getCotacaoesProcesso();
+            const cotacaoUsd = cotacoes['USD']?.venda || 1;
+            const acrescFreteBrl = acrescFreteUSD * cotacaoUsd;
+
+            $(`#acresc_frete_usd_multa-${rowId}`).val(MoneyUtils.formatMoney(acrescFreteUSD, 2));
+            $(`#acresc_frete_brl_multa-${rowId}`).val(MoneyUtils.formatMoney(acrescFreteBrl, 2));
+        }
+
+        // Função para calcular THC da tabela multa
+        function calcularTHCMulta(rowId) {
+            const thcCapataziaBase = MoneyUtils.parseMoney($('#thc_capatazia').val()) || 0;
+
+            // Calcular fator peso da linha
+            const totalPesoLiq = calcularPesoTotalMulta();
+            const pesoLinha = MoneyUtils.parseMoney($(`#peso_liquido_total_multa-${rowId}`).val()) || 0;
+            const fatorPeso = totalPesoLiq > 0 ? pesoLinha / totalPesoLiq : 0;
+
+            const thcBrl = thcCapataziaBase * fatorPeso;
+            const cotacoes = getCotacaoesProcesso();
+            const cotacaoUsd = cotacoes['USD']?.venda || 1;
+            const thcUsd = cotacaoUsd > 0 ? thcBrl / cotacaoUsd : 0;
+
+            $(`#thc_usd_multa-${rowId}`).val(MoneyUtils.formatMoney(thcUsd, 2));
+            $(`#thc_brl_multa-${rowId}`).val(MoneyUtils.formatMoney(thcBrl, 2));
         }
 
         // Event listeners para copiar valores quando campos são preenchidos
         $(document).on('change select2:select', '.selectProductMulta', function() {
             const rowId = $(this).data('row');
             if (rowId !== undefined) {
-                verificarECopiarValoresMulta(rowId);
+                // Preencher campos de código, NCM e descrição quando produto é selecionado
+                let products = JSON.parse($('#productsClient').val());
+                let productObject = products.find(el => el.id == this.value);
+                
+                if (productObject) {
+                    $(`#codigo_multa-${rowId}`).val(productObject.codigo);
+                    $(`#ncm_multa-${rowId}`).val(productObject.ncm);
+                    $(`#descricao_multa-${rowId}`).val(productObject.descricao || '');
+                }
+                
+                // Verificar e copiar valores de produtos relacionados (sem mostrar aviso ainda, pois pode não ter adição/item)
+                const produtoId = $(`#produto_multa_id-${rowId}`).val();
+                const adicao = $(`#adicao_multa-${rowId}`).val();
+                const item = $(`#item_multa-${rowId}`).val();
+                
+                // Só verificar se tiver todos os dados
+                if (produtoId && adicao && item) {
+                    verificarECopiarValoresMulta(rowId, true);
+                }
+                
+                // Recalcular campos da linha
+                atualizarCamposMulta(rowId, false);
+                
+                // Atualizar totalizadores e card de resumo
+                setTimeout(function() {
+                    calcularValoresCPTMulta();
+                    atualizarTotalizadoresMulta();
+                    atualizarCardResumoMulta();
+                }, 100);
             }
         });
 
@@ -296,9 +520,82 @@
             }
 
             if (rowId) {
-                verificarECopiarValoresMulta(rowId);
+                const produtoId = $(`#produto_multa_id-${rowId}`).val();
+                const adicao = $(`#adicao_multa-${rowId}`).val();
+                const item = $(`#item_multa-${rowId}`).val();
+                
+                // Só verificar se tiver todos os dados
+                if (produtoId && adicao && item) {
+                    const encontrado = verificarECopiarValoresMulta(rowId, true);
+                    if (!encontrado) {
+                        // Recalcular campos para preencher com valores calculados
+                        atualizarCamposMulta(rowId, false);
+                    } else {
+                        // Se encontrou, também recalcular para garantir que tudo está atualizado
+                        atualizarCamposMulta(rowId, false);
+                    }
+                }
             }
         });
+
+        // Função para obter valores base da linha multa (similar a obterValoresBase)
+        function obterValoresBaseMulta(rowId) {
+            let pesoTotal = MoneyUtils.parseMoney($(`#peso_liquido_total_multa-${rowId}`).val()) || 0;
+            let quantidade = MoneyUtils.parseMoney($(`#quantidade_multa-${rowId}`).val()) || 0;
+            let fobUnitario = MoneyUtils.parseMoney($(`#fob_unit_usd_multa-${rowId}`).val()) || 0;
+
+            if (isNaN(pesoTotal)) pesoTotal = 0;
+            if (isNaN(quantidade)) quantidade = 0;
+            if (isNaN(fobUnitario)) fobUnitario = 0;
+
+            return {
+                pesoTotal: pesoTotal,
+                fobUnitario: fobUnitario,
+                quantidade: quantidade
+            };
+        }
+
+        // Função para calcular peso total da tabela multa
+        function calcularPesoTotalMulta() {
+            let total = 0;
+            $('.pesoLiqTotalMulta').each(function() {
+                total += MoneyUtils.parseMoney($(this).val()) || 0;
+            });
+            return total;
+        }
+
+        // Função para recalcular fator peso da tabela multa
+        function recalcularFatorPesoMulta(totalPeso, currentRowId) {
+            let fator = 0;
+            $('.pesoLiqTotalMulta').each(function() {
+                const rowId = $(this).data('row');
+                const valor = MoneyUtils.parseMoney($(this).val()) || 0;
+                const fatorLinha = valor / (totalPeso || 1);
+                $(`#fator_peso_multa-${rowId}`).val(MoneyUtils.formatMoney(fatorLinha, 8));
+                if (rowId == currentRowId) fator = fatorLinha;
+            });
+            return fator;
+        }
+
+        // Função para calcular peso líquido unitário da tabela multa
+        function calcularPesoLiquidoUnitarioMulta(rowId) {
+            const { pesoTotal, quantidade } = obterValoresBaseMulta(rowId);
+            const pesoLiqUnit = quantidade > 0 ? pesoTotal / quantidade : 0;
+            $(`#peso_liquido_unitario_multa-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit, 6));
+        }
+
+        // Função para calcular FOB total da tabela multa
+        function calcularFobTotalMulta(rowId) {
+            const { fobUnitario, quantidade } = obterValoresBaseMulta(rowId);
+            const fobTotal = fobUnitario * quantidade;
+            
+            const cotacoes = getCotacaoesProcesso();
+            const cotacaoUsd = cotacoes['USD']?.venda || 1;
+            const fobTotalBrl = fobTotal * cotacaoUsd;
+
+            $(`#fob_total_usd_multa-${rowId}`).val(MoneyUtils.formatMoney(fobTotal, 7));
+            $(`#fob_total_brl_multa-${rowId}`).val(MoneyUtils.formatMoney(fobTotalBrl, 7));
+        }
 
         // Calcular valores CPT da tabela multa
         function calcularValoresCPTMulta() {
@@ -381,9 +678,50 @@
         }
 
         // Atualizar campos de impostos da tabela multa
-        function atualizarCamposMulta(rowId) {
+        function atualizarCamposMulta(rowId, mostrarAviso = false) {
             // Primeiro, verificar e copiar valores se necessário
-            verificarECopiarValoresMulta(rowId);
+            const produtoEquivalenteEncontrado = verificarECopiarValoresMulta(rowId, mostrarAviso);
+
+            // Calcular peso líquido unitário
+            calcularPesoLiquidoUnitarioMulta(rowId);
+
+            // Calcular FOB total
+            calcularFobTotalMulta(rowId);
+
+            // Calcular fator peso
+            const totalPesoLiq = calcularPesoTotalMulta();
+            recalcularFatorPesoMulta(totalPesoLiq, rowId);
+
+            // Se não encontrou produto equivalente, calcular os valores automaticamente
+            if (!produtoEquivalenteEncontrado) {
+                // Verificar se tem os dados mínimos (produto, adição, item)
+                const produtoId = $(`#produto_multa_id-${rowId}`).val();
+                const adicao = $(`#adicao_multa-${rowId}`).val();
+                const item = $(`#item_multa-${rowId}`).val();
+                
+                if (produtoId && adicao && item) {
+                    // Calcular todos os valores usando fator peso/FOB
+                    calcularServiceChargesMulta(rowId);
+                    calcularFreteInternacionalMulta(rowId);
+                    calcularSeguroInternacionalMulta(rowId);
+                    calcularAcrescimoFreteMulta(rowId);
+                    calcularTHCMulta(rowId);
+                }
+            } else {
+                // Se encontrou produto equivalente, verificar se os campos estão vazios e calcular se necessário
+                const freteUsd = MoneyUtils.parseMoney($(`#frete_usd_multa-${rowId}`).val()) || 0;
+                const serviceCharges = MoneyUtils.parseMoney($(`#service_charges_multa-${rowId}`).val()) || 0;
+                const seguroUsd = MoneyUtils.parseMoney($(`#seguro_usd_multa-${rowId}`).val()) || 0;
+                const acrescFreteUsd = MoneyUtils.parseMoney($(`#acresc_frete_usd_multa-${rowId}`).val()) || 0;
+                const thcUsd = MoneyUtils.parseMoney($(`#thc_usd_multa-${rowId}`).val()) || 0;
+
+                // Se algum campo estiver vazio, calcular
+                if (freteUsd === 0) calcularFreteInternacionalMulta(rowId);
+                if (serviceCharges === 0) calcularServiceChargesMulta(rowId);
+                if (seguroUsd === 0) calcularSeguroInternacionalMulta(rowId);
+                if (acrescFreteUsd === 0) calcularAcrescimoFreteMulta(rowId);
+                if (thcUsd === 0) calcularTHCMulta(rowId);
+            }
 
             // Calcular CFR
             calcularValoresCFRMulta(rowId);
@@ -526,6 +864,7 @@
 
         // Recalcular toda a tabela multa
         function recalcularTodaTabelaMulta() {
+            // Primeiro, copiar valores de produtos relacionados
             $('#productsBodyMulta tr.linhas-input').each(function() {
                 const rowId = $(this).attr('id') ? $(this).attr('id').replace('row-multa-', '') : null;
                 if (rowId !== null) {
@@ -533,8 +872,20 @@
                 }
             });
 
+            // Calcular peso total e recalcular fator peso para todas as linhas
+            const totalPesoLiq = calcularPesoTotalMulta();
+            $('#productsBodyMulta tr.linhas-input').each(function() {
+                const rowId = $(this).attr('id') ? $(this).attr('id').replace('row-multa-', '') : null;
+                if (rowId !== null) {
+                    calcularPesoLiquidoUnitarioMulta(rowId);
+                    calcularFobTotalMulta(rowId);
+                    recalcularFatorPesoMulta(totalPesoLiq, rowId);
+                }
+            });
+
             calcularValoresCPTMulta();
 
+            // Atualizar campos de impostos e valores aduaneiros
             $('#productsBodyMulta tr.linhas-input').each(function() {
                 const rowId = $(this).attr('id') ? $(this).attr('id').replace('row-multa-', '') : null;
                 if (rowId !== null) {
@@ -772,6 +1123,7 @@
                 {name: 'item', type: 'number', class: 'form-control'},
                 {name: 'codigo', type: 'text', class: 'form-control', readonly: true},
                 {name: 'ncm', type: 'text', class: 'form-control', readonly: true},
+                {name: 'descricao', type: 'text', class: 'form-control', readonly: true},
                 {name: 'quantidade', type: 'number', class: 'form-control'},
                 {name: 'peso_liquido_unitario', type: 'text', class: 'form-control moneyReal', readonly: true},
                 {name: 'peso_liquido_total', type: 'text', class: 'form-control moneyReal pesoLiqTotalMulta'},
@@ -884,8 +1236,72 @@
             }, 1000);
         });
 
-        // Atualizar totalizadores quando houver mudanças na tabela multa
-        $(document).on('change blur', '#productsBodyMulta input, #productsBodyMulta select', function() {
+        // Listener para peso_liquido_total - recalcular peso unitário e fator peso
+        $(document).on('change blur keyup input', '[id^="peso_liquido_total_multa-"]', function() {
+            const rowId = $(this).data('row');
+            if (rowId !== undefined && rowId !== null && rowId !== '') {
+                calcularPesoLiquidoUnitarioMulta(rowId);
+                const totalPesoLiq = calcularPesoTotalMulta();
+                recalcularFatorPesoMulta(totalPesoLiq, rowId);
+                atualizarCamposMulta(rowId);
+                calcularValorAduaneiroMultaPorAdicao();
+                
+                setTimeout(function() {
+                    calcularValoresCPTMulta();
+                    atualizarTotalizadoresMulta();
+                    atualizarCardResumoMulta();
+                }, 100);
+            }
+        });
+
+        // Listener para quantidade - recalcular peso unitário, FOB total e fator peso
+        $(document).on('change blur keyup input', '[id^="quantidade_multa-"]', function() {
+            const rowId = $(this).data('row');
+            if (rowId !== undefined && rowId !== null && rowId !== '') {
+                calcularPesoLiquidoUnitarioMulta(rowId);
+                calcularFobTotalMulta(rowId);
+                const totalPesoLiq = calcularPesoTotalMulta();
+                recalcularFatorPesoMulta(totalPesoLiq, rowId);
+                atualizarCamposMulta(rowId);
+                calcularValorAduaneiroMultaPorAdicao();
+                
+                setTimeout(function() {
+                    calcularValoresCPTMulta();
+                    atualizarTotalizadoresMulta();
+                    atualizarCardResumoMulta();
+                }, 100);
+            }
+        });
+
+        // Listener para fob_unit_usd - recalcular FOB total
+        $(document).on('change blur keyup input', '[id^="fob_unit_usd_multa-"]', function() {
+            const rowId = $(this).data('row');
+            if (rowId !== undefined && rowId !== null && rowId !== '') {
+                calcularFobTotalMulta(rowId);
+                atualizarCamposMulta(rowId);
+                calcularValorAduaneiroMultaPorAdicao();
+                
+                setTimeout(function() {
+                    calcularValoresCPTMulta();
+                    atualizarTotalizadoresMulta();
+                    atualizarCardResumoMulta();
+                }, 100);
+            }
+        });
+
+        // Atualizar totalizadores quando houver mudanças na tabela multa (para outros campos)
+        $(document).on('change blur keyup input', '#productsBodyMulta input, #productsBodyMulta select', function() {
+            const rowId = $(this).data('row');
+            if (rowId !== undefined && rowId !== null && rowId !== '') {
+                // Evitar recalcular duas vezes para campos já tratados acima
+                const id = $(this).attr('id') || '';
+                if (!id.includes('peso_liquido_total_multa-') && 
+                    !id.includes('quantidade_multa-') && 
+                    !id.includes('fob_unit_usd_multa-')) {
+                    atualizarCamposMulta(rowId);
+                    calcularValorAduaneiroMultaPorAdicao();
+                }
+            }
             setTimeout(function() {
                 calcularValoresCPTMulta();
                 atualizarTotalizadoresMulta();

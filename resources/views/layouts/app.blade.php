@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'Nix International') }}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <!-- ✅ load jQuery ✅ -->
+    <!--  load jQuery  -->
     <script src="{{ asset('js/vendor/jquery.min.js') }}"></script>
     <script src="{{ asset('js/vendor/select2.min.js') }}"></script>
     <script src="{{ asset('js/vendor/popper.min.js') }}"></script>

@@ -4000,8 +4000,23 @@
 
 
         $(document).on('click', '.addProduct', function() {
-            let lengthOptions = $('#productsBody tr').length;
-            let newIndex = lengthOptions;
+            // Desabilitar todos os botões de adicionar produto para evitar múltiplos cliques
+            const $btn = $(this);
+            const $allAddButtons = $('.addProduct');
+            
+            // Verificar se já está processando
+            if ($btn.prop('disabled') || $btn.data('processing')) {
+                return false;
+            }
+            
+            // Marcar como processando e desabilitar
+            $allAddButtons.prop('disabled', true).data('processing', true);
+            const originalHtml = $btn.html();
+            $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Adicionando...');
+            
+            try {
+                let lengthOptions = $('#productsBody tr').length;
+                let newIndex = lengthOptions;
 
             let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
         <option selected disabled>Selecione uma opção</option>`;
@@ -4163,7 +4178,27 @@
             $(`#row-${newIndex} input, #row-${newIndex} select, #row-${newIndex} textarea`).each(function() {
                 initialInputs.add(this);
             });
-            setTimeout(atualizarTotalizadores, 100);
+            setTimeout(() => {
+                atualizarTotalizadores();
+                
+                // Reabilitar botões após processamento
+                $allAddButtons.prop('disabled', false).data('processing', false);
+                $btn.html(originalHtml);
+            }, 100);
+            
+            } catch (error) {
+                console.error('Erro ao adicionar produto:', error);
+                // Reabilitar botões em caso de erro
+                $allAddButtons.prop('disabled', false).data('processing', false);
+                $btn.html(originalHtml);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Erro ao adicionar produto. Tente novamente.',
+                    confirmButtonText: 'OK'
+                });
+            }
 
         });
 
