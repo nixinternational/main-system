@@ -2698,22 +2698,27 @@
 
             // Ordenar as linhas por adição e depois por item
             linhas.sort((a, b) => {
-                const adicaoA = parseFloat(a.querySelector('input[name*="[adicao]"]').value) || 0;
-                const adicaoB = parseFloat(b.querySelector('input[name*="[adicao]"]').value) || 0;
+                const inputAdicaoA = a.querySelector('input[name*="[adicao]"]');
+                const inputAdicaoB = b.querySelector('input[name*="[adicao]"]');
+                const adicaoA = inputAdicaoA ? parseFloat(inputAdicaoA.value) || 0 : 0;
+                const adicaoB = inputAdicaoB ? parseFloat(inputAdicaoB.value) || 0 : 0;
 
                 if (adicaoA !== adicaoB) {
                     return adicaoA - adicaoB; // primeiro pela adição
                 }
 
-                const itemA = parseFloat(a.querySelector('input[name*="[item]"]').value) || 0;
-                const itemB = parseFloat(b.querySelector('input[name*="[item]"]').value) || 0;
+                const inputItemA = a.querySelector('input[name*="[item]"]');
+                const inputItemB = b.querySelector('input[name*="[item]"]');
+                const itemA = inputItemA ? parseFloat(inputItemA.value) || 0 : 0;
+                const itemB = inputItemB ? parseFloat(inputItemB.value) || 0 : 0;
                 return itemA - itemB; // depois pelo item
             });
 
             // Agrupar linhas por adição
             const grupos = {};
             linhas.forEach(linha => {
-                const adicao = parseFloat(linha.querySelector('input[name*="[adicao]"]').value) || 0;
+                const inputAdicao = linha.querySelector('input[name*="[adicao]"]');
+                const adicao = inputAdicao ? parseFloat(inputAdicao.value) || 0 : 0;
                 if (!grupos[adicao]) grupos[adicao] = [];
                 grupos[adicao].push(linha);
             });
