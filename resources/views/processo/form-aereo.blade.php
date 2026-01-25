@@ -761,6 +761,7 @@
                 diferenca_cambial_fob: 0,
                 opcional_1_valor: 0,
                 opcional_2_valor: 0,
+                custo_unitario_final: 0,
                 custo_total_final: 0
             };
 
@@ -887,6 +888,9 @@
                     const valorTotalNfComIcmsSt = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${rowId}`).val()) || 0;
                     // Usar valor bruto se disponível para máxima precisão no totalizador
                     const valoresBrutosLinha = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId];
+                    const custoUnitarioFinal = valoresBrutosLinha?.custo_unitario_final !== undefined 
+                        ? valoresBrutosLinha.custo_unitario_final 
+                        : (MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0);
                     const custoTotalFinal = valoresBrutosLinha?.custo_total_final !== undefined 
                         ? valoresBrutosLinha.custo_total_final 
                         : (MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || 0);
@@ -901,6 +905,7 @@
                     totais.base_icms_st += baseIcmsSt;
                     totais.valor_icms_st += valorIcmsSt;
                     totais.valor_total_nf_com_icms_st += valorTotalNfComIcmsSt;
+                    totais.custo_unitario_final += custoUnitarioFinal;
                     totais.custo_total_final += custoTotalFinal;
                 } else {
                     // Usar valores brutos armazenados (máxima precisão)
@@ -1166,7 +1171,7 @@
             tr += `<td data-field="dif-cambial-fob" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>`;
             tr += `<td data-field="opcional-1-valor" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_1_valor || 0, 7)}</td>`;
             tr += `<td data-field="opcional-2-valor" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_2_valor || 0, 7)}</td>`;
-            tr += '<td data-field="custo-unit-final"></td>'; // CUSTO UNIT FINAL (vazio - é unitário, não é somado)
+            tr += `<td data-field="custo-unit-final" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_unitario_final, 2)}</td>`;
             tr += `<td data-field="custo-total-final" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 2)}</td>`;
             
             tr += '</tr>';
