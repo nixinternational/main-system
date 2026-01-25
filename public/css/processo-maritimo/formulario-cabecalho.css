@@ -1,0 +1,52 @@
+/* Estilos do formulário e cabeçalho */
+[class^="col"] {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.btn-remove {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.dados-container {
+    display: flex;
+    gap: 40px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    margin-bottom: 30px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.dados-basicos th,
+.dados-basicos td {
+    border: 1px solid #000;
+}
+
+.dados-basicos th {
+    background-color: #d9d9d9;
+    text-align: left;
+}
+
+.info-complementares {
+    max-width: 400px;
+}
+
+.info-complementares h4 {
+    background-color: #d9d9d9;
+    padding: 5px;
+    border: 1px solid #000;
+    margin-bottom: 10px;
+}
+
+.info-complementares .linha {
+    /* Estilo vazio, mantido para compatibilidade */
+}
+
+.info-complementares .bold {
+    font-weight: bold;
+}

@@ -728,25 +728,41 @@
                     $(this).val('');
                 }
             });
-            // Dinheiro com 7 casas decimais
+            // Dinheiro com 2 casas decimais
             $('.moneyReal2').on('blur', function() {
+                // Não formatar se for cabeçalho input (já tem formatação específica)
+                if ($(this).hasClass('cabecalhoInputs')) {
+                    return;
+                }
+                
                 let val = $(this).val();
                 if (val) {
-                    val = val.trim().replace('%', '').trim();
-                    if (val.includes(',')) {
-                        val = val.replace(/\./g, '').replace(',', '.');
+                    // Usar MoneyUtils se disponível (já consolidado)
+                    if (typeof MoneyUtils !== 'undefined') {
+                        const numero = MoneyUtils.parseMoney(val);
+                        if (!isNaN(numero) && isFinite(numero)) {
+                            $(this).val(MoneyUtils.formatMoney(numero, 2));
+                        } else {
+                            $(this).val('');
+                        }
                     } else {
-                        val = val.replace(',', '.');
-                    }
-                    let numero = parseFloat(val);
-                    if (!isNaN(numero)) {
-                        let formatado = numero.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
-                        $(this).val(formatado);
-                    } else {
-                        $(this).val('');
+                        // Fallback para lógica antiga se MoneyUtils não estiver disponível
+                        val = val.trim().replace('%', '').trim();
+                        if (val.includes(',')) {
+                            val = val.replace(/\./g, '').replace(',', '.');
+                        } else {
+                            val = val.replace(',', '.');
+                        }
+                        let numero = parseFloat(val);
+                        if (!isNaN(numero)) {
+                            let formatado = numero.toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                            $(this).val(formatado);
+                        } else {
+                            $(this).val('');
+                        }
                     }
                 } else {
                     $(this).val('');

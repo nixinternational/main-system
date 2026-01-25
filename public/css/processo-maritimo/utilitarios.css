@@ -1,0 +1,19 @@
+/* Classes utilitárias e helpers */
+.highlight {
+    background-color: #fef7a1;
+}
+
+.green-highlight {
+    background-color: #d4f4d4;
+}
+
+/* Estilos para dados complementares e básicos */
+.table-dados-complementares td:first-child,
+.table-dados-basicos td:first-child {
+    color: var(--theme-text) !important;
+}
+
+[data-background="black"] .table-dados-complementares td:first-child,
+[data-background="black"] .table-dados-basicos td:first-child {
+    color: var(--theme-primary) !important;
+}

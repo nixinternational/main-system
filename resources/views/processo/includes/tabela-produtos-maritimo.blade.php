@@ -32,7 +32,7 @@
                     <thead class=" text-center">
                         <tr>
                             <th style="background-color: #fff"></th>
-                            <th style="background-color: #fff" colspan="23"></th>
+                            <th style="background-color: #fff" colspan="27"></th>
                             <th colspan="7">ALÍQUOTAS</th>
 
                             <th colspan="7" style="background-color: #fff">VLR II</th>
@@ -618,6 +618,7 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                    
                                 </td>
 
                                 <td>

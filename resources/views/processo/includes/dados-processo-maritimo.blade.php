@@ -854,33 +854,174 @@
                        $(this).val(today);
                    }
                });
+
+               // Função para atualizar o símbolo da moeda
+               function atualizarSimboloMoeda(campoMoedaId, campoSymbolId) {
+                   var campoMoeda = $('#' + campoMoedaId);
+                   var campoSymbol = $('#' + campoSymbolId);
+                   
+                   // Função auxiliar para atualizar o símbolo
+                   function atualizar() {
+                       var moedaSelecionada = campoMoeda.val();
+                       if (moedaSelecionada && moedaSelecionada !== '') {
+                           campoSymbol.text(moedaSelecionada);
+                       } else {
+                           campoSymbol.text('-');
+                       }
+                   }
+                   
+                   // Atualizar quando o select2 mudar (eventos do Select2)
+                   campoMoeda.on('change select2:select', function() {
+                       atualizar();
+                   });
+                   
+                   // Atualizar valor inicial se já houver seleção (com delay para garantir que Select2 está inicializado)
+                   setTimeout(function() {
+                       atualizar();
+                   }, 100);
+               }
+
+               // Configurar atualização de símbolos para todos os campos
+               atualizarSimboloMoeda('frete_internacional_moeda', 'frete_internacional_symbol');
+               atualizarSimboloMoeda('seguro_internacional_moeda', 'seguro_internacional_symbol');
+               atualizarSimboloMoeda('acrescimo_frete_moeda', 'acrescimo_frete_symbol');
+               atualizarSimboloMoeda('service_charges_moeda', 'service_charges_symbol');
+               
+               // Handler específico para inputs do cabeçalho com formatação correta
+               // IMPORTANTE: Usar delegação no body com namespace e garantir execução após outros handlers
+               // Usar setTimeout para garantir que seja registrado DEPOIS de todos os outros handlers
+               setTimeout(function() {
+                   // Remover qualquer handler anterior
+                   $('body').off('blur.cabecalhoInputs', '.cabecalhoInputs.moneyReal2');
+                   
+                   // Adicionar handler com delegação no body para funcionar com elementos dinâmicos
+                   // e garantir que seja executado por último usando namespace
+                   $('body').on('blur.cabecalhoInputs', '.cabecalhoInputs.moneyReal2', function(e) {
+                       // Parar propagação imediatamente para evitar outros handlers
+                       e.stopImmediatePropagation();
+                       e.preventDefault();
+                       e.stopPropagation();
+                       
+                       const $input = $(this);
+                       const val = $input.val();
+                       if (val && val.trim() !== '') {
+                           if (typeof MoneyUtils !== 'undefined') {
+                               const numero = MoneyUtils.parseMoney(val);
+                               if (!isNaN(numero) && isFinite(numero)) {
+                                   const formatado = MoneyUtils.formatMoney(numero, 2);
+                                   // Usar setTimeout para garantir que o valor seja setado após todos os outros handlers
+                                   setTimeout(function() {
+                                       $input.val(formatado);
+                                   }, 10);
+                               }
+                           }
+                       }
+                       return false;
+                   });
+               }, 200);
+               
+               $(document).on('blur', '.cabecalhoInputs.moneyReal7', function() {
+                   const val = $(this).val();
+                   if (val && val.trim() !== '') {
+                       if (typeof MoneyUtils !== 'undefined') {
+                           const numero = MoneyUtils.parseMoney(val);
+                           if (!isNaN(numero) && isFinite(numero)) {
+                               $(this).val(MoneyUtils.formatMoney(numero, 7));
+                           }
+                       }
+                   }
+               });
            });
 
            function formatarCampoPorClasse(container, classe, decimais) {
                container.find(classe).each(function() {
+                   // Não formatar se for cabeçalho input (já tem formatação específica)
+                   if ($(this).hasClass('cabecalhoInputs')) {
+                       return;
+                   }
+                   
                    let val = $(this).val();
-
                    if (val && val.trim() !== '') {
-                       val = val.trim().replace('%', '').trim();
-                       if (val.includes(',')) {
-                           val = val.replace(/\./g, '').replace(',', '.');
-                       } else {
-                           val = val.replace(',', '.');
-                       }
-                       let numero = parseFloat(val);
-                       if (!isNaN(numero)) {
-                           let formatado = numero.toLocaleString('pt-BR', {
-                               minimumFractionDigits: decimais,
-                               maximumFractionDigits: decimais
-                           });
-                           if (classe.includes('percentage')) {
-                               formatado += ' %';
+                       // Usar MoneyUtils para parsing e formatação (já consolidado)
+                       if (typeof MoneyUtils !== 'undefined') {
+                           const numero = MoneyUtils.parseMoney(val);
+                           if (!isNaN(numero) && isFinite(numero)) {
+                               let formatado;
+                               if (classe.includes('percentage')) {
+                                   formatado = MoneyUtils.formatPercentage(numero / 100, decimais);
+                               } else {
+                                   formatado = MoneyUtils.formatMoney(numero, decimais);
+                               }
+                               $(this).val(formatado);
                            }
-                           $(this).val(formatado);
+                       } else {
+                           // Fallback para lógica antiga se MoneyUtils não estiver disponível
+                           val = val.trim().replace('%', '').trim();
+                           if (val.includes(',')) {
+                               val = val.replace(/\./g, '').replace(',', '.');
+                           } else {
+                               val = val.replace(',', '.');
+                           }
+                           let numero = parseFloat(val);
+                           if (!isNaN(numero)) {
+                               let formatado = numero.toLocaleString('pt-BR', {
+                                   minimumFractionDigits: decimais,
+                                   maximumFractionDigits: decimais
+                               });
+                               if (classe.includes('percentage')) {
+                                   formatado += ' %';
+                               }
+                               $(this).val(formatado);
+                           }
                        }
                    }
                });
            }
+           
+           // Handlers de blur para inputs monetários (exceto cabeçalho)
+           // IMPORTANTE: Usar stopImmediatePropagation para evitar múltiplos handlers
+           $(document).on('blur', '.moneyReal2', function(e) {
+               // Não formatar se for cabeçalho input (já tem formatação específica)
+               if ($(this).hasClass('cabecalhoInputs')) {
+                   e.stopImmediatePropagation();
+                   return false;
+               }
+               
+               const val = $(this).val();
+               if (val && val.trim() !== '') {
+                   if (typeof MoneyUtils !== 'undefined') {
+                       const numero = MoneyUtils.parseMoney(val);
+                       if (!isNaN(numero) && isFinite(numero)) {
+                           $(this).val(MoneyUtils.formatMoney(numero, 2));
+                       } else {
+                           $(this).val('');
+                       }
+                   }
+               } else {
+                   $(this).val('');
+               }
+           });
+           
+           $(document).on('blur', '.moneyReal7', function() {
+               // Não formatar se for cabeçalho input (já tem formatação específica)
+               if ($(this).hasClass('cabecalhoInputs')) {
+                   return;
+               }
+               
+               const val = $(this).val();
+               if (val && val.trim() !== '') {
+                   if (typeof MoneyUtils !== 'undefined') {
+                       const numero = MoneyUtils.parseMoney(val);
+                       if (!isNaN(numero) && isFinite(numero)) {
+                           $(this).val(MoneyUtils.formatMoney(numero, 7));
+                       } else {
+                           $(this).val('');
+                       }
+                   }
+               } else {
+                   $(this).val('');
+               }
+           });
 
            // Monitoramento específico para o campo thc_capatazia
            function monitorarTHCCapatazia() {
