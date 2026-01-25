@@ -51,6 +51,7 @@
                                                 'santos' => 'Santos',
                                                 'anapolis' => 'Anápolis',
                                                 'santa_catarina' => 'Santa Catarina',
+                                                'mato_grosso' => 'Mato Grosso',
                                                 'outros' => 'Outros',
                                             ];
                                             $nacionalizacao = $processo->nacionalizacao ?? 'outros';

@@ -99,10 +99,16 @@
                                 $colspanBeforeMiddleRow += 30; // THC USD até VLR TOTAL NF C/ICMS-ST
 
                                 // Colunas dos fatores (FATOR VLR FOB até TAXA SISCOMEX)
-                                $colspanBeforeMiddleRow += 5; // FATOR VLR FOB até TAXA SISCOMEX
+                                $nacionalizacaoTemp = $processo->nacionalizacao ?? 'outros';
+                                
+                                // Para Mato Grosso, tx_def_li tem input de cabeçalho, então o colspan cobre apenas até MULTA
+                                if ($nacionalizacaoTemp === 'mato_grosso') {
+                                    $colspanBeforeMiddleRow += 3; // FATOR VLR FOB, FATOR TX SISCOMEX, MULTA
+                                } else {
+                                    $colspanBeforeMiddleRow += 5; // FATOR VLR FOB até TAXA SISCOMEX
+                                }
 
                                 // Em Santa Catarina, adicionar +2 para MULTA COMPLEM e DIF IMPOSTOS (calculados automaticamente)
-                                $nacionalizacaoTemp = $processo->nacionalizacao ?? 'outros';
                                 if ($nacionalizacaoTemp === 'santa_catarina') {
                                     $colspanBeforeMiddleRow += 2;
                                 }
@@ -173,6 +179,28 @@
                                         'li_dta_honor_nix',
                                         'honorarios_nix',
                                     ];
+                                } elseif ($nacionalizacaoAtual === 'mato_grosso') {
+                                    // Ordem específica para Mato Grosso
+                                    // tx_def_li é renderizado separadamente antes do loop
+                                    $campos = [
+                                        'outras_taxas_agente',
+                                        'liberacao_bl',
+                                        'desconsolidacao',
+                                        'isps_code',
+                                        'handling',
+                                        'capatazia',
+                                        'afrmm',
+                                        'armazenagem_sts',
+                                        'frete_sts_cgb',
+                                        'diarias',
+                                        'sda',
+                                        'rep_sts',
+                                        'armaz_cgb',
+                                        'rep_cgb',
+                                        'demurrage',
+                                        'li_dta_honor_nix',
+                                        'honorarios_nix',
+                                    ];
                                 } else {
                                     // Ordem padrão para outros tipos de nacionalização
                                     $campos = [
@@ -224,6 +252,17 @@
                                 $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
 
+                            {{-- Renderizar tx_def_li separadamente para Mato Grosso (antes dos outros campos) --}}
+                            @if ($nacionalizacaoAtual === 'mato_grosso')
+                                <th class="middleRowInputTh" data-campo="tx_def_li">
+                                    <input type="text" class="form-control cabecalhoInputs moneyReal2"
+                                        name="tx_def_li" id="tx_def_li"
+                                        value="{{ number_format($processo->tx_def_li ?? 0, 2, ',', '.') }}">
+                                </th>
+                                {{-- TAXA SISCOMEX é calculada automaticamente, sem input no cabeçalho --}}
+                                <th></th>
+                            @endif
+
                             @foreach ($campos as $campo)
                                 <th class="middleRowInputTh" data-campo="{{ $campo }}">
                                     @if ($campo == 'capatazia')
@@ -231,9 +270,9 @@
                                             id="{{ $campo }}" readonly
                                             value="{{ number_format($processo->thc_capatazia ?? 0, 5, ',', '.') }}">
                                     @else
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal2"
                                             name="{{ $campo }}" id="{{ $campo }}"
-                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                            value="{{ number_format($processo->$campo ?? 0, 2, ',', '.') }}">
                                     @endif
                                 </th>
                             @endforeach
@@ -243,9 +282,9 @@
 
                             @foreach ($camposCambiais as $campoCambial)
                                 <th class="middleRowInputTh">
-                                    <input type="text" class="form-control difCambial moneyReal"
+                                    <input type="text" class="form-control difCambial moneyReal2"
                                         name="{{ $campoCambial }}" id="{{ $campoCambial }}"
-                                        value="{{ number_format($processo->$campoCambial ?? 0, 5, ',', '.') }}">
+                                        value="{{ number_format($processo->$campoCambial ?? 0, 2, ',', '.') }}">
                                 </th>
                             @endforeach
                             
@@ -270,10 +309,10 @@
                                         value="{{ $processo->opcional_1_descricao ?? 'Opcional 1' }}"
                                         style="font-size: 11px; padding: 4px;">
                                     <input type="text" 
-                                        class="form-control cabecalhoInputs moneyReal opcional-valor" 
+                                        class="form-control cabecalhoInputs moneyReal2 opcional-valor" 
                                         name="opcional_1_valor" 
                                         id="opcional_1_valor"
-                                        value="{{ number_format($processo->opcional_1_valor ?? 0, 5, ',', '.') }}"
+                                        value="{{ number_format($processo->opcional_1_valor ?? 0, 2, ',', '.') }}"
                                         style="font-size: 12px; padding: 4px;">
                                 </div>
                             </th>
@@ -299,10 +338,10 @@
                                         value="{{ $processo->opcional_2_descricao ?? 'Opcional 2' }}"
                                         style="font-size: 11px; padding: 4px;">
                                     <input type="text" 
-                                        class="form-control cabecalhoInputs moneyReal opcional-valor" 
+                                        class="form-control cabecalhoInputs moneyReal2 opcional-valor" 
                                         name="opcional_2_valor" 
                                         id="opcional_2_valor"
-                                        value="{{ number_format($processo->opcional_2_valor ?? 0, 5, ',', '.') }}"
+                                        value="{{ number_format($processo->opcional_2_valor ?? 0, 2, ',', '.') }}"
                                         style="font-size: 12px; padding: 4px;">
                                 </div>
                             </th>
@@ -472,6 +511,25 @@
                                 <th>TX CORREÇÃO LACRE</th>
                                 <th>LI+DTA+HONOR.NIX</th>
                                 <th>HONORÁRIOS NIX</th>
+                            @elseif ($nacionalizacaoAtual === 'mato_grosso')
+                                {{-- Ordem específica para Mato Grosso --}}
+                                <th>OUTRAS TX AGENTE</th>
+                                <th>LIBERAÇÃO BL</th>
+                                <th>DESCONS.</th>
+                                <th>ISPS CODE</th>
+                                <th>HANDLING</th>
+                                <th>CAPATAZIA</th>
+                                <th>AFRMM</th>
+                                <th>ARMAZENAGEM STS</th>
+                                <th>FRETE STS/CGB</th>
+                                <th>DIARIAS</th>
+                                <th>S.D.A</th>
+                                <th>REP.STS</th>
+                                <th>ARMAZ CGB</th>
+                                <th>REP. CGB</th>
+                                <th>DEMURRAGE</th>
+                                <th>LI+DTA+HONOR.NIX</th>
+                                <th>HONORÁRIOS NIX</th>
                             @else
                                 {{-- Ordem padrão para outros tipos --}}
                                 <th>OUTRAS TX AGENTE</th>
@@ -503,6 +561,27 @@
                             <th id="th-opcional-2-descricao">{{ 'OPCIONAL 2' }}</th>
                             <th>CUSTO UNIT FINAL</th>
                             <th>CUSTO TOTAL FINAL</th>
+                            @if ($nacionalizacaoAtual === 'mato_grosso')
+                                <th>DEZ POR CENTO</th>
+                                <th>CUSTO COM MARGEM</th>
+                                <th>VLR IPI</th>
+                                <th>VLR ICMS</th>
+                                <th>PIS</th>
+                                <th>COFINS</th>
+                                <th>CUSTO TOTAL FINAL</th>
+                                <th>CUSTO UNIT CREDITO</th>
+                                <th>BC ICMS-ST</th>
+                                <th>MVA</th>
+                                <th>ICMS-ST</th>
+                                <th>VLR ICMS-ST</th>
+                                <th>CUSTO TOTAL C/ICMS ST</th>
+                                <th>CUSTO UNIT C/ICMS ST</th>
+                                <th>EXPORTADOR</th>
+                                <th>TRIBUTOS</th>
+                                <th>DESPESAS</th>
+                                <th>TOTAL PAGO</th>
+                                <th>PERCENTUAL S/FOB</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="productsBody">
@@ -1035,11 +1114,19 @@
                                 </td>
 
                                 <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control percentage2"
-                                        name="produtos[{{ $index }}][tx_def_li]"
-                                        id="tx_def_li-{{ $index }}"
-                                        value="{{ $processoProduto->tx_def_li ? number_format($processoProduto->tx_def_li, 2, ',', '.') : '' }} %">
+                                    @if ($nacionalizacaoAtual === 'mato_grosso')
+                                        <input type="text" data-row="{{ $index }}"
+                                            class=" form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][tx_def_li]"
+                                            id="tx_def_li-{{ $index }}"
+                                            value="{{ $processoProduto->tx_def_li ? number_format($processoProduto->tx_def_li, 2, ',', '.') : '' }}">
+                                    @else
+                                        <input type="text" data-row="{{ $index }}"
+                                            class=" form-control percentage2"
+                                            name="produtos[{{ $index }}][tx_def_li]"
+                                            id="tx_def_li-{{ $index }}"
+                                            value="{{ $processoProduto->tx_def_li ? number_format($processoProduto->tx_def_li, 2, ',', '.') : '' }} %">
+                                    @endif
                                 </td>
 
                                 <td>
@@ -1110,6 +1197,27 @@
                                             'li_dta_honor_nix',
                                             'honorarios_nix',
                                         ];
+                                    } elseif ($nacionalizacaoAtual === 'mato_grosso') {
+                                        // Ordem específica para Mato Grosso
+                                        $camposTbody = [
+                                            'outras_taxas_agente',
+                                            'liberacao_bl',
+                                            'desconsolidacao',
+                                            'isps_code',
+                                            'handling',
+                                            'capatazia',
+                                            'afrmm',
+                                            'armazenagem_sts',
+                                            'frete_sts_cgb',
+                                            'diarias',
+                                            'sda',
+                                            'rep_sts',
+                                            'armaz_cgb',
+                                            'rep_cgb',
+                                            'demurrage',
+                                            'li_dta_honor_nix',
+                                            'honorarios_nix',
+                                        ];
                                     } else {
                                         // Ordem padrão para outros tipos
                                         $camposTbody = [
@@ -1140,6 +1248,8 @@
                                         $mostrarCampo = true;
                                         $dataCampo = '';
                                         $styleDisplay = '';
+                                        $classeInput = 'form-control moneyReal';
+                                        $decimais = 2;
                                         
                                         if ($campoTbody === 'tx_correcao_lacre' && $nacionalizacaoAtual !== 'santos' && $nacionalizacaoAtual !== 'santa_catarina') {
                                             $mostrarCampo = false;
@@ -1151,17 +1261,21 @@
                                             }
                                         } elseif (in_array($campoTbody, ['rep_anapolis', 'correios'])) {
                                             $dataCampo = 'data-campo="' . $campoTbody . '"';
+                                        } elseif (in_array($campoTbody, ['li_dta_honor_nix', 'honorarios_nix'])) {
+                                            // Campos que precisam de mais precisão (7 casas decimais)
+                                            $classeInput = 'form-control moneyReal7';
+                                            $decimais = 7;
                                         }
                                         
                                         $valorCampo = isset($processoProduto->$campoTbody) && $processoProduto->$campoTbody 
-                                            ? number_format($processoProduto->$campoTbody, 2, ',' , '.') 
+                                            ? number_format($processoProduto->$campoTbody, $decimais, ',' , '.') 
                                             : '';
                                     @endphp
                                     
                                     @if ($mostrarCampo)
                                         <td {!! $dataCampo !!} {!! $styleDisplay !!}>
                                             <input type="text" data-row="{{ $index }}"
-                                                class=" form-control moneyReal" readonly
+                                                class="{{ $classeInput }}" readonly
                                                 name="produtos[{{ $index }}][{{ $campoTbody }}]"
                                                 id="{{ $campoTbody }}-{{ $index }}"
                                                 value="{{ $valorCampo }}">
@@ -1224,6 +1338,141 @@
                                         id="custo_total_final-{{ $index }}"
                                         value="{{ $processoProduto->custo_total_final ? number_format($processoProduto->custo_total_final, 2, ',' , '.') : '' }}">
                                 </td>
+                                @if ($nacionalizacaoAtual === 'mato_grosso')
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][dez_porcento]"
+                                            id="dez_porcento-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][custo_com_margem]"
+                                            id="custo_com_margem-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][vlr_ipi_mg]"
+                                            id="vlr_ipi_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][vlr_icms_mg]"
+                                            id="vlr_icms_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][pis_mg]"
+                                            id="pis_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][cofins_mg]"
+                                            id="cofins_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][custo_total_final_credito]"
+                                            id="custo_total_final_credito-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][custo_unit_credito]"
+                                            id="custo_unit_credito-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][bc_icms_st_mg]"
+                                            id="bc_icms_st_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control percentage2"
+                                            name="produtos[{{ $index }}][mva_mg]"
+                                            id="mva_mg-{{ $index }}"
+                                            value="{{ $processoProduto->mva_mg ? number_format($processoProduto->mva_mg, 2, ',', '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control percentage2"
+                                            name="produtos[{{ $index }}][icms_st_mg]"
+                                            id="icms_st_mg-{{ $index }}"
+                                            value="{{ $processoProduto->icms_st_mg ? number_format($processoProduto->icms_st_mg, 2, ',', '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][vlr_icms_st_mg]"
+                                            id="vlr_icms_st_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][custo_total_c_icms_st]"
+                                            id="custo_total_c_icms_st-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][custo_unit_c_icms_st]"
+                                            id="custo_unit_c_icms_st-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][exportador_mg]"
+                                            id="exportador_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][tributos_mg]"
+                                            id="tributos_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][despesas_mg]"
+                                            id="despesas_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control moneyReal2" readonly
+                                            name="produtos[{{ $index }}][total_pago_mg]"
+                                            id="total_pago_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" data-row="{{ $index }}"
+                                            class="form-control percentage2" readonly
+                                            name="produtos[{{ $index }}][percentual_s_fob_mg]"
+                                            id="percentual_s_fob_mg-{{ $index }}"
+                                            value="">
+                                    </td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>

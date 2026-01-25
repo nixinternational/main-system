@@ -148,6 +148,7 @@
                            <option value="santos" {{ $nacionalizacaoSelecionada === 'santos' ? 'selected' : '' }}>Porto de Santos</option>
                            <option value="anapolis" {{ $nacionalizacaoSelecionada === 'anapolis' ? 'selected' : '' }}>Anápolis</option>
                            <option value="santa_catarina" {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'selected' : '' }}>Santa Catarina</option>
+                           <option value="mato_grosso" {{ $nacionalizacaoSelecionada === 'mato_grosso' ? 'selected' : '' }}>Mato Grosso</option>
                            <option value="outros" {{ $nacionalizacaoSelecionada === 'outros' ? 'selected' : '' }}>Geral</option>
                        </select>
                    </div>
@@ -169,6 +170,26 @@
                            <span class="input-group-text">R$</span>
                            <input type="text" readonly class="form-control moneyReal" 
                                name="valor_cpt_brl" id="valor_cpt_brl" value="">
+                       </div>
+                   </div>
+               </div>
+
+               <!-- Campos CIF para Mato Grosso -->
+               <div class="row mt-3" id="campos-cif-mato-grosso" style="display: none;">
+                   <div class="col-md-6">
+                       <label for="valor_cif_usd" class="form-label">Valor CIF USD</label>
+                       <div class="input-group">
+                           <span class="input-group-text">USD</span>
+                           <input type="text" readonly class="form-control moneyReal" 
+                               name="valor_cif_usd" id="valor_cif_usd" value="">
+                       </div>
+                   </div>
+                   <div class="col-md-6">
+                       <label for="valor_cif_brl" class="form-label">Valor CIF BRL</label>
+                       <div class="input-group">
+                           <span class="input-group-text">R$</span>
+                           <input type="text" readonly class="form-control moneyReal" 
+                               name="valor_cif_brl" id="valor_cif_brl" value="">
                        </div>
                    </div>
                </div>

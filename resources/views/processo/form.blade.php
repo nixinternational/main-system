@@ -2502,8 +2502,8 @@
             $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Adicionando...');
             
             try {
-                let lengthOptions = $('#productsBody tr').length;
-                let newIndex = lengthOptions;
+            let lengthOptions = $('#productsBody tr').length;
+            let newIndex = lengthOptions;
 
             let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
         <option selected disabled>Selecione uma opção</option>`;

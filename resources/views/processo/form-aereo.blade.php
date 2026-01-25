@@ -4223,8 +4223,8 @@
             $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Adicionando...');
             
             try {
-                let lengthOptions = $('#productsBody tr').length;
-                let newIndex = lengthOptions;
+            let lengthOptions = $('#productsBody tr').length;
+            let newIndex = lengthOptions;
 
             // Obter moedas atuais
             let moedaFrete = $('#frete_internacional_moeda').val();

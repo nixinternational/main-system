@@ -361,10 +361,15 @@
                 armazenagem_sts: 0,
                 armazenagem_porto: 0,
                 frete_dta_sts_ana: 0,
+                frete_sts_cgb: 0,
+                diarias: 0,
                 frete_rodoviario: 0,
                 dif_frete_rodoviario: 0,
                 sda: 0,
                 rep_sts: 0,
+                armaz_cgb: 0,
+                rep_cgb: 0,
+                demurrage: 0,
                 rep_porto: 0,
                 armaz_ana: 0,
                 lavagem_container: 0,
@@ -379,7 +384,23 @@
                 opcional_1_valor: 0,
                 opcional_2_valor: 0,
                 custo_unitario_final: 0,
-                custo_total_final: 0
+                custo_total_final: 0,
+                dez_porcento: 0,
+                custo_com_margem: 0,
+                vlr_ipi_mg: 0,
+                vlr_icms_mg: 0,
+                pis_mg: 0,
+                cofins_mg: 0,
+                custo_total_final_credito: 0,
+                custo_unit_credito: 0,
+                bc_icms_st_mg: 0,
+                vlr_icms_st_mg: 0,
+                custo_total_c_icms_st: 0,
+                custo_unit_c_icms_st: 0,
+                exportador_mg: 0,
+                tributos_mg: 0,
+                despesas_mg: 0,
+                total_pago_mg: 0
             };
 
 
@@ -405,7 +426,17 @@
                                 valor = validarDiferencaCambialFrete(valor);
                             }
                             
+                            // Debug para campos de Mato Grosso
+                            if (rowId === 0 && (campo === 'exportador_mg' || campo === 'tributos_mg' || campo === 'despesas_mg' || campo === 'total_pago_mg')) {
+                                console.log(`Totalizador - Linha ${rowId}, Campo: ${campo}, Valor: ${valor}, Total antes: ${totais[campo]}`);
+                            }
+                            
                             totais[campo] += valor;
+                            
+                            // Debug para campos de Mato Grosso
+                            if (rowId === 0 && (campo === 'exportador_mg' || campo === 'tributos_mg' || campo === 'despesas_mg' || campo === 'total_pago_mg')) {
+                                console.log(`Totalizador - Linha ${rowId}, Campo: ${campo}, Total depois: ${totais[campo]}`);
+                            }
                         }
                     });
                 } else {
@@ -683,6 +714,24 @@
             '<td data-campo="correios" style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.correios, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
+        : getNacionalizacaoAtual() === 'mato_grosso' ?
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.isps_code, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.handling, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.capatazia, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.afrmm, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armazenagem_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.frete_sts_cgb || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.diarias || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.sda, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_sts, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.armaz_cgb || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.rep_cgb || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.demurrage || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.honorarios_nix, 2) + '</td>'
         :
             // Ordem padrão para outras nacionalizações
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
@@ -711,6 +760,28 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_2_valor || 0, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_unitario_final, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_total_final, 2)}</td>
+        ${getNacionalizacaoAtual() === 'mato_grosso' ? 
+            '<td></td>' + // DEZ POR CENTO (sem totalizador)
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.custo_com_margem || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.vlr_ipi_mg || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.vlr_icms_mg || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.pis_mg || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.cofins_mg || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.custo_total_final_credito || 0, 2) + '</td>' +
+            '<td></td>' + // CUSTO UNIT CREDITO (sem totalizador)
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.bc_icms_st_mg || 0, 2) + '</td>' +
+            '<td></td>' + // MVA (sem totalizador)
+            '<td></td>' + // ICMS-ST (sem totalizador)
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.vlr_icms_st_mg || 0, 2) + '</td>' +
+            '<td></td>' + // CUSTO TOTAL C/ICMS ST (sem totalizador)
+            '<td style="font-weight: bold; text-align: right;">' + (totais.quantidade > 0 ? MoneyUtils.formatMoney(totais.custo_total_c_icms_st / totais.quantidade, 2) : '0,00') + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.exportador_mg || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tributos_mg || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.despesas_mg || 0, 2) + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.total_pago_mg || 0, 2) + '</td>' +
+            '<td></td>' // PERCENTUAL S/FOB (sem totalizador)
+            : ''
+        }
     </tr>`;
 
             try {
@@ -981,6 +1052,10 @@
                     setTimeout(atualizarVisibilidadeColunasMoeda, 100);
                 });
             $('.moneyReal').on('blur', function() {
+                // Não formatar se for cabeçalho input (já tem formatação específica)
+                if ($(this).hasClass('cabecalhoInputs')) {
+                    return;
+                }
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
                     const numero = normalizeNumericValue(val);
@@ -1011,6 +1086,10 @@
 
 
             $('.moneyReal7').on('blur', function() {
+                // Não formatar se for cabeçalho input (já tem formatação específica)
+                if ($(this).hasClass('cabecalhoInputs')) {
+                    return;
+                }
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
                     const numero = normalizeNumericValue(val);
@@ -1218,6 +1297,7 @@
             
             // Recalcular valores CPT quando os valores USD mudarem
             calcularValoresCPT();
+            calcularValoresCIF();
         }
 
         function updateValorReal(inputId, spanId, automatic = true) {
@@ -1431,6 +1511,7 @@
                 
                 // Recalcular valores CPT quando a cotação mudar
                 calcularValoresCPT();
+                calcularValoresCIF();
 
 
                 if (moeda && moeda !== 'USD') {
@@ -1814,11 +1895,14 @@
                     const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeralAtualizado);
                     const acrescimoFreteUsdRow = calcularAcrescimoFrete(fobTotal, fobTotalGeralAtualizado, dolar);
                     
-                    // Calcular CRF Total - para Santa Catarina inclui service charges e acréscimo frete
+                    // Calcular CRF Total - varia conforme nacionalização
                     const nacionalizacao = getNacionalizacaoAtual();
                     let vlrCrfTotal;
                     if (nacionalizacao === 'santa_catarina') {
                         vlrCrfTotal = fobTotal + freteUsdInt + serviceChargesRowAtualUSD + acrescimoFreteUsdRow;
+                    } else if (nacionalizacao === 'mato_grosso') {
+                        // Para Mato Grosso: FOB Total USD + Frete Internacional USD + Seguro Internacional USD
+                        vlrCrfTotal = fobTotal + freteUsdInt + seguroIntUsdRow;
                     } else {
                         vlrCrfTotal = fobTotal + freteUsdInt;
                     }
@@ -1826,11 +1910,15 @@
                     const vlrCrfUnit = quantidadeAtual > 0 ? vlrCrfTotal / quantidadeAtual : 0;
                     
                     
-                    // Calcular Valor Aduaneiro - para Santa Catarina é apenas CRF Total + Seguro + THC USD
+                    // Calcular Valor Aduaneiro - varia conforme nacionalização
                     let vlrAduaneiroUsd;
                     if (nacionalizacao === 'santa_catarina') {
                         const thcUsd = dolar > 0 ? thcRow / dolar : 0;
                         vlrAduaneiroUsd = vlrCrfTotal + seguroIntUsdRow + thcUsd;
+                    } else if (nacionalizacao === 'mato_grosso') {
+                        // Para Mato Grosso: VLR CFR Total + Acréscimo Frete USD + THC USD
+                        const thcUsd = dolar > 0 ? thcRow / dolar : 0;
+                        vlrAduaneiroUsd = vlrCrfTotal + acrescimoFreteUsdRow + thcUsd;
                     } else {
                         vlrAduaneiroUsd = calcularValorAduaneiro(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
                             seguroIntUsdRow, thcRow, dolar, vlrCrfTotal, serviceChargesRowAtual);
@@ -1847,11 +1935,25 @@
                         (taxaSiscomexUnitaria_BB ?? 0), vlrAduaneiroBrl);
                     const despesas = despesasInfo.total;
 
-                    const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas);
+                    // Despesa aduaneira = taxa siscomex linha + afrmm (apenas para Mato Grosso)
+                    let despesaAduaneira;
+                    if (nacionalizacao === 'mato_grosso') {
+                        const afrmm = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
+                        despesaAduaneira = (taxaSiscomexUnitaria_BB ?? 0) + afrmm;
+                    } else {
+                        despesaAduaneira = despesas;
+                    }
+
+                    // Para Mato Grosso, passar despesaAduaneira; para outros, passar despesas
+                    const despesasParaBcIcms = nacionalizacao === 'mato_grosso' ? despesaAduaneira : despesas;
+                    const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesasParaBcIcms);
                     const vlrIcmsSReducao = bcIcmsSReducao * impostos.icms;
-                    const bcImcsReduzido = calcularBcIcmsReduzido(rowId, vlrAduaneiroBrl, impostos, despesas);
+                    const despesasParaBcIcmsReduzido = nacionalizacao === 'mato_grosso' ? despesaAduaneira : despesas;
+                    const bcImcsReduzido = calcularBcIcmsReduzido(rowId, vlrAduaneiroBrl, impostos, despesasParaBcIcmsReduzido);
                     const vlrIcmsReduzido = bcImcsReduzido * impostos.icms;
-                    const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
+                    // Para Mato Grosso, passar despesaAduaneira para calcularTotais; para outros, passar despesas
+                    const despesasParaTotais = nacionalizacao === 'mato_grosso' ? despesaAduaneira : despesas;
+                    const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesasParaTotais, quantidade, vlrIcmsReduzido,
                         rowId);
 
                     const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#mva-${rowId}`).val()) : 0;
@@ -1876,7 +1978,18 @@
                     let diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
                         dolar);
                     diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
-                    const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar) : 0;
+                    
+                    // Calcular diferenca_cambial_fob conforme nacionalização
+                    let diferenca_cambial_fob;
+                    if (nacionalizacao === 'mato_grosso') {
+                        // Para Mato Grosso: (diferenca_cambial_fob_cabecalho * fator_vlr_fob) - (fob_total_brl + frete_brl + seguro_brl)
+                        const fobTotalBrl = fobTotal * dolar;
+                        const freteBrl = freteUsdInt * dolar;
+                        const seguroBrl = seguroIntUsdRow * dolar;
+                        diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotalBrl + freteBrl + seguroBrl);
+                    } else {
+                        diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar) : 0;
+                    }
 
                     const reducaoPercent = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) || 0;
 
@@ -1887,8 +2000,20 @@
                     
                     const multaDesp = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
                     const vlrAduaneiroBrlDesp = vlrAduaneiroBrl;
+                    const nacionalizacaoAtualDesp = getNacionalizacaoAtual();
+                    let taxa_def_desp;
+                    if (nacionalizacaoAtualDesp === 'mato_grosso') {
+                        // Para Mato Grosso: usar valor rateado do cabeçalho
+                        const valorCampo = MoneyUtils.parseMoney($(`#tx_def_li`).val()) || 0;
+                        const valorDistribuido = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['tx_def_li'] && window.valoresBrutosCamposExternos['tx_def_li'][rowId] !== undefined
+                            ? window.valoresBrutosCamposExternos['tx_def_li'][rowId]
+                            : (valorCampo * fatorVlrFob_AX);
+                        taxa_def_desp = MoneyUtils.parseMoney($(`#tx_def_li-${rowId}`).val()) || valorDistribuido;
+                    } else {
+                        // Para outras nacionalizações: calcular como porcentagem
                     const txDefLiPercentDesp = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) : 0;
-                    const taxa_def_desp = vlrAduaneiroBrlDesp * txDefLiPercentDesp;
+                        taxa_def_desp = vlrAduaneiroBrlDesp * txDefLiPercentDesp;
+                    }
                     const taxa_siscomex_desp = taxaSiscomexUnitaria_BB || 0;
                     const capatazia_desp = $(`#capatazia-${rowId}`).val() ? MoneyUtils.parseMoney($(`#capatazia-${rowId}`).val()) : 0;
                     const afrmm_desp = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
@@ -1925,6 +2050,63 @@
                             afrmm_desp + armazenagem_porto_desp + frete_rodoviario_desp + honorarios_nix_desp;
                         
                         despesaDesembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    } else if (nacionalizacaoDesp === 'mato_grosso') {
+                        // Para Mato Grosso: DESP. DESEMBARAÇO = SOMA(multa:honorario_nix) - (multa+taxa_siscomex+capatazia+afrmm)
+                        
+                        // Ler todos os campos de MULTA até HONORÁRIOS NIX
+                        const outras_taxas_agente_desp = MoneyUtils.parseMoney($(`#outras_taxas_agente-${rowId}`).val()) || 0;
+                        const liberacao_bl_desp = MoneyUtils.parseMoney($(`#liberacao_bl-${rowId}`).val()) || 0;
+                        const desconsolidacao_desp = MoneyUtils.parseMoney($(`#desconsolidacao-${rowId}`).val()) || 0;
+                        const isps_code_desp = MoneyUtils.parseMoney($(`#isps_code-${rowId}`).val()) || 0;
+                        const handling_desp = MoneyUtils.parseMoney($(`#handling-${rowId}`).val()) || 0;
+                        const armazenagem_sts_desp = MoneyUtils.parseMoney($(`#armazenagem_sts-${rowId}`).val()) || 0;
+                        const frete_sts_cgb_desp = MoneyUtils.parseMoney($(`#frete_sts_cgb-${rowId}`).val()) || 0;
+                        const diarias_desp = MoneyUtils.parseMoney($(`#diarias-${rowId}`).val()) || 0;
+                        const sda_desp = MoneyUtils.parseMoney($(`#sda-${rowId}`).val()) || 0;
+                        const rep_sts_desp = MoneyUtils.parseMoney($(`#rep_sts-${rowId}`).val()) || 0;
+                        const armaz_cgb_desp = MoneyUtils.parseMoney($(`#armaz_cgb-${rowId}`).val()) || 0;
+                        const rep_cgb_desp = MoneyUtils.parseMoney($(`#rep_cgb-${rowId}`).val()) || 0;
+                        const demurrage_desp = MoneyUtils.parseMoney($(`#demurrage-${rowId}`).val()) || 0;
+                        const li_dta_honor_nix_desp = MoneyUtils.parseMoney($(`#li_dta_honor_nix-${rowId}`).val()) || 0;
+                        const honorarios_nix_desp_mg = MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) || 0;
+                        
+                        // Parte 1: SOMA(multa:honorario_nix) = MULTA + TX DEF. LI + TAXA SISCOMEX + OUTRAS TX AGENTE + ... + HONORÁRIOS NIX
+                        desp_desenbaraco_parte_1 = multaDesp + taxa_def_desp + taxa_siscomex_desp + outras_taxas_agente_desp + 
+                            liberacao_bl_desp + desconsolidacao_desp + isps_code_desp + handling_desp + capatazia_desp + 
+                            afrmm_desp + armazenagem_sts_desp + frete_sts_cgb_desp + diarias_desp + sda_desp + 
+                            rep_sts_desp + armaz_cgb_desp + rep_cgb_desp + demurrage_desp + li_dta_honor_nix_desp + honorarios_nix_desp_mg;
+                        
+                        // Parte 2: (multa+taxa_siscomex+capatazia+afrmm)
+                        desp_desenbaraco_parte_2 = multaDesp + taxa_siscomex_desp + capatazia_desp + afrmm_desp;
+                        
+                        despesaDesembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                        
+                        // // Debug para Mato Grosso
+                        // console.log(`=== DESP. DESEMBARAÇO MATO GROSSO - ROW ${rowId} ===`);
+                        // console.log('MULTA:', multaDesp);
+                        // console.log('TX DEF. LI:', taxa_def_desp);
+                        // console.log('TAXA SISCOMEX:', taxa_siscomex_desp);
+                        // console.log('OUTRAS TX AGENTE:', outras_taxas_agente_desp);
+                        // console.log('LIBERAÇÃO BL:', liberacao_bl_desp);
+                        // console.log('DESCONS.:', desconsolidacao_desp);
+                        // console.log('ISPS CODE:', isps_code_desp);
+                        // console.log('HANDLING:', handling_desp);
+                        // console.log('CAPATAZIA:', capatazia_desp);
+                        // console.log('AFRMM:', afrmm_desp);
+                        // console.log('ARMAZENAGEM STS:', armazenagem_sts_desp);
+                        // console.log('FRETE STS/CGB:', frete_sts_cgb_desp);
+                        // console.log('DIARIAS:', diarias_desp);
+                        // console.log('S.D.A:', sda_desp);
+                        // console.log('REP.STS:', rep_sts_desp);
+                        // console.log('ARMAZ CGB:', armaz_cgb_desp);
+                        // console.log('REP. CGB:', rep_cgb_desp);
+                        // console.log('DEMURRAGE:', demurrage_desp);
+                        // console.log('LI+DTA+HONOR.NIX:', li_dta_honor_nix_desp);
+                        // console.log('HONORÁRIOS NIX:', honorarios_nix_desp_mg);
+                        // console.log('SOMA (Parte 1):', desp_desenbaraco_parte_1);
+                        // console.log('Subtração (Parte 2):', desp_desenbaraco_parte_2);
+                        // console.log('DESP. DESEMBARAÇO (Parte 1 - Parte 2):', despesaDesembaraco);
+                        // console.log('==========================================');
                     } else {
                         // Fórmula padrão para outras nacionalizações
                         for (let campo of camposExternos) {
@@ -1954,39 +2136,159 @@
                         despesasAdicionaisCalc += opcional2ValorCalc;
                     }
                     
-                    // Para Santos: (VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) / quantidade
+                    // Para Santos e Mato Grosso: (VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) / quantidade
                     // Para outras: ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) - VLR ICMS REDUZIDO) / quantidade
-                    const custoUnitarioFinal = getNacionalizacaoAtual() === 'santos' 
-                        ? (quantidadeAtual > 0 ? (vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete) / quantidadeAtual : 0)
-                        : (quantidadeAtual > 0 ? ((vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionaisCalc) - vlrIcmsReduzido) / quantidadeAtual : 0);
+                    const nacionalizacaoCusto = getNacionalizacaoAtual();
+                    let custoUnitarioFinal;
+                    if (nacionalizacaoCusto === 'santos' || nacionalizacaoCusto === 'mato_grosso') {
+                        // EM MATO GROSSO CUSTO UNIT FINAL É =((AX19+BV19+BW19+BX19)/F19)
+                        // AX = VLR TOTAL NF C/ICMS-ST
+                        // BV = DESP DESEMBARACO
+                        // BW = DIF CAMBIAL FRETE
+                        // BX = DIF CAMBIAL FOB
+                        // F = QUANTIDADE
+                        custoUnitarioFinal = quantidadeAtual > 0 
+                            ? (vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete) / quantidadeAtual 
+                            : 0;
+                        
+                      
+                    } else {
+                        custoUnitarioFinal = quantidadeAtual > 0 
+                            ? ((vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionaisCalc) - vlrIcmsReduzido) / quantidadeAtual 
+                            : 0;
+                    }
                     
                     const custoTotalFinal = custoUnitarioFinal * quantidadeAtual;
                     
-                    // Console.log para inspecionar cálculo da linha 6
-                    if (rowId == 6) {
-                        console.log('=== CÁLCULO CUSTO UNITÁRIO FINAL - ROW 6 ===');
-                        console.log('Nacionalização:', getNacionalizacaoAtual());
-                        console.log('vlrTotalNfComIcmsSt:', vlrTotalNfComIcmsSt);
-                        console.log('despesaDesembaraco:', despesaDesembaraco);
-                        console.log('diferenca_cambial_fob:', diferenca_cambial_fob);
-                        console.log('diferenca_cambial_frete:', diferenca_cambial_frete);
-                        console.log('despesasAdicionaisCalc:', despesasAdicionaisCalc);
-                        console.log('vlrIcmsReduzido:', vlrIcmsReduzido);
-                        console.log('quantidadeAtual:', quantidadeAtual);
-                        if (getNacionalizacaoAtual() === 'santos') {
-                            const soma = vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete;
-                            console.log('SOMA (Santos):', soma);
-                            console.log('Divisão por quantidade:', soma / quantidadeAtual);
-                        } else {
-                            const soma = vlrTotalNfComIcmsSt + despesaDesembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionaisCalc;
-                            console.log('SOMA (Outras):', soma);
-                            console.log('Subtração vlrIcmsReduzido:', soma - vlrIcmsReduzido);
-                            console.log('Divisão por quantidade:', (soma - vlrIcmsReduzido) / quantidadeAtual);
+                    // Calcular novas colunas para Mato Grosso
+                    let dezPorcento = 0;
+                    let custoComMargem = 0;
+                    let vlrIpiMg = 0;
+                    let vlrIcmsMg = 0;
+                    let pisMg = 0;
+                    let cofinsMg = 0;
+                    let custoTotalFinalCredito = 0;
+                    let custoUnitCredito = 0;
+                    
+                    if (nacionalizacaoCusto === 'mato_grosso') {
+                        // Obter valores brutos da linha atual (valores já calculados anteriormente no loop)
+                        const valorIpi = totais.vlrIpi || 0;
+                        const valorPis = totais.vlrPis || 0;
+                        const valorCofins = totais.vlrCofins || 0;
+                        
+                        // DEZ POR CENTO = (custo_unitario_final * 0.1) + custo_unitario_final
+                        dezPorcento = (custoUnitarioFinal * 0.1) + custoUnitarioFinal;
+                        
+                        // CUSTO COM MARGEM = dez_porcento * quantidade
+                        custoComMargem = dezPorcento * quantidadeAtual;
+                        
+                        // VLR IPI = valor_ipi (já calculado em totais)
+                        vlrIpiMg = valorIpi;
+                        
+                        // VLR ICMS = 0 (vazio)
+                        vlrIcmsMg = 0;
+                        
+                        // PIS = valor_pis (já calculado em totais)
+                        pisMg = valorPis;
+                        
+                        // COFINS = valor_cofins (já calculado em totais)
+                        cofinsMg = valorCofins;
+                        
+                        // CUSTO TOTAL FINAL = custo_com_margem - (vlr_ipi + vlr_icms + vlr_pis + vlr_cofins)
+                        custoTotalFinalCredito = custoComMargem - (vlrIpiMg + vlrIcmsMg + pisMg + cofinsMg);
+                        
+                        // CUSTO UNIT CREDITO = custo_total_final_credito / quantidade
+                        if (quantidadeAtual > 0) {
+                            custoUnitCredito = custoTotalFinalCredito / quantidadeAtual;
                         }
-                        console.log('custoUnitarioFinal:', custoUnitarioFinal);
-                        console.log('custoTotalFinal:', custoTotalFinal);
+                        
+                        // Calcular novas colunas ICMS-ST para Mato Grosso
+                        // Ler MVA e ICMS-ST dos inputs (porcentagem) - usar campos específicos _mg
+                        const mvaPercent = MoneyUtils.parsePercentage($(`#mva_mg-${rowId}`).val()) || 0;
+                        const icmsStPercent = MoneyUtils.parsePercentage($(`#icms_st_mg-${rowId}`).val()) || 0;
+                        
+                        // BC ICMS-ST = custo_total_final_credito * (1 + mva_percent)
+                        const bcIcmsStMg = custoTotalFinalCredito * (1 + mvaPercent);
+                        
+                        // VLR ICMS-ST = bc_icms_st_mg * icms_st_percent
+                        const vlrIcmsStMg = bcIcmsStMg * icmsStPercent;
+                        
+                        // CUSTO TOTAL C/ICMS ST = custo_total_final_credito + vlr_icms_st_mg
+                        const custoTotalCIcmsSt = custoTotalFinalCredito + vlrIcmsStMg;
+                        
+                        // CUSTO UNIT C/ICMS ST = custo_total_c_icms_st / quantidade
+                        let custoUnitCIcmsSt = 0;
+                        if (quantidadeAtual > 0) {
+                            custoUnitCIcmsSt = custoTotalCIcmsSt / quantidadeAtual;
+                        }
+                        
+                        // DEBUG: Log dos cálculos ICMS-ST
+                        console.log(`=== DEBUG ICMS-ST - Linha ${rowId} ===`);
+                        console.log('ENTRADAS:');
+                        console.log(`  - CUSTO TOTAL FINAL (CH): ${custoTotalFinalCredito}`);
+                        console.log(`  - MVA % (CL): ${mvaPercent} (${(mvaPercent * 100).toFixed(2)}%)`);
+                        console.log(`  - ICMS-ST % (CM): ${icmsStPercent} (${(icmsStPercent * 100).toFixed(2)}%)`);
+                        console.log(`  - QUANTIDADE (F): ${quantidadeAtual}`);
+                        console.log('');
+                        console.log('CÁLCULOS:');
+                        console.log(`  1. BC ICMS-ST (CK) = CH * (1 + CL)`);
+                        console.log(`     BC ICMS-ST = ${custoTotalFinalCredito} * (1 + ${mvaPercent})`);
+                        console.log(`     BC ICMS-ST = ${custoTotalFinalCredito} * ${(1 + mvaPercent)}`);
+                        console.log(`     BC ICMS-ST = ${bcIcmsStMg}`);
+                        console.log('');
+                        console.log(`  2. VLR ICMS-ST (CN) = CK * CM`);
+                        console.log(`     VLR ICMS-ST = ${bcIcmsStMg} * ${icmsStPercent}`);
+                        console.log(`     VLR ICMS-ST = ${vlrIcmsStMg}`);
+                        console.log('');
+                        console.log(`  3. CUSTO TOTAL C/ICMS ST (CO) = CH + CN`);
+                        console.log(`     CUSTO TOTAL C/ICMS ST = ${custoTotalFinalCredito} + ${vlrIcmsStMg}`);
+                        console.log(`     CUSTO TOTAL C/ICMS ST = ${custoTotalCIcmsSt}`);
+                        console.log('');
+                        console.log(`  4. CUSTO UNIT C/ICMS ST = CO / F`);
+                        console.log(`     CUSTO UNIT C/ICMS ST = ${custoTotalCIcmsSt} / ${quantidadeAtual}`);
+                        console.log(`     CUSTO UNIT C/ICMS ST = ${custoUnitCIcmsSt}`);
+                        console.log('');
+                        console.log('RESULTADOS FINAIS:');
+                        console.log(`  - BC ICMS-ST: ${bcIcmsStMg}`);
+                        console.log(`  - VLR ICMS-ST: ${vlrIcmsStMg}`);
+                        console.log(`  - CUSTO TOTAL C/ICMS ST: ${custoTotalCIcmsSt}`);
+                        console.log(`  - CUSTO UNIT C/ICMS ST: ${custoUnitCIcmsSt}`);
                         console.log('==========================================');
+                        
+                        // Armazenar valores brutos
+                        if (!window.valoresBrutosPorLinha[rowId]) {
+                            window.valoresBrutosPorLinha[rowId] = {};
+                        }
+                        window.valoresBrutosPorLinha[rowId].bc_icms_st_mg = bcIcmsStMg;
+                        window.valoresBrutosPorLinha[rowId].mva_mg = mvaPercent;
+                        window.valoresBrutosPorLinha[rowId].icms_st_mg = icmsStPercent;
+                        window.valoresBrutosPorLinha[rowId].vlr_icms_st_mg = vlrIcmsStMg;
+                        window.valoresBrutosPorLinha[rowId].custo_total_c_icms_st = custoTotalCIcmsSt;
+                        window.valoresBrutosPorLinha[rowId].custo_unit_c_icms_st = custoUnitCIcmsSt;
+                        
+                        // Calcular novas colunas: EXPORTADOR, TRIBUTOS, DESPESAS, TOTAL PAGO, PERCENTUAL S/FOB
+                        calcularColunasExportadorTributosDespesas(rowId);
                     }
+                    
+                    // Debug temporário para Mato Grosso
+                    if (nacionalizacaoCusto === 'mato_grosso' && rowId === 0) {
+                        console.log('DEBUG CUSTO UNIT FINAL - Mato Grosso:', {
+                            rowId,
+                            vlrTotalNfComIcmsSt,
+                            despesaDesembaraco,
+                            diferenca_cambial_fob,
+                            diferenca_cambial_frete,
+                            quantidadeAtual,
+                            custoUnitarioFinal,
+                            custoTotalFinal,
+                            dezPorcento,
+                            custoComMargem,
+                            custoTotalFinalCredito,
+                            custoUnitCredito
+                        });
+                    }
+                    
+     
 
                     addDebugEntry(rowId, {
                         freteUsd: freteUsdInt,
@@ -2084,7 +2386,7 @@
                         base_pis_cofins: totais.bcPisCofins,
                         valor_pis: totais.vlrPis,
                         valor_cofins: totais.vlrCofins,
-                        despesa_aduaneira: despesas,
+                        despesa_aduaneira: despesaAduaneira,
                         base_icms_sem_reducao: bcIcmsSReducao,
                         valor_icms_sem_reducao: vlrIcmsSReducao,
                         base_icms_reduzido: bcImcsReduzido,
@@ -2101,7 +2403,20 @@
                         dif_impostos: getNacionalizacaoAtual() === 'santa_catarina' 
                             ? obterDiferencaImpostosPorAdicaoItemProduto(rowId) 
                             : (MoneyUtils.parseMoney($(`#dif_impostos-${rowId}`).val()) || 0),
-                        tx_def_li: taxa_def_desp,
+                        tx_def_li: (() => {
+                            const nacionalizacaoAtual = getNacionalizacaoAtual();
+                            if (nacionalizacaoAtual === 'mato_grosso') {
+                                // Para Mato Grosso: usar valor distribuído do cabeçalho
+                                if (window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['tx_def_li'] && 
+                                    window.valoresBrutosCamposExternos['tx_def_li'][rowId] !== undefined) {
+                                    return window.valoresBrutosCamposExternos['tx_def_li'][rowId];
+                                }
+                                return MoneyUtils.parseMoney($(`#tx_def_li-${rowId}`).val()) || 0;
+                            } else {
+                                // Para outras nacionalizações: usar valor calculado como porcentagem
+                                return taxa_def_desp;
+                            }
+                        })(),
                         taxa_siscomex: taxa_siscomex_desp,
                         outras_taxas_agente: (() => {
                             // Usar valor distribuído se disponível, caso contrário usar valor do input da linha
@@ -2125,10 +2440,29 @@
                         armazenagem_sts: MoneyUtils.parseMoney($(`#armazenagem_sts-${rowId}`).val()) || 0,
                         armazenagem_porto: MoneyUtils.parseMoney($(`#armazenagem_porto-${rowId}`).val()) || 0,
                         frete_dta_sts_ana: MoneyUtils.parseMoney($(`#frete_dta_sts_ana-${rowId}`).val()) || 0,
+                        frete_sts_cgb: MoneyUtils.parseMoney($(`#frete_sts_cgb-${rowId}`).val()) || 0,
+                        diarias: MoneyUtils.parseMoney($(`#diarias-${rowId}`).val()) || 0,
                         frete_rodoviario: MoneyUtils.parseMoney($(`#frete_rodoviario-${rowId}`).val()) || 0,
                         dif_frete_rodoviario: MoneyUtils.parseMoney($(`#dif_frete_rodoviario-${rowId}`).val()) || 0,
                         sda: MoneyUtils.parseMoney($(`#sda-${rowId}`).val()) || 0,
                         rep_sts: MoneyUtils.parseMoney($(`#rep_sts-${rowId}`).val()) || 0,
+                        armaz_cgb: MoneyUtils.parseMoney($(`#armaz_cgb-${rowId}`).val()) || 0,
+                        rep_cgb: MoneyUtils.parseMoney($(`#rep_cgb-${rowId}`).val()) || 0,
+                        demurrage: MoneyUtils.parseMoney($(`#demurrage-${rowId}`).val()) || 0,
+                        tx_def_li: (() => {
+                            const nacionalizacaoAtual = getNacionalizacaoAtual();
+                            if (nacionalizacaoAtual === 'mato_grosso') {
+                                // Para Mato Grosso: usar valor distribuído do cabeçalho
+                                if (window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['tx_def_li'] && 
+                                    window.valoresBrutosCamposExternos['tx_def_li'][rowId] !== undefined) {
+                                    return window.valoresBrutosCamposExternos['tx_def_li'][rowId];
+                                }
+                                return MoneyUtils.parseMoney($(`#tx_def_li-${rowId}`).val()) || 0;
+                            } else {
+                                // Para outras nacionalizações: usar valor calculado como porcentagem
+                                return taxa_def_desp;
+                            }
+                        })(),
                         rep_porto: MoneyUtils.parseMoney($(`#rep_porto-${rowId}`).val()) || 0,
                         armaz_ana: MoneyUtils.parseMoney($(`#armaz_ana-${rowId}`).val()) || 0,
                         lavagem_container: MoneyUtils.parseMoney($(`#lavagem_container-${rowId}`).val()) || 0,
@@ -2142,7 +2476,21 @@
                         opcional_1_valor: MoneyUtils.parseMoney($(`#opcional_1_valor-${rowId}`).val()) || 0,
                         opcional_2_valor: MoneyUtils.parseMoney($(`#opcional_2_valor-${rowId}`).val()) || 0,
                         custo_unitario_final: custoUnitarioFinal,
-                        custo_total_final: custoTotalFinal
+                        custo_total_final: custoTotalFinal,
+                        dez_porcento: dezPorcento,
+                        custo_com_margem: custoComMargem,
+                        vlr_ipi_mg: vlrIpiMg,
+                        vlr_icms_mg: vlrIcmsMg,
+                        pis_mg: pisMg,
+                        cofins_mg: cofinsMg,
+                        custo_total_final_credito: custoTotalFinalCredito,
+                        custo_unit_credito: custoUnitCredito,
+                        bc_icms_st_mg: nacionalizacaoCusto === 'mato_grosso' ? (window.valoresBrutosPorLinha[rowId]?.bc_icms_st_mg || 0) : 0,
+                        mva_mg: nacionalizacaoCusto === 'mato_grosso' ? (MoneyUtils.parsePercentage($(`#mva_mg-${rowId}`).val()) || 0) : 0,
+                        icms_st_mg: nacionalizacaoCusto === 'mato_grosso' ? (MoneyUtils.parsePercentage($(`#icms_st_mg-${rowId}`).val()) || 0) : 0,
+                        vlr_icms_st_mg: nacionalizacaoCusto === 'mato_grosso' ? (window.valoresBrutosPorLinha[rowId]?.vlr_icms_st_mg || 0) : 0,
+                        custo_total_c_icms_st: nacionalizacaoCusto === 'mato_grosso' ? (window.valoresBrutosPorLinha[rowId]?.custo_total_c_icms_st || 0) : 0,
+                        custo_unit_c_icms_st: nacionalizacaoCusto === 'mato_grosso' ? (window.valoresBrutosPorLinha[rowId]?.custo_unit_c_icms_st || 0) : 0
                     };
 
                     atualizarCampos(rowId, {
@@ -2172,8 +2520,8 @@
                         fobUnitario,
                         diferenca_cambial_frete,
                         diferenca_cambial_fob,
-                        custoUnitarioFinal,
-                        custoTotalFinal
+                        custoUnitarioFinal: custoUnitarioFinal,
+                        custoTotalFinal: custoTotalFinal
                     });
                 }
             });
@@ -2184,6 +2532,7 @@
             atualizarMultaProdutosPorMulta(); // Atualiza multa_complem e dif_impostos para Santa Catarina
             atualizarTotalizadores();
             calcularValoresCPT();
+            calcularValoresCIF();
             setDebugGlobals({
                 ...globaisProcesso,
                 fobTotalProcesso: fobTotalGeralAtualizado,
@@ -2237,7 +2586,21 @@
                 let diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
                     dolar);
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
-                const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
+                
+                // Calcular diferenca_cambial_fob conforme nacionalização
+                const nacionalizacaoCambial = getNacionalizacaoAtual();
+                let diferenca_cambial_fob;
+                if (nacionalizacaoCambial === 'mato_grosso') {
+                    // Para Mato Grosso: (diferenca_cambial_fob_cabecalho * fator_vlr_fob) - (fob_total_brl + frete_brl + seguro_brl)
+                    const fobTotalBrl = fobTotal * dolar;
+                    const freteBrl = freteUsdInt * dolar;
+                    // Calcular seguro proporcional ao FOB
+                    const seguroIntUsdRow = calcularSeguro(fobTotal, fobTotalGeral);
+                    const seguroBrl = seguroIntUsdRow * dolar;
+                    diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotalBrl + freteBrl + seguroBrl);
+                } else {
+                    diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
+                }
 
 
                 if (diferenca_cambial_frete === 0 || isNaN(diferenca_cambial_frete) || !isFinite(diferenca_cambial_frete) || diferenca_cambial_frete < 0) {
@@ -2299,6 +2662,28 @@
             'honorarios_nix'
         ];
 
+        // Ordem específica para Mato Grosso
+        const CAMPOS_EXTERNOS_MATO_GROSSO = [
+            'outras_taxas_agente',
+            'liberacao_bl',
+            'desconsolidacao',
+            'isps_code',
+            'handling',
+            'capatazia',
+            'afrmm',
+            'armazenagem_sts',
+            'frete_sts_cgb',
+            'diarias',
+            'sda',
+            'rep_sts',
+            'armaz_cgb',
+            'rep_cgb',
+            'demurrage',
+            'tx_def_li',
+            'li_dta_honor_nix',
+            'honorarios_nix'
+        ];
+
         function getNacionalizacaoAtual() {
             const valor = $('#nacionalizacao').val();
             return (valor ? valor.toLowerCase() : 'outros');
@@ -2315,6 +2700,11 @@
             // Se for Santa Catarina, usar ordem específica
             if (nacionalizacao === 'santa_catarina') {
                 return CAMPOS_EXTERNOS_SANTA_CATARINA;
+            }
+            
+            // Se for Mato Grosso, usar ordem específica
+            if (nacionalizacao === 'mato_grosso') {
+                return CAMPOS_EXTERNOS_MATO_GROSSO;
             }
             
             // Para outros tipos, filtrar da ordem base
@@ -2431,6 +2821,74 @@
             $('#valor_cpt_brl').val(MoneyUtils.formatMoney(valorCptBrl, 2));
         }
 
+        function calcularValoresCIF() {
+            const nacionalizacao = getNacionalizacaoAtual();
+            const tipoProcesso = '{{ $tipoProcesso ?? "maritimo" }}';
+            
+            // Só calcular se for Mato Grosso e processo marítimo
+            if (nacionalizacao !== 'mato_grosso' || tipoProcesso !== 'maritimo') {
+                $('#campos-cif-mato-grosso').hide();
+                return;
+            }
+            
+            // Verificar se os campos existem
+            if ($('#campos-cif-mato-grosso').length === 0) {
+                return;
+            }
+            
+            // Mostrar os campos
+            $('#campos-cif-mato-grosso').show();
+            
+            // Obter valores totais do processo
+            const rows = $('#productsBody tr:not(.separador-adicao)');
+            
+            // Calcular valor total FOB USD
+            let valorTotalFobUsd = 0;
+            rows.each(function() {
+                const rowId = this.id.replace('row-', '');
+                const fobTotalUsd = MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
+                valorTotalFobUsd += fobTotalUsd;
+            });
+            
+            // Obter frete internacional total USD
+            const freteInternacionalTotalUsd = MoneyUtils.parseMoney($('#frete_internacional_usd').val()) || 0;
+            
+            // Obter seguro internacional total USD
+            const seguroInternacionalTotalUsd = MoneyUtils.parseMoney($('#seguro_internacional_usd').val()) || 0;
+            
+            // Obter acréscimo frete dolar
+            const acrescimoFreteDolar = MoneyUtils.parseMoney($('#acrescimo_frete_usd').val()) || 0;
+            
+            // CIF = FOB Total + Frete Internacional + Seguro + Acréscimo Frete
+            const valorCifUsd = valorTotalFobUsd + freteInternacionalTotalUsd + seguroInternacionalTotalUsd + acrescimoFreteDolar;
+            
+            // Obter cotação do dólar do processo
+            const cotacoesProcesso = getCotacaoesProcesso();
+            let cotacaoDolarProcesso = 1;
+            if (cotacoesProcesso && cotacoesProcesso['USD'] && cotacoesProcesso['USD'].venda) {
+                cotacaoDolarProcesso = cotacoesProcesso['USD'].venda;
+            } else {
+                // Tentar obter do campo dolarHoje ou display_cotacao
+                const dolarHoje = $('#dolarHoje').val();
+                if (dolarHoje) {
+                    try {
+                        const dolarObj = JSON.parse(dolarHoje);
+                        if (dolarObj['USD'] && dolarObj['USD'].venda) {
+                            cotacaoDolarProcesso = dolarObj['USD'].venda;
+                        }
+                    } catch (e) {
+                        // Se não conseguir parsear, usar 1 como padrão
+                    }
+                }
+            }
+            
+            // Calcular Valor CIF BRL
+            const valorCifBrl = valorCifUsd * cotacaoDolarProcesso;
+            
+            $('#valor_cif_usd').val(MoneyUtils.formatMoney(valorCifUsd, 2));
+            $('#valor_cif_brl').val(MoneyUtils.formatMoney(valorCifBrl, 2));
+        }
+
         function atualizarVisibilidadeNacionalizacao(options = {}) {
             const { recalcular = false } = options;
             const nacionalizacao = getNacionalizacaoAtual();
@@ -2483,6 +2941,7 @@
             
             // Atualizar visibilidade e calcular valores CPT
             calcularValoresCPT();
+            calcularValoresCIF();
             
             if (recalcular) {
                 debouncedRecalcular();
@@ -2994,8 +3453,19 @@
             if (vlrAduaneiroBrl === null) {
                 vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
             }
+            let txDefLi;
+            if (nacionalizacao === 'mato_grosso') {
+                // Para Mato Grosso: usar valor rateado do cabeçalho
+                const valorCampo = MoneyUtils.parseMoney($(`#tx_def_li`).val()) || 0;
+                const valorDistribuido = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['tx_def_li'] && window.valoresBrutosCamposExternos['tx_def_li'][rowId] !== undefined
+                    ? window.valoresBrutosCamposExternos['tx_def_li'][rowId]
+                    : (valorCampo * fatorVlrFob_AX);
+                txDefLi = MoneyUtils.parseMoney($(`#tx_def_li-${rowId}`).val()) || valorDistribuido;
+            } else {
+                // Para outras nacionalizações: calcular como porcentagem
             const txDefLiPercent = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) : 0;
-            const txDefLi = vlrAduaneiroBrl * txDefLiPercent;
+                txDefLi = vlrAduaneiroBrl * txDefLiPercent;
+            }
             
             const taxaSiscomex = taxaSiscomexUnit || 0;
             
@@ -3075,12 +3545,27 @@
         }
 
         function calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas) {
-            const bcIpi = vlrAduaneiroBrl + (vlrAduaneiroBrl * impostos.ii);
-            const vlrIpi = bcIpi * impostos.ipi;
             const nacionalizacao = getNacionalizacaoAtual();
+            
+            // Calcular valores de impostos
+            const vlrII = vlrAduaneiroBrl * impostos.ii;
+            const bcIpi = vlrAduaneiroBrl + vlrII;
+            const vlrIpi = bcIpi * impostos.ipi;
+            const vlrPis = vlrAduaneiroBrl * impostos.pis;
+            const vlrCofins = vlrAduaneiroBrl * impostos.cofins;
+            
+            // Para Mato Grosso: BC ICMS S/REDUÇÃO = soma simples (sem divisão)
+            // = vlr aduaneiro brl + vlr II + vlr IPI + vlr PIS + vlr COFINS + desp aduaneira
+            if (nacionalizacao === 'mato_grosso') {
+                // Para Mato Grosso, despesas já é a despesa aduaneira (taxa siscomex + afrmm)
+                const despAduaneira = despesas;
+                const resultado = vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira;
+                return resultado;
+            }
+            
+            // Para outras nacionalizações: fórmula padrão com divisão
             const divisor = nacionalizacao === 'santa_catarina' ? 0.96 : (1 - impostos.icms);
-            const resultado = (vlrAduaneiroBrl + (vlrAduaneiroBrl * impostos.ii) + vlrIpi + (vlrAduaneiroBrl * impostos.pis) + (vlrAduaneiroBrl * impostos.cofins) +
-                despesas) / divisor;
+            const resultado = (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despesas) / divisor;
             return resultado;
         }
 
@@ -3119,6 +3604,22 @@
                 return resultado;
             }
             
+            // Para Mato Grosso, aplicar fórmula específica:
+            // =((X+AF+AH+AJ+AK+AL)/(1-AC))*(SE(AE=0;1;AE))
+            // Onde: X=vlr aduaneiro brl, AF=vlr II, AH=vlr IPI, AJ=vlr PIS, AK=vlr COFINS, AL=desp aduaneira, AC=ICMS_PERCENT, AE=reducao
+            if (nacionalizacao === 'mato_grosso') {
+                // Usar valor bruto de redução armazenado (com todas as casas decimais)
+                let reducao = 1;
+                if (valoresBrutos && valoresBrutos.reducao !== undefined && valoresBrutos.reducao > 0) {
+                    reducao = valoresBrutos.reducao;
+                } else if ($(`#reducao-${rowId}`).val() && MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) > 0) {
+                    reducao = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
+                }
+               
+                const resultado = ((vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / (1 - impostos.icms)) * (reducao === 0 ? 1 : reducao);
+                return resultado;
+            }
+            
             // Para Santos, aplicar fórmula específica:
             // =((vlrAduaneiro+vlrII+vlrIPI+vlrPIS+vlrCOFINS+despAduaneira)/(1-icmsReduzido))*(SE(reducao=0;1;reducao))
             if (nacionalizacao === 'santos') {
@@ -3129,21 +3630,7 @@
                 } else if ($(`#reducao-${rowId}`).val() && MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val()) > 0) {
                     reducao = MoneyUtils.parsePercentage($(`#reducao-${rowId}`).val());
                 }
-                if(rowId == 16) {
-                    console.log('=== VALORES BRUTOS (Santos) ===');
-                    console.log('reducao (BRUTO)', reducao);
-                    console.log('vlrAduaneiroBrl', vlrAduaneiroBrl);
-                    console.log('vlrII', vlrII);
-                    console.log('vlrIpi', vlrIpi);
-                    console.log('vlrPis', vlrPis);
-                    console.log('vlrCofins', vlrCofins);
-                    console.log('despAduaneira', despAduaneira);
-                    console.log('icms', impostos.icms);
-                    console.log('divisor (1 - icms)', (1 - impostos.icms));
-                    console.log('soma', (vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira));
-                    console.log('divisao', ((vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / (1 - impostos.icms)));
-                    console.log('resultado final', ((vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / (1 - impostos.icms)) * (reducao === 0 ? 1 : reducao));
-                }
+               
                 const resultado = ((vlrAduaneiroBrl + vlrII + vlrIpi + vlrPis + vlrCofins + despAduaneira) / (1 - impostos.icms)) * (reducao === 0 ? 1 : reducao);
                 return resultado;
             }
@@ -3161,7 +3648,193 @@
             return resultado * reducao;
         }
 
+        function calcularColunasExportadorTributosDespesas(rowId) {
+            const nacionalizacao = getNacionalizacaoAtual();
+            if (nacionalizacao !== 'mato_grosso') {
+                return;
+            }
+
+            console.log(`=== DEBUG EXPORTADOR/TRIBUTOS/DESPESAS - Linha ${rowId} ===`);
+
+            // 1. EXPORTADOR = DIF CAMBIAL FOB (cabecalho) × FATOR VLR FOB
+            const diferencaCambialFobCabecalho = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val()) || 0;
+            const fatorValorFob = MoneyUtils.parseMoney($(`#fator_valor_fob-${rowId}`).val()) || 0;
+            const exportador = diferencaCambialFobCabecalho * fatorValorFob;
+            
+            console.log('1. EXPORTADOR:');
+            console.log(`   - DIF CAMBIAL FOB (cabecalho): ${diferencaCambialFobCabecalho}`);
+            console.log(`   - FATOR VLR FOB: ${fatorValorFob}`);
+            console.log(`   - EXPORTADOR = ${diferencaCambialFobCabecalho} × ${fatorValorFob} = ${exportador}`);
+
+            // 2. TRIBUTOS = VLR II + VLR IPI + VLR PIS + VLR COFINS + vlr_icms_st_mg
+            const valoresBrutos = window.valoresBrutosPorLinha[rowId] || {};
+            const valorII = valoresBrutos.valor_ii || MoneyUtils.parseMoney($(`#valor_ii-${rowId}`).val()) || 0;
+            const valorIPI = valoresBrutos.valor_ipi || MoneyUtils.parseMoney($(`#valor_ipi-${rowId}`).val()) || 0;
+            const valorPIS = valoresBrutos.valor_pis || MoneyUtils.parseMoney($(`#valor_pis-${rowId}`).val()) || 0;
+            const valorCOFINS = valoresBrutos.valor_cofins || MoneyUtils.parseMoney($(`#valor_cofins-${rowId}`).val()) || 0;
+            const vlrIcmsStMg = valoresBrutos.vlr_icms_st_mg || 0;
+            const tributos = valorII + valorIPI + valorPIS + valorCOFINS + vlrIcmsStMg;
+            
+            console.log('2. TRIBUTOS:');
+            console.log(`   - VLR II: ${valorII}`);
+            console.log(`   - VLR IPI: ${valorIPI}`);
+            console.log(`   - VLR PIS: ${valorPIS}`);
+            console.log(`   - VLR COFINS: ${valorCOFINS}`);
+            console.log(`   - VLR ICMS-ST MG: ${vlrIcmsStMg}`);
+            console.log(`   - TRIBUTOS = ${valorII} + ${valorIPI} + ${valorPIS} + ${valorCOFINS} + ${vlrIcmsStMg} = ${tributos}`);
+
+            // 3. DESPESAS = SOMA de todos os campos de despesas (BB19:BU19)
+            // Ordem: multa, tx_def_li, taxa_siscomex, outras_taxas_agente, liberacao_bl, desconsolidacao,
+            // isps_code, handling, capatazia, afrmm, armazenagem_sts, frete_sts_cgb, diarias, sda,
+            // rep_sts, armaz_cgb, rep_cgb, demurrage, li_dta_honor_nix, honorarios_nix
+            const multa = valoresBrutos.multa || MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) || 0;
+            const txDefLi = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['tx_def_li'] && window.valoresBrutosCamposExternos['tx_def_li'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['tx_def_li'][rowId]
+                : MoneyUtils.parseMoney($(`#tx_def_li-${rowId}`).val()) || 0;
+            const taxaSiscomex = valoresBrutos.taxa_siscomex || MoneyUtils.parseMoney($(`#taxa_siscomex-${rowId}`).val()) || 0;
+            const outrasTaxasAgente = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['outras_taxas_agente'] && window.valoresBrutosCamposExternos['outras_taxas_agente'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['outras_taxas_agente'][rowId]
+                : MoneyUtils.parseMoney($(`#outras_taxas_agente-${rowId}`).val()) || 0;
+            const liberacaoBl = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['liberacao_bl'] && window.valoresBrutosCamposExternos['liberacao_bl'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['liberacao_bl'][rowId]
+                : MoneyUtils.parseMoney($(`#liberacao_bl-${rowId}`).val()) || 0;
+            const desconsolidacao = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['desconsolidacao'] && window.valoresBrutosCamposExternos['desconsolidacao'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['desconsolidacao'][rowId]
+                : MoneyUtils.parseMoney($(`#desconsolidacao-${rowId}`).val()) || 0;
+            const ispsCode = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['isps_code'] && window.valoresBrutosCamposExternos['isps_code'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['isps_code'][rowId]
+                : MoneyUtils.parseMoney($(`#isps_code-${rowId}`).val()) || 0;
+            const handling = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['handling'] && window.valoresBrutosCamposExternos['handling'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['handling'][rowId]
+                : MoneyUtils.parseMoney($(`#handling-${rowId}`).val()) || 0;
+            const capatazia = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['capatazia'] && window.valoresBrutosCamposExternos['capatazia'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['capatazia'][rowId]
+                : MoneyUtils.parseMoney($(`#capatazia-${rowId}`).val()) || 0;
+            const afrmm = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['afrmm'] && window.valoresBrutosCamposExternos['afrmm'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['afrmm'][rowId]
+                : MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) || 0;
+            const armazenagemSts = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['armazenagem_sts'] && window.valoresBrutosCamposExternos['armazenagem_sts'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['armazenagem_sts'][rowId]
+                : MoneyUtils.parseMoney($(`#armazenagem_sts-${rowId}`).val()) || 0;
+            const freteStsCgb = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['frete_sts_cgb'] && window.valoresBrutosCamposExternos['frete_sts_cgb'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['frete_sts_cgb'][rowId]
+                : MoneyUtils.parseMoney($(`#frete_sts_cgb-${rowId}`).val()) || 0;
+            const diarias = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['diarias'] && window.valoresBrutosCamposExternos['diarias'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['diarias'][rowId]
+                : MoneyUtils.parseMoney($(`#diarias-${rowId}`).val()) || 0;
+            const sda = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['sda'] && window.valoresBrutosCamposExternos['sda'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['sda'][rowId]
+                : MoneyUtils.parseMoney($(`#sda-${rowId}`).val()) || 0;
+            const repSts = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['rep_sts'] && window.valoresBrutosCamposExternos['rep_sts'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['rep_sts'][rowId]
+                : MoneyUtils.parseMoney($(`#rep_sts-${rowId}`).val()) || 0;
+            const armazCgb = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['armaz_cgb'] && window.valoresBrutosCamposExternos['armaz_cgb'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['armaz_cgb'][rowId]
+                : MoneyUtils.parseMoney($(`#armaz_cgb-${rowId}`).val()) || 0;
+            const repCgb = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['rep_cgb'] && window.valoresBrutosCamposExternos['rep_cgb'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['rep_cgb'][rowId]
+                : MoneyUtils.parseMoney($(`#rep_cgb-${rowId}`).val()) || 0;
+            const demurrage = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['demurrage'] && window.valoresBrutosCamposExternos['demurrage'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['demurrage'][rowId]
+                : MoneyUtils.parseMoney($(`#demurrage-${rowId}`).val()) || 0;
+            const liDtaHonorNix = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['li_dta_honor_nix'] && window.valoresBrutosCamposExternos['li_dta_honor_nix'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['li_dta_honor_nix'][rowId]
+                : MoneyUtils.parseMoney($(`#li_dta_honor_nix-${rowId}`).val()) || 0;
+            const honorariosNix = window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos['honorarios_nix'] && window.valoresBrutosCamposExternos['honorarios_nix'][rowId] !== undefined
+                ? window.valoresBrutosCamposExternos['honorarios_nix'][rowId]
+                : MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) || 0;
+
+            const despesas = multa + txDefLi + taxaSiscomex + outrasTaxasAgente + liberacaoBl + desconsolidacao +
+                ispsCode + handling + capatazia + afrmm + armazenagemSts + freteStsCgb + diarias + sda +
+                repSts + armazCgb + repCgb + demurrage + liDtaHonorNix + honorariosNix;
+
+            console.log('3. DESPESAS:');
+            console.log(`   - MULTA: ${multa}`);
+            console.log(`   - TX DEF. LI: ${txDefLi}`);
+            console.log(`   - TAXA SISCOMEX: ${taxaSiscomex}`);
+            console.log(`   - OUTRAS TX AGENTE: ${outrasTaxasAgente}`);
+            console.log(`   - LIBERAÇÃO BL: ${liberacaoBl}`);
+            console.log(`   - DESCONS.: ${desconsolidacao}`);
+            console.log(`   - ISPS CODE: ${ispsCode}`);
+            console.log(`   - HANDLING: ${handling}`);
+            console.log(`   - CAPATAZIA: ${capatazia}`);
+            console.log(`   - AFRMM: ${afrmm}`);
+            console.log(`   - ARMAZENAGEM STS: ${armazenagemSts}`);
+            console.log(`   - FRETE STS/CGB: ${freteStsCgb}`);
+            console.log(`   - DIARIAS: ${diarias}`);
+            console.log(`   - S.D.A: ${sda}`);
+            console.log(`   - REP.STS: ${repSts}`);
+            console.log(`   - ARMAZ CGB: ${armazCgb}`);
+            console.log(`   - REP. CGB: ${repCgb}`);
+            console.log(`   - DEMURRAGE: ${demurrage}`);
+            console.log(`   - LI+DTA+HONOR.NIX: ${liDtaHonorNix}`);
+            console.log(`   - HONORÁRIOS NIX: ${honorariosNix}`);
+            console.log(`   - DESPESAS TOTAL = ${despesas}`);
+
+            // 4. TOTAL PAGO = EXPORTADOR + TRIBUTOS + DESPESAS
+            const totalPago = exportador + tributos + despesas;
+            
+            console.log('4. TOTAL PAGO:');
+            console.log(`   - TOTAL PAGO = ${exportador} + ${tributos} + ${despesas} = ${totalPago}`);
+
+            // 5. PERCENTUAL S/FOB = (TOTAL PAGO / VLR TOTAL FOB R$ LINHA) / 100
+            const fobTotalBrl = valoresBrutos.fob_total_brl || MoneyUtils.parseMoney($(`#fob_total_brl-${rowId}`).val()) || 0;
+            let percentualSFob = 0;
+            if (fobTotalBrl > 0) {
+                percentualSFob = (totalPago / fobTotalBrl) / 100;
+            }
+            
+            console.log('5. PERCENTUAL S/FOB:');
+            console.log(`   - VLR TOTAL FOB R$ LINHA: ${fobTotalBrl}`);
+            console.log(`   - PERCENTUAL S/FOB = (${totalPago} / ${fobTotalBrl}) / 100 = ${percentualSFob}`);
+
+            // Armazenar valores brutos
+            if (!window.valoresBrutosPorLinha[rowId]) {
+                window.valoresBrutosPorLinha[rowId] = {};
+            }
+                        window.valoresBrutosPorLinha[rowId].exportador_mg = exportador;
+                        window.valoresBrutosPorLinha[rowId].tributos_mg = tributos;
+                        window.valoresBrutosPorLinha[rowId].despesas_mg = despesas;
+                        window.valoresBrutosPorLinha[rowId].total_pago_mg = totalPago;
+                        window.valoresBrutosPorLinha[rowId].percentual_s_fob_mg = percentualSFob;
+            
+            // console.log('RESULTADOS FINAIS ARMAZENADOS:');
+            // console.log(`   - exportador_mg: ${exportador}`);
+            // console.log(`   - tributos_mg: ${tributos}`);
+            // console.log(`   - despesas_mg: ${despesas}`);
+            // console.log(`   - total_pago_mg: ${totalPago}`);
+            // console.log(`   - percentual_s_fob_mg: ${percentualSFob}`);
+            // console.log('==========================================');
+            
+            // Atualizar campos diretamente após calcular
+            const exportadorFormatted = MoneyUtils.formatMoney(exportador, 2);
+            const tributosFormatted = MoneyUtils.formatMoney(tributos, 2);
+            const despesasFormatted = MoneyUtils.formatMoney(despesas, 2);
+            const totalPagoFormatted = MoneyUtils.formatMoney(totalPago, 2);
+            const percentualSFobFormatted = MoneyUtils.formatPercentage(percentualSFob);
+        
+            $(`#exportador_mg-${rowId}`).val(exportadorFormatted);
+            $(`#tributos_mg-${rowId}`).val(tributosFormatted);
+            $(`#despesas_mg-${rowId}`).val(despesasFormatted);
+            $(`#total_pago_mg-${rowId}`).val(totalPagoFormatted);
+            $(`#percentual_s_fob_mg-${rowId}`).val(percentualSFobFormatted);
+            
+            // Verificar se os valores foram setados corretamente
+            if (rowId === 0) {
+                setTimeout(() => {
+                    console.log(`=== VERIFICAÇÃO PÓS-ATUALIZAÇÃO - Linha ${rowId} ===`);
+                    console.log(`  - exportador_mg input: ${$(`#exportador_mg-${rowId}`).val()}`);
+                    console.log(`  - tributos_mg input: ${$(`#tributos_mg-${rowId}`).val()}`);
+                    console.log(`  - despesas_mg input: ${$(`#despesas_mg-${rowId}`).val()}`);
+                    console.log(`  - total_pago_mg input: ${$(`#total_pago_mg-${rowId}`).val()}`);
+                    console.log(`  - percentual_s_fob_mg input: ${$(`#percentual_s_fob_mg-${rowId}`).val()}`);
+                    console.log('==========================================');
+                }, 100);
+            }
+        }
+
         function calcularTotais(base, impostos, despesas, quantidade, vlrIcmsReduzido, rowId) {
+            const nacionalizacao = getNacionalizacaoAtual();
             const vlrII = base * impostos.ii;
             const bcIpi = base + vlrII;
             const vlrIpi = bcIpi * impostos.ipi;
@@ -3170,7 +3843,17 @@
             const vlrCofins = bcPisCofins * impostos.cofins;
             const vlrTotalProdutoNf = base + vlrII;
             const vlrUnitProdutNf = vlrTotalProdutoNf / (quantidade || 1);
-            const vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesas + vlrIcmsReduzido;
+            
+            // Para Mato Grosso: VLR TOTAL NF S/ICMS ST = AR+AH+AJ+AK+AL
+            // Onde: AR=vlrTotalProdutoNf, AH=vlrIpi, AJ=vlrPis, AK=vlrCofins, AL=despAduaneira
+            let vlrTotalNfSemIcms;
+            if (nacionalizacao === 'mato_grosso') {
+                // Para Mato Grosso: soma simples sem vlrIcmsReduzido
+                // O parâmetro 'despesas' já contém despesaAduaneira quando chamado para Mato Grosso
+                vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesas;
+            } else {
+                vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesas + vlrIcmsReduzido;
+            }
         
             const vlrTotalNfComIcms = vlrTotalNfSemIcms + ($(`#valor_icms_st-${rowId}`).val() ? MoneyUtils.parseMoney($(
                 `#valor_icms_st-${rowId}`).val()) : 0);
@@ -3257,6 +3940,10 @@
                     const serviceChargesUsd = MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
                     const acrescimoFreteUsd = valores.acrescimoFreteUsdRow || MoneyUtils.parseMoney($(`#acresc_frete_usd-${rowId}`).val()) || 0;
                     vlrCrfTotal = fobTotal + freteUsd + serviceChargesUsd + acrescimoFreteUsd;
+                } else if (nacionalizacao === 'mato_grosso') {
+                    // Para Mato Grosso: FOB Total USD + Frete Internacional USD + Seguro Internacional USD
+                    const seguroUsd = valores.seguroIntUsdRow || MoneyUtils.parseMoney($(`#seguro_usd-${rowId}`).val()) || 0;
+                    vlrCrfTotal = fobTotal + freteUsd + seguroUsd;
                 } else {
                     vlrCrfTotal = fobTotal + freteUsd;
                 }
@@ -3321,7 +4008,17 @@
             $(`#base_pis_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl, 2));
             $(`#valor_pis-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.pis, 2));
             $(`#valor_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.cofins, 2));
-            $(`#despesa_aduaneira-${rowId}`).val(MoneyUtils.formatMoney(valores.despesas, 2));
+            // Despesa aduaneira = taxa siscomex linha + afrmm (apenas para Mato Grosso)
+            const nacionalizacao = getNacionalizacaoAtual();
+            let despesaAduaneira;
+            if (nacionalizacao === 'mato_grosso') {
+                const taxaSiscomexLinha = $(`#taxa_siscomex-${rowId}`).val() ? MoneyUtils.parseMoney($(`#taxa_siscomex-${rowId}`).val()) : 0;
+                const afrmm = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
+                despesaAduaneira = taxaSiscomexLinha + afrmm;
+            } else {
+                despesaAduaneira = valores.despesas;
+            }
+            $(`#despesa_aduaneira-${rowId}`).val(MoneyUtils.formatMoney(despesaAduaneira, 2));
             $(`#base_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.bcIcmsSReducao, 2));
             $(`#valor_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSReducao, 2));
             $(`#base_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.bcImcsReduzido, 2));
@@ -3347,16 +4044,135 @@
             }
             $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob, 2));
 
-           if(rowId == 6) {
-            console.log('valores.custoUnitarioFinal', valores.custoUnitarioFinal);
-            console.log('valores.custoTotalFinal', valores.custoTotalFinal);
-            console.log(MoneyUtils.formatMoney(valores.custoUnitarioFinal, 2))
-           }
-            if (valores.custoUnitarioFinal !== undefined) {
-                $(`#custo_unitario_final-${rowId}`).val(MoneyUtils.formatMoney(valores.custoUnitarioFinal, 2));
+            // Atualizar custo_unitario_final e custo_total_final
+            // Priorizar valores de window.valoresBrutosPorLinha se disponíveis (mesma fonte do totalizador)
+            let custoUnitarioFinal = 0;
+            let custoTotalFinal = 0;
+            
+            // Tentar obter de window.valoresBrutosPorLinha primeiro (mesma fonte do totalizador)
+            if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId]) {
+                custoUnitarioFinal = window.valoresBrutosPorLinha[rowId].custo_unitario_final || 0;
+                custoTotalFinal = window.valoresBrutosPorLinha[rowId].custo_total_final || 0;
             }
-            if (valores.custoTotalFinal !== undefined) {
-                $(`#custo_total_final-${rowId}`).val(MoneyUtils.formatMoney(valores.custoTotalFinal, 2));
+            
+            // Fallback para valores passados como parâmetro
+            if ((!custoUnitarioFinal || custoUnitarioFinal === 0) && valores.custoUnitarioFinal !== undefined && valores.custoUnitarioFinal !== null) {
+                custoUnitarioFinal = valores.custoUnitarioFinal;
+            }
+            if ((!custoTotalFinal || custoTotalFinal === 0) && valores.custoTotalFinal !== undefined && valores.custoTotalFinal !== null) {
+                custoTotalFinal = valores.custoTotalFinal;
+            }
+            
+            // Validar se os valores são números válidos
+            if (isNaN(custoUnitarioFinal) || !isFinite(custoUnitarioFinal)) {
+                custoUnitarioFinal = 0;
+            }
+            if (isNaN(custoTotalFinal) || !isFinite(custoTotalFinal)) {
+                custoTotalFinal = 0;
+            }
+            
+            // Debug temporário
+            if (rowId === 0) {
+                console.log('DEBUG custo_unitario_final - atualizarCampos:', {
+                    rowId,
+                    custoUnitarioFinal,
+                    custoTotalFinal,
+                    valoresBrutos: window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId] ? window.valoresBrutosPorLinha[rowId].custo_unitario_final : 'não encontrado',
+                    valoresCustoUnitarioFinal: valores.custoUnitarioFinal,
+                    valoresCustoTotalFinal: valores.custoTotalFinal,
+                    campoExiste: $(`#custo_unitario_final-${rowId}`).length > 0
+                });
+            }
+            
+            // Garantir que os campos existam antes de atualizar
+            const campoCustoUnitario = $(`#custo_unitario_final-${rowId}`);
+            const campoCustoTotal = $(`#custo_total_final-${rowId}`);
+            
+            if (campoCustoUnitario.length > 0) {
+                campoCustoUnitario.val(MoneyUtils.formatMoney(custoUnitarioFinal, 2));
+            } else {
+                console.warn(`Campo custo_unitario_final-${rowId} não encontrado`);
+            }
+            
+            if (campoCustoTotal.length > 0) {
+                campoCustoTotal.val(MoneyUtils.formatMoney(custoTotalFinal, 2));
+            } else {
+                console.warn(`Campo custo_total_final-${rowId} não encontrado`);
+            }
+            
+            // Atualizar campos específicos de Mato Grosso
+            const nacionalizacaoAtual = getNacionalizacaoAtual();
+            if (nacionalizacaoAtual === 'mato_grosso') {
+                // Obter valores brutos
+                const valoresBrutos = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId];
+                if (valoresBrutos) {
+                    const dezPorcento = valoresBrutos.dez_porcento || 0;
+                    const custoComMargem = valoresBrutos.custo_com_margem || 0;
+                    const vlrIpiMg = valoresBrutos.vlr_ipi_mg || 0;
+                    const vlrIcmsMg = valoresBrutos.vlr_icms_mg || 0;
+                    const pisMg = valoresBrutos.pis_mg || 0;
+                    const cofinsMg = valoresBrutos.cofins_mg || 0;
+                    const custoTotalFinalCredito = valoresBrutos.custo_total_final_credito || 0;
+                    const custoUnitCredito = valoresBrutos.custo_unit_credito || 0;
+                    
+                    $(`#dez_porcento-${rowId}`).val(MoneyUtils.formatMoney(dezPorcento, 2));
+                    $(`#custo_com_margem-${rowId}`).val(MoneyUtils.formatMoney(custoComMargem, 2));
+                    $(`#vlr_ipi_mg-${rowId}`).val(MoneyUtils.formatMoney(vlrIpiMg, 2));
+                    $(`#vlr_icms_mg-${rowId}`).val(MoneyUtils.formatMoney(vlrIcmsMg, 2));
+                    $(`#pis_mg-${rowId}`).val(MoneyUtils.formatMoney(pisMg, 2));
+                    $(`#cofins_mg-${rowId}`).val(MoneyUtils.formatMoney(cofinsMg, 2));
+                    $(`#custo_total_final_credito-${rowId}`).val(MoneyUtils.formatMoney(custoTotalFinalCredito, 2));
+                    $(`#custo_unit_credito-${rowId}`).val(MoneyUtils.formatMoney(custoUnitCredito, 2));
+                    
+                    // Atualizar campos ICMS-ST para Mato Grosso
+                    const bcIcmsStMg = valoresBrutos.bc_icms_st_mg || 0;
+                    const vlrIcmsStMg = valoresBrutos.vlr_icms_st_mg || 0;
+                    const custoTotalCIcmsSt = valoresBrutos.custo_total_c_icms_st || 0;
+                    const custoUnitCIcmsSt = valoresBrutos.custo_unit_c_icms_st || 0;
+                    
+                    // DEBUG: Log na atualização de campos
+                    if (rowId === 0) {
+                        console.log(`=== DEBUG ATUALIZAÇÃO CAMPOS ICMS-ST - Linha ${rowId} ===`);
+                        console.log('Valores obtidos de window.valoresBrutosPorLinha:');
+                        console.log(`  - bc_icms_st_mg: ${bcIcmsStMg}`);
+                        console.log(`  - vlr_icms_st_mg: ${vlrIcmsStMg}`);
+                        console.log(`  - custo_total_c_icms_st: ${custoTotalCIcmsSt}`);
+                        console.log(`  - custo_unit_c_icms_st: ${custoUnitCIcmsSt}`);
+                        console.log('==========================================');
+                    }
+                    
+                    $(`#bc_icms_st_mg-${rowId}`).val(MoneyUtils.formatMoney(bcIcmsStMg, 2));
+                    $(`#vlr_icms_st_mg-${rowId}`).val(MoneyUtils.formatMoney(vlrIcmsStMg, 2));
+                    $(`#custo_total_c_icms_st-${rowId}`).val(MoneyUtils.formatMoney(custoTotalCIcmsSt, 2));
+                    $(`#custo_unit_c_icms_st-${rowId}`).val(MoneyUtils.formatMoney(custoUnitCIcmsSt, 2));
+                    
+                    // Atualizar novas colunas: EXPORTADOR, TRIBUTOS, DESPESAS, TOTAL PAGO, PERCENTUAL S/FOB
+                    // Tentar obter valores de window.valoresBrutosPorLinha primeiro
+                    const valoresBrutosAtualizados = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId];
+                    const exportadorMg = valoresBrutosAtualizados?.exportador_mg !== undefined ? valoresBrutosAtualizados.exportador_mg : (valoresBrutos.exportador_mg || 0);
+                    const tributosMg = valoresBrutosAtualizados?.tributos_mg !== undefined ? valoresBrutosAtualizados.tributos_mg : (valoresBrutos.tributos_mg || 0);
+                    const despesasMg = valoresBrutosAtualizados?.despesas_mg !== undefined ? valoresBrutosAtualizados.despesas_mg : (valoresBrutos.despesas_mg || 0);
+                    const totalPagoMg = valoresBrutosAtualizados?.total_pago_mg !== undefined ? valoresBrutosAtualizados.total_pago_mg : (valoresBrutos.total_pago_mg || 0);
+                    const percentualSFobMg = valoresBrutosAtualizados?.percentual_s_fob_mg !== undefined ? valoresBrutosAtualizados.percentual_s_fob_mg : (valoresBrutos.percentual_s_fob_mg || 0);
+                    
+                    // Debug
+                    if (rowId === 0) {
+                        console.log(`=== DEBUG atualizarCampos - Linha ${rowId} ===`);
+                        console.log('Valores obtidos:');
+                        console.log(`  - exportador_mg: ${exportadorMg} (de valoresBrutosAtualizados: ${valoresBrutosAtualizados?.exportador_mg}, de valoresBrutos: ${valoresBrutos.exportador_mg})`);
+                        console.log(`  - tributos_mg: ${tributosMg}`);
+                        console.log(`  - despesas_mg: ${despesasMg}`);
+                        console.log(`  - total_pago_mg: ${totalPagoMg}`);
+                        console.log(`  - percentual_s_fob_mg: ${percentualSFobMg}`);
+                        console.log('==========================================');
+                    }
+                    
+                    $(`#exportador_mg-${rowId}`).val(MoneyUtils.formatMoney(exportadorMg, 2));
+                    $(`#tributos_mg-${rowId}`).val(MoneyUtils.formatMoney(tributosMg, 2));
+                    $(`#despesas_mg-${rowId}`).val(MoneyUtils.formatMoney(despesasMg, 2));
+                    $(`#total_pago_mg-${rowId}`).val(MoneyUtils.formatMoney(totalPagoMg, 2));
+                    $(`#percentual_s_fob_mg-${rowId}`).val(MoneyUtils.formatPercentage(percentualSFobMg * 100));
+                }
             }
 
             atualizarFatoresFob()
@@ -3457,8 +4273,13 @@
                     'afrmm',
                     'armazenagem_sts',
                     'frete_dta_sts_ana',
+                    'frete_sts_cgb',
+                    'diarias',
                     'sda',
                     'rep_sts',
+                    'armaz_cgb',
+                    'rep_cgb',
+                    'demurrage',
                     'armaz_ana',
                     'lavagem_container',
                     'rep_anapolis',
@@ -3619,6 +4440,20 @@
         $(document).on('change blur', '.difCambial', function() {
             debouncedAtualizarCambial();
         });
+        
+        // Event listeners para MVA e ICMS-ST em Mato Grosso (campos específicos _mg)
+        $(document).on('change blur keyup', '#productsBody input[id^="mva_mg-"], #productsBody input[id^="icms_st_mg-"]', function() {
+            const nacionalizacao = getNacionalizacaoAtual();
+            if (nacionalizacao === 'mato_grosso') {
+                const rowId = $(this).data('row');
+                if (rowId !== undefined && rowId !== null && rowId !== '') {
+                    // Recalcular apenas as colunas ICMS-ST para esta linha
+                    setTimeout(function() {
+                        recalcularTodaTabela();
+                    }, 100);
+                }
+            }
+        });
 
         $(document).on('focusin', '#nacionalizacao', function() {
             $(this).data('valor-anterior', $(this).val());
@@ -3638,13 +4473,14 @@
 
             let fobTotalGeral = calcularFobTotalGeral();
 
-
             for (let campo of campos) {
                 const campoElement = $(`#${campo}`);
                 if (campoElement.length === 0) {
                     continue;
                 }
                 const valorCampo = MoneyUtils.parseMoney(campoElement.val()) || 0;
+             
+                
                 if (valorCampo === 0) {
                     for (let i = 0; i < lengthTable; i++) {
                         const valorLinha = MoneyUtils.parseMoney($(`#${campo}-${i}`).val()) || 0;
@@ -3670,7 +4506,6 @@
                 
                 let somaDistribuida = 0;
                 const valoresPorLinha = [];
-                
 
 
                 for (let i = 0; i < lengthTable - 1; i++) {
@@ -3691,8 +4526,11 @@
 
                     window.valoresBrutosCamposExternos[campo][i] = valorFinal;
                     
+                    // Campos que precisam de mais precisão (7 casas decimais)
+                    const camposPrecisao7 = ['li_dta_honor_nix', 'honorarios_nix'];
+                    const decimais = camposPrecisao7.includes(campo) ? 7 : 2;
 
-                    $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valorFinal, 2));
+                    $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valorFinal, decimais));
                 }
                 
 
@@ -3724,7 +4562,11 @@
 
                             window.valoresBrutosCamposExternos[campo][i] = valoresPorLinha[i];
                             
-                            $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valoresPorLinha[i], 2));
+                            // Campos que precisam de mais precisão (7 casas decimais)
+                            const camposPrecisao7 = ['li_dta_honor_nix', 'honorarios_nix'];
+                            const decimais = camposPrecisao7.includes(campo) ? 7 : 2;
+                          
+                            $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valoresPorLinha[i], decimais));
                         }
                     }
 
@@ -3753,49 +4595,88 @@
                 
 
 
-                $(`#${campo}-${ultimaLinha}`).val(MoneyUtils.formatMoneyExato(valorUltimaLinha));
+                // Campos que precisam de mais precisão (7 casas decimais)
+                const camposPrecisao7 = ['li_dta_honor_nix', 'honorarios_nix'];
+                if (camposPrecisao7.includes(campo)) {
+                    $(`#${campo}-${ultimaLinha}`).val(MoneyUtils.formatMoney(valorUltimaLinha, 7));
+                } else {
+                    // Usar formatMoney com 2 casas decimais para campos do cabeçalho (moneyReal2)
+                    $(`#${campo}-${ultimaLinha}`).val(MoneyUtils.formatMoney(valorUltimaLinha, 2));
+                }
             }
             
+            // Função auxiliar para parsear valores monetários de forma segura
+            const parsearValorMonetario = (seletor) => {
+                const valor = $(seletor).val();
+                if (valor) {
+                    return MoneyUtils.parseMoney(valor) || 0;
+                }
+                return 0;
+            };
 
             for (let i = 0; i < lengthTable; i++) {
-                const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
-                const fatorVlrFob_AX = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
-                let desp_desenbaraco_parte_1 = 0
-
-                let taxa_siscomex = $(`#taxa_siscomex-${i}`).val() ? MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) : 0
-                let multa = $(`#multa-${i}`).val() ? MoneyUtils.parseMoney($(`#multa-${i}`).val()) : 0
-
-                const vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${i}`).val()) || 0;
-                const txDefLiPercent = $(`#tx_def_li-${i}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${i}`).val()) : 0;
-                let taxa_def = vlrAduaneiroBrl * txDefLiPercent;
-
-                let capatazia = $('#capatazia-' + i).val() ? MoneyUtils.parseMoney($('#capatazia-' + i).val()) : 0
-                let afrmm = $('#afrmm-' + i).val() ? MoneyUtils.parseMoney($('#afrmm-' + i).val()) : 0
-                let armazenagem_sts = $('#armazenagem_sts-' + i).val() ? MoneyUtils.parseMoney($('#armazenagem_sts-' + i).val()) : 0
-                let frete_dta_sts_ana = $('#frete_dta_sts_ana-' + i).val() ? MoneyUtils.parseMoney($('#frete_dta_sts_ana-' + i).val()) : 0
-                let honorarios_nix = $('#honorarios_nix-' + i).val() ? MoneyUtils.parseMoney($('#honorarios_nix-' + i).val()) : 0
-
-                const nacionalizacao = getNacionalizacaoAtual();
+                // Obter valores brutos da linha (mesma fonte do totalizador)
+                const valoresBrutos = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i] ? window.valoresBrutosPorLinha[i] : {};
                 
-                // Declarar despesa_desembaraco antes dos blocos condicionais
+                // Obter valores base dos valores brutos
+                const fobTotal = valoresBrutos.fob_total_usd || 0;
+                
+                // Calcular fator de valor FOB
+                let fatorVlrFob_AX = 0;
+                if (fobTotalGeral > 0) {
+                    fatorVlrFob_AX = fobTotal / fobTotalGeral;
+                }
+                
+                let desp_desenbaraco_parte_1 = 0;
+
+                // Obter valores comuns dos valores brutos
+                const taxa_siscomex = valoresBrutos.taxa_siscomex || 0;
+                const multa = valoresBrutos.multa || 0;
+                const vlrAduaneiroBrl = valoresBrutos.valor_aduaneiro_brl || 0;
+                const capatazia = valoresBrutos.capatazia || 0;
+                const afrmm = valoresBrutos.afrmm || 0;
+                const armazenagem_sts = valoresBrutos.armazenagem_sts || 0;
+                const frete_dta_sts_ana = valoresBrutos.frete_dta_sts_ana || 0;
+                const honorarios_nix = valoresBrutos.honorarios_nix || 0;
+
+                // Calcular taxa_def conforme nacionalização usando valores brutos
+                let taxa_def = 0;
+                const nacionalizacaoRecalc = getNacionalizacaoAtual();
+                
+                if (nacionalizacaoRecalc === 'mato_grosso') {
+                    // Para Mato Grosso: usar valor rateado do cabeçalho (valores brutos)
+                    if (window.valoresBrutosCamposExternos && 
+                        window.valoresBrutosCamposExternos['tx_def_li'] && 
+                        window.valoresBrutosCamposExternos['tx_def_li'][i] !== undefined) {
+                        taxa_def = window.valoresBrutosCamposExternos['tx_def_li'][i];
+                    } else {
+                        taxa_def = valoresBrutos.tx_def_li || 0;
+                    }
+                } else {
+                    // Para outras nacionalizações: usar valor dos valores brutos
+                    taxa_def = valoresBrutos.tx_def_li || 0;
+                }
+
+                // Calcular despesa de desembaraço conforme nacionalização
+                const nacionalizacao = getNacionalizacaoAtual();
                 let despesa_desembaraco = 0;
                 
                 if (nacionalizacao === 'santa_catarina') {
-                    // Fórmula específica para Santa Catarina
-                    let multa_complem = $('#multa_complem-' + i).val() ? MoneyUtils.parseMoney($('#multa_complem-' + i).val()) : 0
-                    let dif_impostos = $('#dif_impostos-' + i).val() ? MoneyUtils.parseMoney($('#dif_impostos-' + i).val()) : 0
-                    let outras_taxas_agente = $('#outras_taxas_agente-' + i).val() ? MoneyUtils.parseMoney($('#outras_taxas_agente-' + i).val()) : 0
-                    let liberacao_bl = $('#liberacao_bl-' + i).val() ? MoneyUtils.parseMoney($('#liberacao_bl-' + i).val()) : 0
-                    let desconsolidacao = $('#desconsolidacao-' + i).val() ? MoneyUtils.parseMoney($('#desconsolidacao-' + i).val()) : 0
-                    let isps_code = $('#isps_code-' + i).val() ? MoneyUtils.parseMoney($('#isps_code-' + i).val()) : 0
-                    let handling = $('#handling-' + i).val() ? MoneyUtils.parseMoney($('#handling-' + i).val()) : 0
-                    let armazenagem_porto = $('#armazenagem_porto-' + i).val() ? MoneyUtils.parseMoney($('#armazenagem_porto-' + i).val()) : 0
-                    let frete_rodoviario = $('#frete_rodoviario-' + i).val() ? MoneyUtils.parseMoney($('#frete_rodoviario-' + i).val()) : 0
-                    let dif_frete_rodoviario = $('#dif_frete_rodoviario-' + i).val() ? MoneyUtils.parseMoney($('#dif_frete_rodoviario-' + i).val()) : 0
-                    let sda = $('#sda-' + i).val() ? MoneyUtils.parseMoney($('#sda-' + i).val()) : 0
-                    let rep_porto = $('#rep_porto-' + i).val() ? MoneyUtils.parseMoney($('#rep_porto-' + i).val()) : 0
-                    let tx_correcao_lacre = $('#tx_correcao_lacre-' + i).val() ? MoneyUtils.parseMoney($('#tx_correcao_lacre-' + i).val()) : 0
-                    let li_dta_honor_nix = $('#li_dta_honor_nix-' + i).val() ? MoneyUtils.parseMoney($('#li_dta_honor_nix-' + i).val()) : 0
+                    // Fórmula específica para Santa Catarina - usar valores brutos
+                    const multa_complem = valoresBrutos.multa_complem || 0;
+                    const dif_impostos = valoresBrutos.dif_impostos || 0;
+                    const outras_taxas_agente = valoresBrutos.outras_taxas_agente || 0;
+                    const liberacao_bl = valoresBrutos.liberacao_bl || 0;
+                    const desconsolidacao = valoresBrutos.desconsolidacao || 0;
+                    const isps_code = valoresBrutos.isps_code || 0;
+                    const handling = valoresBrutos.handling || 0;
+                    const armazenagem_porto = valoresBrutos.armazenagem_porto || 0;
+                    const frete_rodoviario = valoresBrutos.frete_rodoviario || 0;
+                    const dif_frete_rodoviario = valoresBrutos.dif_frete_rodoviario || 0;
+                    const sda = valoresBrutos.sda || 0;
+                    const rep_porto = valoresBrutos.rep_porto || 0;
+                    const tx_correcao_lacre = valoresBrutos.tx_correcao_lacre || 0;
+                    const li_dta_honor_nix = valoresBrutos.li_dta_honor_nix || 0;
 
                     // Parte 1: soma de todos os campos
                     desp_desenbaraco_parte_1 = multa + taxa_def + taxa_siscomex + multa_complem + dif_impostos + 
@@ -3803,55 +4684,99 @@
                         afrmm + armazenagem_porto + frete_rodoviario + dif_frete_rodoviario + sda + rep_porto + 
                         tx_correcao_lacre + li_dta_honor_nix + honorarios_nix;
 
-                    // Parte 2: campos a subtrair
-                    let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + 
+                    const desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + 
                         armazenagem_porto + frete_rodoviario + honorarios_nix;
                     
                     despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    
+                } else if (nacionalizacao === 'mato_grosso') {
+                    // Para Mato Grosso: DESP. DESEMBARAÇO = SOMA(multa:honorario_nix) - (multa+taxa_siscomex+capatazia+afrmm)
+                    // Usar valores brutos
+                    const outras_taxas_agente = valoresBrutos.outras_taxas_agente || 0;
+                    const liberacao_bl = valoresBrutos.liberacao_bl || 0;
+                    const desconsolidacao = valoresBrutos.desconsolidacao || 0;
+                    const isps_code = valoresBrutos.isps_code || 0;
+                    const handling = valoresBrutos.handling || 0;
+                    const frete_sts_cgb = valoresBrutos.frete_sts_cgb || 0;
+                    const diarias = valoresBrutos.diarias || 0;
+                    const sda = valoresBrutos.sda || 0;
+                    const rep_sts = valoresBrutos.rep_sts || 0;
+                    const armaz_cgb = valoresBrutos.armaz_cgb || 0;
+                    const rep_cgb = valoresBrutos.rep_cgb || 0;
+                    const demurrage = valoresBrutos.demurrage || 0;
+                    const li_dta_honor_nix = valoresBrutos.li_dta_honor_nix || 0;
+                    
+                    // Parte 1: SOMA(multa:honorario_nix) = MULTA + TX DEF. LI + TAXA SISCOMEX + OUTRAS TX AGENTE + ... + HONORÁRIOS NIX
+                    desp_desenbaraco_parte_1 = multa + taxa_def + taxa_siscomex + outras_taxas_agente + 
+                        liberacao_bl + desconsolidacao + isps_code + handling + capatazia + afrmm + 
+                        armazenagem_sts + frete_sts_cgb + diarias + sda + rep_sts + armaz_cgb + 
+                        rep_cgb + demurrage + li_dta_honor_nix + honorarios_nix;
+                    
+                    // Parte 2: (multa+taxa_siscomex+capatazia+afrmm)
+                    const desp_desenbaraco_parte_2 = multa + taxa_siscomex + capatazia + afrmm;
+                    despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    
                 } else if (nacionalizacao !== 'santos') {
-                    let outras_taxas_agente = $('#outras_taxas_agente-' + i).val() ? MoneyUtils.parseMoney($('#outras_taxas_agente-' + i).val()) : 0
-                    let liberacao_bl = $('#liberacao_bl-' + i).val() ? MoneyUtils.parseMoney($('#liberacao_bl-' + i).val()) : 0
-                    let desconsolidacao = $('#desconsolidacao-' + i).val() ? MoneyUtils.parseMoney($('#desconsolidacao-' + i).val()) : 0
-                    let isps_code = $('#isps_code-' + i).val() ? MoneyUtils.parseMoney($('#isps_code-' + i).val()) : 0
-                    let handling = $('#handling-' + i).val() ? MoneyUtils.parseMoney($('#handling-' + i).val()) : 0
-                    let sda = $('#sda-' + i).val() ? MoneyUtils.parseMoney($('#sda-' + i).val()) : 0
-                    let rep_sts = $('#rep_sts-' + i).val() ? MoneyUtils.parseMoney($('#rep_sts-' + i).val()) : 0
-                    let desp_anapolis = $('#desp_anapolis-' + i).val() ? MoneyUtils.parseMoney($('#desp_anapolis-' + i).val()) : 0
-                    let rep_anapolis = $('#rep_anapolis-' + i).val() ? MoneyUtils.parseMoney($('#rep_anapolis-' + i).val()) : 0
-                    let correios = $('#correios-' + i).val() ? MoneyUtils.parseMoney($('#correios-' + i).val()) : 0
-                    let li_dta_honor_nix = $('#li_dta_honor_nix-' + i).val() ? MoneyUtils.parseMoney($('#li_dta_honor_nix-' + i).val()) : 0
+                    // Para outras nacionalizações (exceto Santos) - usar valores brutos
+                    const outras_taxas_agente = valoresBrutos.outras_taxas_agente || 0;
+                    const liberacao_bl = valoresBrutos.liberacao_bl || 0;
+                    const desconsolidacao = valoresBrutos.desconsolidacao || 0;
+                    const isps_code = valoresBrutos.isps_code || 0;
+                    const handling = valoresBrutos.handling || 0;
+                    const sda = valoresBrutos.sda || 0;
+                    const rep_sts = valoresBrutos.rep_sts || 0;
+                    const desp_anapolis = valoresBrutos.desp_anapolis || 0;
+                    const rep_anapolis = valoresBrutos.rep_anapolis || 0;
+                    const correios = valoresBrutos.correios || 0;
+                    const li_dta_honor_nix = valoresBrutos.li_dta_honor_nix || 0;
 
                     desp_desenbaraco_parte_1 = multa + taxa_def + taxa_siscomex + outras_taxas_agente + liberacao_bl + 
                         desconsolidacao + isps_code + handling + capatazia + afrmm + armazenagem_sts + 
                         frete_dta_sts_ana + sda + rep_sts + desp_anapolis + rep_anapolis + correios + 
                         li_dta_honor_nix + honorarios_nix;
 
-                    let desp_desenbaraco_parte_2 = taxa_siscomex + capatazia + afrmm + honorarios_nix;
+                    const desp_desenbaraco_parte_2 = taxa_siscomex + capatazia + afrmm + honorarios_nix;
                     despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
+                    
                 } else {
+                    // Para Santos - usar valores brutos dos campos externos
                     for (let campo of campos) {
-                        const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
-                        const valorDistribuido = window.valoresBrutosCamposExternos[campo]?.[i] ?? (valorCampo * fatorVlrFob_AX);
+                        let valorDistribuido = 0;
+                        
+                        if (window.valoresBrutosCamposExternos && 
+                            window.valoresBrutosCamposExternos[campo] && 
+                            window.valoresBrutosCamposExternos[campo][i] !== undefined) {
+                            valorDistribuido = window.valoresBrutosCamposExternos[campo][i];
+                        } else {
+                            // Fallback: usar valor do objeto valoresBrutos se disponível
+                            const nomeCampo = campo.replace(/-/g, '_');
+                            valorDistribuido = valoresBrutos[nomeCampo] || 0;
+                        }
+                        
                         desp_desenbaraco_parte_1 += valorDistribuido;
                     }
 
                     desp_desenbaraco_parte_1 += multa + taxa_def + taxa_siscomex;
 
-                    let desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + honorarios_nix;
+                    const desp_desenbaraco_parte_2 = multa + taxa_def + taxa_siscomex + capatazia + afrmm + honorarios_nix;
                     despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2;
                 }
-                const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
-                let qquantidade = MoneyUtils.parseMoney($(`#quantidade-${i}`).val()) || 0
-                const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val())
-                let diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val());
-                diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
-                const diferenca_cambial_fob = MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val());
                 
-                // Adicionar campos opcionais se checkbox marcado
+                // Obter valores para cálculo de custo unitário final dos valores brutos
+                const vlrIcmsReduzido = valoresBrutos.valor_icms_reduzido || 0;
+                const qquantidade = valoresBrutos.quantidade || 0;
+                const vlrTotalNfComIcms = valoresBrutos.valor_total_nf_com_icms_st || 0;
+                
+                let diferenca_cambial_frete = valoresBrutos.diferenca_cambial_frete || 0;
+                diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
+                
+                const diferenca_cambial_fob = valoresBrutos.diferenca_cambial_fob || 0;
+                
+                // Adicionar campos opcionais se checkbox marcado - usar valores brutos
                 const opcional1Compoe = $('#opcional_1_compoe_despesas').is(':checked');
                 const opcional2Compoe = $('#opcional_2_compoe_despesas').is(':checked');
-                const opcional1Valor = $(`#opcional_1_valor-${i}`).val() ? MoneyUtils.parseMoney($(`#opcional_1_valor-${i}`).val()) : 0;
-                const opcional2Valor = $(`#opcional_2_valor-${i}`).val() ? MoneyUtils.parseMoney($(`#opcional_2_valor-${i}`).val()) : 0;
+                const opcional1Valor = valoresBrutos.opcional_1_valor || 0;
+                const opcional2Valor = valoresBrutos.opcional_2_valor || 0;
                 
                 let despesasAdicionais = 0;
                 if (opcional1Compoe) {
@@ -3861,23 +4786,129 @@
                     despesasAdicionais += opcional2Valor;
                 }
                 
-                // Para Santos: (VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) / quantidade
-                // Para outras: ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) - VLR ICMS REDUZIDO) / quantidade
-                const custo_unitario_final = getNacionalizacaoAtual() === 'santos' 
-                    ? (qquantidade > 0 ? (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete) / qquantidade : 0)
-                    : (qquantidade > 0 ? ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionais) - vlrIcmsReduzido) / qquantidade : 0)
-                console.log('custo_unitario_final', custo_unitario_final);
-                console.log('qquantidade', qquantidade);
-                const custo_total_final = custo_unitario_final * qquantidade
-                $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2))
-                $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2))
-                $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2))
+                // Calcular custo unitário final conforme nacionalização
+                const nacionalizacaoCustoTotalizador = getNacionalizacaoAtual();
+                let custo_unitario_final = 0;
+                
+                if (nacionalizacaoCustoTotalizador === 'santos' || nacionalizacaoCustoTotalizador === 'mato_grosso') {
+                    // Para Santos e Mato Grosso: (VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) / quantidade
+                    // EM MATO GROSSO CUSTO UNIT FINAL É =((AX19+BV19+BW19+BX19)/F19)
+                    // AX = VLR TOTAL NF C/ICMS-ST, BV = DESP DESEMBARACO, BW = DIF CAMBIAL FRETE, BX = DIF CAMBIAL FOB, F = QUANTIDADE
+                    if (qquantidade > 0) {
+                        custo_unitario_final = (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete) / qquantidade;
+                        
+                        // DEBUG: Log do cálculo de CUSTO UNIT FINAL no loop de atualização
+                     
+                    }
+                } else {
+                    // Para outras: ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF.CAMBIAL FOB + DIF. CAMBIAL FRETE) - VLR ICMS REDUZIDO) / quantidade
+                    if (qquantidade > 0) {
+                        const numerador = (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_fob + diferenca_cambial_frete + despesasAdicionais) - vlrIcmsReduzido;
+                        custo_unitario_final = numerador / qquantidade;
+                    }
+                }
+                
+                const custo_total_final = custo_unitario_final * qquantidade;
+                
+                // Calcular novas colunas para Mato Grosso
+                const nacionalizacaoAtual = getNacionalizacaoAtual();
+                if (nacionalizacaoAtual === 'mato_grosso') {
+                    // Obter valores brutos da linha
+                    const valoresBrutosLinha = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i];
+                    const valorIpi = valoresBrutosLinha ? (valoresBrutosLinha.valor_ipi || 0) : 0;
+                    const valorPis = valoresBrutosLinha ? (valoresBrutosLinha.valor_pis || 0) : 0;
+                    const valorCofins = valoresBrutosLinha ? (valoresBrutosLinha.valor_cofins || 0) : 0;
+                    
+                    // DEZ POR CENTO = (custo_unitario_final * 0.1) + custo_unitario_final
+                    const dez_porcento = (custo_unitario_final * 0.1) + custo_unitario_final;
+                    
+                    // CUSTO COM MARGEM = dez_porcento * quantidade
+                    const custo_com_margem = dez_porcento * qquantidade;
+                    
+                    // VLR IPI = valor_ipi
+                    const vlr_ipi_mg = valorIpi;
+                    
+                    // VLR ICMS = 0 (vazio)
+                    const vlr_icms_mg = 0;
+                    
+                    // PIS = valor_pis
+                    const pis_mg = valorPis;
+                    
+                    // COFINS = valor_cofins
+                    const cofins_mg = valorCofins;
+                    
+                    // CUSTO TOTAL FINAL = custo_com_margem - (vlr_ipi + vlr_icms + vlr_pis + vlr_cofins)
+                    const custo_total_final_credito = custo_com_margem - (vlr_ipi_mg + vlr_icms_mg + pis_mg + cofins_mg);
+                    
+                    // CUSTO UNIT CREDITO = custo_total_final_credito / quantidade
+                    const custo_unit_credito = qquantidade > 0 ? custo_total_final_credito / qquantidade : 0;
+                    
+                    // Calcular novas colunas ICMS-ST para Mato Grosso
+                    // Ler MVA e ICMS-ST dos inputs (porcentagem) - usar campos específicos _mg
+                    const mvaPercent = MoneyUtils.parsePercentage($(`#mva_mg-${i}`).val()) || 0;
+                    const icmsStPercent = MoneyUtils.parsePercentage($(`#icms_st_mg-${i}`).val()) || 0;
+                    
+                    // BC ICMS-ST = custo_total_final_credito * (1 + mva_percent)
+                    const bc_icms_st_mg = custo_total_final_credito * (1 + mvaPercent);
+                    
+                    // VLR ICMS-ST = bc_icms_st_mg * icms_st_percent
+                    const vlr_icms_st_mg = bc_icms_st_mg * icmsStPercent;
+                    
+                    // CUSTO TOTAL C/ICMS ST = custo_total_final_credito + vlr_icms_st_mg
+                    const custo_total_c_icms_st = custo_total_final_credito + vlr_icms_st_mg;
+                    
+                    // CUSTO UNIT C/ICMS ST = custo_total_c_icms_st / quantidade
+                    const custo_unit_c_icms_st = qquantidade > 0 ? custo_total_c_icms_st / qquantidade : 0;
+                    
+                   
+                    
+                    // Atualizar valores brutos
+                    if (valoresBrutosLinha) {
+                        valoresBrutosLinha.dez_porcento = dez_porcento;
+                        valoresBrutosLinha.custo_com_margem = custo_com_margem;
+                        valoresBrutosLinha.vlr_ipi_mg = vlr_ipi_mg;
+                        valoresBrutosLinha.vlr_icms_mg = vlr_icms_mg;
+                        valoresBrutosLinha.pis_mg = pis_mg;
+                        valoresBrutosLinha.cofins_mg = cofins_mg;
+                        valoresBrutosLinha.custo_total_final_credito = custo_total_final_credito;
+                        valoresBrutosLinha.custo_unit_credito = custo_unit_credito;
+                        valoresBrutosLinha.bc_icms_st_mg = bc_icms_st_mg;
+                        valoresBrutosLinha.mva_mg = mvaPercent;
+                        valoresBrutosLinha.icms_st_mg = icmsStPercent;
+                        valoresBrutosLinha.vlr_icms_st_mg = vlr_icms_st_mg;
+                        valoresBrutosLinha.custo_total_c_icms_st = custo_total_c_icms_st;
+                        valoresBrutosLinha.custo_unit_c_icms_st = custo_unit_c_icms_st;
+                    }
+                    
+                    // Atualizar campos na interface
+                    $(`#dez_porcento-${i}`).val(MoneyUtils.formatMoney(dez_porcento, 2));
+                    $(`#custo_com_margem-${i}`).val(MoneyUtils.formatMoney(custo_com_margem, 2));
+                    $(`#vlr_ipi_mg-${i}`).val(MoneyUtils.formatMoney(vlr_ipi_mg, 2));
+                    $(`#vlr_icms_mg-${i}`).val(MoneyUtils.formatMoney(vlr_icms_mg, 2));
+                    $(`#pis_mg-${i}`).val(MoneyUtils.formatMoney(pis_mg, 2));
+                    $(`#cofins_mg-${i}`).val(MoneyUtils.formatMoney(cofins_mg, 2));
+                    $(`#custo_total_final_credito-${i}`).val(MoneyUtils.formatMoney(custo_total_final_credito, 2));
+                    $(`#custo_unit_credito-${i}`).val(MoneyUtils.formatMoney(custo_unit_credito, 2));
+                    $(`#bc_icms_st_mg-${i}`).val(MoneyUtils.formatMoney(bc_icms_st_mg, 2));
+                    $(`#vlr_icms_st_mg-${i}`).val(MoneyUtils.formatMoney(vlr_icms_st_mg, 2));
+                    $(`#custo_total_c_icms_st-${i}`).val(MoneyUtils.formatMoney(custo_total_c_icms_st, 2));
+                    $(`#custo_unit_c_icms_st-${i}`).val(MoneyUtils.formatMoney(custo_unit_c_icms_st, 2));
+                    
+                    // Recalcular e atualizar novas colunas: EXPORTADOR, TRIBUTOS, DESPESAS, TOTAL PAGO, PERCENTUAL S/FOB
+                    calcularColunasExportadorTributosDespesas(i);
+                }
+                
+                // Atualizar campos na interface
+                $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2));
+                $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2));
+                $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2));
             }
 
 
             atualizarMultaProdutosPorMulta(); // Atualiza multa_complem e dif_impostos para Santa Catarina
             atualizarTotalizadores();
             calcularValoresCPT();
+            calcularValoresCIF();
             
             // Ratear campos opcionais
             ratearCamposOpcionais();
@@ -3977,20 +5008,21 @@
         })
 
         function calcularTaxaSiscomex() {
-
-            const valores = $('input[name^="produtos["][name$="[adicao]"]')
+            // Selecionar apenas inputs de adição que estão em linhas de produtos válidas (não separadores)
+            const valores = $('#productsBody tr:not(.separador-adicao) input[name^="produtos["][name$="[adicao]"]')
                 .map(function() {
-                    return $(this).val();
+                    const valor = $(this).val();
+                    // Retornar apenas valores não vazios e que não sejam apenas espaços
+                    return valor && valor.trim() !== '' ? valor.trim() : null;
                 })
-                .get();
-
-
-            const unicos = [...new Set(valores.filter(v => v !== ""))];
+                .get()
+                .filter(v => v !== null && v !== '');
+            // Obter valores únicos de adição
+            const unicos = [...new Set(valores)];
             const quantidade = unicos.length;
 
 
             const valorRegistroDI = 115.67;
-
 
             if (quantidade === 0) {
                 return valorRegistroDI;
@@ -3999,12 +5031,12 @@
 
 
             const faixas = [
-                { limite: 2, valor: 38.56, inicio: 0 },      
-                { limite: 3, valor: 30.85, inicio: 2 },      
-                { limite: 5, valor: 23.14, inicio: 5 },      
-                { limite: 10, valor: 15.42, inicio: 10 },   
-                { limite: 30, valor: 7.71, inicio: 20 },     
-                { limite: Infinity, valor: 3.86, inicio: 50 } 
+                { min: 1, max: 2, valor: 38.56 },      
+                { min: 3, max: 5, valor: 30.85 },      
+                { min: 6, max: 10, valor: 23.14 },      
+                { min: 11, max: 20, valor: 15.42 },   
+                { min: 21, max: 50, valor: 7.71 },     
+                { min: 51, max: Infinity, valor: 3.86 } 
             ];
 
 
@@ -4012,21 +5044,13 @@
 
 
             faixas.forEach(faixa => {
-
-
-
-                let adicoesNaFaixa;
-                if (faixa.limite === Infinity) {
-
-                    adicoesNaFaixa = Math.max(quantidade - faixa.inicio, 0);
-                } else {
-
-                    adicoesNaFaixa = Math.min(
-                        Math.max(quantidade - faixa.inicio, 0),
-                        faixa.limite
-                    );
+                if (quantidade < faixa.min) {
+                    return;
                 }
                 
+                const inicioFaixa = faixa.min;
+                const fimFaixa = faixa.max === Infinity ? quantidade : Math.min(quantidade, faixa.max);
+                const adicoesNaFaixa = fimFaixa - inicioFaixa + 1;
 
                 if (adicoesNaFaixa > 0) {
                     total += adicoesNaFaixa * faixa.valor;
@@ -4063,9 +5087,9 @@
             $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Adicionando...');
             
             try {
-                let lengthOptions = $('#productsBody tr').length;
-                let newIndex = lengthOptions;
-                let proximoItem = obterProximoNumeroItem();
+            let lengthOptions = $('#productsBody tr').length;
+            let newIndex = lengthOptions;
+            let proximoItem = obterProximoNumeroItem();
 
             let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
         <option selected disabled>Selecione uma opção</option>`;
@@ -4199,7 +5223,7 @@
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fator_valor_fob]" id="fator_valor_fob-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][fator_tx_siscomex]" id="fator_tx_siscomex-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal7" name="produtos[${newIndex}][multa]" id="multa-${newIndex}" value="" ${multaReadonly}></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control percentage2" name="produtos[${newIndex}][tx_def_li]" id="tx_def_li-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class=" form-control ${getNacionalizacaoAtual() === 'mato_grosso' ? 'moneyReal' : 'percentage2'}" ${getNacionalizacaoAtual() === 'mato_grosso' ? 'readonly' : ''} name="produtos[${newIndex}][tx_def_li]" id="tx_def_li-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][taxa_siscomex]" id="taxa_siscomex-${newIndex}" value=""></td>
         ${(() => {
             const nacionalizacao = getNacionalizacaoAtual();
@@ -4221,8 +5245,8 @@
                 html += '<td data-campo="desp_anapolis"><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][desp_anapolis]" id="desp_anapolis-' + newIndex + '" value=""></td>';
                 html += '<td data-campo="rep_anapolis"><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][rep_anapolis]" id="rep_anapolis-' + newIndex + '" value=""></td>';
                 html += '<td data-campo="correios"><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][correios]" id="correios-' + newIndex + '" value=""></td>';
-                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
-                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
             } else if (nacionalizacao === 'santa_catarina') {
                 // Ordem específica para Santa Catarina
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][multa_complem]" id="multa_complem-' + newIndex + '" value=""></td>';
@@ -4240,8 +5264,28 @@
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][sda]" id="sda-' + newIndex + '" value=""></td>';
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][rep_porto]" id="rep_porto-' + newIndex + '" value=""></td>';
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][tx_correcao_lacre]" id="tx_correcao_lacre-' + newIndex + '" value=""></td>';
-                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
-                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
+            } else if (nacionalizacao === 'mato_grosso') {
+                // Ordem específica para Mato Grosso
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][outras_taxas_agente]" id="outras_taxas_agente-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][liberacao_bl]" id="liberacao_bl-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][desconsolidacao]" id="desconsolidacao-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][isps_code]" id="isps_code-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][handling]" id="handling-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][capatazia]" id="capatazia-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][afrmm]" id="afrmm-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][armazenagem_sts]" id="armazenagem_sts-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][frete_sts_cgb]" id="frete_sts_cgb-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][diarias]" id="diarias-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][sda]" id="sda-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][rep_sts]" id="rep_sts-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][armaz_cgb]" id="armaz_cgb-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][rep_cgb]" id="rep_cgb-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][demurrage]" id="demurrage-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][tx_def_li]" id="tx_def_li-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
             } else {
                 // Ordem padrão para outros tipos
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][outras_taxas_agente]" id="outras_taxas_agente-' + newIndex + '" value=""></td>';
@@ -4265,8 +5309,8 @@
                     html += '<td data-campo="desp_anapolis" style="display: none;"><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][desp_anapolis]" id="desp_anapolis-' + newIndex + '" value=""></td>';
                     html += '<td data-campo="correios"><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][correios]" id="correios-' + newIndex + '" value=""></td>';
                 }
-                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
-                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][li_dta_honor_nix]" id="li_dta_honor_nix-' + newIndex + '" value=""></td>';
+                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
             }
             
             return html;
@@ -4278,6 +5322,28 @@
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][opcional_2_valor]" id="opcional_2_valor-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][custo_unitario_final]" id="custo_unitario_final-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][custo_total_final]" id="custo_total_final-${newIndex}" value=""></td>
+        ${getNacionalizacaoAtual() === 'mato_grosso' ? 
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][dez_porcento]" id="dez_porcento-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][custo_com_margem]" id="custo_com_margem-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][vlr_ipi_mg]" id="vlr_ipi_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][vlr_icms_mg]" id="vlr_icms_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][pis_mg]" id="pis_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][cofins_mg]" id="cofins_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][custo_total_final_credito]" id="custo_total_final_credito-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][custo_unit_credito]" id="custo_unit_credito-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][bc_icms_st_mg]" id="bc_icms_st_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control percentage2" name="produtos[' + newIndex + '][mva_mg]" id="mva_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control percentage2" name="produtos[' + newIndex + '][icms_st_mg]" id="icms_st_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][vlr_icms_st_mg]" id="vlr_icms_st_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][custo_total_c_icms_st]" id="custo_total_c_icms_st-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][custo_unit_c_icms_st]" id="custo_unit_c_icms_st-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][exportador_mg]" id="exportador_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][tributos_mg]" id="tributos_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][despesas_mg]" id="despesas_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal2" readonly name="produtos[' + newIndex + '][total_pago_mg]" id="total_pago_mg-' + newIndex + '" value=""></td>' +
+            '<td><input type="text" data-row="' + newIndex + '" class="form-control percentage2" readonly name="produtos[' + newIndex + '][percentual_s_fob_mg]" id="percentual_s_fob_mg-' + newIndex + '" value=""></td>'
+            : ''
+        }
     </tr>`;
 
             $('#productsBody').append(tr);
@@ -4298,7 +5364,7 @@
                 $allAddButtons.prop('disabled', false).data('processing', false);
                 $btn.html(originalHtml);
             }, 100);
-            
+
             } catch (error) {
                 console.error('Erro ao adicionar produto:', error);
                 // Reabilitar botões em caso de erro
@@ -4382,6 +5448,7 @@
                     atualizarTotalizadores();
                 }
                 calcularValoresCPT();
+                calcularValoresCIF();
                 
                 // Chamar novamente após a tabela de multa estar carregada para garantir valores corretos
                 setTimeout(function() {
