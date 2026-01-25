@@ -1091,10 +1091,10 @@
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
+                                        class=" form-control moneyReal8" readonly
                                         name="produtos[{{ $index }}][fator_valor_fob]"
                                         id="fator_valor_fob-{{ $index }}"
-                                        value="{{ $processoProduto->fator_valor_fob ? number_format($processoProduto->fator_valor_fob, 6, ',', '.') : '' }}">
+                                        value="{{ $processoProduto->fator_valor_fob ? number_format($processoProduto->fator_valor_fob, 8, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
