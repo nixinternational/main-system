@@ -616,14 +616,9 @@
                 buildRow('LI+DTA+HONOR.NIX', formatDebugMoney(dados.liDtaHonorNix || 0, 2), 'Valor distribuído do campo externo LI+DTA+HONOR.NIX.', formatComponent('LI+DTA+HONOR.NIX', dados.liDtaHonorNix || 0, 2)),
                 buildRow('Honorários NIX', formatDebugMoney(dados.honorariosNix || 0, 2), 'Valor distribuído do campo externo Honorários NIX.', formatComponent('Honorários NIX', dados.honorariosNix || 0, 2)),
                 buildRow('Desp. Desembaraço', formatDebugMoney(dados.despesaDesembaraco || 0, 2), '(Outras TX + Delivery Fee + Collect Fee + Desconsolidacao + HANDLING + DAI + DAPE + Correios + LI+DTA+HONOR.NIX + Honorários + Taxa SISCOMEX) - (Multa + TX DEF LI + Taxa SISCOMEX + DAI + Honorários).', formatCalcDetail(dados.despesaDesembaraco || 0, ['(', formatComponent('Soma campos externos', (dados.outrasTaxasAgente || 0) + (dados.deliveryFee || 0) + (dados.collectFee || 0) + (dados.desconsolidacao || 0) + (dados.handling || 0) + (dados.dai || 0) + (dados.dape || 0) + (dados.correios || 0) + (dados.liDtaHonorNix || 0) + (dados.honorariosNix || 0) + (dados.taxaSiscomexUnit || 0), 2), ')', '-', formatComponent('Subtrações', (dados.multa || 0) + (dados.taxaDefLi || 0) + (dados.taxaSiscomexUnit || 0) + (dados.dai || 0) + (dados.honorariosNix || 0), 2)], 2)),
-                buildRow('Custo Unit. Final', formatDebugMoney(dados.custoUnitarioFinal, 2), '[(Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete) - ICMS reduzido (apenas SC)] ÷ Quantidade.', (() => {
+                buildRow('Custo Unit. Final', formatDebugMoney(dados.custoUnitarioFinal, 2), '[(Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete)] ÷ Quantidade.', (() => {
                     const nacionalizacao = getNacionalizacaoAtual();
-                    const icmsReduzidoParaSubtrair = (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') ? vlrIcmsReduzidoVal : 0;
-                    const componentes = ['(', formatComponent('Total NF c/ICMS', dados.vlrTotalNfComIcms || vlrTotalNfSemIcmsVal, 2), '+', formatComponent('Desp. Desembaraço', dados.despesaDesembaraco || 0, 2), '+', formatComponent('Dif. Cambial FOB', dados.diferencaCambialFob || 0, 2), '+', formatComponent('Dif. Cambial Frete', dados.diferencaCambialFrete || 0, 2)];
-                    if (icmsReduzidoParaSubtrair > 0) {
-                        componentes.push('-', formatComponent('ICMS reduzido (SC)', icmsReduzidoParaSubtrair, 2));
-                    }
-                    componentes.push(')', '÷', formatComponent('Quantidade', quantidadeSafe, 4));
+                    const componentes = ['(', formatComponent('Total NF c/ICMS', dados.vlrTotalNfComIcms || vlrTotalNfSemIcmsVal, 2), '+', formatComponent('Desp. Desembaraço', dados.despesaDesembaraco || 0, 2), '+', formatComponent('Dif. Cambial FOB', dados.diferencaCambialFob || 0, 2), '+', formatComponent('Dif. Cambial Frete', dados.diferencaCambialFrete || 0, 2), ')', '÷', formatComponent('Quantidade', quantidadeSafe, 4)];
                     return formatCalcDetail(dados.custoUnitarioFinal, componentes, 2);
                 })()),
                 buildRow('Custo Total Final', formatDebugMoney(dados.custoTotalFinal, 2), 'Custo unitário final × Quantidade.', formatCalcDetail(dados.custoTotalFinal, [formatComponent('Custo Unit. Final', dados.custoUnitarioFinal, 2), '×', formatComponent('Quantidade', quantidade, 4)], 2))
@@ -740,6 +735,7 @@
                 valor_icms_sem_reducao: 0,
                 base_icms_reduzido: 0,
                 valor_icms_reduzido: 0,
+                reducao: 0,
                 valor_total_nf: 0,
                 valor_total_nf_sem_icms_st: 0,
                 base_icms_st: 0,
@@ -755,6 +751,8 @@
                 dape: 0,
                 correios: 0,
                 li_dta_honor_nix: 0,
+                rep_itj: 0,
+                frete_nvg_x_gyn: 0,
                 honorarios_nix: 0,
                 desp_desenbaraco: 0,
                 diferenca_cambial_frete: 0,
@@ -799,7 +797,7 @@
                     const thcUsd = MoneyUtils.parseMoney($(`#thc_usd-${rowId}`).val()) || 0;
                     const thcBrl = MoneyUtils.parseMoney($(`#thc_brl-${rowId}`).val()) || 0;
                     const vlrAduaneiroUsd = MoneyUtils.parseMoney($(`#valor_aduaneiro_usd-${rowId}`).val()) || 0;
-                    const vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
+                const vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
                     
                     // Calcular impostos a partir dos valores brutos
                     const impostos = {
@@ -845,15 +843,15 @@
                     totais.valor_cofins += valorCofins;
                     
                     // Calcular tx_def_li
-                    const txDefLiPercent = MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) || 0;
-                    const txDefLiLinha = vlrAduaneiroBrl * txDefLiPercent;
-                    txDefLiTotal += txDefLiLinha;
-                    
+                const txDefLiPercent = MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) || 0;
+                const txDefLiLinha = vlrAduaneiroBrl * txDefLiPercent;
+                txDefLiTotal += txDefLiLinha;
+                
                     // Outros campos - usar valores brutos de campos externos ou calcular diretamente
-                    const camposExternos = ['multa', 'taxa_siscomex', 'outras_taxas_agente', 'desconsolidacao', 
-                    'handling', 'dai', 'dape', 'correios', 'li_dta_honor_nix', 'honorarios_nix',
+                    const camposExternos = getCamposExternos().concat([
                     'desp_desenbaraco', 'diferenca_cambial_frete', 'diferenca_cambial_fob',
-                    'delivery_fee', 'collect_fee', 'opcional_1_valor', 'opcional_2_valor'];
+                    'delivery_fee', 'collect_fee', 'opcional_1_valor', 'opcional_2_valor'
+                    ]);
                     
                     camposExternos.forEach(campo => {
                         let valor = 0;
@@ -863,7 +861,7 @@
                         } else {
                             // Calcular diretamente se não estiver em valoresBrutosCamposExternos
                             const elemento = $(`#${campo}-${rowId}`);
-                            if (elemento.length > 0) {
+                        if (elemento.length > 0) {
                                 valor = MoneyUtils.parseMoney(elemento.val()) || 0;
                             }
                         }
@@ -872,7 +870,7 @@
                             valor = validarDiferencaCambialFrete(valor);
                         }
                         valor = (typeof valor === 'number' && !isNaN(valor)) ? valor : 0;
-                        totais[campo] += valor;
+                            totais[campo] += valor;
                     });
                     
                     // Campos calculados
@@ -881,6 +879,7 @@
                     const vlrIcmsSemReducao = MoneyUtils.parseMoney($(`#valor_icms_sem_reducao-${rowId}`).val()) || 0;
                     const bcIcmsReduzido = MoneyUtils.parseMoney($(`#base_icms_reduzido-${rowId}`).val()) || 0;
                     const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${rowId}`).val()) || 0;
+                    const reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) || 0;
                     const valorTotalNf = MoneyUtils.parseMoney($(`#valor_total_nf-${rowId}`).val()) || 0;
                     const valorTotalNfSemIcmsSt = MoneyUtils.parseMoney($(`#valor_total_nf_sem_icms_st-${rowId}`).val()) || 0;
                     const baseIcmsSt = MoneyUtils.parseMoney($(`#base_icms_st-${rowId}`).val()) || 0;
@@ -900,6 +899,7 @@
                     totais.valor_icms_sem_reducao += vlrIcmsSemReducao;
                     totais.base_icms_reduzido += bcIcmsReduzido;
                     totais.valor_icms_reduzido += vlrIcmsReduzido;
+                    totais.reducao += reducao;
                     totais.valor_total_nf += valorTotalNf;
                     totais.valor_total_nf_sem_icms_st += valorTotalNfSemIcmsSt;
                     totais.base_icms_st += baseIcmsSt;
@@ -927,43 +927,74 @@
                         window.valoresBrutosCamposExternos[campo][rowId] !== undefined) {
                             valor = window.valoresBrutosCamposExternos[campo][rowId] || 0;
                         }
-                        // 3. Se não encontrou, pular (não usar valores formatados)
+                        // 3. Se não encontrou, tratar campos especiais
                         else {
                             // Campos especiais que podem não estar em valoresBrutos
-                            if (campo === 'service_charges' && moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                            if (campo === 'peso_liq_total_kg') {
+                                // Tentar ler diretamente do input se não estiver em valoresBrutos
+                                valor = MoneyUtils.parseMoney($(`#peso_liq_total_kg-${rowId}`).val()) || 0;
+                    } else if (campo === 'peso_liq_lbs') {
+                                // Tentar ler diretamente do input se não estiver em valoresBrutos
+                                valor = MoneyUtils.parseMoney($(`#peso_liq_lbs-${rowId}`).val()) || 0;
+                            } else if (campo === 'desp_desenbaraco') {
+                                // Tentar valores brutos primeiro, depois DOM
+                                if (valoresBrutos.desp_desenbaraco !== undefined) {
+                                    valor = valoresBrutos.desp_desenbaraco;
+                                } else if (window.valoresBrutosCamposExternos?.desp_desenbaraco?.[rowId] !== undefined) {
+                                    valor = window.valoresBrutosCamposExternos.desp_desenbaraco[rowId];
+                                } else {
+                                    valor = MoneyUtils.parseMoney($(`#desp_desenbaraco-${rowId}`).val()) || 0;
+                                }
+                            } else if (campo === 'custo_unitario_final') {
+                                // Tentar valores brutos primeiro, depois DOM
+                                if (valoresBrutos.custo_unitario_final !== undefined) {
+                                    valor = valoresBrutos.custo_unitario_final;
+                                } else {
+                                    valor = MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0;
+                                }
+                            } else if (campo === 'custo_total_final') {
+                                // Tentar valores brutos primeiro, depois DOM
+                                if (valoresBrutos.custo_total_final !== undefined) {
+                                    valor = valoresBrutos.custo_total_final;
+                                } else {
+                                    valor = MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || 0;
+                                }
+                            } else if (campo === 'service_charges' && moedaServiceCharges && moedaServiceCharges !== 'USD') {
                                 // Tentar valores brutos primeiro
                                 if (valoresBrutos.service_charges_moeda_estrangeira !== undefined) {
                                     valor = valoresBrutos.service_charges_moeda_estrangeira;
-                                } else {
+                    } else {
                                     return; // Pular se não tiver valor bruto
                                 }
                             } else if (campo === 'vlr_crf_unit' || campo === 'vlr_cfr_unit') {
                                 return; // Não somar campos unitários
-                            } else {
+                        } else {
                                 return; // Pular campos sem valores brutos
                             }
                         }
                         
                         // Aplicar validações
-                        if (campo === 'diferenca_cambial_frete') {
-                            valor = validarDiferencaCambialFrete(valor);
-                        }
+                                if (campo === 'diferenca_cambial_frete') {
+                                    valor = validarDiferencaCambialFrete(valor);
+                                }
                         valor = (typeof valor === 'number' && !isNaN(valor)) ? valor : 0;
                         
                         // Atualizar totais
                         if (campo === 'peso_liq_total_kg') {
                             totais.peso_liq_total_kg += valor;
                             totais.peso_liquido_total += valor;
+                        } else if (campo === 'peso_liq_lbs') {
+                            totais.peso_liq_lbs += valor;
                         } else if (campo === 'vlr_crf_total' || campo === 'vlr_cfr_total') {
                             totais.vlr_crf_total += valor;
                             totais.vlr_cfr_total += valor;
                         } else {
-                            totais[campo] += valor;
-                        }
-                    });
+                                totais[campo] += valor;
+                    }
+                });
                 }
 
-         
+
                 // Acumular para médias (usar valores calculados diretamente para maior precisão)
                 const fatorPesoVal = MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
                 const fatorValorFobVal = MoneyUtils.parseMoney($(`#fator_valor_fob-${rowId}`).val()) || 0;
@@ -973,6 +1004,7 @@
                 fatorValorFobSum += fatorValorFobVal;
                 fatorTxSiscomexSum += fatorTxSiscomexVal;
             });
+            // console.log(totais) // Comentado para reduzir logs excessivos
             
             // Garantir que os totais dos fatores sempre dêem 1 (ajustar se diferença for pequena - erro de arredondamento)
             const diffPeso = Math.abs(1 - fatorPesoSum);
@@ -1010,20 +1042,23 @@
             // QUANTIDADE
             tr += `<td data-field="quantidade" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.quantidade, 2)}</td>`;
 
-            // PESO LIQ. LBS (soma total)
-            tr += `<td data-field="peso-liq-lbs" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liq_lbs, 6)}</td>`;
-
-            // PESO LIQ. UNIT (vazio - é unitário)
-            tr += '<td data-field="peso-liq-unit"></td>';
-
-            // PESO LIQ TOTAL KG (para aéreo) - verificar se está oculto
+            // PESO LIQ. LBS e PESO LIQ TOTAL KG - mostrar conforme o tipo de peso selecionado
             const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
-            if (tipoPeso === 'kg') {
-                // Em modo KG, ocultar a coluna
-                tr += `<td data-field="peso-liq-total-kg" style="display: none;"></td>`;
+            // Calcular peso_liq_total_kg uma vez para usar em ambos os casos
+            const pesoLiqTotalKg = totais.peso_liq_total_kg || totais.peso_liquido_total || 0;
+            
+            if (tipoPeso === 'lbs') {
+                // Em modo LBS: mostrar LBS e calcular/mostrar KG
+                tr += `<td data-field="peso-liq-lbs" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liq_lbs || 0, 6)}</td>`;
+                tr += '<td data-field="peso-liq-unit"></td>';
+                // Mostrar o valor de peso_liq_total_kg quando estiver em modo LBS (calculado a partir de LBS)
+                tr += `<td data-field="peso-liq-total-kg" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(pesoLiqTotalKg, 2)}</td>`;
             } else {
-                // Em modo LBS, mostrar a coluna
-                tr += `<td data-field="peso-liq-total-kg" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liq_total_kg || totais.peso_liquido_total, 2)}</td>`;
+                // Em modo KG: ocultar LBS, mostrar KG (normalidade)
+                tr += `<td data-field="peso-liq-lbs" style="display: none;"></td>`;
+                tr += '<td data-field="peso-liq-unit"></td>';
+                // Mostrar o valor de peso_liq_total_kg quando estiver em modo KG
+                tr += `<td data-field="peso-liq-total-kg" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(pesoLiqTotalKg, 2)}</td>`;
             }
 
             // FATOR PESO (total deve ser 1)
@@ -1104,8 +1139,9 @@
             tr += `<td data-field="vlr-aduaneiro-usd" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_usd, 2)}</td>`;
             tr += `<td data-field="vlr-aduaneiro-brl" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_brl, 2)}</td>`;
             
-            // ALÍQUOTAS: II, IPI, PIS, COFINS, ICMS, ICMS REDUZIDO, REDUÇÃO (7 colunas vazias)
-            tr += '<td colspan="7" data-field="aliquotas-ii-ipi-pis-cofins-icms-icms-reduzido-reducao"></td>';
+            // ALÍQUOTAS: II, IPI, PIS, COFINS, ICMS, ICMS REDUZIDO (6 colunas vazias) + REDUÇÃO (1 coluna com totalizador)
+            tr += '<td colspan="6" data-field="aliquotas-ii-ipi-pis-cofins-icms-icms-reduzido"></td>';
+            tr += `<td data-field="reducao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.reducao, 8)}</td>`;
             
             // VLR II, BC IPI, VLR IPI, BC PIS/COFINS, VLR PIS, VLR COFINS
             tr += `<td data-field="vlr-ii" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_ii, 2)}</td>`;
@@ -1116,15 +1152,27 @@
             tr += `<td data-field="vlr-cofins" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_cofins, 2)}</td>`;
             
             // DESP. ADUANEIRA, BC ICMS S/REDUÇÃO, VLR ICMS S/RED., BC ICMS REDUZIDO, VLR ICMS REDUZ.
-            // Para processos aéreos do tipo geral: DESP. ADUANEIRA = BA17+BB17+BH17+BL17
-            // BA17 = TX DEF LI (txDefLiTotal já calculado acima)
-            // BB17 = TAXA SISCOMEX (usar cálculo direto com melhor precisão)
-            // BH17 = DAI (totais.dai)
-            // BL17 = HONORARIOS_NIX (totais.honorarios_nix)
-            // IMPORTANTE: Usar o cálculo direto da função calcularTaxaSiscomex() para máxima precisão
-            // em vez de somar os valores arredondados das linhas
+            const nacionalizacao = getNacionalizacaoAtual();
             const taxaSiscomexTotalProcesso = calcularTaxaSiscomex();
-            const despAduaneiraCalculada = txDefLiTotal + taxaSiscomexTotalProcesso + (totais.dai || 0) + totais.honorarios_nix;
+            let despAduaneiraCalculada;
+            
+            if (nacionalizacao === 'santa_catarina') {
+                // Para Santa Catarina: DESP. ADUANEIRA = BE23+BF23+BG23
+                // BE = MULTA (do cabeçalho)
+                // BF = TX DEF. LI (txDefLiTotal já calculado acima)
+                // BG = TAXA SISCOMEX (usar cálculo direto com melhor precisão)
+                const multaTotal = $('#multa').val() ? MoneyUtils.parseMoney($('#multa').val()) : 0;
+                despAduaneiraCalculada = multaTotal + txDefLiTotal + taxaSiscomexTotalProcesso;
+            } else {
+                // Para processos aéreos do tipo geral: DESP. ADUANEIRA = BA17+BB17+BH17+BL17
+                // BA17 = TX DEF LI (txDefLiTotal já calculado acima)
+                // BB17 = TAXA SISCOMEX (usar cálculo direto com melhor precisão)
+                // BH17 = DAI (totais.dai)
+                // BL17 = HONORARIOS_NIX (totais.honorarios_nix)
+                // IMPORTANTE: Usar o cálculo direto da função calcularTaxaSiscomex() para máxima precisão
+                // em vez de somar os valores arredondados das linhas
+                despAduaneiraCalculada = txDefLiTotal + taxaSiscomexTotalProcesso + (totais.dai || 0) + totais.honorarios_nix;
+            }
             tr += `<td data-field="desp-aduaneira" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(despAduaneiraCalculada, 2)}</td>`;
             tr += `<td data-field="bc-icms-sem-reducao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_sem_reducao, 2)}</td>`;
             tr += `<td data-field="vlr-icms-sem-reducao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_sem_reducao, 2)}</td>`;
@@ -1145,7 +1193,7 @@
             
             // FATOR VLR FOB, FATOR TX SISCOMEX, MULTA, TX DEF. LI, TAXA SISCOMEX
             tr += `<td data-field="fator-vlr-fob" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorValorFobSum, 8)}</td>`;
-            tr += `<td data-field="fator-tx-siscomex" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(fatorTxSiscomexSum, 8)}</td>`;
+            tr += `<td data-field="fator-tx-siscomex" style="font-weight: bold; text-align: right;"></td>`;
             tr += `<td data-field="multa" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.multa, 2)}</td>`;
             // TX DEF LI: usar o valor calculado corretamente (txDefLiTotal)
             tr += `<td data-field="tx-def-li" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(txDefLiTotal, 2)}</td>`;
@@ -1161,8 +1209,18 @@
             tr += `<td data-field="handling" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>`;
             tr += `<td data-field="dai" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.dai || 0, 2)}</td>`;
             tr += `<td data-field="dape" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.dape || 0, 2)}</td>`;
+            
+            // Para Santa Catarina: REP.ITJ e FRETE NVG X GYN
+            // Para outras nacionalizações: CORREIOS e LI+DTA+HONOR.NIX
+            // (nacionalizacao já foi declarada acima)
+            if (nacionalizacao === 'santa_catarina') {
+                tr += `<td data-field="rep-itj" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.rep_itj || 0, 2)}</td>`;
+                tr += `<td data-field="frete-nvg-x-gyn" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_nvg_x_gyn || 0, 2)}</td>`;
+            } else {
             tr += `<td data-field="correios" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.correios || 0, 2)}</td>`;
             tr += `<td data-field="li-dta-honor-nix" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.li_dta_honor_nix, 2)}</td>`;
+            }
+            
             tr += `<td data-field="honorarios-nix" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.honorarios_nix, 2)}</td>`;
             
             // DESP. DESEMBARAÇO, DIF. CAMBIAL FRETE, DIF.CAMBIAL FOB, CUSTO UNIT FINAL, CUSTO TOTAL FINAL
@@ -1557,14 +1615,16 @@
                 width: '100%'
             });
 
-            // Listener para SERVICE_CHARGES do processo - recalcular todos os produtos
-            $('#service_charges').on('blur change input', function() {
+            // Listener para SERVICE_CHARGES do processo - recalcular todos os produtos com debounce
+            let serviceChargesTimeout = null;
+            $('#service_charges').on('blur change', function() {
                 // Converter imediatamente quando o valor mudar
                 convertToUSDAndBRL('service_charges');
-                // Recalcular toda a tabela quando service_charges do processo mudar
-                setTimeout(function() {
-                    recalcularTodaTabela();
-                }, 100);
+                // Recalcular toda a tabela quando service_charges do processo mudar (com debounce)
+                clearTimeout(serviceChargesTimeout);
+                serviceChargesTimeout = setTimeout(function() {
+                    debouncedRecalcular();
+                }, 300);
             });
 
             // Listener para THC/Capatazia - recalcular todos os produtos
@@ -1753,10 +1813,10 @@
                 let convertido = dolar[codigoMoeda].venda;
                 $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 4));
                 
-                // Log apenas para service_charges quando setar a cotação
-                if (inputId === 'service_charges') {
-                    console.log(`Cotação setada para service_charges: ${codigoMoeda} = ${convertido}`);
-                }
+                // Log apenas para service_charges quando setar a cotação (comentado para reduzir logs)
+                // if (inputId === 'service_charges') {
+                //     console.log(`Cotação setada para service_charges: ${codigoMoeda} = ${convertido}`);
+                // }
 
                 // Tentar obter a data da cotação
                 if (dolar[codigoMoeda].data) {
@@ -1773,10 +1833,10 @@
                     }
                 }
             } else {
-                // Se não encontrou a cotação
-                if (inputId === 'service_charges') {
-                    console.log(`Cotação NÃO encontrada para service_charges. Moeda: ${codigoMoeda}, Cotações disponíveis:`, Object.keys(dolar || {}));
-                }
+                // Se não encontrou a cotação (comentado para reduzir logs)
+                // if (inputId === 'service_charges') {
+                //     console.log(`Cotação NÃO encontrada para service_charges. Moeda: ${codigoMoeda}, Cotações disponíveis:`, Object.keys(dolar || {}));
+                // }
                 $(`#${spanId}`).val('');
                 $(`#data_moeda_${inputId}`).val('');
             }
@@ -1852,12 +1912,14 @@
                 }, 200);
             });
             
-            // Listener para cotacao_service_charges - FORÇAR CONVERSÃO quando cotação mudar
-            $('#cotacao_service_charges').on('blur change input', function() {
-                setTimeout(function() {
+            // Listener para cotacao_service_charges - FORÇAR CONVERSÃO quando cotação mudar (com debounce)
+            let cotacaoServiceChargesTimeout = null;
+            $('#cotacao_service_charges').on('blur change', function() {
+                clearTimeout(cotacaoServiceChargesTimeout);
+                cotacaoServiceChargesTimeout = setTimeout(function() {
                     convertToUSDAndBRL('service_charges');
-                    setTimeout(recalcularTodaTabela, 100);
-                }, 50);
+                    debouncedRecalcular();
+                }, 300);
             });
 
 
@@ -1912,6 +1974,14 @@
 
                 // ADICIONAR ESTA LINHA PARA RECALCULAR A TABELA COM A NOVA MOEDA
                 setTimeout(recalcularTodaTabela, 200);
+
+                // Validar campo required antes de submeter
+                const displayCotacao = $('#display_cotacao').val();
+                if (!displayCotacao || displayCotacao.trim() === '') {
+                    alert('Por favor, preencha o campo COTAÇÃO DO PROCESSO antes de salvar.');
+                    $('#display_cotacao').focus();
+                    return false;
+                }
 
                 $('#formProcesso').submit();
 
@@ -2204,11 +2274,21 @@
             isRecalculating = true;
             resetDebugStore();
             
+            // Contador de recálculos para debug (opcional)
+            if (typeof window.contadorRecalculos === 'undefined') {
+                window.contadorRecalculos = 0;
+            }
+            window.contadorRecalculos++;
+            
             const rows = $('.linhas-input');
             const moedasOBject = getCotacaoesProcesso();
-            // Garantir máxima precisão na obtenção do dólar
+            // Obter cotação do dólar do objeto de cotações do processo
             let moedaDolar = moedasOBject['USD']?.venda;
-            if (!moedaDolar || moedaDolar === null || moedaDolar === undefined) {
+            if (!moedaDolar || moedaDolar === null || moedaDolar === undefined || moedaDolar <= 0) {
+                // Tentar obter do campo cotacao_dolar como fallback
+                moedaDolar = MoneyUtils.parseMoney($('#cotacao_dolar').val());
+            }
+            if (!moedaDolar || moedaDolar <= 0) {
                 const cotacaoFrete = $(`#cotacao_frete_internacional`).val();
                 moedaDolar = cotacaoFrete ? cotacaoFrete.replace(',', '.') : 1;
             }
@@ -2454,22 +2534,159 @@
                     // A diferença cambial ocorre quando há variação na taxa de câmbio
                     // Vamos usar o campo #diferenca_cambial_frete do processo para calcular proporcionalmente
                     const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val()) || 0;
-                    const freteBrl = freteUsdInt * dolar;
-                    // Calcular diferença cambial proporcional ao frete
+                    
+                    // Calcular diferença cambial frete conforme nacionalização
+                    // Usar valores brutos se disponíveis, caso contrário calcular
+                    const nacionalizacaoCambial = getNacionalizacaoAtual();
+                    let diferenca_cambial_frete = 0;
+                    
+                    // Obter valores brutos de frete
+                    let freteUsdIntBruto = freteUsdInt;
+                    let freteBrlBruto = 0;
+                    
+                    // Para Santa Catarina, Q23 deve ser o valor REAL do campo frete_brl (que já foi calculado e setado)
+
+                    if (nacionalizacaoCambial === 'santa_catarina') {
+                        // Ler o valor REAL do campo frete_brl (que já foi calculado e setado anteriormente)
+                        const freteBrlDoCampo = MoneyUtils.parseMoney($(`#frete_brl-${rowId}`).val());
+                        const freteBrlCalculadoCorreto = freteUsdInt * dolar;
+                        
+                        // Se o valor do campo for igual ao USD (ou muito próximo), significa que foi setado incorretamente
+                        // Nesse caso, usar o valor calculado correto (BRL) ao invés do valor do campo
+                        const valorCampoEIgualAoUSD = freteBrlDoCampo && Math.abs(freteBrlDoCampo - freteUsdInt) < 0.01;
+                        
+                        // #region agent log
+                        fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2535',message:'READ frete_brl campo DOM',data:{rowId,funcao:'recalcularTodaTabela',freteBrlDoCampo,freteUsdInt,dolar,valorCalculado:freteBrlCalculadoCorreto,valorBruto:window.valoresBrutosPorLinha?.[rowId]?.frete_brl,valorCampoEIgualAoUSD},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                        // #endregion
+                        
+                        // Se o valor do campo for igual ao USD, usar o valor calculado correto
+                        if (valorCampoEIgualAoUSD) {
+                            freteBrlBruto = freteBrlCalculadoCorreto;
+                        } else {
+                            freteBrlBruto = freteBrlDoCampo || freteBrlCalculadoCorreto;
+                        }
+                        
+                        // Se não existir em valores brutos, usar o valor calculado
+                        if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId] && 
+                            window.valoresBrutosPorLinha[rowId].frete_brl !== undefined) {
+                            // Só usar o valor bruto se ele for diferente do USD (ou seja, está correto)
+                            const valorBruto = window.valoresBrutosPorLinha[rowId].frete_brl;
+                            if (Math.abs(valorBruto - freteUsdInt) > 0.01) {
+                                // #region agent log
+                                fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2553',message:'READ window.valoresBrutosPorLinha frete_brl',data:{rowId,funcao:'recalcularTodaTabela',freteBrlBrutoAntes:freteBrlBruto,freteBrlBrutoDepois:valorBruto},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                                // #endregion
+                                freteBrlBruto = valorBruto;
+                            }
+                        }
+                    } else {
+                        // Para outras nacionalizações, tentar obter valores brutos se existirem
+                        if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId]) {
+                            freteUsdIntBruto = window.valoresBrutosPorLinha[rowId].frete_usd !== undefined 
+                                ? window.valoresBrutosPorLinha[rowId].frete_usd 
+                                : freteUsdInt;
+                            freteBrlBruto = window.valoresBrutosPorLinha[rowId].frete_brl !== undefined 
+                                ? window.valoresBrutosPorLinha[rowId].frete_brl 
+                                : (freteUsdIntBruto * dolar);
+                        } else {
+                            // Calcular se não existir
+                            freteBrlBruto = freteUsdIntBruto * dolar;
+                        }
+                    }
+                    
+                    // Obter frete USD bruto
+                    if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId] && 
+                        window.valoresBrutosPorLinha[rowId].frete_usd !== undefined) {
+                        freteUsdIntBruto = window.valoresBrutosPorLinha[rowId].frete_usd;
+                    }
+                    
+                    // Registrar valores brutos se não existirem
+                    if (!window.valoresBrutosPorLinha) {
+                        window.valoresBrutosPorLinha = {};
+                    }
+                    if (!window.valoresBrutosPorLinha[rowId]) {
+                        window.valoresBrutosPorLinha[rowId] = {};
+                    }
+                    window.valoresBrutosPorLinha[rowId].frete_usd = freteUsdIntBruto;
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2592',message:'SET window.valoresBrutosPorLinha frete_brl',data:{rowId,funcao:'recalcularTodaTabela',freteUsdIntBruto,freteBrlBruto,antes:window.valoresBrutosPorLinha[rowId]?.frete_brl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                    // #endregion
+                    window.valoresBrutosPorLinha[rowId].frete_brl = freteBrlBruto;
+                    
+                    if (nacionalizacaoCambial === 'santa_catarina') {
+                        // Para Santa Catarina: (P23 * $BS$21) - Q23
+                        // P23 = FRETE INT.USD (freteUsdIntBruto)
+                        // BS$21 = COTACAO FRETE (cotacaoFrete)
+                        // Q23 = FRETE INT.R$ (freteBrlBruto - valor REAL do campo, não calculado)
+                        // Obter cotação do frete para o cálculo
+                        const cotacaoFrete = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val()) || 0;
+                        // IMPORTANTE: freteBrlBruto já foi lido do campo ou valores brutos acima
+                        // Se freteBrlBruto ainda for 0 ou igual a freteUsdIntBruto * cotacaoFrete, ler do campo novamente
+                        if (freteBrlBruto === 0 || Math.abs(freteBrlBruto - (freteUsdIntBruto * cotacaoFrete)) < 0.01) {
+                            const freteBrlDoCampo = MoneyUtils.parseMoney($(`#frete_brl-${rowId}`).val());
+                            // #region agent log
+                            fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2601',message:'RE-READ frete_brl campo DOM (condicao)',data:{rowId,funcao:'recalcularTodaTabela',freteBrlBrutoAntes:freteBrlBruto,freteBrlDoCampo,calculado:freteUsdIntBruto*cotacaoFrete,diferenca:Math.abs(freteBrlBruto-(freteUsdIntBruto*cotacaoFrete))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                            // #endregion
+                            if (freteBrlDoCampo && freteBrlDoCampo > 0 && Math.abs(freteBrlDoCampo - (freteUsdIntBruto * cotacaoFrete)) > 0.01) {
+                                freteBrlBruto = freteBrlDoCampo;
+                                // Atualizar valores brutos com o valor real do campo
+                                window.valoresBrutosPorLinha[rowId].frete_brl = freteBrlBruto;
+                            }
+                        }
+                        // Fórmula Santa Catarina: (P23 * $BS$21) - Q23
+                        diferenca_cambial_frete = (freteUsdIntBruto * cotacaoFrete) - freteBrlBruto;
+                        // #region agent log
+                        fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2609',message:'APLICAR FORMULA SC',data:{rowId,funcao:'recalcularTodaTabela',freteUsdIntBruto,freteBrlBruto,dolar,formula:`(${freteUsdIntBruto}*${dolar})-${freteBrlBruto}`,diferenca_cambial_frete},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                        // #endregion
+                    } else {
+                        // Para outras nacionalizações: calcular diferença cambial proporcional ao frete
                     // Se há diferença cambial no processo, distribuir proporcionalmente
                     const freteTotalProcessoUSD = obterValorProcessoUSD('#frete_internacional', '#frete_internacional_moeda', '#cotacao_frete_internacional');
-                    let diferenca_cambial_frete = 0;
                     if (freteTotalProcessoUSD > 0 && dif_cambial_frete_processo !== 0) {
                         // Proporcional ao frete da linha
-                        diferenca_cambial_frete = (dif_cambial_frete_processo / freteTotalProcessoUSD) * freteUsdInt;
+                            diferenca_cambial_frete = (dif_cambial_frete_processo / freteTotalProcessoUSD) * freteUsdIntBruto;
                     } else {
                         // Fórmula original: BR23 = (P23*$BR$21)-(Q23)
-                        // Mas como Q23 = P23*$B$14, isso sempre daria 0
-                        // Vamos calcular como: (FRETE_USD * TAXA_DOLAR_ATUAL) - (FRETE_USD * TAXA_DOLAR_ORIGINAL)
-                        // Por enquanto, usar 0 se não houver diferença cambial do processo
-                        diferenca_cambial_frete = (freteUsdInt * dolar) - freteBrl; // Sempre 0, mas mantendo a fórmula
+                        // Usar cotação do frete ao invés da cotação da moeda do processo
+                        const cotacaoFrete = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val()) || 0;
+                        diferenca_cambial_frete = (freteUsdIntBruto * cotacaoFrete) - freteBrlBruto;
+                        }
                     }
                     diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
+                    if(rowId == 3){
+                    console.log({
+                            'acao': 'recalcularTodaTabela',
+                            'rowId': rowId,
+                            'freteUsdIntBruto': freteUsdIntBruto,
+                            'freteBrlBruto': freteBrlBruto,
+                            'dolar': dolar,
+                            'diferenca_cambial_frete': diferenca_cambial_frete
+                            
+                        });
+                }
+                    // Atualizar o campo diretamente para garantir que o valor seja exibido
+                    const campoDiferencaCambialFreteRecalc = $(`#diferenca_cambial_frete-${rowId}`);
+                    const diferencaCambialFreteValidadaRecalc = validarDiferencaCambialFrete(diferenca_cambial_frete);
+                    if (diferencaCambialFreteValidadaRecalc === 0 || isNaN(diferencaCambialFreteValidadaRecalc) || !isFinite(diferencaCambialFreteValidadaRecalc) || diferencaCambialFreteValidadaRecalc < 0) {
+                        campoDiferencaCambialFreteRecalc.val('');
+                    
+                    } else {
+                        const valorFormatado = MoneyUtils.formatMoney(diferencaCambialFreteValidadaRecalc, 4);
+                        campoDiferencaCambialFreteRecalc.val(valorFormatado);
+                    }
+                    
+                    // Armazenar valor bruto em valoresBrutosPorLinha e valoresBrutosCamposExternos
+                    if (!window.valoresBrutosPorLinha[rowId]) {
+                        window.valoresBrutosPorLinha[rowId] = {};
+                    }
+                    window.valoresBrutosPorLinha[rowId].diferenca_cambial_frete = diferencaCambialFreteValidadaRecalc;
+                    
+                    if (!window.valoresBrutosCamposExternos) {
+                        window.valoresBrutosCamposExternos = {};
+                    }
+                    if (!window.valoresBrutosCamposExternos.diferenca_cambial_frete) {
+                        window.valoresBrutosCamposExternos.diferenca_cambial_frete = {};
+                    }
+                    window.valoresBrutosCamposExternos.diferenca_cambial_frete[rowId] = diferencaCambialFreteValidadaRecalc;
                     
                     // BS23 = (($BS$21*BC23)-M23) (DIF. CAMBIAL FOB)
                     // Onde: $BS$21 = diferença cambial FOB do processo, BC23 = FATOR_VLR_FOB, M23 = FOB_TOTAL_BRL
@@ -2599,7 +2816,8 @@
             // Calcular DESP. DESEMBARAÇO no final, após todos os cálculos estarem completos
             calcularDespDesembaracoAereo();
             
-            // Atualizar totalizadores novamente após calcular DESP. DESEMBARAÇO e CUSTO TOTAL FINAL
+            // Recalcular totalizadores após calcularDespDesembaracoAereo para incluir os valores calculados
+            // (desp_desenbaraco, custo_unitario_final, custo_total_final)
             atualizarTotalizadores();
             
             setDebugGlobals({
@@ -2608,10 +2826,10 @@
                 nacionalizacao: getNacionalizacaoAtual()
             });
             
-            // Liberar flag após conclusão
+            // Liberar flag após conclusão (aumentado para 500ms para evitar recálculos muito rápidos)
             setTimeout(() => {
                 isRecalculating = false;
-            }, 50);
+            }, 500);
         }
 
         function atualizarCamposCambial() {
@@ -2652,31 +2870,154 @@
                 const fatorVlrFob_AX = fobTotal / fobTotalGeral;
                 const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val()) || 0;
                 const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val()) || 0;
-                let diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt *
-                    dolar);
+                
+                // Calcular diferença cambial frete conforme nacionalização
+                // Usar valores brutos se disponíveis, caso contrário calcular
+                const nacionalizacaoCambial = getNacionalizacaoAtual();
+                let diferenca_cambial_frete = 0;
+                
+                // Obter valores brutos de frete
+                let freteUsdIntBruto = freteUsdInt;
+                let freteBrlBruto = 0;
+                
+                // Para Santa Catarina, Q23 deve ser o valor REAL do campo frete_brl (que já foi calculado e setado)
+                // Para outras nacionalizações, usar valores brutos se disponíveis
+                if (nacionalizacaoCambial === 'santa_catarina') {
+                    // Ler o valor REAL do campo frete_brl (que já foi calculado e setado anteriormente)
+                    const freteBrlDoCampoCambial = MoneyUtils.parseMoney($(`#frete_brl-${rowId}`).val());
+                    const freteBrlCalculadoCorretoCambial = freteUsdInt * dolar;
+                    
+                    // Se o valor do campo for igual ao USD (ou muito próximo), significa que foi setado incorretamente
+                    // Nesse caso, usar o valor calculado correto (BRL) ao invés do valor do campo
+                    const valorCampoEIgualAoUSDCambial = freteBrlDoCampoCambial && Math.abs(freteBrlDoCampoCambial - freteUsdInt) < 0.01;
+                    
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2857',message:'READ frete_brl campo DOM',data:{rowId,funcao:'atualizarCamposCambial',freteBrlDoCampo:freteBrlDoCampoCambial,freteUsdInt,dolar,valorCalculado:freteBrlCalculadoCorretoCambial,valorBruto:window.valoresBrutosPorLinha?.[rowId]?.frete_brl,valorCampoEIgualAoUSD:valorCampoEIgualAoUSDCambial},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                    // #endregion
+                    
+                    // Se o valor do campo for igual ao USD, usar o valor calculado correto
+                    if (valorCampoEIgualAoUSDCambial) {
+                        freteBrlBruto = freteBrlCalculadoCorretoCambial;
+                    } else {
+                        freteBrlBruto = freteBrlDoCampoCambial || freteBrlCalculadoCorretoCambial;
+                    }
+                    
+                    // Se não existir em valores brutos, usar o valor calculado
+                    if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId] && 
+                        window.valoresBrutosPorLinha[rowId].frete_brl !== undefined) {
+                        // Só usar o valor bruto se ele for diferente do USD (ou seja, está correto)
+                        const valorBruto = window.valoresBrutosPorLinha[rowId].frete_brl;
+                        if (Math.abs(valorBruto - freteUsdInt) > 0.01) {
+                            // #region agent log
+                            fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2860',message:'READ window.valoresBrutosPorLinha frete_brl',data:{rowId,funcao:'atualizarCamposCambial',freteBrlBrutoAntes:freteBrlBruto,freteBrlBrutoDepois:valorBruto},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                            // #endregion
+                            freteBrlBruto = valorBruto;
+                        }
+                    }
+                } else {
+                    // Para outras nacionalizações, tentar obter valores brutos se existirem
+                    if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId]) {
+                        freteUsdIntBruto = window.valoresBrutosPorLinha[rowId].frete_usd !== undefined 
+                            ? window.valoresBrutosPorLinha[rowId].frete_usd 
+                            : freteUsdInt;
+                        freteBrlBruto = window.valoresBrutosPorLinha[rowId].frete_brl !== undefined 
+                            ? window.valoresBrutosPorLinha[rowId].frete_brl 
+                            : (freteUsdIntBruto * dolar);
+                    } else {
+                        // Calcular se não existir
+                        freteBrlBruto = freteUsdIntBruto * dolar;
+                    }
+                }
+                
+                // Obter frete USD bruto
+                if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId] && 
+                    window.valoresBrutosPorLinha[rowId].frete_usd !== undefined) {
+                    freteUsdIntBruto = window.valoresBrutosPorLinha[rowId].frete_usd;
+                }
+                
+                // Registrar valores brutos se não existirem
+                if (!window.valoresBrutosPorLinha) {
+                    window.valoresBrutosPorLinha = {};
+                }
+                if (!window.valoresBrutosPorLinha[rowId]) {
+                    window.valoresBrutosPorLinha[rowId] = {};
+                }
+                window.valoresBrutosPorLinha[rowId].frete_usd = freteUsdIntBruto;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2875',message:'SET window.valoresBrutosPorLinha frete_brl',data:{rowId,funcao:'atualizarCamposCambial',freteUsdIntBruto,freteBrlBruto,antes:window.valoresBrutosPorLinha[rowId]?.frete_brl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
+                window.valoresBrutosPorLinha[rowId].frete_brl = freteBrlBruto;
+                
+                if (nacionalizacaoCambial === 'santa_catarina') {
+                    // Para Santa Catarina: (P23 * $BS$21) - Q23
+                    // P23 = FRETE INT.USD (freteUsdIntBruto)
+                    // BS$21 = COTACAO DOLAR (dolar)
+                    // Q23 = FRETE INT.R$ (freteBrlBruto - valor REAL do campo, não calculado)
+                    // IMPORTANTE: freteBrlBruto já foi lido do campo ou valores brutos acima
+                    // Se freteBrlBruto ainda for 0 ou igual a freteUsdIntBruto * dolar, ler do campo novamente
+                    if (freteBrlBruto === 0 || Math.abs(freteBrlBruto - (freteUsdIntBruto * dolar)) < 0.01) {
+                        const freteBrlDoCampo = MoneyUtils.parseMoney($(`#frete_brl-${rowId}`).val());
+                        if (freteBrlDoCampo && freteBrlDoCampo > 0 && Math.abs(freteBrlDoCampo - (freteUsdIntBruto * dolar)) > 0.01) {
+                            freteBrlBruto = freteBrlDoCampo;
+                            // Atualizar valores brutos com o valor real do campo
+                            window.valoresBrutosPorLinha[rowId].frete_brl = freteBrlBruto;
+                        }
+                    }
+                    // Fórmula Santa Catarina: (P23 * $BS$21) - Q23
+                    // Usar cotação do frete ao invés da cotação da moeda do processo
+                    const cotacaoFreteCambial = MoneyUtils.parseMoney($('#cotacao_frete_internacional').val()) || dolar;
+                    diferenca_cambial_frete = (freteUsdIntBruto * cotacaoFreteCambial) - freteBrlBruto;
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2900',message:'APLICAR FORMULA SC',data:{rowId,funcao:'atualizarCamposCambial',freteUsdIntBruto,freteBrlBruto,cotacaoFrete:cotacaoFreteCambial,formula:`(${freteUsdIntBruto}*${cotacaoFreteCambial})-${freteBrlBruto}`,diferenca_cambial_frete},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                    // #endregion
+                } else {
+                    // Para outras nacionalizações: fórmula original
+                    // Usar cotação do frete ao invés da cotação da moeda do processo
+                    const cotacaoFreteCambial = MoneyUtils.parseMoney($('#cotacao_frete_internacional').val()) || dolar;
+                    diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt * cotacaoFreteCambial);
+                    console.log(`[atualizarCamposCambial] Linha ${rowId} - FÓRMULA OUTRAS: (${freteUsdInt} * ${dif_cambial_frete_processo}) - (${freteUsdInt} * ${dolar}) = ${diferenca_cambial_frete}`);
+                }
+                
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
 
-                // Não sobrescrever o campo se o usuário estiver editando (focado) ou se foi editado manualmente
+                // Como o campo é readonly, sempre atualizar com o valor calculado
+                const diferencaCambialFreteValidada = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const campoDiferencaCambialFrete = $(`#diferenca_cambial_frete-${rowId}`);
-                const foiEditadoManual = campoDiferencaCambialFrete.data('editado-manual') === true;
-                const valorAtualCampo = campoDiferencaCambialFrete.val();
-                const valorAtualParseado = valorAtualCampo ? MoneyUtils.parseMoney(valorAtualCampo) : null;
-                
-                // Se o campo já tem um valor salvo (diferente de vazio), marcar como editado manualmente para preservar
-                if (valorAtualParseado !== null && valorAtualParseado !== 0 && !foiEditadoManual) {
-                    campoDiferencaCambialFrete.data('editado-manual', true);
+                console.log(`[atualizarCamposCambial] Linha ${rowId} - DIF. CAMBIAL FRETE calculado:`, {
+                    freteUsdInt_bruto: freteUsdIntBruto,
+                    freteBrl_bruto: freteBrlBruto,
+                    dolar,
+                    freteBrl_calculado: freteUsdIntBruto * dolar,
+                    diferenca_cambial_frete_calculado: diferenca_cambial_frete,
+                    diferenca_cambial_frete_validado: diferencaCambialFreteValidada,
+                    nacionalizacao: nacionalizacaoCambial
+                });
+                if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
+                    campoDiferencaCambialFrete.val('');
+                    console.log(`[atualizarCamposCambial] Linha ${rowId} - Campo setado como vazio (valor inválido)`);
+                } else {
+                    const valorFormatado = MoneyUtils.formatMoney(diferencaCambialFreteValidada, 4);
+                    campoDiferencaCambialFrete.val(valorFormatado);
+                    console.log(`[atualizarCamposCambial] Linha ${rowId} - Campo setado com valor:`, valorFormatado);
                 }
                 
-                // Só recalcular se o campo não estiver focado E não foi editado manualmente E não tem valor salvo
-                if (!campoDiferencaCambialFrete.is(':focus') && !foiEditadoManual && (!valorAtualCampo || valorAtualCampo.trim() === '')) {
-                    // Se o valor for inválido ou negativo, não mostra nada no campo, caso contrário formata
-                    if (diferenca_cambial_frete === 0 || isNaN(diferenca_cambial_frete) || !isFinite(diferenca_cambial_frete) || diferenca_cambial_frete < 0) {
-                        campoDiferencaCambialFrete.val('');
-                    } else {
-                        campoDiferencaCambialFrete.val(MoneyUtils.formatMoney(diferenca_cambial_frete, 4));
-                    }
+                // Armazenar valor bruto em valoresBrutosPorLinha e valoresBrutosCamposExternos
+                if (!window.valoresBrutosPorLinha) {
+                    window.valoresBrutosPorLinha = {};
                 }
+                if (!window.valoresBrutosPorLinha[rowId]) {
+                    window.valoresBrutosPorLinha[rowId] = {};
+                }
+                window.valoresBrutosPorLinha[rowId].diferenca_cambial_frete = diferencaCambialFreteValidada;
+                
+                if (!window.valoresBrutosCamposExternos) {
+                    window.valoresBrutosCamposExternos = {};
+                }
+                if (!window.valoresBrutosCamposExternos.diferenca_cambial_frete) {
+                    window.valoresBrutosCamposExternos.diferenca_cambial_frete = {};
+                }
+                window.valoresBrutosCamposExternos.diferenca_cambial_frete[rowId] = diferencaCambialFreteValidada;
                 $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob, 2));
 
 
@@ -2695,8 +3036,26 @@
         }
 
         function getCamposExternos() {
-            // Para processos aéreos, todos os campos externos base são sempre visíveis
+            const nacionalizacao = getNacionalizacaoAtual();
+            
+            if (nacionalizacao === 'santa_catarina') {
+                // Ordem específica para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONS., HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
+                return [
+                    'outras_taxas_agente',
+                    'delivery_fee',
+                    'collect_fee',
+                    'desconsolidacao',
+                    'handling',
+                    'dai',
+                    'dape',
+                    'rep_itj',
+                    'frete_nvg_x_gyn',
+                    'honorarios_nix'
+                ];
+            } else {
+                // Ordem padrão para outros tipos de nacionalização
             return CAMPOS_EXTERNOS_BASE;
+            }
         }
 
         function limparCamposEspecificos(campos) {
@@ -2938,10 +3297,46 @@
             
             const fatorPesoRow = MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
             const freteUsdInt = valorFreteInternacionalDolar * fatorPesoRow;
-            const dolar = MoneyUtils.parseMoney($('#cotacao_dolar').val()) || 1;
+            
+            // Obter cotação do dólar do objeto de cotações do processo
+            let cotacaoProcessoDolar = getCotacaoesProcesso();
+            let dolar = cotacaoProcessoDolar['USD']?.venda;
+            if (!dolar || dolar <= 0) {
+                // Tentar obter do campo cotacao_dolar como fallback
+                dolar = MoneyUtils.parseMoney($('#cotacao_dolar').val());
+            }
+            if (!dolar || dolar <= 0) {
+                // Tentar obter do campo de cotação do frete se disponível
+                dolar = MoneyUtils.parseMoney($('#cotacao_frete_internacional').val());
+            }
+            if (!dolar || dolar <= 0) {
+                // Se ainda não encontrou, usar 1 como fallback mas logar aviso
+                dolar = 1;
+                console.warn(`[recalcularFretePorLinha] Linha ${rowId} - Cotação do dólar não encontrada, usando 1 como fallback`);
+            }
             
             $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(freteUsdInt, 2));
-            $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(freteUsdInt * dolar, 2));
+            const freteBrlCalculado = freteUsdInt * dolar;
+            
+            // Para Santa Catarina, não sobrescrever se o valor já estiver correto (BRL)
+            // Verificar se o valor atual do campo é diferente do USD (indicando que já foi calculado corretamente)
+            const freteBrlAtual = MoneyUtils.parseMoney($(`#frete_brl-${rowId}`).val());
+            const nacionalizacaoAtual = getNacionalizacaoAtual();
+            
+            // Se for Santa Catarina e o valor atual for diferente do USD (ou seja, já foi calculado corretamente), não sobrescrever
+            if (nacionalizacaoAtual === 'santa_catarina' && freteBrlAtual && 
+                Math.abs(freteBrlAtual - freteUsdInt) > 0.01 && 
+                Math.abs(freteBrlAtual - freteBrlCalculado) > 0.01) {
+                // Não sobrescrever - o valor já está correto
+                // #region agent log
+         
+                // #endregion
+            } else {
+                // #region agent log
+       
+                // #endregion
+                $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(freteBrlCalculado, 2));
+            }
             
             // Recalcular VLR CFR após atualizar o frete
             recalcularVlrCfr(rowId);
@@ -3318,6 +3713,58 @@
         }
 
         function calcularDespesas(rowId, fatorVlrFob_AX, fatorSiscomex, taxaSiscomexUnit, vlrAduaneiroBrl = null) {
+            const nacionalizacao = getNacionalizacaoAtual();
+            
+            // Para Santa Catarina: DESP. ADUANEIRA = BE23+BF23+BG23
+            // Onde:
+            // BE = MULTA (do cabeçalho)
+            // BF = TX DEF. LI (calculado como porcentagem do valor aduaneiro)
+            // BG = TAXA SISCOMEX (da linha)
+            if (nacionalizacao === 'santa_catarina') {
+                // MULTA do cabeçalho
+                const multa = $('#multa').val() ? MoneyUtils.parseMoney($('#multa').val()) : 0; // BE = MULTA
+                
+                // tx_def_li é uma porcentagem, precisa calcular sobre uma base
+                // Vamos usar o valor aduaneiro BRL como base
+                if (vlrAduaneiroBrl === null) {
+                    vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
+                }
+                const txDefLiPercent = $('#tx_def_li').val() ? MoneyUtils.parsePercentage($('#tx_def_li').val()) : 0;
+                const txDefLi = vlrAduaneiroBrl * txDefLiPercent; // BF = TX DEF. LI
+                
+                // Taxa SISCOMEX da linha (já vem como parâmetro taxaSiscomexUnit)
+                const taxaSiscomex = taxaSiscomexUnit || 0; // BG = TAXA SISCOMEX
+                
+                // DESP. ADUANEIRA = BE+BF+BG
+                let despesas = multa + txDefLi + taxaSiscomex;
+                
+                // Adicionar campos opcionais se checkbox marcado
+                const opcional1Compoe = $('#opcional_1_compoe_despesas').is(':checked');
+                const opcional2Compoe = $('#opcional_2_compoe_despesas').is(':checked');
+                
+                const opcional1Valor = $(`#opcional_1_valor-${rowId}`).val() ? MoneyUtils.parseMoney($(`#opcional_1_valor-${rowId}`).val()) : 0;
+                const opcional2Valor = $(`#opcional_2_valor-${rowId}`).val() ? MoneyUtils.parseMoney($(`#opcional_2_valor-${rowId}`).val()) : 0;
+                
+                if (opcional1Compoe) {
+                    despesas += opcional1Valor;
+                }
+                if (opcional2Compoe) {
+                    despesas += opcional2Valor;
+                }
+                
+                return {
+                    total: despesas,
+                    componentes: {
+                        multa, // BE = MULTA
+                        txDefLi, // BF = TX DEF. LI
+                        taxaSiscomex, // BG = TAXA SISCOMEX
+                        opcional1: opcional1Compoe ? opcional1Valor : 0,
+                        opcional2: opcional2Compoe ? opcional2Valor : 0
+                    },
+                    tipoCalculo: 'aereo_santa_catarina'
+                };
+            }
+            
             // Para processo aéreo do tipo geral: DESP. ADUANEIRA = BA17+BB17+BH17+BL17
             // Onde:
             // BA17 = TX DEF LI
@@ -3376,26 +3823,53 @@
         }
 
         function calcularBcIcmsSemReducao(base, impostos, despesas) {
-            const bcIpi = base + (base * impostos.ii);
+            const nacionalizacao = getNacionalizacaoAtual();
+            
+            // Calcular valores de impostos
+            const vlrII = base * impostos.ii;
+            const bcIpi = base + vlrII;
             const vlrIpi = bcIpi * impostos.ipi;
-
-            const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
-                despesas) / (1 - impostos.icms);
+            const vlrPis = base * impostos.pis;
+            const vlrCofins = base * impostos.cofins;
+            
+            // Para Santa Catarina: BC ICMS S/REDUÇÃO = ((AA+AI+AK+AM+AN+AO)/(0,96))
+            // AA = vlr aduaneiro, AI = vlr ii, AK = vlr ipi, AM = vlr pis, AN = vlr cofins, AO = desp aduaneira
+            if (nacionalizacao === 'santa_catarina') {
+                const resultado = (base + vlrII + vlrIpi + vlrPis + vlrCofins + despesas) / 0.96;
+                return resultado;
+            }
+            
+            // Para outras nacionalizações: fórmula padrão
+            const resultado = (base + vlrII + vlrIpi + vlrPis + vlrCofins + despesas) / (1 - impostos.icms);
             return resultado;
         }
 
         function calcularBcIcmsReduzido(rowId, base, impostos, despesas) {
-            atualizarReducao(rowId);
-            const bcIpi = base + (base * impostos.ii);
+            const nacionalizacao = getNacionalizacaoAtual();
+            
+            // Calcular valores de impostos
+            const vlrII = base * impostos.ii;
+            const bcIpi = base + vlrII;
             const vlrIpi = bcIpi * impostos.ipi;
+            const vlrPis = base * impostos.pis;
+            const vlrCofins = base * impostos.cofins;
+            
+            // Para Santa Catarina: BC ICMS REDUZIDO = BC ICMS S/REDUÇÃO (divisor 0.96, sem aplicar redução)
+            if (nacionalizacao === 'santa_catarina') {
+                const divisor = 0.96;
+                const resultado = (base + vlrII + vlrIpi + vlrPis + vlrCofins + despesas) / divisor;
+                return resultado;
+            }
+            
+            // Para outras nacionalizações: fórmula padrão com redução
+            atualizarReducao(rowId);
             let reducao = 1;
 
             // Usar parseMoney ao invés de parsePercentage, pois redução é uma fração decimal (ex: 0,46315789)
             if ($(`#reducao-${rowId}`).val() && MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) > 0) {
                 reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
             }
-            const resultado = (base + (base * impostos.ii) + vlrIpi + (base * impostos.pis) + (base * impostos.cofins) +
-                despesas) / ((1 - impostos.icms));
+            const resultado = (base + vlrII + vlrIpi + vlrPis + vlrCofins + despesas) / (1 - impostos.icms);
 
             return resultado * reducao;
         }
@@ -3443,7 +3917,11 @@
                 $(`#frete_moeda_estrangeira-${rowId}`).val(MoneyUtils.formatMoney(valorFreteMoedaEstrangeira, 2));
             }
             $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt, 2));
-            $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt * valores.dolar, 2));
+            const freteBrlCalculadoAtualizar = valores.freteUsdInt * valores.dolar;
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:3821',message:'SET frete_brl campo DOM',data:{rowId,funcao:'atualizarCampos',freteUsdInt:valores.freteUsdInt,freteBrlCalculado:freteBrlCalculadoAtualizar,dolar:valores.dolar,valorFormatado:MoneyUtils.formatMoney(freteBrlCalculadoAtualizar,2)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(freteBrlCalculadoAtualizar, 2));
 
             if (moedaSeguro && moedaSeguro !== 'USD') {
 
@@ -3467,9 +3945,11 @@
             let cotacaoProcesso = getCotacaoesProcesso();
             let cotacaoUSD = cotacaoProcesso['USD']?.venda ?? 1;
             if (moedaProcesso && moedaProcesso !== 'USD') {
-                let cotacaoMoedaProcesso = MoneyUtils.parseMoney($('#display_cotacao').val());
-                if (!cotacaoMoedaProcesso && cotacaoProcesso[moedaProcesso]) {
-                    cotacaoMoedaProcesso = cotacaoProcesso[moedaProcesso].venda;
+                // Obter cotação da moeda do processo do objeto de cotações
+                let cotacaoMoedaProcesso = cotacaoProcesso[moedaProcesso]?.venda;
+                if (!cotacaoMoedaProcesso || cotacaoMoedaProcesso === 0) {
+                    // Fallback: tentar obter do campo display_cotacao
+                    cotacaoMoedaProcesso = MoneyUtils.parseMoney($('#display_cotacao').val());
                 }
 
                 if (cotacaoMoedaProcesso) {
@@ -3588,26 +4068,53 @@
             $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado, 2));
 
             // Validar e tratar diferenca_cambial_frete antes de exibir
-            // Não sobrescrever o campo se o usuário estiver editando (focado) ou se foi editado manualmente
-            const campoDiferencaCambialFrete = $(`#diferenca_cambial_frete-${rowId}`);
-            const foiEditadoManual = campoDiferencaCambialFrete.data('editado-manual') === true;
-            const valorAtualCampo = campoDiferencaCambialFrete.val();
-            const valorAtualParseado = valorAtualCampo ? MoneyUtils.parseMoney(valorAtualCampo) : null;
+            // Priorizar valores brutos se disponíveis, caso contrário usar valor recebido
+            let diferencaCambialFreteCalculada = 0;
             
-            // Se o campo já tem um valor salvo (diferente de vazio), marcar como editado manualmente para preservar
-            if (valorAtualParseado !== null && valorAtualParseado !== 0 && !foiEditadoManual) {
-                campoDiferencaCambialFrete.data('editado-manual', true);
+            // Primeiro tentar obter do valoresBrutosPorLinha
+            if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId] && 
+                window.valoresBrutosPorLinha[rowId].diferenca_cambial_frete !== undefined) {
+                diferencaCambialFreteCalculada = window.valoresBrutosPorLinha[rowId].diferenca_cambial_frete;
+            } 
+            // Se não existir, tentar do valores recebidos
+            else if (valores.diferenca_cambial_frete !== undefined) {
+                diferencaCambialFreteCalculada = valores.diferenca_cambial_frete;
+            }
+            // Se ainda não existir, tentar do valoresBrutosCamposExternos
+            else if (window.valoresBrutosCamposExternos && window.valoresBrutosCamposExternos.diferenca_cambial_frete && 
+                     window.valoresBrutosCamposExternos.diferenca_cambial_frete[rowId] !== undefined) {
+                diferencaCambialFreteCalculada = window.valoresBrutosCamposExternos.diferenca_cambial_frete[rowId];
             }
             
-            // Só recalcular se o campo não estiver focado E não foi editado manualmente E não tem valor salvo
-            if (!campoDiferencaCambialFrete.is(':focus') && !foiEditadoManual && (!valorAtualCampo || valorAtualCampo.trim() === '')) {
-                const diferencaCambialFreteValidada = validarDiferencaCambialFrete(valores.diferenca_cambial_frete);
+            const diferencaCambialFreteValidada = validarDiferencaCambialFrete(diferencaCambialFreteCalculada);
+            const campoDiferencaCambialFrete = $(`#diferenca_cambial_frete-${rowId}`);
+            
+            
                 if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
                     campoDiferencaCambialFrete.val('');
+       
                 } else {
-                    campoDiferencaCambialFrete.val(MoneyUtils.formatMoney(diferencaCambialFreteValidada, 4));
-                }
+                const valorFormatado = MoneyUtils.formatMoney(diferencaCambialFreteValidada, 4);
+                campoDiferencaCambialFrete.val(valorFormatado);
+        
             }
+            
+            // Armazenar valor bruto em valoresBrutosPorLinha e valoresBrutosCamposExternos
+            if (!window.valoresBrutosPorLinha) {
+                window.valoresBrutosPorLinha = {};
+            }
+            if (!window.valoresBrutosPorLinha[rowId]) {
+                window.valoresBrutosPorLinha[rowId] = {};
+            }
+            window.valoresBrutosPorLinha[rowId].diferenca_cambial_frete = diferencaCambialFreteValidada;
+            
+            if (!window.valoresBrutosCamposExternos) {
+                window.valoresBrutosCamposExternos = {};
+            }
+            if (!window.valoresBrutosCamposExternos.diferenca_cambial_frete) {
+                window.valoresBrutosCamposExternos.diferenca_cambial_frete = {};
+            }
+            window.valoresBrutosCamposExternos.diferenca_cambial_frete[rowId] = diferencaCambialFreteValidada;
             $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob, 2));
 
             // Armazenar valores brutos (sem arredondamento) para uso nos totalizadores
@@ -3652,15 +4159,34 @@
             // Taxa SISCOMEX da linha (BB17) - usar valor bruto se disponível
             const taxaSiscomexLinha = valores.taxaSiscomexUnit !== undefined ? valores.taxaSiscomexUnit : (MoneyUtils.parseMoney($(`#taxa_siscomex-${rowId}`).val()) || 0);
             
+            // Obter valores adicionais que podem já estar calculados
+            const fatorPeso = MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
+            const fatorValorFob = MoneyUtils.parseMoney($(`#fator_valor_fob-${rowId}`).val()) || 0;
+            const fatorTxSiscomex = MoneyUtils.parseMoney($(`#fator_tx_siscomex-${rowId}`).val()) || 0;
+            const valorUnitNf = valores.totais && valores.totais.vlrUnitProdutNf !== undefined ? valores.totais.vlrUnitProdutNf : (MoneyUtils.parseMoney($(`#valor_unit_nf-${rowId}`).val()) || 0);
+            const pesoLiquidoUnitario = MoneyUtils.parseMoney($(`#peso_liquido_unitario-${rowId}`).val()) || 0;
+            const despDesenbaraco = (window.valoresBrutosCamposExternos?.desp_desenbaraco?.[rowId] !== undefined) 
+                ? window.valoresBrutosCamposExternos.desp_desenbaraco[rowId] 
+                : (MoneyUtils.parseMoney($(`#desp_desenbaraco-${rowId}`).val()) || 0);
+            const custoUnitarioFinal = (window.valoresBrutosPorLinha?.[rowId]?.custo_unitario_final !== undefined)
+                ? window.valoresBrutosPorLinha[rowId].custo_unitario_final
+                : (MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0);
+            const custoTotalFinal = (window.valoresBrutosPorLinha?.[rowId]?.custo_total_final !== undefined)
+                ? window.valoresBrutosPorLinha[rowId].custo_total_final
+                : (MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || 0);
+            
             window.valoresBrutosPorLinha[rowId] = {
                 quantidade: quantidade,
                 peso_liq_total_kg: pesoLiqTotalKg,
                 peso_liq_lbs: pesoLiqLbs,
                 peso_liquido_total: pesoLiqTotalKg, // Compatibilidade
+                peso_liquido_unitario: pesoLiquidoUnitario,
                 fob_total_usd: fobTotal,
                 fob_total_brl: fobTotal * dolar,
                 frete_usd: freteUsdInt,
-                frete_brl: freteUsdInt * dolar,
+                frete_brl: (window.valoresBrutosPorLinha[rowId]?.frete_brl !== undefined) 
+                    ? window.valoresBrutosPorLinha[rowId].frete_brl 
+                    : (freteUsdInt * dolar),
                 seguro_usd: seguroIntUsdRow,
                 seguro_brl: seguroIntUsdRow * dolar,
                 acresc_frete_usd: acrescimoFreteUsdRow,
@@ -3686,6 +4212,7 @@
                 valor_icms_sem_reducao: vlrIcmsSReducao,
                 base_icms_reduzido: bcImcsReduzido,
                 valor_icms_reduzido: vlrIcmsReduzido,
+                valor_unit_nf: valorUnitNf,
                 valor_total_nf: valorTotalNf,
                 valor_total_nf_sem_icms_st: valorTotalNfSemIcmsSt,
                 base_icms_st: baseIcmsSt,
@@ -3693,6 +4220,12 @@
                 valor_total_nf_com_icms_st: valorTotalNfComIcmsSt,
                 diferenca_cambial_frete: diferencaCambialFrete,
                 diferenca_cambial_fob: diferencaCambialFob,
+                fator_peso: fatorPeso,
+                fator_valor_fob: fatorValorFob,
+                fator_tx_siscomex: fatorTxSiscomex,
+                desp_desenbaraco: despDesenbaraco,
+                custo_unitario_final: custoUnitarioFinal,
+                custo_total_final: custoTotalFinal,
                 taxa_siscomex: taxaSiscomexLinha // BB17 = TAXA SISCOMEX LINHA
             };
 
@@ -3799,16 +4332,21 @@
             }
         });
         
-        $('.cabecalhoInputs').on('change keyup', function() {
+        // Removido 'keyup' para evitar múltiplas execuções - apenas 'change' e 'blur'
+        $('.cabecalhoInputs').on('change blur', function() {
             // Quando o cabeçalho mudar, recalcular distribuição
             atualizarFatoresFob();
             atualizarCamposCabecalho(); // Isso já chama atualizarTotalizadores() no final
         });
         
-        // Listeners para campos opcionais
-        $('.opcional-valor').on('change keyup', function() {
+        // Listeners para campos opcionais com debounce
+        let opcionalTimeout = null;
+        $('.opcional-valor').on('change blur', function() {
+            clearTimeout(opcionalTimeout);
+            opcionalTimeout = setTimeout(function() {
             ratearCamposOpcionais();
-            recalcularTodaTabela();
+                debouncedRecalcular();
+            }, 300);
         });
         
         $('#opcional_1_compoe_despesas, #opcional_2_compoe_despesas').on('change', function() {
@@ -3860,7 +4398,7 @@
                 if (!isRecalculating) {
                     recalcularTodaTabela();
                 }
-            }, 300);
+            }, 500);
         }
 
         // Event listeners para multa e tx_def_li - apenas no blur para evitar loops
@@ -4111,80 +4649,181 @@
         // Chamada no final de recalcularTodaTabela() para garantir que todos os valores estão atualizados
         function calcularDespDesembaracoAereo() {
             const lengthTable = $('.linhas-input').length;
+            const nacionalizacao = getNacionalizacaoAtual();
             
-            // Recalcular desp_desenbaraco para todas as linhas (processo aéreo do tipo geral)
-            // Fórmula: SOMA(AZ17:BL17) - (AZ17+BA17+BB17+BH17+BL17)
-            // Onde:
-            // AZ17:BL17 = MULTA, TX DEF. LI, TAXA SISCOMEX, OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, 
-            //             DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
-            // AZ17 = MULTA
-            // BA17 = TX DEF LI
-            // BB17 = TAXA SISCOMEX
-            // BH17 = DAI
-            // BL17 = HONORARIOS_NIX
+            // Recalcular desp_desenbaraco para todas as linhas
             for (let i = 0; i < lengthTable; i++) {
-                // Parte 1: SOMA(AZ17:BL17) - usar APENAS valores brutos armazenados para máxima precisão
                 // Priorizar valores brutos de window.valoresBrutosPorLinha e window.valoresBrutosCamposExternos
                 const valoresBrutos = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i];
                 
-                // AZ17 = MULTA - usar valor bruto se disponível
-                const multa = (window.valoresBrutosCamposExternos?.multa?.[i] !== undefined) 
-                    ? window.valoresBrutosCamposExternos.multa[i] 
-                    : (MoneyUtils.parseMoney($(`#multa-${i}`).val()) || 0);
+                // Inicializar todas as variáveis com 0 para evitar erros de undefined
+                let multa = 0, txDefLi = 0, taxaSiscomex = 0, outrasTxAgente = 0, 
+                    deliveryFee = 0, collectFee = 0, desconsolidacao = 0, 
+                    handling = 0, dai = 0, dape = 0, honorariosNix = 0, 
+                    repItj = 0, freteNvgXGyn = 0, correios = 0, liDtaHonorNix = 0;
+                let desp_desenbaraco_parte_1, desp_desenbaraco_parte_2;
                 
-                // BA17 = TX DEF LI - calcular a partir de valores brutos
+                // Calcular valor aduaneiro BRL (usado em ambos os blocos)
                 const vlrAduaneiroBrl = valoresBrutos?.valor_aduaneiro_brl !== undefined 
                     ? valoresBrutos.valor_aduaneiro_brl 
                     : (MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${i}`).val()) || 0);
-                const txDefLiPercent = MoneyUtils.parsePercentage($(`#tx_def_li-${i}`).val()) || 0;
-                const txDefLi = vlrAduaneiroBrl * txDefLiPercent; // BA17
                 
-                // BB17 = TAXA SISCOMEX - usar valor bruto se disponível
-                const taxaSiscomex = valoresBrutos?.taxa_siscomex !== undefined 
-                    ? valoresBrutos.taxa_siscomex 
-                    : ((window.valoresBrutosCamposExternos?.taxa_siscomex?.[i] !== undefined) 
-                        ? window.valoresBrutosCamposExternos.taxa_siscomex[i] 
-                        : (MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) || 0));
-                const outrasTxAgente = (window.valoresBrutosCamposExternos?.outras_taxas_agente?.[i] !== undefined) 
+                if (nacionalizacao === 'santa_catarina') {
+                    // Para Santa Catarina: DESP. DESEMBARAÇO = SOMA(BE23:BQ23) - (BE23+BF23+BG23)
+                    // BE = MULTA (do cabeçalho)
+                    // BF = TX DEF. LI (calculado do cabeçalho sobre valor aduaneiro)
+                    // BG = TAXA SISCOMEX (da linha)
+                    // BH = OUTRAS TX AGENTE
+                    // BI = DELIVERY FEE
+                    // BJ = DESCONS. (desconsolidacao)
+                    // BK = COLLECT FEE
+                    // BL = HANDLING
+                    // BM = DAI
+                    // BN = DAPE
+                    // BO = REP.ITJ
+                    // BP = FRETE NVG X GYN
+                    // BQ = HONORÁRIOS NIX
+                    
+                    // BE = MULTA (do cabeçalho)
+                    multa = $('#multa').val() ? MoneyUtils.parseMoney($('#multa').val()) : 0;
+                    
+                    // BF = TX DEF. LI (calculado do cabeçalho sobre valor aduaneiro)
+                    const txDefLiPercent = $('#tx_def_li').val() ? MoneyUtils.parsePercentage($('#tx_def_li').val()) : 0;
+                    txDefLi = vlrAduaneiroBrl * txDefLiPercent;
+                    
+                    // BG = TAXA SISCOMEX (da linha)
+                    taxaSiscomex = valoresBrutos?.taxa_siscomex !== undefined 
+                        ? valoresBrutos.taxa_siscomex 
+                        : ((window.valoresBrutosCamposExternos?.taxa_siscomex?.[i] !== undefined) 
+                            ? window.valoresBrutosCamposExternos.taxa_siscomex[i] 
+                            : (MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) || 0));
+                    
+                    // BH = OUTRAS TX AGENTE
+                    outrasTxAgente = (window.valoresBrutosCamposExternos?.outras_taxas_agente?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.outras_taxas_agente[i] 
                     : (MoneyUtils.parseMoney($(`#outras_taxas_agente-${i}`).val()) || 0);
-                const deliveryFee = (window.valoresBrutosCamposExternos?.delivery_fee?.[i] !== undefined) 
+                    
+                    // BI = DELIVERY FEE
+                    deliveryFee = (window.valoresBrutosCamposExternos?.delivery_fee?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.delivery_fee[i] 
                     : (MoneyUtils.parseMoney($(`#delivery_fee-${i}`).val()) || 0);
-                const collectFee = (window.valoresBrutosCamposExternos?.collect_fee?.[i] !== undefined) 
+                    
+                    // BJ = DESCONS. (desconsolidacao)
+                    desconsolidacao = (window.valoresBrutosCamposExternos?.desconsolidacao?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.desconsolidacao[i] 
+                        : (MoneyUtils.parseMoney($(`#desconsolidacao-${i}`).val()) || 0);
+                    
+                    // BK = COLLECT FEE
+                    collectFee = (window.valoresBrutosCamposExternos?.collect_fee?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.collect_fee[i] 
                     : (MoneyUtils.parseMoney($(`#collect_fee-${i}`).val()) || 0);
-                const desconsolidacao = (window.valoresBrutosCamposExternos?.desconsolidacao?.[i] !== undefined) 
+                    
+                    // BL = HANDLING
+                    handling = (window.valoresBrutosCamposExternos?.handling?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.handling[i] 
+                        : (MoneyUtils.parseMoney($(`#handling-${i}`).val()) || 0);
+                    
+                    // BM = DAI
+                    dai = (window.valoresBrutosCamposExternos?.dai?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.dai[i] 
+                        : (MoneyUtils.parseMoney($(`#dai-${i}`).val()) || 0);
+                    
+                    // BN = DAPE
+                    dape = (window.valoresBrutosCamposExternos?.dape?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.dape[i] 
+                        : (MoneyUtils.parseMoney($(`#dape-${i}`).val()) || 0);
+                    
+                    // BO = REP.ITJ
+                    repItj = (window.valoresBrutosCamposExternos?.rep_itj?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.rep_itj[i] 
+                        : (MoneyUtils.parseMoney($(`#rep_itj-${i}`).val()) || 0);
+                    
+                    // BP = FRETE NVG X GYN
+                    freteNvgXGyn = (window.valoresBrutosCamposExternos?.frete_nvg_x_gyn?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.frete_nvg_x_gyn[i] 
+                        : (MoneyUtils.parseMoney($(`#frete_nvg_x_gyn-${i}`).val()) || 0);
+                    
+                    // BQ = HONORÁRIOS NIX
+                    honorariosNix = (window.valoresBrutosCamposExternos?.honorarios_nix?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.honorarios_nix[i] 
+                        : (MoneyUtils.parseMoney($(`#honorarios_nix-${i}`).val()) || 0);
+                    
+                    // Parte 1: SOMA(BE23:BQ23) = MULTA + TX DEF. LI + TAXA SISCOMEX + OUTRAS TX AGENTE + DELIVERY FEE + 
+                    //                            DESCONS. + COLLECT FEE + HANDLING + DAI + DAPE + REP.ITJ + FRETE NVG X GYN + HONORÁRIOS NIX
+                    desp_desenbaraco_parte_1 = multa + txDefLi + taxaSiscomex + outrasTxAgente + deliveryFee + 
+                                              desconsolidacao + collectFee + handling + dai + dape + repItj + 
+                                              freteNvgXGyn + honorariosNix;
+                    
+                    // Parte 2: (BE23+BF23+BG23) = MULTA + TX DEF. LI + TAXA SISCOMEX
+                    desp_desenbaraco_parte_2 = multa + txDefLi + taxaSiscomex;
+                } else {
+                    // Para processo aéreo do tipo geral: SOMA(AZ17:BL17) - (AZ17+BA17+BB17+BH17+BL17)
+                    // Onde:
+                    // AZ17:BL17 = MULTA, TX DEF. LI, TAXA SISCOMEX, OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, 
+                    //             DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
+                    // AZ17 = MULTA
+                    // BA17 = TX DEF LI
+                    // BB17 = TAXA SISCOMEX
+                    // BH17 = DAI
+                    // BL17 = HONORARIOS_NIX
+                    
+                    // AZ17 = MULTA - usar valor bruto se disponível
+                    multa = (window.valoresBrutosCamposExternos?.multa?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.multa[i] 
+                        : (MoneyUtils.parseMoney($(`#multa-${i}`).val()) || 0);
+                    
+                    // BA17 = TX DEF LI - calcular a partir de valores brutos
+                    // (vlrAduaneiroBrl já foi declarado antes do if/else)
+                    const txDefLiPercent = MoneyUtils.parsePercentage($(`#tx_def_li-${i}`).val()) || 0;
+                    txDefLi = vlrAduaneiroBrl * txDefLiPercent; // BA17
+                    
+                    // BB17 = TAXA SISCOMEX - usar valor bruto se disponível
+                    taxaSiscomex = valoresBrutos?.taxa_siscomex !== undefined 
+                        ? valoresBrutos.taxa_siscomex 
+                        : ((window.valoresBrutosCamposExternos?.taxa_siscomex?.[i] !== undefined) 
+                            ? window.valoresBrutosCamposExternos.taxa_siscomex[i] 
+                            : (MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) || 0));
+                    outrasTxAgente = (window.valoresBrutosCamposExternos?.outras_taxas_agente?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.outras_taxas_agente[i] 
+                        : (MoneyUtils.parseMoney($(`#outras_taxas_agente-${i}`).val()) || 0);
+                    deliveryFee = (window.valoresBrutosCamposExternos?.delivery_fee?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.delivery_fee[i] 
+                        : (MoneyUtils.parseMoney($(`#delivery_fee-${i}`).val()) || 0);
+                    collectFee = (window.valoresBrutosCamposExternos?.collect_fee?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.collect_fee[i] 
+                        : (MoneyUtils.parseMoney($(`#collect_fee-${i}`).val()) || 0);
+                    desconsolidacao = (window.valoresBrutosCamposExternos?.desconsolidacao?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.desconsolidacao[i] 
                     : (MoneyUtils.parseMoney($(`#desconsolidacao-${i}`).val()) || 0);
-                const handling = (window.valoresBrutosCamposExternos?.handling?.[i] !== undefined) 
+                    handling = (window.valoresBrutosCamposExternos?.handling?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.handling[i] 
                     : (MoneyUtils.parseMoney($(`#handling-${i}`).val()) || 0);
-                const dai = (window.valoresBrutosCamposExternos?.dai?.[i] !== undefined) 
+                    dai = (window.valoresBrutosCamposExternos?.dai?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.dai[i] 
-                    : (MoneyUtils.parseMoney($(`#dai-${i}`).val()) || 0); // BH17
-                const dape = (window.valoresBrutosCamposExternos?.dape?.[i] !== undefined) 
+                        : (MoneyUtils.parseMoney($(`#dai-${i}`).val()) || 0); // BH17
+                    dape = (window.valoresBrutosCamposExternos?.dape?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.dape[i] 
                     : (MoneyUtils.parseMoney($(`#dape-${i}`).val()) || 0);
-                const correios = (window.valoresBrutosCamposExternos?.correios?.[i] !== undefined) 
+                    correios = (window.valoresBrutosCamposExternos?.correios?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.correios[i] 
                     : (MoneyUtils.parseMoney($(`#correios-${i}`).val()) || 0);
-                const liDtaHonorNix = (window.valoresBrutosCamposExternos?.li_dta_honor_nix?.[i] !== undefined) 
+                    liDtaHonorNix = (window.valoresBrutosCamposExternos?.li_dta_honor_nix?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.li_dta_honor_nix[i] 
                     : (MoneyUtils.parseMoney($(`#li_dta_honor_nix-${i}`).val()) || 0);
-                const honorariosNix = (window.valoresBrutosCamposExternos?.honorarios_nix?.[i] !== undefined) 
+                    honorariosNix = (window.valoresBrutosCamposExternos?.honorarios_nix?.[i] !== undefined) 
                     ? window.valoresBrutosCamposExternos.honorarios_nix[i] 
-                    : (MoneyUtils.parseMoney($(`#honorarios_nix-${i}`).val()) || 0); // BL17
-                
-                // Parte 1: SOMA(AZ17:BL17) = MULTA + TX DEF LI + TAXA SISCOMEX + OUTRAS TX AGENTE + DELIVERY FEE + 
-                //                            COLLECT FEE + DESCONSOLIDAÇÃO + HANDLING + DAI + DAPE + CORREIOS + 
-                //                            LI+DTA+HONOR.NIX + HONORÁRIOS NIX
-                const desp_desenbaraco_parte_1 = multa + txDefLi + taxaSiscomex + outrasTxAgente + deliveryFee + 
-                                                  collectFee + desconsolidacao + handling + dai + dape + correios + 
-                                                  liDtaHonorNix + honorariosNix;
+                        : (MoneyUtils.parseMoney($(`#honorarios_nix-${i}`).val()) || 0); // BL17
+                    
+                    // Parte 1: SOMA(AZ17:BL17) = MULTA + TX DEF LI + TAXA SISCOMEX + OUTRAS TX AGENTE + DELIVERY FEE + 
+                    //                            COLLECT FEE + DESCONSOLIDAÇÃO + HANDLING + DAI + DAPE + CORREIOS + 
+                    //                            LI+DTA+HONOR.NIX + HONORÁRIOS NIX
+                    desp_desenbaraco_parte_1 = multa + txDefLi + taxaSiscomex + outrasTxAgente + deliveryFee + 
+                                              collectFee + desconsolidacao + handling + dai + dape + correios + 
+                                              liDtaHonorNix + honorariosNix;
 
-                // Parte 2: (AZ17+BA17+BB17+BH17+BL17) = MULTA + TX DEF LI + TAXA SISCOMEX + DAI + HONORÁRIOS NIX
-                const desp_desenbaraco_parte_2 = multa + txDefLi + taxaSiscomex + dai + honorariosNix;
+                    // Parte 2: (AZ17+BA17+BB17+BH17+BL17) = MULTA + TX DEF LI + TAXA SISCOMEX + DAI + HONORÁRIOS NIX
+                    desp_desenbaraco_parte_2 = multa + txDefLi + taxaSiscomex + dai + honorariosNix;
+                }
                 
                 // Adicionar campos opcionais se checkbox marcado
                 const opcional1Compoe = $('#opcional_1_compoe_despesas').is(':checked');
@@ -4202,72 +4841,7 @@
                 
                 const despesa_desembaraco = desp_desenbaraco_parte_1 - desp_desenbaraco_parte_2 + despesasAdicionaisOpcionais;
                 
-                // Debug organizado para primeira linha
-                if (i === 29) {
-                    console.group('🔍 DEBUG DESP. DESEMBARAÇO - Linha 1');
-                    console.log('📊 PARTE 1 (SOMA) - Valores lidos do DOM:');
-                    console.table({
-                        'Outras TX Agente': outrasTxAgente.toFixed(2),
-                        'Delivery Fee': deliveryFee.toFixed(2),
-                        'Collect Fee': collectFee.toFixed(2),
-                        'Desconsolidacao': desconsolidacao.toFixed(2),
-                        'Handling': handling.toFixed(2),
-                        'DAI': dai.toFixed(2),
-                        'DAPE': dape.toFixed(2),
-                        'Correios': correios.toFixed(2),
-                        'LI+DTA+HONOR.NIX': liDtaHonorNix.toFixed(2),
-                        'Honorários NIX': honorariosNix.toFixed(2),
-                        'Taxa SISCOMEX': taxaSiscomex.toFixed(2),
-                        'TOTAL PARTE 1': desp_desenbaraco_parte_1.toFixed(2)
-                    });
-                    console.log('📉 PARTE 2 (SUBTRAÇÃO) - Valores lidos do DOM:');
-                    console.table({
-                        'Multa': multa.toFixed(2),
-                        'TX DEF LI': txDefLi.toFixed(2),
-                        'Taxa SISCOMEX': taxaSiscomex.toFixed(2),
-                        'DAI': dai.toFixed(2),
-                        'Honorários NIX': honorariosNix.toFixed(2),
-                        'TOTAL PARTE 2': desp_desenbaraco_parte_2.toFixed(2)
-                    });
-                    // console.log('💰 RESULTADO FINAL:');
-                    // console.log(`DESP. DESEMBARAÇO = ${desp_desenbaraco_parte_1.toFixed(2)} - ${desp_desenbaraco_parte_2.toFixed(2)} = ${despesa_desembaraco.toFixed(2)}`);
-                    // console.log('📋 VALORES BRUTOS DO DOM (antes de parseMoney):');
-                    // console.table({
-                    //     'outras_taxas_agente': $(`#outras_taxas_agente-${i}`).val(),
-                    //     'delivery_fee': $(`#delivery_fee-${i}`).val(),
-                    //     'collect_fee': $(`#collect_fee-${i}`).val(),
-                    //     'desconsolidacao': $(`#desconsolidacao-${i}`).val(),
-                    //     'handling': $(`#handling-${i}`).val(),
-                    //     'dai': $(`#dai-${i}`).val(),
-                    //     'dape': $(`#dape-${i}`).val(),
-                    //     'correios': $(`#correios-${i}`).val(),
-                    //     'li_dta_honor_nix': $(`#li_dta_honor_nix-${i}`).val(),
-                    //     'honorarios_nix': $(`#honorarios_nix-${i}`).val(),
-                    //     'taxa_siscomex': $(`#taxa_siscomex-${i}`).val(),
-                    //     'multa': $(`#multa-${i}`).val(),
-                    //     'tx_def_li': $(`#tx_def_li-${i}`).val(),
-                    //     'valor_aduaneiro_brl': $(`#valor_aduaneiro_brl-${i}`).val()
-                    // });
-                    // console.log('🔢 VALORES PARSED (após parseMoney/parsePercentage):');
-                    // console.table({
-                    //     'outras_taxas_agente': outrasTxAgente,
-                    //     'delivery_fee': deliveryFee,
-                    //     'collect_fee': collectFee,
-                    //     'desconsolidacao': desconsolidacao,
-                    //     'handling': handling,
-                    //     'dai': dai,
-                    //     'dape': dape,
-                    //     'correios': correios,
-                    //     'li_dta_honor_nix': liDtaHonorNix,
-                    //     'honorarios_nix': honorariosNix,
-                    //     'taxa_siscomex': taxa_siscomex,
-                    //     'multa': multa,
-                    //     'taxa_def': taxa_def,
-                    //     'tx_def_li_percent': txDefLiPercent,
-                    //     'valor_aduaneiro_brl': vlrAduaneiroBrl
-                    // });
-                    // console.groupEnd();
-                }
+     
                 
                 // Fórmulas do JSON:
                 // BT23 = (((BA23+BQ23+BR23+BS23)-AS23)/G23) (CUSTO UNIT FINAL)
@@ -4310,7 +4884,7 @@
                 const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0; // AS23
                 
                 // Calcular CUSTO UNIT TOTAL COMP conforme nacionalização
-                const nacionalizacao = getNacionalizacaoAtual();
+                // (nacionalizacao já foi declarada no início da função)
                 let custo_unitario_final = 0;
                 
                 if (nacionalizacao === 'geral' || nacionalizacao === 'Geral') {
@@ -4323,9 +4897,13 @@
                     const numerador = vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete;
                     custo_unitario_final = qquantidade > 0 ? numerador / qquantidade : 0;
                 } else if (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') {
-                    // EM SANTA CATARINA: (Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete - ICMS reduzido) ÷ Quantidade
-                    const icmsReduzidoParaSubtrair = vlrIcmsReduzido;
-                    const numerador = (vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete + diferenca_cambial_fob) - icmsReduzidoParaSubtrair;
+                    // EM SANTA CATARINA: CUSTO UNIT FINAL = ((BA23+BR23+BS23+BT23))/G23
+                    // BA = VLR TOTAL NF C/ICMS-ST
+                    // BR = DESP. DESEMBARAÇO
+                    // BS = DIF. CAMBIAL FRETE
+                    // BT = DIF CAMBIAL FOB
+                    // G = QUANTIDADE
+                    const numerador = vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete + diferenca_cambial_fob;
                     custo_unitario_final = qquantidade > 0 ? numerador / qquantidade : 0;
                 } else {
                     // Para outras nacionalizações: (Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete) ÷ Quantidade
@@ -4333,32 +4911,7 @@
                     custo_unitario_final = qquantidade > 0 ? numerador / qquantidade : 0;
                 }
                 
-                // Debug para primeira linha
-                if (i === 0) {
-                    console.log('🔍 DEBUG CUSTO UNITÁRIO FINAL - Linha 1');
-                    console.log('Valores usados no cálculo:');
-                    console.log(`  VLR TOTAL NF C/ICMS-ST: ${vlrTotalNfComIcms.toFixed(2)}`);
-                    console.log(`  Desp. Desembaraço: ${despesasAdicionais.toFixed(2)}`);
-                    console.log(`  Dif. Cambial Frete: ${diferenca_cambial_frete.toFixed(2)}`);
-                    console.log(`  Dif. Cambial FOB: ${diferenca_cambial_fob.toFixed(2)}`);
-                    console.log(`  ICMS Reduzido: ${vlrIcmsReduzido.toFixed(2)}`);
-                    console.log(`  Nacionalização: ${nacionalizacao}`);
-                    if (nacionalizacao === 'geral' || nacionalizacao === 'Geral') {
-                        const numerador = vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete;
-                        console.log(`  Fórmula GERAL: (VLR TOTAL NF C/ICMS-ST + DESP DESEMBARACO + DIF CAMBIAL FRETE) / QUANTIDADE`);
-                        console.log(`  Numerador: ${numerador.toFixed(2)}`);
-                    } else if (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') {
-                        const numerador = (vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete + diferenca_cambial_fob) - vlrIcmsReduzido;
-                        console.log(`  Fórmula SC: (VLR TOTAL NF C/ICMS-ST + DESP DESEMBARACO + DIF CAMBIAL FRETE + DIF CAMBIAL FOB - ICMS REDUZIDO) / QUANTIDADE`);
-                        console.log(`  Numerador: ${numerador.toFixed(2)}`);
-                    } else {
-                        const numerador = vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete + diferenca_cambial_fob;
-                        console.log(`  Fórmula OUTRAS: (VLR TOTAL NF C/ICMS-ST + DESP DESEMBARACO + DIF CAMBIAL FRETE + DIF CAMBIAL FOB) / QUANTIDADE`);
-                        console.log(`  Numerador: ${numerador.toFixed(2)}`);
-                    }
-                    console.log(`  Quantidade: ${qquantidade}`);
-                    console.log(`  Custo Unit. Final: ${custo_unitario_final.toFixed(2)}`);
-                }
+                
 
                 // CUSTO TOTAL FINAL = CUSTO UNITÁRIO FINAL * QUANTIDADE
                 const custo_total_final = custo_unitario_final * qquantidade;
@@ -4368,12 +4921,15 @@
                 $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2));
                 
                 // Armazenar valores brutos para uso no totalizador
+                // Garantir que o objeto existe e não sobrescrever campos existentes
                 if (!window.valoresBrutosPorLinha) {
                     window.valoresBrutosPorLinha = {};
                 }
                 if (!window.valoresBrutosPorLinha[i]) {
                     window.valoresBrutosPorLinha[i] = {};
                 }
+                // Atualizar apenas os campos calculados nesta função, preservando os demais
+                window.valoresBrutosPorLinha[i].desp_desenbaraco = despesa_desembaraco;
                 window.valoresBrutosPorLinha[i].custo_unitario_final = custo_unitario_final;
                 window.valoresBrutosPorLinha[i].custo_total_final = custo_total_final;
                 
@@ -4578,7 +5134,10 @@
         <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]" id="item-${newIndex}" value=""></td>
-        <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][origem]" id="origem-${newIndex}" value=""></td>
+        ${getNacionalizacaoAtual() === 'santa_catarina' 
+            ? '<td><input data-row="' + newIndex + '" type="text" class="form-control" name="produtos[' + newIndex + '][codigo_giiro]" id="codigo_giiro-' + newIndex + '" value=""></td>'
+            : '<td><input data-row="' + newIndex + '" type="text" class="form-control" name="produtos[' + newIndex + '][origem]" id="origem-' + newIndex + '" value=""></td>'
+        }
         <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
         <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][ncm]" id="ncm-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
@@ -4647,7 +5206,7 @@
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][li_dta_honor_nix]" id="li_dta_honor_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][honorarios_nix]" id="honorarios_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal4" name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal4" readonly name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][diferenca_cambial_fob]" id="diferenca_cambial_fob-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][opcional_1_valor]" id="opcional_1_valor-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][opcional_2_valor]" id="opcional_2_valor-${newIndex}" value=""></td>
@@ -4747,11 +5306,14 @@
                 }
             });
             
-            // Chamar totalizador ao carregar a página
+            // Chamar totalizador ao carregar a página (com flag para evitar múltiplas execuções)
+            let paginaCarregada = false;
             setTimeout(function() {
-                if ($('#productsBody tr:not(.separador-adicao)').length > 0) {
+                if (!paginaCarregada && $('#productsBody tr:not(.separador-adicao)').length > 0) {
+                    paginaCarregada = true;
                     recalcularTodaTabela();
-                } else {
+                } else if (!paginaCarregada) {
+                    paginaCarregada = true;
                     atualizarTotalizadores();
                 }
             }, 1000);
@@ -5249,6 +5811,9 @@
                 
                 // Campos do cabeçalho que devem ser salvos
                 let campos = [
+                    'multa',
+                    'tx_def_li',
+                    'taxa_siscomex',
                     'outras_taxas_agente',
                     'delivery_fee',
                     'delivery_fee_brl',
@@ -5258,6 +5823,8 @@
                     'handling',
                     'dai',
                     'dape',
+                    'rep_itj',
+                    'frete_nvg_x_gyn',
                     'correios',
                     'li_dta_honor_nix',
                     'honorarios_nix',

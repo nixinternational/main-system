@@ -125,91 +125,131 @@
                             <th colspan="{{ $colspanBeforeMiddleRow - $colspanAntesPesoLiqUnit - 2 }}"></th>
 
                             @php
-                                // Ordem: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
-                                $campos = [
-                                    'outras_taxas_agente',
-                                    'delivery_fee',
-                                    'collect_fee',
-                                    'desconsolidacao',
-                                    'handling',
-                                    'dai',
-                                    'dape',
-                                    'correios',
-                                    'li_dta_honor_nix',
-                                    'honorarios_nix', // Movido para depois de LI+DTA+HONOR.NIX
-                                ];
+                                $nacionalizacaoAtual = strtolower($processo->nacionalizacao ?? 'outros');
+                                
+                                if ($nacionalizacaoAtual === 'santa_catarina') {
+                                    // Ordem específica para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONS., HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
+                                    $campos = [
+                                        'outras_taxas_agente',
+                                        'delivery_fee',
+                                        'collect_fee',
+                                        'desconsolidacao',
+                                        'handling',
+                                        'dai',
+                                        'dape',
+                                        'rep_itj',
+                                        'frete_nvg_x_gyn',
+                                        'honorarios_nix',
+                                    ];
+                                } else {
+                                    // Ordem padrão: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
+                                    $campos = [
+                                        'outras_taxas_agente',
+                                        'delivery_fee',
+                                        'collect_fee',
+                                        'desconsolidacao',
+                                        'handling',
+                                        'dai',
+                                        'dape',
+                                        'correios',
+                                        'li_dta_honor_nix',
+                                        'honorarios_nix',
+                                    ];
+                                }
                                 $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
 
-                            {{-- OUTRAS TX AGENTE --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="outras_taxas_agente" id="outras_taxas_agente"
-                                    value="{{ number_format($processo->outras_taxas_agente ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- DELIVERY FEE --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="delivery_fee" id="delivery_fee"
-                                    value="{{ number_format($processo->delivery_fee ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- COLLECT FEE --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="collect_fee" id="collect_fee"
-                                    value="{{ number_format($processo->collect_fee ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- DESCONSOLIDAÇÃO --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="desconsolidacao" id="desconsolidacao"
-                                    value="{{ number_format($processo->desconsolidacao ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- HANDLING --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="handling" id="handling"
-                                    value="{{ number_format($processo->handling ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- DAI --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="dai" id="dai"
-                                    value="{{ number_format($processo->dai ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- DAPE --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="dape" id="dape"
-                                    value="{{ number_format($processo->dape ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- CORREIOS --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="correios" id="correios"
-                                    value="{{ number_format($processo->correios ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- LI+DTA+HONOR.NIX --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="li_dta_honor_nix" id="li_dta_honor_nix"
-                                    value="{{ number_format($processo->li_dta_honor_nix ?? 0, 5, ',', '.') }}">
-                            </th>
-                            
-                            {{-- HONORÁRIOS NIX --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="honorarios_nix" id="honorarios_nix"
-                                    value="{{ number_format($processo->honorarios_nix ?? 0, 5, ',', '.') }}">
-                            </th>
+                            @foreach ($campos as $campo)
+                                @if ($campo === 'outras_taxas_agente')
+                                    {{-- OUTRAS TX AGENTE --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'delivery_fee')
+                                    {{-- DELIVERY FEE --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'collect_fee')
+                                    {{-- COLLECT FEE --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'desconsolidacao')
+                                    {{-- DESCONSOLIDAÇÃO --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'handling')
+                                    {{-- HANDLING --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'dai')
+                                    {{-- DAI --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'dape')
+                                    {{-- DAPE --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'rep_itj')
+                                    {{-- REP.ITJ --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 2, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'frete_nvg_x_gyn')
+                                    {{-- FRETE NVG X GYN --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 2, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'honorarios_nix')
+                                    {{-- HONORÁRIOS NIX --}}
+                                    <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                            name="{{ $campo }}" id="{{ $campo }}"
+                                            value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                    </th>
+                                @elseif ($campo === 'correios')
+                                    {{-- CORREIOS (apenas para não Santa Catarina) --}}
+                                    @if ($nacionalizacaoAtual !== 'santa_catarina')
+                                        <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                            <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                                name="{{ $campo }}" id="{{ $campo }}"
+                                                value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                        </th>
+                                    @endif
+                                @elseif ($campo === 'li_dta_honor_nix')
+                                    {{-- LI+DTA+HONOR.NIX (apenas para não Santa Catarina) --}}
+                                    @if ($nacionalizacaoAtual !== 'santa_catarina')
+                                        <th class="middleRowInputTh" data-campo="{{ $campo }}">
+                                            <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                                name="{{ $campo }}" id="{{ $campo }}"
+                                                value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
+                                        </th>
+                                    @endif
+                                @endif
+                            @endforeach
 
                             @php
                                 // Colunas restantes após os campos da middleRow
@@ -296,7 +336,11 @@
                             <th style="min-width: 500px !important;">DESCRIÇÃO</th>
                             <th>ADIÇÃO</th>
                             <th>ITEM</th>
-                            <th>ORIGEM</th>
+                            @if ($nacionalizacaoAtual === 'santa_catarina')
+                                <th>CODIGO GIIRO</th>
+                            @else
+                                <th>ORIGEM</th>
+                            @endif
                             <th>CODIGO</th>
                             <th>NCM</th>
                             <th>QUANTD</th>
@@ -388,16 +432,34 @@
                             <th>MULTA</th>
                             <th>TX DEF. LI</th>
                             <th>TAXA SISCOMEX</th>
-                            <th>OUTRAS TX AGENTE</th>
-                            <th>DELIVERY FEE</th>
-                            <th>COLLECT FEE</th>
-                            <th>Desconsolidação</th>
-                            <th>HANDLING</th>
-                            <th>DAI</th>
-                            <th>DAPE</th>
-                            <th>CORREIOS</th>
-                            <th>LI+DTA+HONOR.NIX</th>
-                            <th>HONORÁRIOS NIX</th>
+                            @php
+                                $nacionalizacaoAtualHeader = strtolower($processo->nacionalizacao ?? 'outros');
+                            @endphp
+                            @if ($nacionalizacaoAtualHeader === 'santa_catarina')
+                                {{-- Ordem para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX --}}
+                                <th>OUTRAS TX AGENTE</th>
+                                <th>DELIVERY FEE</th>
+                                <th>COLLECT FEE</th>
+                                <th>Desconsolidação</th>
+                                <th>HANDLING</th>
+                                <th>DAI</th>
+                                <th>DAPE</th>
+                                <th>REP.ITJ</th>
+                                <th>FRETE NVG X GYN</th>
+                                <th>HONORÁRIOS NIX</th>
+                            @else
+                                {{-- Ordem padrão para outras nacionalizações --}}
+                                <th>OUTRAS TX AGENTE</th>
+                                <th>DELIVERY FEE</th>
+                                <th>COLLECT FEE</th>
+                                <th>Desconsolidação</th>
+                                <th>HANDLING</th>
+                                <th>DAI</th>
+                                <th>DAPE</th>
+                                <th>CORREIOS</th>
+                                <th>LI+DTA+HONOR.NIX</th>
+                                <th>HONORÁRIOS NIX</th>
+                            @endif
                             <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
                             <th>DIF. CAMBIAL FRETE</th>
                             <th>DIF.CAMBIAL FOB</th>
@@ -462,11 +524,23 @@
                                         value="{{ $processoProduto->item }}">
                                 </td>
 
-                                <td>
-                                    <input data-row="{{ $index }}" type="text" class=" form-control"
-                                        name="produtos[{{ $index }}][origem]" id="origem-{{ $index }}"
-                                        value="{{ $processoProduto->origem ?? '' }}">
-                                </td>
+                                @php
+                                    $nacionalizacaoAtualTbody = strtolower($processo->nacionalizacao ?? 'outros');
+                                @endphp
+
+                                @if ($nacionalizacaoAtualTbody === 'santa_catarina')
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text" class=" form-control"
+                                            name="produtos[{{ $index }}][codigo_giiro]" id="codigo_giiro-{{ $index }}"
+                                            value="{{ $processoProduto->codigo_giiro ?? '' }}">
+                                    </td>
+                                @else
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text" class=" form-control"
+                                            name="produtos[{{ $index }}][origem]" id="origem-{{ $index }}"
+                                            value="{{ $processoProduto->origem ?? '' }}">
+                                    </td>
+                                @endif
 
                                 <td>
                                     <input type="text" class=" form-control" readonly
@@ -1013,21 +1087,43 @@
                                         value="{{ $processoProduto->dape ? number_format($processoProduto->dape, 7, ',', '.') : '' }}">
                                 </td>
 
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][correios]"
-                                        id="correios-{{ $index }}"
-                                        value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 7, ',', '.') : '' }}">
-                                </td>
+                                @if ($nacionalizacaoAtualTbody === 'santa_catarina')
+                                    {{-- REP.ITJ (apenas para Santa Catarina) --}}
+                                    <td data-campo="rep_itj">
+                                        <input type="text" data-row="{{ $index }}"
+                                            class=" form-control moneyReal7" readonly
+                                            name="produtos[{{ $index }}][rep_itj]"
+                                            id="rep_itj-{{ $index }}"
+                                            value="{{ $processoProduto->rep_itj ? number_format($processoProduto->rep_itj, 7, ',', '.') : '' }}">
+                                    </td>
 
-                                <td>
-                                    <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][li_dta_honor_nix]"
-                                        id="li_dta_honor_nix-{{ $index }}"
-                                        value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 7, ',', '.') : '' }}">
-                                </td>
+                                    {{-- FRETE NVG X GYN (apenas para Santa Catarina) --}}
+                                    <td data-campo="frete_nvg_x_gyn">
+                                        <input type="text" data-row="{{ $index }}"
+                                            class=" form-control moneyReal7" readonly
+                                            name="produtos[{{ $index }}][frete_nvg_x_gyn]"
+                                            id="frete_nvg_x_gyn-{{ $index }}"
+                                            value="{{ $processoProduto->frete_nvg_x_gyn ? number_format($processoProduto->frete_nvg_x_gyn, 7, ',', '.') : '' }}">
+                                    </td>
+                                @else
+                                    {{-- CORREIOS (apenas para não Santa Catarina) --}}
+                                    <td data-campo="correios">
+                                        <input type="text" data-row="{{ $index }}"
+                                            class=" form-control moneyReal7" readonly
+                                            name="produtos[{{ $index }}][correios]"
+                                            id="correios-{{ $index }}"
+                                            value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 7, ',', '.') : '' }}">
+                                    </td>
+
+                                    {{-- LI+DTA+HONOR.NIX (apenas para não Santa Catarina) --}}
+                                    <td data-campo="li_dta_honor_nix">
+                                        <input type="text" data-row="{{ $index }}"
+                                            class=" form-control moneyReal7" readonly
+                                            name="produtos[{{ $index }}][li_dta_honor_nix]"
+                                            id="li_dta_honor_nix-{{ $index }}"
+                                            value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 7, ',', '.') : '' }}">
+                                    </td>
+                                @endif
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
@@ -1047,7 +1143,7 @@
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal4"
+                                        class=" form-control moneyReal4" readonly
                                         name="produtos[{{ $index }}][diferenca_cambial_frete]"
                                         id="diferenca_cambial_frete-{{ $index }}"
                                         value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 4, ',', '.') : '' }}">

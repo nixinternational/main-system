@@ -746,6 +746,7 @@ class ProcessoController extends Controller
                             'produto_id' => $produto['produto_id'],
                             'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
                             'origem' => isset($produto['origem']) ? $produto['origem'] : null,
+                            'codigo_giiro' => isset($produto['codigo_giiro']) ? $produto['codigo_giiro'] : null,
                             'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
                             'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) && $produto['peso_liquido_unitario'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
                             'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
@@ -1691,6 +1692,9 @@ class ProcessoController extends Controller
             
             // Campos do cabeçalho que devem ser salvos
             $camposCabecalho = [
+                'multa',
+                'tx_def_li',
+                'taxa_siscomex',
                 'outras_taxas_agente',
                 'delivery_fee',
                 'delivery_fee_brl',
@@ -1700,6 +1704,8 @@ class ProcessoController extends Controller
                 'handling',
                 'dai',
                 'dape',
+                'rep_itj',
+                'frete_nvg_x_gyn',
                 'correios',
                 'li_dta_honor_nix',
                 'honorarios_nix',

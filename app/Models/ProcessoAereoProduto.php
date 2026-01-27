@@ -91,6 +91,8 @@ class ProcessoAereoProduto extends Model
         'dai_brl',
         'dape',
         'dape_brl',
+        'rep_itj',
+        'frete_nvg_x_gyn',
         'correios',
         'li_dta_honor_nix',
         'honorarios_nix',

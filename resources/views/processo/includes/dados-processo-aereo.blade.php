@@ -532,7 +532,7 @@
                                    value="{{ isset($processo->cotacao_moeda_processo[$processo->moeda_processo])
                                        ? number_format($processo->cotacao_moeda_processo[$processo->moeda_processo]['venda'], 4, ',', '.')
                                        : '' }}"
-                                   class="form-control cotacao" name="display_cotacao" id="display_cotacao">
+                                   class="form-control cotacao" name="display_cotacao" id="display_cotacao" required>
                                <input type="hidden" id="cotacao_moeda_processo" name="cotacao_moeda_processo"
                                    value="{{ json_encode($processo->cotacao_moeda_processo ?? $dolar) }}">
                            </div>
