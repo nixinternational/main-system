@@ -610,6 +610,14 @@
                                         name="produtos[{{ $index }}][produto_id]"
                                         id="produto_id-{{ $index }}">
                                         <option selected disabled>Selecione uma opção</option>
+                                        @if (!empty($useProductsAjax))
+                                            @if ($processoProduto->produto)
+                                                <option value="{{ $processoProduto->produto_id }}" selected>
+                                                    {{ $processoProduto->produto->modelo ?? '' }} -
+                                                    {{ $processoProduto->produto->codigo ?? '' }}
+                                                </option>
+                                            @endif
+                                        @else
                                         @foreach ($productsClient as $produto)
                                             <option value="{{ $produto->id }}"
                                                 {{ $processoProduto->produto_id == $produto->id ? 'selected' : '' }}>
@@ -617,6 +625,7 @@
                                                 {{ $produto->codigo }}
                                             </option>
                                         @endforeach
+                                        @endif
                                     </select>
                                 </td>
 
@@ -1563,7 +1572,6 @@
                 }
 
                 async iniciarProcessoSalvamento() {
-                    console.log('Iniciando processo de salvamento. Total de blocos:', this.blocos.length);
 
                     // Mostrar modal de progresso com SweetAlert2
                     this.swalProgress = Swal.fire({
@@ -1579,12 +1587,10 @@
                         }
                     });
 
-                    console.log('Modal de progresso aberto');
 
                     try {
                         // Processar bloco por bloco
                         for (let i = 0; i < this.blocos.length; i++) {
-                            console.log(`Iniciando processamento do bloco ${i + 1}`);
                             const sucesso = await this.salvarBloco(i);
                             if (!sucesso) {
                                 console.error(`Falha no bloco ${i + 1}`);
@@ -1600,7 +1606,6 @@
                             }
                         }
 
-                        console.log('Todos os blocos processados com sucesso');
 
                         // Fechar o modal de progresso e mostrar sucesso
                         await Swal.close();
@@ -1638,7 +1643,6 @@
                 }
 
                 async atualizarProgressoSweetAlert(blocoAtual, totalBlocos, registrosSalvos) {
-                    console.log(`Atualizando progresso: ${blocoAtual}/${totalBlocos}, registros: ${registrosSalvos}`);
 
                     // Atualizar o modal existente
                     Swal.update({
@@ -1696,14 +1700,11 @@
                             }
 
                             produtos.push(produto);
-                            console.log(`Linha ${rowIndex} coletada:`, produto);
                             rowIndex++;
                         } else {
-                            console.log(`Linha ${index} ignorada - sem produto_id ou dados:`, produto);
                         }
                     });
 
-                    console.log('Total de produtos coletados:', produtos.length);
                     return produtos;
                 }
 
@@ -1717,7 +1718,6 @@
 
                 async salvarBloco(indiceBloco) {
                     const blocoProdutos = this.blocos[indiceBloco];
-                    console.log(`Iniciando salvamento do bloco ${indiceBloco + 1} com ${blocoProdutos.length} produtos`);
 
                     try {
                         // Usar FormData que é mais adequado para envio de arquivos e dados complexos
@@ -1803,7 +1803,6 @@
                             });
                         });
 
-                        console.log('Enviando requisição para o servidor...');
 
                         const response = await fetch(`/processo/${this.processoId}`, {
                             method: 'POST',
@@ -1814,18 +1813,15 @@
                             body: formData
                         });
 
-                        console.log('Resposta recebida, status:', response.status);
 
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
 
                         const data = await response.json();
-                        console.log('Dados da resposta:', data);
 
                         if (data.success) {
                             this.totalSalvos += blocoProdutos.length;
-                            console.log(`Bloco ${indiceBloco + 1} salvo com sucesso. Total salvo: ${this.totalSalvos}`);
                             await this.atualizarProgressoSweetAlert(
                                 indiceBloco + 1,
                                 this.blocos.length,

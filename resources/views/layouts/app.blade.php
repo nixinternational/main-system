@@ -229,7 +229,6 @@
             }
             for (let item in messages) {
                 for (let message of messages[item]) {
-                    console.log(message)
                     Toast.fire({
                         icon: `${item}`,
                         html: `${message}`,

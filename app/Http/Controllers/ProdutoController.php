@@ -58,6 +58,58 @@ class ProdutoController extends Controller
         return view('produto.index', compact('produtos'));
     }
 
+    public function searchByCatalogo(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'catalogo_id' => ['required', 'integer', 'exists:catalogos,id'],
+            'q' => ['nullable', 'string'],
+        ]);
+
+        $catalogo = Catalogo::select(['id', 'cliente_id'])->findOrFail($validated['catalogo_id']);
+        $user = $request->user();
+        if ($user && !$user->canAccessCliente($catalogo->cliente_id)) {
+            return response()->json(['message' => 'Cliente não autorizado.'], 403);
+        }
+
+        $term = strtolower(trim((string) ($validated['q'] ?? '')));
+        $perPage = 20;
+
+        $query = Produto::query()
+            ->where('catalogo_id', $catalogo->id)
+            ->select(['id', 'modelo', 'codigo', 'ncm', 'descricao']);
+
+        if ($term !== '') {
+            $like = '%' . $term . '%';
+            $query->where(function ($q) use ($like) {
+                $q->whereRaw('LOWER(modelo) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(codigo) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(ncm) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(descricao) LIKE ?', [$like]);
+            });
+        }
+
+        $results = $query->orderBy('modelo')->paginate($perPage);
+
+        $items = collect($results->items())->map(function ($produto) {
+            $text = trim(($produto->modelo ?? '') . ' - ' . ($produto->codigo ?? ''));
+            return [
+                'id' => $produto->id,
+                'text' => $text !== '-' ? $text : (string) $produto->id,
+                'modelo' => $produto->modelo,
+                'codigo' => $produto->codigo,
+                'ncm' => $produto->ncm,
+                'descricao' => $produto->descricao,
+            ];
+        })->values();
+
+        return response()->json([
+            'results' => $items,
+            'pagination' => [
+                'more' => $results->hasMorePages(),
+            ],
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         try {

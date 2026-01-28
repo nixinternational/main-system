@@ -274,6 +274,9 @@
     </div>
     @if (isset($productsClient))
         <input type="hidden" name="productsClient" id="productsClient" value="{{ $productsClient }}">
+        <input type="hidden" id="useProductsAjax" value="{{ !empty($useProductsAjax) ? '1' : '0' }}">
+        <input type="hidden" id="catalogoId" value="{{ $catalogoId ?? '' }}">
+        <input type="hidden" id="productsSearchUrl" value="{{ route('produtos.search') }}">
         <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ json_encode($dolar) }}">
         <input type="hidden" id="processoAlterado" name="processoAlterado" value="0">
     @endif
@@ -284,7 +287,23 @@
     </form>
     <script>
         let reordenando = false;
-        let products = JSON.parse($('#productsClient').val());
+        const useProductsAjax = $('#useProductsAjax').val() === '1';
+        const productsSearchUrl = $('#productsSearchUrl').val();
+        const catalogoId = $('#catalogoId').val();
+        let products = [];
+        try {
+            products = JSON.parse($('#productsClient').val() || '[]');
+        } catch (e) {
+            products = [];
+        }
+        let productOptionsHtml = '';
+        if (Array.isArray(products) && !useProductsAjax) {
+            const options = [];
+            for (const produto of products) {
+                options.push(`<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`);
+            }
+            productOptionsHtml = options.join('');
+        }
         let debugStore = {};
         let debugGlobals = {};
         let contadorRecalculos = 0;
@@ -292,6 +311,40 @@
 
         {{-- Include de funções de debug e formatação --}}
         @include('processo.includes.scripts.processo-debug')
+
+        function initProductSelectAjax($select) {
+            if (!useProductsAjax || !$select?.length || typeof $.fn.select2 !== 'function') {
+                return;
+            }
+            $select.each(function() {
+                const $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+                $el.select2({
+                    width: '100%',
+                    allowClear: true,
+                    ajax: {
+                        url: productsSearchUrl,
+                        dataType: 'json',
+                        delay: 250,
+                        data: function(params) {
+                            return {
+                                q: params.term,
+                                page: params.page || 1,
+                                catalogo_id: catalogoId
+                            };
+                        },
+                        processResults: function(data) {
+                            return {
+                                results: data.results || [],
+                                pagination: data.pagination || {}
+                            };
+                        }
+                    }
+                });
+            });
+        }
 
         function atualizarTotalizadores() {
 
@@ -1119,9 +1172,17 @@
                     $(this).val('');
                 }
             });
+            if (useProductsAjax) {
+                $('.select2').not('.selectProduct, .selectProductMulta').select2({
+                    width: '100%'
+                });
+                initProductSelectAjax($('.selectProduct'));
+                initProductSelectAjax($('.selectProductMulta'));
+            } else {
             $('.select2').select2({
                 width: '100%'
             });
+            }
 
 
             $('#service_charges').on('blur change input', function() {
@@ -1186,15 +1247,7 @@
                 for (let i = 0; i < lengthTable; i++) {
                     const valor = MoneyUtils.parseMoney($(`#${campo}-${i}`).val()) || 0;
                     window.valoresBrutosCamposExternos[campo][i] = valor;
-                    if (campo === 'desconsolidacao') {
-                        console.log('SETANDO valoresBrutosCamposExternos - Loop inicial', {
-                            campo: campo,
-                            linha: i,
-                            valor_setado: valor,
-                            valor_input: $(`#${campo}-${i}`).val(),
-                            contexto: 'Loop inicial - carregamento'
-                        });
-                    }
+              
                 }
             });
 
@@ -1346,15 +1399,20 @@
         );
 
         setTimeout(function() {
-            $(document).on('change', '.selectProduct', function(e) {
-                let products = JSON.parse($('#productsClient').val());
-                let productObject = products.find(el => el.id == this.value);
-                let rowId = $(this).data('row');
+            $(document).on('change select2:select', '.selectProduct', function(e) {
+                const rowId = $(this).data('row');
+                let productObject = null;
+                if (useProductsAjax && e?.params?.data) {
+                    productObject = e.params.data;
+                } else {
+                    const productsList = Array.isArray(products) ? products : [];
+                    productObject = productsList.find(el => String(el.id) === String(this.value));
+                }
 
                 if (productObject) {
-                    $(`#codigo-${rowId}`).val(productObject.codigo);
-                    $(`#ncm-${rowId}`).val(productObject.ncm);
-                    $(`#descricao-${rowId}`).val(productObject.descricao);
+                    $(`#codigo-${rowId}`).val(productObject.codigo || '');
+                    $(`#ncm-${rowId}`).val(productObject.ncm || '');
+                    $(`#descricao-${rowId}`).val(productObject.descricao || '');
                     debouncedRecalcular();
                 }
             });
@@ -4230,15 +4288,7 @@
                             window.valoresBrutosCamposExternos[campo] = [];
                         }
                         window.valoresBrutosCamposExternos[campo][rowId] = valor;
-                        if (campo === 'desconsolidacao') {
-                            console.log('SETANDO valoresBrutosCamposExternos - Event handler', {
-                                campo: campo,
-                                linha: rowId,
-                                valor_setado: valor,
-                                valor_input: $(this).val(),
-                                contexto: 'Event handler - blur/change'
-                            });
-                        }
+                
                     }
                 }
             }
@@ -4363,27 +4413,12 @@
                                 window.valoresBrutosCamposExternos[campo] = [];
                             }
                             window.valoresBrutosCamposExternos[campo][i] = valorLinha;
-                            if (campo === 'desconsolidacao') {
-                                console.log('SETANDO valoresBrutosCamposExternos - ValorCampo zero (valorLinha)', {
-                                    campo: campo,
-                                    linha: i,
-                                    valor_setado: valorLinha,
-                                    valor_input: $(`#${campo}-${i}`).val(),
-                                    contexto: 'atualizarCamposCabecalho - valorCampo zero'
-                                });
-                            }
+                       
                         } else {
                             $(`#${campo}-${i}`).val('');
                             if (window.valoresBrutosCamposExternos[campo]) {
                                 window.valoresBrutosCamposExternos[campo][i] = 0;
-                                if (campo === 'desconsolidacao') {
-                                    console.log('SETANDO valoresBrutosCamposExternos - Zerando', {
-                                        campo: campo,
-                                        linha: i,
-                                        valor_setado: 0,
-                                        contexto: 'atualizarCamposCabecalho - zerando valor'
-                                    });
-                                }
+                              
                             }
                         }
                     }
@@ -4416,19 +4451,7 @@
                     
 
                     window.valoresBrutosCamposExternos[campo][i] = valorFinal;
-                    if (campo === 'desconsolidacao') {
-                        console.log('SETANDO valoresBrutosCamposExternos - Loop distribuição', {
-                            campo: campo,
-                            linha: i,
-                            valor_setado: valorFinal,
-                            valor_cabecalho: valorCampo,
-                            fator_vlr_fob: fatorVlrFob_AX,
-                            valor_calculado: valorCalculado,
-                            valor_arredondado: valorArredondado,
-                            valor_disponivel: valorDisponivel,
-                            contexto: 'atualizarCamposCabecalho - distribuição normal'
-                        });
-                    }
+                 
                     
                     // Campos que precisam de mais precisão (7 casas decimais)
                     const camposPrecisao7 = ['li_dta_honor_nix', 'honorarios_nix'];
@@ -4465,17 +4488,7 @@
                             
 
                             window.valoresBrutosCamposExternos[campo][i] = valoresPorLinha[i];
-                            if (campo === 'desconsolidacao') {
-                                console.log('SETANDO valoresBrutosCamposExternos - Ajuste negativo', {
-                                    campo: campo,
-                                    linha: i,
-                                    valor_setado: valoresPorLinha[i],
-                                    fator_ajuste: fatorAjuste,
-                                    valor_original: valoresPorLinha[i] / fatorAjuste,
-                                    contexto: 'atualizarCamposCabecalho - ajuste quando valorUltimaLinha < 0'
-                                });
-                            }
-                            
+                       
                             // Campos que precisam de mais precisão (7 casas decimais)
                             const camposPrecisao7 = ['li_dta_honor_nix', 'honorarios_nix'];
                             const decimais = camposPrecisao7.includes(campo) ? 7 : 2;
@@ -4493,16 +4506,7 @@
 
 
                 window.valoresBrutosCamposExternos[campo][ultimaLinha] = valorUltimaLinha;
-                if (campo === 'desconsolidacao') {
-                    console.log('SETANDO valoresBrutosCamposExternos - Última linha', {
-                        campo: campo,
-                        linha: ultimaLinha,
-                        valor_setado: valorUltimaLinha,
-                        valor_cabecalho: valorCampo,
-                        soma_distribuida_recalculada: somaDistribuidaRecalculada,
-                        contexto: 'atualizarCamposCabecalho - última linha inicial'
-                    });
-                }
+        
 
                 let somaFinal = 0;
                 for (let i = 0; i < lengthTable; i++) {
@@ -4514,18 +4518,7 @@
                 if (Math.abs(diferencaFinal) > 0.000001) {
                     window.valoresBrutosCamposExternos[campo][ultimaLinha] += diferencaFinal;
                     valorUltimaLinha += diferencaFinal;
-                    if (campo === 'desconsolidacao') {
-                        console.log('SETANDO valoresBrutosCamposExternos - Ajuste diferencaFinal', {
-                            campo: campo,
-                            linha: ultimaLinha,
-                            valor_antes: window.valoresBrutosCamposExternos[campo][ultimaLinha] - diferencaFinal,
-                            diferenca_final: diferencaFinal,
-                            valor_depois: window.valoresBrutosCamposExternos[campo][ultimaLinha],
-                            soma_final: somaFinal,
-                            valor_cabecalho: valorCampo,
-                            contexto: 'atualizarCamposCabecalho - ajuste diferencaFinal'
-                        });
-                    }
+               
                 }
                 
 
@@ -5089,13 +5082,11 @@
             let newIndex = lengthOptions;
             let proximoItem = obterProximoNumeroItem();
 
+            const selectOptions = useProductsAjax
+                ? '<option></option>'
+                : `<option selected disabled>Selecione uma opção</option>${productOptionsHtml}`;
             let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
-        <option selected disabled>Selecione uma opção</option>`;
-
-            for (let produto of products) {
-                select += `<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`;
-            }
-            select += '</select>';
+        ${selectOptions}</select>`;
 
 
             let moedaFrete = $('#frete_internacional_moeda').val();
@@ -5346,9 +5337,13 @@
 
             $('#productsBody').append(tr);
 
+            if (useProductsAjax) {
+                initProductSelectAjax($(`#produto_id-${newIndex}`));
+            } else {
             $(`#produto_id-${newIndex}`).select2({
                 width: '100%'
             });
+            }
             $('input[data-row="' + newIndex + '"]').trigger('change');
 
             $(`#row-${newIndex} input, #row-${newIndex} select, #row-${newIndex} textarea`).each(function() {

@@ -10,7 +10,6 @@ $( document ).ready(function() {
 
 fetch(`/getPedidosByYear`, ).then(async (response) => {
         //     const resultado = await response.json();
-        //     console.log(resultado);
         //     let label = [];
         //     let dataa = [];
         //     const numeroParaMes = {

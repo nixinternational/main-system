@@ -580,35 +580,35 @@
                       }
                   @endphp
 
-                  <div class="col-12 mt-4">
-                      <div class="card-item shadow-sm" style="flex: 1 1 100%;">
-                          <div class="card-header-primary">
-                              <i class="fas fa-edit me-3"></i>
-                              <span>Editar valores de venda das moedas do dia</span>
-                              <span class="badge-custom ms-3" id="cotacao-data-exibicao">
-                                  {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
-                              </span>
-                          </div>
-                          <div class="card-body p-3">
-                              <div class="row" id="cotacoes-moedas-row">
-                                  @foreach ($cotacoes as $codigo => $cotacao)
-                                       <div class="col-md-3 mb-3">
-                                           <label class="form-label fw-bold small text-muted">
-                                               {{ $cotacao['nome'] ?? $codigo }} ({{ $codigo }})
-                                           </label>
-                                           <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
-                                               value="{{ $cotacao['nome'] ?? $codigo }}">
-                                           <input type="text" step="0.0001" min="0"
-                                               class="form-control cotacao shadow-sm"
-                                               name="cotacao_moeda_processo[{{ $codigo }}][venda]"
-                                               value="{{ number_format($cotacao['venda'], 4, ',', '.') }}"
-                                               aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
-                                       </div>
-                                   @endforeach
+                      <div class="col-12 mt-4">
+                          <div class="card-item shadow-sm" style="flex: 1 1 100%;">
+                              <div class="card-header-primary">
+                                  <i class="fas fa-edit me-3"></i>
+                                  <span>Editar valores de venda das moedas do dia</span>
+                                  <span class="badge-custom ms-3" id="cotacao-data-exibicao">
+                                      {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
+                                  </span>
+                              </div>
+                              <div class="card-body p-3">
+                                  <div class="row" id="cotacoes-moedas-row">
+                                      @foreach ($cotacoes as $codigo => $cotacao)
+                                           <div class="col-md-3 mb-3">
+                                               <label class="form-label fw-bold small text-muted">
+                                                   {{ $cotacao['nome'] ?? $codigo }} ({{ $codigo }})
+                                               </label>
+                                               <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
+                                                   value="{{ $cotacao['nome'] ?? $codigo }}">
+                                               <input type="text" step="0.0001" min="0"
+                                                   class="form-control cotacao shadow-sm"
+                                                   name="cotacao_moeda_processo[{{ $codigo }}][venda]"
+                                                   value="{{ number_format($cotacao['venda'], 4, ',', '.') }}"
+                                                   aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
+                                           </div>
+                                       @endforeach
+                                   </div>
                                </div>
                            </div>
                        </div>
-                   </div>
                </div>
 
 
@@ -886,8 +886,6 @@
 
                // Monitora mudanças de valor
                campoDeliveryFee.add(campoCollectFee).on('input change', function(e) {
-                   console.log('🚨 Campo aéreo alterado por EVENTO:', e.type, this.id);
-                   console.log('Valor atual:', this.value);
                    console.trace('Stack trace do evento');
                });
 
@@ -895,8 +893,6 @@
                const originalVal = $.fn.val;
                $.fn.val = function(value) {
                    if (value !== undefined && (this.is('#delivery_fee') || this.is('#collect_fee'))) {
-                       console.log('🚨 Campo aéreo alterado via .val()', this.attr('id'));
-                       console.log('Novo valor:', value);
                        console.trace('Stack trace do .val()');
                    }
                    return originalVal.apply(this, arguments);
@@ -904,11 +900,9 @@
 
                // Monitora focos e blurs para debug
                campoDeliveryFee.add(campoCollectFee).on('focus', function() {
-                   console.log('Campo aéreo em foco, valor:', this.value, this.id);
                });
 
                campoDeliveryFee.add(campoCollectFee).on('blur', function() {
-                   console.log('Campo aéreo perdeu foco, valor:', this.value, this.id);
                });
            }
 
@@ -1016,7 +1010,6 @@
                                let html = '';
                                Object.keys(cotacoes).forEach(function(codigo) {
                                    let cotacao = cotacoes[codigo];
-                                   console.log(cotacao);
                                    html += `<div class="col-md-3 mb-2">
                                 <label class="form-label">${cotacao.nome ?? codigo} (${codigo})</label>
                                 <input type="hidden" name="cotacao_moeda_processo[${codigo}][nome]" 

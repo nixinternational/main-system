@@ -185,7 +185,6 @@
                 })
             }).then((response) => {
                 response.json().then((res) => {
-                    console.log(res)
                     if (!res.data.success && res.data == '') {
                         Toast.fire({
                             icon: 'success',
@@ -200,7 +199,6 @@
                 });
 
             }).catch((error) => {
-                console.log(error)
             });
         })
         $('#dataHora').daterangepicker({

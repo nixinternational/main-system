@@ -422,7 +422,6 @@
                     try {
                         $select.select2('destroy');
                     } catch(e) {
-                        console.log('Erro ao destruir Select2:', e);
                     }
                 }
                 

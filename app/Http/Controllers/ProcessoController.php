@@ -12,6 +12,7 @@ use App\Models\ProcessoRodoviarioProduto;
 use App\Models\ProcessoProduto;
 use App\Models\ProcessoProdutoMulta;
 use App\Models\Fornecedor;
+use App\Models\Produto;
 use App\Services\Auditoria\ProcessoAuditService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -513,26 +514,38 @@ class ProcessoController extends Controller
             if ($tipoProcessoRequest === 'aereo') {
                 $processoModel = ProcessoAereo::find($id);
                 if ($processoModel) {
-                    $tipoProcesso = 'aereo';
-                    $this->ensureClienteAccess($processoModel->cliente_id);
-                    $processoModel->loadMissing([
-                        'cliente.fornecedores',
-                        'processoAereoProdutos.produto.fornecedor',
-                        'fornecedor'
-                    ]);
-                    $processoProdutosCollection = $processoModel->processoAereoProdutos;
+                $tipoProcesso = 'aereo';
+                $this->ensureClienteAccess($processoModel->cliente_id);
+                $processoModel->loadMissing([
+                        'cliente:id,nome',
+                        'cliente.fornecedores:id,cliente_id,nome',
+                        'processoAereoProdutos' => function ($query) {
+                            $query->with([
+                                'produto:id,modelo,codigo,ncm,descricao,fornecedor_id',
+                                'produto.fornecedor:id,cliente_id,nome'
+                            ]);
+                        },
+                    'fornecedor'
+                ]);
+                $processoProdutosCollection = $processoModel->processoAereoProdutos;
                 }
             } elseif ($tipoProcessoRequest === 'rodoviario') {
                 $processoModel = ProcessoRodoviario::find($id);
                 if ($processoModel) {
-                    $tipoProcesso = 'rodoviario';
-                    $this->ensureClienteAccess($processoModel->cliente_id);
-                    $processoModel->loadMissing([
-                        'cliente.fornecedores',
-                        'processoRodoviarioProdutos.produto.fornecedor',
-                        'fornecedor'
-                    ]);
-                    $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
+                $tipoProcesso = 'rodoviario';
+                $this->ensureClienteAccess($processoModel->cliente_id);
+                $processoModel->loadMissing([
+                        'cliente:id,nome',
+                        'cliente.fornecedores:id,cliente_id,nome',
+                        'processoRodoviarioProdutos' => function ($query) {
+                            $query->with([
+                                'produto:id,modelo,codigo,ncm,descricao,fornecedor_id',
+                                'produto.fornecedor:id,cliente_id,nome'
+                            ]);
+                        },
+                    'fornecedor'
+                ]);
+                $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
                 }
             } else {
                 // Se tipo não foi especificado ou é marítimo, buscar na tabela principal Processo
@@ -544,9 +557,20 @@ class ProcessoController extends Controller
                     $processoModel = $processoPrincipal;
                     $this->ensureClienteAccess($processoModel->cliente_id);
                     $processoModel->loadMissing([
-                        'cliente.fornecedores',
-                        'processoProdutos.produto.fornecedor',
-                        'processoProdutosMulta.produto.fornecedor',
+                        'cliente:id,nome',
+                        'cliente.fornecedores:id,cliente_id,nome',
+                        'processoProdutos' => function ($query) {
+                            $query->with([
+                                'produto:id,modelo,codigo,ncm,descricao,fornecedor_id',
+                                'produto.fornecedor:id,cliente_id,nome'
+                            ]);
+                        },
+                        'processoProdutosMulta' => function ($query) {
+                            $query->with([
+                                'produto:id,modelo,codigo,ncm,descricao,fornecedor_id',
+                                'produto.fornecedor:id,cliente_id,nome'
+                            ]);
+                        },
                         'fornecedor'
                     ]);
                     $processoProdutosCollection = $processoModel->processoProdutos;
@@ -557,22 +581,34 @@ class ProcessoController extends Controller
                         $tipoProcesso = 'aereo';
                         $this->ensureClienteAccess($processoModel->cliente_id);
                         $processoModel->loadMissing([
-                            'cliente.fornecedores',
-                            'processoAereoProdutos.produto.fornecedor',
+                            'cliente:id,nome',
+                            'cliente.fornecedores:id,cliente_id,nome',
+                            'processoAereoProdutos' => function ($query) {
+                                $query->with([
+                                    'produto:id,modelo,codigo,ncm,descricao,fornecedor_id',
+                                    'produto.fornecedor:id,cliente_id,nome'
+                                ]);
+                            },
                             'fornecedor'
                         ]);
                         $processoProdutosCollection = $processoModel->processoAereoProdutos;
                     } else {
                         $processoModel = ProcessoRodoviario::find($id);
                         if ($processoModel) {
-                            $tipoProcesso = 'rodoviario';
-                            $this->ensureClienteAccess($processoModel->cliente_id);
-                            $processoModel->loadMissing([
-                                'cliente.fornecedores',
-                                'processoRodoviarioProdutos.produto.fornecedor',
-                                'fornecedor'
+                        $tipoProcesso = 'rodoviario';
+                        $this->ensureClienteAccess($processoModel->cliente_id);
+                        $processoModel->loadMissing([
+                            'cliente:id,nome',
+                            'cliente.fornecedores:id,cliente_id,nome',
+                        'processoRodoviarioProdutos' => function ($query) {
+                            $query->with([
+                                'produto:id,modelo,codigo,ncm,descricao,fornecedor_id',
+                                'produto.fornecedor:id,cliente_id,nome'
                             ]);
-                            $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
+                            },
+                            'fornecedor'
+                        ]);
+                        $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
                         }
                     }
                 }
@@ -584,12 +620,35 @@ class ProcessoController extends Controller
             }
             
             $processo = $this->parseModelFieldsFromModel($processoModel);
-            $clientes = Cliente::select(['id', 'nome'])->get();
             $catalogo = Catalogo::where('cliente_id', $processo->cliente_id)->first();
             if (!$catalogo) {
                 return redirect(route('processo.index'))->with('messages', ['error' => ['Não é possível acessar um processo com catálogo desde cliente vazio!']]);
             }
-            $productsClient = $catalogo->produtos;
+            $catalogoId = $catalogo->id;
+            $catalogoProductsThreshold = config('app.catalogo_produtos_ajax_threshold', 2000);
+            $catalogoProductsCount = $catalogo->produtos()->count();
+            $useProductsAjax = $catalogoProductsCount > $catalogoProductsThreshold;
+
+            $produtoIds = $processoProdutosCollection
+                ? $processoProdutosCollection->pluck('produto_id')->filter()->unique()
+                : collect();
+
+            if ($processoModel instanceof Processo && $processoModel->relationLoaded('processoProdutosMulta')) {
+                $produtoIds = $produtoIds->merge(
+                    $processoModel->processoProdutosMulta->pluck('produto_id')->filter()
+                )->unique();
+            }
+
+            $baseProductsQuery = Produto::query()
+                ->where('catalogo_id', $catalogoId)
+                ->select(['id', 'modelo', 'codigo', 'ncm', 'descricao']);
+
+            $productsClient = $useProductsAjax
+                ? ( $produtoIds->isEmpty()
+                    ? collect()
+                    : $baseProductsQuery->whereIn('id', $produtoIds)->get()
+                )
+                : $baseProductsQuery->get();
             $dolar = self::getBid();
 
             $moedasSuportadas = self::buscarMoedasSuportadas();
@@ -641,7 +700,6 @@ class ProcessoController extends Controller
             
             return view($viewName, compact(
                 'processo',
-                'clientes',
                 'productsClient',
                 'dolar',
                 'processoProdutos',
@@ -649,7 +707,9 @@ class ProcessoController extends Controller
                 'moedasSuportadas',
                 'fornecedoresEsboco',
                 'podeSelecionarFornecedor',
-                'tipoProcesso'
+                'tipoProcesso',
+                'useProductsAjax',
+                'catalogoId'
             ));
         } catch (ModelNotFoundException $e) {
             return redirect(route('processo.index'))->with('messages', ['error' => ['Processo não encontrado!']]);
@@ -986,7 +1046,7 @@ class ProcessoController extends Controller
                             'peso_liq_kg' => $pesoLiqKgValue ?? null,
                             'peso_liq_total_kg' => $pesoLiqTotalKgValue,
                         ];
-
+                        
                         $processoProduto = ProcessoAereoProduto::updateOrCreate(
                             [
                                 'id' => $produto['processo_produto_id'] ?? null,
@@ -1716,59 +1776,59 @@ class ProcessoController extends Controller
     public function updateProcesso(Request $request, $id)
     {
         try {
-            // Detectar tipo de processo pelo query param ou tentar encontrar em todas as tabelas
-            $tipoProcessoRequest = request()->get('tipo_processo', null);
-            $processo = null;
-            $isAereo = false;
-            $isRodoviario = false;
-            
+        // Detectar tipo de processo pelo query param ou tentar encontrar em todas as tabelas
+        $tipoProcessoRequest = request()->get('tipo_processo', null);
+        $processo = null;
+        $isAereo = false;
+        $isRodoviario = false;
+        
             
      
                 // Se não encontrou na tabela principal, tentar nas tabelas específicas
-                if ($tipoProcessoRequest === 'aereo') {
+        if ($tipoProcessoRequest === 'aereo') {
                     $processo = ProcessoAereo::find($id);
                     if ($processo) {
-                        $isAereo = true;
+            $isAereo = true;
                     }
-                } elseif ($tipoProcessoRequest === 'rodoviario') {
+        } elseif ($tipoProcessoRequest === 'rodoviario') {
+                    $processo = ProcessoRodoviario::find($id);
+                    if ($processo) {
+            $isRodoviario = true;
+                    }
+        } else {
+                    // Se tipo não foi especificado, tentar em todas as tabelas
+                $processo = ProcessoAereo::find($id);
+                if ($processo) {
+                    $isAereo = true;
+                } else {
                     $processo = ProcessoRodoviario::find($id);
                     if ($processo) {
                         $isRodoviario = true;
                     }
-                } else {
-                    // Se tipo não foi especificado, tentar em todas as tabelas
-                    $processo = ProcessoAereo::find($id);
-                    if ($processo) {
-                        $isAereo = true;
-                    } else {
-                        $processo = ProcessoRodoviario::find($id);
-                        if ($processo) {
-                            $isRodoviario = true;
-                        }
-                    }
                 }
+            }
         
             
             // Se não encontrou em nenhuma tabela, retornar erro
             if (!$processo) {
                 return back()->with('messages', ['error' => ['Processo não encontrado!']])->withInput($request->all());
-            }
-            
-            $this->ensureClienteAccess($processo->cliente_id);
+        }
+        
+        $this->ensureClienteAccess($processo->cliente_id);
             $auditService = app(ProcessoAuditService::class);
             $processoOriginal = $processo->getAttributes();
             $processType = $isAereo ? 'aereo' : ($isRodoviario ? 'rodoviario' : ($processo->tipo_processo ?? 'maritimo'));
 
-            $validator = Validator::make($request->all(), [], []);
+        $validator = Validator::make($request->all(), [], []);
 
-            if ($validator->fails()) {
-                $errors = $validator->errors();
-                $message = $errors->unique();
-                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
-            }
+        if ($validator->fails()) {
+            $errors = $validator->errors();
+            $message = $errors->unique();
+            return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+        }
 
-            // Monta o JSON das cotações das moedas do processo
-            $cotacoesMoedaProcesso = [];
+        // Monta o JSON das cotações das moedas do processo
+        $cotacoesMoedaProcesso = [];
             $objeto = null;
 
             // Primeiro, tentar obter dos campos individuais do formulário (prioridade)
@@ -1788,7 +1848,7 @@ class ProcessoController extends Controller
 
             // Processar o objeto se foi obtido com sucesso
             if ($objeto && is_array($objeto) && !empty($objeto)) {
-                foreach ($objeto as $codigo => $cotacao) {
+            foreach ($objeto as $codigo => $cotacao) {
                     if (!is_array($cotacao)) {
                         continue;
                     }
@@ -1799,19 +1859,19 @@ class ProcessoController extends Controller
                     
                     // Só adicionar se pelo menos venda ou compra estiver preenchido
                     if ($venda !== null || $compra !== null) {
-                        $cotacoesMoedaProcesso[$codigo] = [
-                            'nome' => $nome,
-                            'data' => $data,
-                            'moeda' => $codigo,
-                            'compra' => $compra,
-                            'venda' => $venda,
-                            'erro' => null,
-                        ];
+                $cotacoesMoedaProcesso[$codigo] = [
+                    'nome' => $nome,
+                    'data' => $data,
+                    'moeda' => $codigo,
+                    'compra' => $compra,
+                    'venda' => $venda,
+                    'erro' => null,
+                ];
                     }
-                }
             }
-            // Campos comuns entre marítimo e aéreo
-            $dadosProcesso = [
+        }
+        // Campos comuns entre marítimo e aéreo
+        $dadosProcesso = [
             "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
             "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
             "acrescimo_frete" => $this->parseMoneyToFloat($request->acrescimo_frete),
@@ -1844,11 +1904,11 @@ class ProcessoController extends Controller
             'data_moeda_acrescimo_frete' => $request->data_cotacao,
             'cotacao_moeda_processo' => !empty($cotacoesMoedaProcesso) ? $cotacoesMoedaProcesso : null,
             'data_cotacao_processo' => $request->data_cotacao,
-                'moeda_processo' => $request->moeda_processo,
-            ];
-            
-            // Adicionar campos específicos baseado no tipo de processo
-            if ($isAereo) {
+            'moeda_processo' => $request->moeda_processo,
+        ];
+        
+        // Adicionar campos específicos baseado no tipo de processo
+        if ($isAereo) {
             // Campos específicos do transporte aéreo
             $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
             $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
@@ -1867,29 +1927,29 @@ class ProcessoController extends Controller
             $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
             $dadosProcesso['thc_capatazia'] = isset($request->thc_capatazia) ? $this->parseMoneyToFloat($request->thc_capatazia) : null;
             
-                ProcessoAereo::where('id', $id)->update($dadosProcesso);
-            } elseif ($isRodoviario) {
-                // Campos específicos do transporte rodoviário
-                $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
-                $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
-                $dadosProcesso['dai'] = isset($request->dai) ? $this->parseMoneyToFloat($request->dai) : null;
-                $dadosProcesso['dape'] = isset($request->dape) ? $this->parseMoneyToFloat($request->dape) : null;
-                $dadosProcesso['outras_taxas_agente'] = isset($request->outras_taxas_agente) ? $this->parseMoneyToFloat($request->outras_taxas_agente) : null;
-                $dadosProcesso['desconsolidacao'] = isset($request->desconsolidacao) ? $this->parseMoneyToFloat($request->desconsolidacao) : null;
-                $dadosProcesso['handling'] = isset($request->handling) ? $this->parseMoneyToFloat($request->handling) : null;
-                $dadosProcesso['correios'] = isset($request->correios) ? $this->parseMoneyToFloat($request->correios) : null;
-                $dadosProcesso['li_dta_honor_nix'] = isset($request->li_dta_honor_nix) ? $this->parseMoneyToFloat($request->li_dta_honor_nix) : null;
-                $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
+            ProcessoAereo::where('id', $id)->update($dadosProcesso);
+        } elseif ($isRodoviario) {
+            // Campos específicos do transporte rodoviário
+            $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
+            $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
+            $dadosProcesso['dai'] = isset($request->dai) ? $this->parseMoneyToFloat($request->dai) : null;
+            $dadosProcesso['dape'] = isset($request->dape) ? $this->parseMoneyToFloat($request->dape) : null;
+            $dadosProcesso['outras_taxas_agente'] = isset($request->outras_taxas_agente) ? $this->parseMoneyToFloat($request->outras_taxas_agente) : null;
+            $dadosProcesso['desconsolidacao'] = isset($request->desconsolidacao) ? $this->parseMoneyToFloat($request->desconsolidacao) : null;
+            $dadosProcesso['handling'] = isset($request->handling) ? $this->parseMoneyToFloat($request->handling) : null;
+            $dadosProcesso['correios'] = isset($request->correios) ? $this->parseMoneyToFloat($request->correios) : null;
+            $dadosProcesso['li_dta_honor_nix'] = isset($request->li_dta_honor_nix) ? $this->parseMoneyToFloat($request->li_dta_honor_nix) : null;
+            $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
                 // Campos específicos rodoviário (não incluir thc_capatazia pois não existe na tabela processo_rodoviarios)
-                $dadosProcesso['desp_fronteira'] = isset($request->desp_fronteira) ? $this->parseMoneyToFloat($request->desp_fronteira) : null;
-                $dadosProcesso['das_fronteira'] = isset($request->das_fronteira) ? $this->parseMoneyToFloat($request->das_fronteira) : null;
-                $dadosProcesso['armazenagem'] = isset($request->armazenagem) ? $this->parseMoneyToFloat($request->armazenagem) : null;
-                $dadosProcesso['frete_foz_gyn'] = isset($request->frete_foz_gyn) ? $this->parseMoneyToFloat($request->frete_foz_gyn) : null;
-                $dadosProcesso['rep_fronteira'] = isset($request->rep_fronteira) ? $this->parseMoneyToFloat($request->rep_fronteira) : null;
-                $dadosProcesso['armaz_anapolis'] = isset($request->armaz_anapolis) ? $this->parseMoneyToFloat($request->armaz_anapolis) : null;
-                $dadosProcesso['mov_anapolis'] = isset($request->mov_anapolis) ? $this->parseMoneyToFloat($request->mov_anapolis) : null;
-                $dadosProcesso['rep_anapolis'] = isset($request->rep_anapolis) ? $this->parseMoneyToFloat($request->rep_anapolis) : null;
-                
+            $dadosProcesso['desp_fronteira'] = isset($request->desp_fronteira) ? $this->parseMoneyToFloat($request->desp_fronteira) : null;
+            $dadosProcesso['das_fronteira'] = isset($request->das_fronteira) ? $this->parseMoneyToFloat($request->das_fronteira) : null;
+            $dadosProcesso['armazenagem'] = isset($request->armazenagem) ? $this->parseMoneyToFloat($request->armazenagem) : null;
+            $dadosProcesso['frete_foz_gyn'] = isset($request->frete_foz_gyn) ? $this->parseMoneyToFloat($request->frete_foz_gyn) : null;
+            $dadosProcesso['rep_fronteira'] = isset($request->rep_fronteira) ? $this->parseMoneyToFloat($request->rep_fronteira) : null;
+            $dadosProcesso['armaz_anapolis'] = isset($request->armaz_anapolis) ? $this->parseMoneyToFloat($request->armaz_anapolis) : null;
+            $dadosProcesso['mov_anapolis'] = isset($request->mov_anapolis) ? $this->parseMoneyToFloat($request->mov_anapolis) : null;
+            $dadosProcesso['rep_anapolis'] = isset($request->rep_anapolis) ? $this->parseMoneyToFloat($request->rep_anapolis) : null;
+            
                 // Remover campos marítimos que não existem na tabela processo_rodoviarios
                 $camposMaritimos = [
                     'capatazia',
@@ -1911,19 +1971,19 @@ class ProcessoController extends Controller
                 foreach ($camposMaritimos as $campo) {
                     unset($dadosProcesso[$campo]);
                 }
-                ProcessoRodoviario::where('id', $id)->update($dadosProcesso);
-            } else {
-                // Campos específicos do transporte marítimo (incluindo campos _usd e _brl que não existem no aéreo)
-                $dadosProcesso['frete_internacional_usd'] = $this->parseMoneyToFloat($request->frete_internacional_usd);
-                $dadosProcesso['frete_internacional_brl'] = $this->parseMoneyToFloat($request->frete_internacional_brl);
-                $dadosProcesso['seguro_internacional_usd'] = $this->parseMoneyToFloat($request->seguro_internacional_usd);
-                $dadosProcesso['seguro_internacional_brl'] = $this->parseMoneyToFloat($request->seguro_internacional_brl);
-                $dadosProcesso['acrescimo_frete_usd'] = $this->parseMoneyToFloat($request->acrescimo_frete_usd);
-                $dadosProcesso['acrescimo_frete_brl'] = $this->parseMoneyToFloat($request->acrescimo_frete_brl);
-                $dadosProcesso['thc_capatazia'] = $this->parseMoneyToFloat($request->thc_capatazia);
-                
-                Processo::where('id', $id)->update($dadosProcesso);
-            }
+            ProcessoRodoviario::where('id', $id)->update($dadosProcesso);
+        } else {
+            // Campos específicos do transporte marítimo (incluindo campos _usd e _brl que não existem no aéreo)
+            $dadosProcesso['frete_internacional_usd'] = $this->parseMoneyToFloat($request->frete_internacional_usd);
+            $dadosProcesso['frete_internacional_brl'] = $this->parseMoneyToFloat($request->frete_internacional_brl);
+            $dadosProcesso['seguro_internacional_usd'] = $this->parseMoneyToFloat($request->seguro_internacional_usd);
+            $dadosProcesso['seguro_internacional_brl'] = $this->parseMoneyToFloat($request->seguro_internacional_brl);
+            $dadosProcesso['acrescimo_frete_usd'] = $this->parseMoneyToFloat($request->acrescimo_frete_usd);
+            $dadosProcesso['acrescimo_frete_brl'] = $this->parseMoneyToFloat($request->acrescimo_frete_brl);
+            $dadosProcesso['thc_capatazia'] = $this->parseMoneyToFloat($request->thc_capatazia);
+            
+            Processo::where('id', $id)->update($dadosProcesso);
+        }
 
             $auditProcessoChanges = array_intersect_key($dadosProcesso, $request->all());
             if (!empty($auditProcessoChanges)) {
@@ -1939,7 +1999,7 @@ class ProcessoController extends Controller
                 });
             }
         
-            return back()->with('messages', ['success' => ['Dados do processo atualizado com sucesso!']]);
+        return back()->with('messages', ['success' => ['Dados do processo atualizado com sucesso!']]);
         } catch (ModelNotFoundException $e) {
             return back()->with('messages', ['error' => ['Processo não encontrado!']])->withInput($request->all());
         } catch (Exception $e) {
@@ -2416,7 +2476,7 @@ class ProcessoController extends Controller
                 ProcessoRodoviarioProduto::where('processo_rodoviario_id', $id)->delete();
             } else {
                 // Processo marítimo
-                ProcessoProduto::where('processo_id', $id)->delete();
+            ProcessoProduto::where('processo_id', $id)->delete();
             }
             
             // Excluir o processo

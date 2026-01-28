@@ -31,10 +31,10 @@
                     <table class="table table-bordered table-striped table-products" style="min-width: 3000px;">
                     <thead class=" text-center">
                         @php
-                            $moedaProcesso = $processo->moeda_processo ?? 'USD';
-                            $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
-                            $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
-                            $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
+                                $moedaProcesso = $processo->moeda_processo ?? 'USD';
+                                $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
+                                $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
+                                $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
 
                             $totalColunas = 9; // Ações até Fator Peso
                             $totalColunas += $moedaProcesso == 'USD' ? 3 : 4; // FOB
@@ -128,35 +128,35 @@
                                     name="desp_fronteira" id="desp_fronteira"
                                     value="{{ number_format($processo->desp_fronteira ?? 0, 5, ',', '.') }}">
                             </th>
-
+                            
                             {{-- DAS FRONTEIRA --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="das_fronteira" id="das_fronteira"
                                     value="{{ number_format($processo->das_fronteira ?? 0, 5, ',', '.') }}">
                             </th>
-
+                            
                             {{-- ARMAZENAGEM --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="armazenagem" id="armazenagem"
                                     value="{{ number_format($processo->armazenagem ?? 0, 5, ',', '.') }}">
                             </th>
-
+                            
                             {{-- FRETE FOZ/GYN --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="frete_foz_gyn" id="frete_foz_gyn"
                                     value="{{ number_format($processo->frete_foz_gyn ?? 0, 5, ',', '.') }}">
                             </th>
-
+                            
                             {{-- REP. FRONTEIRA --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="rep_fronteira" id="rep_fronteira"
                                     value="{{ number_format($processo->rep_fronteira ?? 0, 5, ',', '.') }}">
                             </th>
-
+                            
                             {{-- ARMAZ. ANAPOLIS --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
@@ -177,14 +177,14 @@
                                     name="rep_anapolis" id="rep_anapolis"
                                     value="{{ number_format($processo->rep_anapolis ?? 0, 5, ',', '.') }}">
                             </th>
-
+                            
                             {{-- CORREIOS --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="correios" id="correios"
                                     value="{{ number_format($processo->correios ?? 0, 5, ',', '.') }}">
                             </th>
-
+                            
                             {{-- LI+DTA+HONOR.NIX --}}
                             <th class="middleRowInputTh">
                                 <input type="text" class="form-control cabecalhoInputs moneyReal"
@@ -193,11 +193,11 @@
                             </th>
 
                             {{-- HONORÁRIOS NIX --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <th class="middleRowInputTh">
+                                    <input type="text" class="form-control cabecalhoInputs moneyReal"
                                     name="honorarios_nix" id="honorarios_nix"
                                     value="{{ number_format($processo->honorarios_nix ?? 0, 5, ',', '.') }}">
-                            </th>
+                                </th>
 
                             @php
                                 // Colunas restantes após os campos da middleRow
@@ -208,11 +208,11 @@
                             <th colspan="{{ $colspanAfterMiddleRow }}"></th>
 
                             {{-- DIF. CAMBIAL FRETE --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control difCambial moneyReal"
+                                <th class="middleRowInputTh">
+                                    <input type="text" class="form-control difCambial moneyReal"
                                     name="diferenca_cambial_frete" id="diferenca_cambial_frete"
                                     value="{{ number_format($processo->diferenca_cambial_frete ?? 0, 5, ',', '.') }}">
-                            </th>
+                                </th>
                             
                             {{-- CUSTO UNIT FINAL e CUSTO TOTAL FINAL (2 colunas vazias após os campos cambiais) --}}
                             <th colspan="2"></th>
@@ -358,6 +358,14 @@
                                         name="produtos[{{ $index }}][produto_id]"
                                         id="produto_id-{{ $index }}">
                                         <option selected disabled>Selecione uma opção</option>
+                                        @if (!empty($useProductsAjax))
+                                            @if ($processoProduto->produto)
+                                                <option value="{{ $processoProduto->produto_id }}" selected>
+                                                    {{ $processoProduto->produto->modelo ?? '' }} -
+                                                    {{ $processoProduto->produto->codigo ?? '' }}
+                                                </option>
+                                            @endif
+                                        @else
                                         @foreach ($productsClient as $produto)
                                             <option value="{{ $produto->id }}"
                                                 {{ $processoProduto->produto_id == $produto->id ? 'selected' : '' }}>
@@ -365,6 +373,7 @@
                                                 {{ $produto->codigo }}
                                             </option>
                                         @endforeach
+                                        @endif
                                     </select>
                                 </td>
 
@@ -1054,7 +1063,6 @@
                 }
 
                 async iniciarProcessoSalvamento() {
-                    console.log('Iniciando processo de salvamento. Total de blocos:', this.blocos.length);
 
                     // Mostrar modal de progresso com SweetAlert2
                     this.swalProgress = Swal.fire({
@@ -1070,11 +1078,9 @@
                         }
                     });
 
-                    console.log('Modal de progresso aberto');
 
                     try {
                         // PRIMEIRO: Salvar os cabecalhoInputs antes de salvar os produtos
-                        console.log('Salvando cabecalhoInputs antes de salvar produtos...');
                         const cabecalhoSalvo = await this.salvarCabecalhoInputs();
                         if (!cabecalhoSalvo) {
                             console.error('Falha ao salvar cabecalhoInputs');
@@ -1087,11 +1093,9 @@
                             });
                             return false;
                         }
-                        console.log('CabecalhoInputs salvos com sucesso!');
                         
                         // DEPOIS: Processar bloco por bloco
                         for (let i = 0; i < this.blocos.length; i++) {
-                            console.log(`Iniciando processamento do bloco ${i + 1}`);
                             const sucesso = await this.salvarBloco(i);
                             if (!sucesso) {
                                 console.error(`Falha no bloco ${i + 1}`);
@@ -1107,7 +1111,6 @@
                             }
                         }
 
-                        console.log('Todos os blocos processados com sucesso');
 
                         // Fechar o modal de progresso e mostrar sucesso
                         await Swal.close();
@@ -1145,7 +1148,6 @@
                 }
 
                 async atualizarProgressoSweetAlert(blocoAtual, totalBlocos, registrosSalvos) {
-                    console.log(`Atualizando progresso: ${blocoAtual}/${totalBlocos}, registros: ${registrosSalvos}`);
 
                     // Atualizar o modal existente
                     Swal.update({
@@ -1198,14 +1200,11 @@
                             }
 
                             produtos.push(produto);
-                            console.log(`Linha ${rowIndex} coletada:`, produto);
                             rowIndex++;
                         } else {
-                            console.log(`Linha ${index} ignorada - sem produto_id ou dados:`, produto);
                         }
                     });
 
-                    console.log('Total de produtos coletados:', produtos.length);
                     return produtos;
                 }
 
@@ -1222,7 +1221,6 @@
                  */
                 async salvarCabecalhoInputs() {
                     try {
-                        console.log('Iniciando salvamento dos cabecalhoInputs...');
                         
                         const formData = new FormData();
                         formData.append('_token', '{{ csrf_token() }}');
@@ -1256,7 +1254,6 @@
                         }
                         
                         const url = '{{ route("processo.salvar.cabecalho.inputs.rodoviario", $processo->id ?? 0) }}';
-                        console.log('Enviando cabecalhoInputs para:', url);
                         
                         const response = await fetch(url, {
                             method: 'POST',
@@ -1266,7 +1263,6 @@
                         const data = await response.json();
                         
                         if (data.success) {
-                            console.log('CabecalhoInputs salvos com sucesso:', data);
                             return true;
                         } else {
                             console.error('Erro ao salvar cabecalhoInputs:', data.error);
@@ -1280,7 +1276,6 @@
 
                 async salvarBloco(indiceBloco) {
                     const blocoProdutos = this.blocos[indiceBloco];
-                    console.log(`Iniciando salvamento do bloco ${indiceBloco + 1} com ${blocoProdutos.length} produtos`);
 
                     try {
                         // Usar FormData que é mais adequado para envio de arquivos e dados complexos
@@ -1304,7 +1299,6 @@
                             });
                         });
 
-                        console.log('Enviando requisição para o servidor...');
 
                         const response = await fetch(`/processo/${this.processoId}`, {
                             method: 'POST',
@@ -1315,18 +1309,15 @@
                             body: formData
                         });
 
-                        console.log('Resposta recebida, status:', response.status);
 
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
 
                         const data = await response.json();
-                        console.log('Dados da resposta:', data);
 
                         if (data.success) {
                             this.totalSalvos += blocoProdutos.length;
-                            console.log(`Bloco ${indiceBloco + 1} salvo com sucesso. Total salvo: ${this.totalSalvos}`);
                             await this.atualizarProgressoSweetAlert(
                                 indiceBloco + 1,
                                 this.blocos.length,

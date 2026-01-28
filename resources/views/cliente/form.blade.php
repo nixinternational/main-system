@@ -1538,7 +1538,6 @@
             let idBanco = this.value;
             const bancosNix = JSON.parse($('#bancoOptions').val())
             const banco = bancosNix.find((el) => el.id == idBanco)
-            console.log(banco, idRow)
             $(`#agencia-${idRow}`).text(banco.agencia)
             $(`#conta-corrente-${idRow}`).text(banco.conta_corrente)
             $(`#numero-banco-${idRow}`).text(banco.numero_banco)

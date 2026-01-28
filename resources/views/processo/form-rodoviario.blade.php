@@ -260,6 +260,9 @@
     </div>
     @if (isset($productsClient))
         <input type="hidden" name="productsClient" id="productsClient" value="{{ $productsClient }}">
+        <input type="hidden" id="useProductsAjax" value="{{ !empty($useProductsAjax) ? '1' : '0' }}">
+        <input type="hidden" id="catalogoId" value="{{ $catalogoId ?? '' }}">
+        <input type="hidden" id="productsSearchUrl" value="{{ route('produtos.search') }}">
         <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ json_encode($dolar) }}">
         <input type="hidden" id="processoAlterado" name="processoAlterado" value="0">
     @endif
@@ -270,7 +273,23 @@
     </form>
     <script>
         let reordenando = false;
-        let products = JSON.parse($('#productsClient').val());
+        const useProductsAjax = $('#useProductsAjax').val() === '1';
+        const productsSearchUrl = $('#productsSearchUrl').val();
+        const catalogoId = $('#catalogoId').val();
+        let products = [];
+        try {
+            products = JSON.parse($('#productsClient').val() || '[]');
+        } catch (e) {
+            products = [];
+        }
+        let productOptionsHtml = '';
+        if (Array.isArray(products) && !useProductsAjax) {
+            const options = [];
+            for (const produto of products) {
+                options.push(`<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`);
+            }
+            productOptionsHtml = options.join('');
+        }
         let debugStore = {};
         let debugGlobals = {};
 
@@ -344,6 +363,40 @@
                 return Math.floor(num * factor) / factor;
             }
             return Math.ceil(num * factor) / factor;
+        }
+
+        function initProductSelectAjax($select) {
+            if (!useProductsAjax || !$select?.length || typeof $.fn.select2 !== 'function') {
+                return;
+            }
+            $select.each(function() {
+                const $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+                $el.select2({
+                    width: '100%',
+                    allowClear: true,
+                    ajax: {
+                        url: productsSearchUrl,
+                        dataType: 'json',
+                        delay: 250,
+                        data: function(params) {
+                            return {
+                                q: params.term,
+                                page: params.page || 1,
+                                catalogo_id: catalogoId
+                            };
+                        },
+                        processResults: function(data) {
+                            return {
+                                results: data.results || [],
+                                pagination: data.pagination || {}
+                            };
+                        }
+                    }
+                });
+            });
         }
 
         function formatTruncatedNumber(value, decimals = 2, options = {}) {
@@ -792,8 +845,8 @@
                     } else if (campo === 'vlr_crf_total' || campo === 'vlr_cfr_total') {
                         // Para aéreo, somar vlr_cfr_total (nome do campo na tabela)
                         const valor = valoresBrutosLinha?.vlr_cfr_total ?? (MoneyUtils.parseMoney($(`#vlr_cfr_total-${rowId}`).val()) || 0);
-                        totais.vlr_crf_total += valor;
-                        totais.vlr_cfr_total += valor;
+                            totais.vlr_crf_total += valor;
+                            totais.vlr_cfr_total += valor;
                     } else if (campo === 'vlr_crf_unit' || campo === 'vlr_cfr_unit') {
                         // VLR CFR UNIT não é somado (é unitário), apenas garantir que existe
                         // Não precisa somar
@@ -1040,12 +1093,12 @@
         function getCotacaoesProcesso() {
             let cotacaoProcesso = {};
             try {
-                if (!$('#cotacao_moeda_processo').val()) {
+            if (!$('#cotacao_moeda_processo').val()) {
                     // Se não há valor, usar dolarHoje como base
                     if ($('#dolarHoje').val()) {
                         cotacaoProcesso = JSON.parse($('#dolarHoje').val());
                         $('#cotacao_moeda_processo').val($('#dolarHoje').val());
-                    } else {
+            } else {
                         cotacaoProcesso = {};
                     }
                 } else {
@@ -1258,7 +1311,6 @@
             if (isNaN(valores.dolar)) valores.dolar = 1;
 
             // Calcular totais
-            console.log(valores);
             let fobTotalUSD = valores.fobTotal;
             let fobTotalBRL = valores.fobTotal * valores.dolar;
 
@@ -1280,7 +1332,6 @@
                 }
             }
 
-            console.log(fobTotalUSD, fobTotalBRL);
             $(`#fob_total_usd-${rowId}`).val(MoneyUtils.formatMoney(fobTotalUSD, 7));
             $(`#fob_total_brl-${rowId}`).val(MoneyUtils.formatMoney(fobTotalBRL, 7));
         }
@@ -1429,9 +1480,17 @@
                     $(this).val('');
                 }
             });
+            if (useProductsAjax) {
+                $('.select2').not('.selectProduct, .selectProductMulta').select2({
+                    width: '100%'
+                });
+                initProductSelectAjax($('.selectProduct'));
+                initProductSelectAjax($('.selectProductMulta'));
+            } else {
             $('.select2').select2({
                 width: '100%'
             });
+            }
 
             // Listener para SERVICE_CHARGES do processo - recalcular todos os produtos
             $('#service_charges').on('blur change input', function() {
@@ -1674,9 +1733,7 @@
                 $(`#${spanId}`).val(MoneyUtils.formatMoney(convertido, 4));
                 
                 // Log apenas para service_charges quando setar a cotação
-                if (inputId === 'service_charges') {
-                    console.log(`Cotação setada para service_charges: ${codigoMoeda} = ${convertido}`);
-                }
+             
 
                 // Tentar obter a data da cotação
                 if (dolar[codigoMoeda].data) {
@@ -1694,9 +1751,7 @@
                 }
             } else {
                 // Se não encontrou a cotação
-                if (inputId === 'service_charges') {
-                    console.log(`Cotação NÃO encontrada para service_charges. Moeda: ${codigoMoeda}, Cotações disponíveis:`, Object.keys(dolar || {}));
-                }
+             
                 $(`#${spanId}`).val('');
                 $(`#data_moeda_${inputId}`).val('');
             }
@@ -1706,13 +1761,18 @@
         );
 
         setTimeout(function() {
-            $(document).on('change', '.selectProduct', function(e) {
-                let products = JSON.parse($('#productsClient').val());
-                let productObject = products.find(el => el.id == this.value);
-                let rowId = $(this).data('row');
+            $(document).on('change select2:select', '.selectProduct', function(e) {
+                const rowId = $(this).data('row');
+                let productObject = null;
+                if (useProductsAjax && e?.params?.data) {
+                    productObject = e.params.data;
+                } else {
+                    const productsList = Array.isArray(products) ? products : [];
+                    productObject = productsList.find(el => String(el.id) === String(this.value));
+                }
 
                 if (productObject) {
-                    $(`#ncm-${rowId}`).val(productObject.ncm);
+                    $(`#ncm-${rowId}`).val(productObject.ncm || '');
                     $(`#descricao-${rowId}`).val(productObject.descricao || '');
                     debouncedRecalcular();
                 }
@@ -1783,7 +1843,7 @@
             $('#moeda_processo').on('select2:select', function(e) {
                 let cotacaoProcesso = getCotacaoesProcesso();
                 let moeda = e.params.data.id;
-                
+
                 // Validar que a moeda está definida
                 if (!moeda || moeda === '' || moeda === '0') {
                     console.warn('Moeda inválida selecionada');
@@ -1806,13 +1866,13 @@
                             };
                         } else {
                             // Se não existir no dolarHoje, criar com valores zerados
-                            cotacaoProcesso[moeda] = {
-                                nome: moeda,
-                                moeda: moeda,
-                                compra: 0,
-                                venda: 0,
-                                data: null
-                            };
+                    cotacaoProcesso[moeda] = {
+                        nome: moeda,
+                        moeda: moeda,
+                        compra: 0,
+                        venda: 0,
+                        data: null
+                    };
                         }
                     } catch(e) {
                         // Se houver erro ao parsear, criar objeto básico
@@ -1879,7 +1939,7 @@
                 if (cotacaoProcesso[0]) {
                     delete cotacaoProcesso[0];
                 }
-                
+
                 // atualiza o hidden sempre
                 $('#cotacao_moeda_processo').val(JSON.stringify(cotacaoProcesso));
             });
@@ -1927,7 +1987,7 @@
                 
                 // Usar data_cotacao se data_cotacao_processo não existir
                 let data = $('#data_cotacao_processo').length ? $('#data_cotacao_processo').val() : $('#data_cotacao').val();
-                
+
                 // Buscar nome da moeda do objeto dolarHoje ou moedasSuportadas
                 let nomeMoeda = moeda;
                 try {
@@ -2947,11 +3007,11 @@
         // Função para calcular peso_liquido_unitario quando quantidade ou peso_liq_total_kg mudar
         function calcularPesoLiqUnitario(rowId) {
             const pesoLiqTotalKg = MoneyUtils.parseMoney($(`#peso_liq_total_kg-${rowId}`).val()) || 0;
-            const quantidade = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
+                const quantidade = MoneyUtils.parseMoney($(`#quantidade-${rowId}`).val()) || 0;
             
             if (pesoLiqTotalKg > 0 && quantidade > 0) {
-                const pesoLiqUnit = pesoLiqTotalKg / quantidade;
-                $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit, 6));
+                    const pesoLiqUnit = pesoLiqTotalKg / quantidade;
+                    $(`#peso_liquido_unitario-${rowId}`).val(MoneyUtils.formatMoney(pesoLiqUnit, 6));
                 
                 // Recalcular fator peso
                 const totalPesoLiq = calcularPesoTotal();
@@ -3084,12 +3144,7 @@
                         fobUnitarioMoedaEstrangeira
                     } = obterValoresBase(rowId);
                     const fobTotal = fobUnitario * quantidade;
-                    console.log({
-                        fobUnitario, 
-                        quantidade,
-                        rowId,
-                        fobTotal,
-                    });
+               
                     let cotacaoProcesso = getCotacaoesProcesso();
 
                     // Usar a cotação específica do seguro, não do frete
@@ -3351,7 +3406,7 @@
             
             // Frete Foz/GYN
             const freteFozGyn = $(`#frete_foz_gyn-${rowId}`).val() ? MoneyUtils.parseMoney($(`#frete_foz_gyn-${rowId}`).val()) : 0;
-
+            
             // Honorários NIX
             const honorarios_nix = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0; // BP23
 
@@ -4085,13 +4140,11 @@
             let lengthOptions = $('#productsBody tr').length;
             let newIndex = lengthOptions;
 
+            const selectOptions = useProductsAjax
+                ? '<option></option>'
+                : `<option selected disabled>Selecione uma opção</option>${productOptionsHtml}`;
             let select = `<select required data-row="${newIndex}" class="custom-select selectProduct select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
-        <option selected disabled>Selecione uma opção</option>`;
-
-            for (let produto of products) {
-                select += `<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`;
-            }
-            select += '</select>';
+        ${selectOptions}</select>`;
 
             // Obter moedas atuais
             let moedaFrete = $('#frete_internacional_moeda').val();
@@ -4223,9 +4276,13 @@
 
             $('#productsBody').append(tr);
 
+            if (useProductsAjax) {
+                initProductSelectAjax($(`#produto_id-${newIndex}`));
+            } else {
             $(`#produto_id-${newIndex}`).select2({
                 width: '100%'
             });
+            }
             $('input[data-row="' + newIndex + '"]').trigger('change');
 
             $(`#row-${newIndex} input, #row-${newIndex} select, #row-${newIndex} textarea`).each(function() {

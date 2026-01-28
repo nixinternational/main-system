@@ -213,11 +213,11 @@
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </div>
-                                        <input type="checkbox" style="margin-left: 10px" class="select-produto-multa" value="{{ $processoProdutoMulta->id ?? '' }}">
+                                        <input type="checkbox" style="margin-left: 10px" class="select-produto-multa" value="{{ optional($processoProdutoMulta)->id ?? '' }}">
                                     </td>
 
                                     <input type="hidden" name="produtos_multa[{{ $index }}][processo_produto_multa_id]"
-                                        id="processo_produto_multa_id-{{ $index }}" value="{{ $processoProdutoMulta->id ?? '' }}">
+                                        id="processo_produto_multa_id-{{ $index }}" value="{{ optional($processoProdutoMulta)->id ?? '' }}">
                                     @foreach ($camposMultaHidden as $campoHidden)
                                         <input type="hidden" data-row="{{ $index }}"
                                             name="produtos_multa[{{ $index }}][{{ $campoHidden }}]"
@@ -225,18 +225,30 @@
                                             value="{{ $processoProdutoMulta->$campoHidden ?? '' }}">
                                     @endforeach
 
+                                    @php
+                                        $produtoMulta = optional($processoProdutoMulta)->produto;
+                                    @endphp
                                     <td>
                                         <select data-row="{{ $index }}"
                                             class="custom-select selectProductMulta w-100 select2"
                                             name="produtos_multa[{{ $index }}][produto_id]"
                                             id="produto_multa_id-{{ $index }}">
                                             <option selected disabled>Selecione uma opção</option>
+                                        @if (!empty($useProductsAjax))
+                                            @if (!empty($produtoMulta))
+                                                <option value="{{ optional($processoProdutoMulta)->produto_id }}" selected>
+                                                    {{ $produtoMulta->modelo ?? '' }} -
+                                                    {{ $produtoMulta->codigo ?? '' }}
+                                                </option>
+                                            @endif
+                                        @else
                                             @foreach ($productsClient as $produto)
                                                 <option value="{{ $produto->id }}"
-                                                    {{ ($processoProdutoMulta->produto_id ?? null) == $produto->id ? 'selected' : '' }}>
+                                                    {{ (optional($processoProdutoMulta)->produto_id ?? null) == $produto->id ? 'selected' : '' }}>
                                                     {{ $produto->modelo }} - {{ $produto->codigo }}
                                                 </option>
                                             @endforeach
+                                        @endif
                                         </select>
                                     </td>
 
@@ -248,11 +260,11 @@
                                             $class = $coluna['class'] ?? 'form-control';
 
                                             if ($campo === 'codigo') {
-                                                $valor = optional($processoProdutoMulta->produto)->codigo ?? '';
+                                                $valor = optional($produtoMulta)->codigo ?? '';
                                             } elseif ($campo === 'ncm') {
-                                                $valor = optional($processoProdutoMulta->produto)->ncm ?? '';
+                                                $valor = optional($produtoMulta)->ncm ?? '';
                                             } elseif ($campo === 'descricao') {
-                                                $valor = optional($processoProdutoMulta->produto)->descricao ?? '';
+                                                $valor = optional($produtoMulta)->descricao ?? '';
                                             } else {
                                                 $valor = $processoProdutoMulta->$campo ?? '';
                                             }

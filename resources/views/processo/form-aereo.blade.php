@@ -264,6 +264,9 @@
     </div>
     @if (isset($productsClient))
         <input type="hidden" name="productsClient" id="productsClient" value="{{ $productsClient }}">
+        <input type="hidden" id="useProductsAjax" value="{{ !empty($useProductsAjax) ? '1' : '0' }}">
+        <input type="hidden" id="catalogoId" value="{{ $catalogoId ?? '' }}">
+        <input type="hidden" id="productsSearchUrl" value="{{ route('produtos.search') }}">
         <input type="hidden" name="dolarHoje" id="dolarHoje" value="{{ json_encode($dolar) }}">
         <input type="hidden" id="processoAlterado" name="processoAlterado" value="0">
     @endif
@@ -274,7 +277,15 @@
     </form>
     <script>
         let reordenando = false;
-        let products = JSON.parse($('#productsClient').val());
+        const useProductsAjax = $('#useProductsAjax').val() === '1';
+        const productsSearchUrl = $('#productsSearchUrl').val();
+        const catalogoId = $('#catalogoId').val();
+        let products = [];
+        try {
+            products = JSON.parse($('#productsClient').val() || '[]');
+        } catch (e) {
+            products = [];
+        }
         let productsById = new Map();
         let productOptionsHtml = '';
 
@@ -282,9 +293,45 @@
             const options = [];
             for (const produto of products) {
                 productsById.set(String(produto.id), produto);
-                options.push(`<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`);
+                if (!useProductsAjax) {
+                    options.push(`<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`);
+                }
             }
             productOptionsHtml = options.join('');
+        }
+
+        function initProductSelectAjax($select) {
+            if (!useProductsAjax || !$select?.length || typeof $.fn.select2 !== 'function') {
+                return;
+            }
+            $select.each(function() {
+                const $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+                $el.select2({
+                    width: '100%',
+                    allowClear: true,
+                    ajax: {
+                        url: productsSearchUrl,
+                        dataType: 'json',
+                        delay: 250,
+                        data: function(params) {
+                            return {
+                                q: params.term,
+                                page: params.page || 1,
+                                catalogo_id: catalogoId
+                            };
+                        },
+                        processResults: function(data) {
+                            return {
+                                results: data.results || [],
+                                pagination: data.pagination || {}
+                            };
+                        }
+                    }
+                });
+            });
         }
         let debugStore = {};
         let debugGlobals = {};
@@ -962,14 +1009,14 @@
                                     valor = valoresBrutos.custo_unitario_final;
                                 } else {
                                     valor = MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0;
-                                }
+                        }
                             } else if (campo === 'custo_total_final') {
                                 // Tentar valores brutos primeiro, depois DOM
                                 if (valoresBrutos.custo_total_final !== undefined) {
                                     valor = valoresBrutos.custo_total_final;
                                 } else {
                                     valor = MoneyUtils.parseMoney($(`#custo_total_final-${rowId}`).val()) || 0;
-                                }
+                        }
                             } else if (campo === 'service_charges' && moedaServiceCharges && moedaServiceCharges !== 'USD') {
                                 // Tentar valores brutos primeiro
                                 if (valoresBrutos.service_charges_moeda_estrangeira !== undefined) {
@@ -1015,7 +1062,6 @@
                 fatorValorFobSum += fatorValorFobVal;
                 fatorTxSiscomexSum += fatorTxSiscomexVal;
             });
-            // console.log(totais) // Comentado para reduzir logs excessivos
             
             // Garantir que os totais dos fatores sempre dêem 1 (ajustar se diferença for pequena - erro de arredondamento)
             const diffPeso = Math.abs(1 - fatorPesoSum);
@@ -1622,9 +1668,17 @@
                     $(this).val('');
                 }
             });
+            if (useProductsAjax) {
+                $('.select2').not('.selectProduct, .selectProductMulta').select2({
+                    width: '100%'
+                });
+                initProductSelectAjax($('.selectProduct'));
+                initProductSelectAjax($('.selectProductMulta'));
+            } else {
             $('.select2').select2({
                 width: '100%'
             });
+            }
 
             // Listener para SERVICE_CHARGES do processo - recalcular todos os produtos com debounce
             let serviceChargesTimeout = null;
@@ -1826,7 +1880,6 @@
                 
                 // Log apenas para service_charges quando setar a cotação (comentado para reduzir logs)
                 // if (inputId === 'service_charges') {
-                //     console.log(`Cotação setada para service_charges: ${codigoMoeda} = ${convertido}`);
                 // }
 
                 // Tentar obter a data da cotação
@@ -1846,7 +1899,6 @@
             } else {
                 // Se não encontrou a cotação (comentado para reduzir logs)
                 // if (inputId === 'service_charges') {
-                //     console.log(`Cotação NÃO encontrada para service_charges. Moeda: ${codigoMoeda}, Cotações disponíveis:`, Object.keys(dolar || {}));
                 // }
                 $(`#${spanId}`).val('');
                 $(`#data_moeda_${inputId}`).val('');
@@ -1857,18 +1909,22 @@
         );
 
         setTimeout(function() {
-            $(document).on('change', '.selectProduct', function(e) {
+            $(document).on('change select2:select', '.selectProduct', function(e) {
                 const productId = String(this.value);
-                let productObject = productsById.size
-                    ? productsById.get(productId)
-                    : (products || []).find(el => String(el.id) === productId);
+                let productObject = null;
+                if (useProductsAjax && e?.params?.data) {
+                    productObject = e.params.data;
+                } else {
+                    productObject = productsById.size
+                        ? productsById.get(productId)
+                        : (products || []).find(el => String(el.id) === productId);
+                }
                 let rowId = $(this).data('row');
 
                 if (productObject) {
-                    $(`#codigo-${rowId}`).val(productObject.codigo);
-                    $(`#ncm-${rowId}`).val(productObject.ncm);
-                    $(`#descricao-${rowId}`).val(productObject.descricao);
-                    debouncedRecalcular();
+                    $(`#codigo-${rowId}`).val(productObject.codigo || '');
+                    $(`#ncm-${rowId}`).val(productObject.ncm || '');
+                    $(`#descricao-${rowId}`).val(productObject.descricao || '');
                 }
             });
             $(document).on('keyup',
@@ -2569,7 +2625,6 @@
                         const valorCampoEIgualAoUSD = freteBrlDoCampo && Math.abs(freteBrlDoCampo - freteUsdInt) < 0.01;
                         
                         // #region agent log
-                        fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2535',message:'READ frete_brl campo DOM',data:{rowId,funcao:'recalcularTodaTabela',freteBrlDoCampo,freteUsdInt,dolar,valorCalculado:freteBrlCalculadoCorreto,valorBruto:window.valoresBrutosPorLinha?.[rowId]?.frete_brl,valorCampoEIgualAoUSD},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
                         // #endregion
                         
                         // Se o valor do campo for igual ao USD, usar o valor calculado correto
@@ -2586,7 +2641,6 @@
                             const valorBruto = window.valoresBrutosPorLinha[rowId].frete_brl;
                             if (Math.abs(valorBruto - freteUsdInt) > 0.01) {
                                 // #region agent log
-                                fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2553',message:'READ window.valoresBrutosPorLinha frete_brl',data:{rowId,funcao:'recalcularTodaTabela',freteBrlBrutoAntes:freteBrlBruto,freteBrlBrutoDepois:valorBruto},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
                                 // #endregion
                                 freteBrlBruto = valorBruto;
                             }
@@ -2621,7 +2675,6 @@
                     }
                     window.valoresBrutosPorLinha[rowId].frete_usd = freteUsdIntBruto;
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2592',message:'SET window.valoresBrutosPorLinha frete_brl',data:{rowId,funcao:'recalcularTodaTabela',freteUsdIntBruto,freteBrlBruto,antes:window.valoresBrutosPorLinha[rowId]?.frete_brl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
                     // #endregion
                     window.valoresBrutosPorLinha[rowId].frete_brl = freteBrlBruto;
                     
@@ -2637,7 +2690,6 @@
                         if (freteBrlBruto === 0 || Math.abs(freteBrlBruto - (freteUsdIntBruto * cotacaoFrete)) < 0.01) {
                             const freteBrlDoCampo = MoneyUtils.parseMoney($(`#frete_brl-${rowId}`).val());
                             // #region agent log
-                            fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2601',message:'RE-READ frete_brl campo DOM (condicao)',data:{rowId,funcao:'recalcularTodaTabela',freteBrlBrutoAntes:freteBrlBruto,freteBrlDoCampo,calculado:freteUsdIntBruto*cotacaoFrete,diferenca:Math.abs(freteBrlBruto-(freteUsdIntBruto*cotacaoFrete))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
                             // #endregion
                             if (freteBrlDoCampo && freteBrlDoCampo > 0 && Math.abs(freteBrlDoCampo - (freteUsdIntBruto * cotacaoFrete)) > 0.01) {
                                 freteBrlBruto = freteBrlDoCampo;
@@ -2648,7 +2700,6 @@
                         // Fórmula Santa Catarina: (P23 * $BS$21) - Q23
                         diferenca_cambial_frete = (freteUsdIntBruto * cotacaoFrete) - freteBrlBruto;
                         // #region agent log
-                        fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2609',message:'APLICAR FORMULA SC',data:{rowId,funcao:'recalcularTodaTabela',freteUsdIntBruto,freteBrlBruto,dolar,formula:`(${freteUsdIntBruto}*${dolar})-${freteBrlBruto}`,diferenca_cambial_frete},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
                         // #endregion
                     } else {
                         // Para outras nacionalizações: calcular diferença cambial proporcional ao frete
@@ -2665,17 +2716,7 @@
                         }
                     }
                     diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
-                    if(rowId == 3){
-                    console.log({
-                            'acao': 'recalcularTodaTabela',
-                            'rowId': rowId,
-                            'freteUsdIntBruto': freteUsdIntBruto,
-                            'freteBrlBruto': freteBrlBruto,
-                            'dolar': dolar,
-                            'diferenca_cambial_frete': diferenca_cambial_frete
-                            
-                        });
-                }
+      
                     // Atualizar o campo diretamente para garantir que o valor seja exibido
                     const campoDiferencaCambialFreteRecalc = $(`#diferenca_cambial_frete-${rowId}`);
                     const diferencaCambialFreteValidadaRecalc = validarDiferencaCambialFrete(diferenca_cambial_frete);
@@ -2905,7 +2946,6 @@
                     const valorCampoEIgualAoUSDCambial = freteBrlDoCampoCambial && Math.abs(freteBrlDoCampoCambial - freteUsdInt) < 0.01;
                     
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2857',message:'READ frete_brl campo DOM',data:{rowId,funcao:'atualizarCamposCambial',freteBrlDoCampo:freteBrlDoCampoCambial,freteUsdInt,dolar,valorCalculado:freteBrlCalculadoCorretoCambial,valorBruto:window.valoresBrutosPorLinha?.[rowId]?.frete_brl,valorCampoEIgualAoUSD:valorCampoEIgualAoUSDCambial},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
                     // #endregion
                     
                     // Se o valor do campo for igual ao USD, usar o valor calculado correto
@@ -2922,7 +2962,6 @@
                         const valorBruto = window.valoresBrutosPorLinha[rowId].frete_brl;
                         if (Math.abs(valorBruto - freteUsdInt) > 0.01) {
                             // #region agent log
-                            fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2860',message:'READ window.valoresBrutosPorLinha frete_brl',data:{rowId,funcao:'atualizarCamposCambial',freteBrlBrutoAntes:freteBrlBruto,freteBrlBrutoDepois:valorBruto},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
                             // #endregion
                             freteBrlBruto = valorBruto;
                         }
@@ -2957,7 +2996,6 @@
                 }
                 window.valoresBrutosPorLinha[rowId].frete_usd = freteUsdIntBruto;
                 // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2875',message:'SET window.valoresBrutosPorLinha frete_brl',data:{rowId,funcao:'atualizarCamposCambial',freteUsdIntBruto,freteBrlBruto,antes:window.valoresBrutosPorLinha[rowId]?.frete_brl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
                 // #endregion
                 window.valoresBrutosPorLinha[rowId].frete_brl = freteBrlBruto;
                 
@@ -2981,14 +3019,12 @@
                     const cotacaoFreteCambial = MoneyUtils.parseMoney($('#cotacao_frete_internacional').val()) || dolar;
                     diferenca_cambial_frete = (freteUsdIntBruto * cotacaoFreteCambial) - freteBrlBruto;
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:2900',message:'APLICAR FORMULA SC',data:{rowId,funcao:'atualizarCamposCambial',freteUsdIntBruto,freteBrlBruto,cotacaoFrete:cotacaoFreteCambial,formula:`(${freteUsdIntBruto}*${cotacaoFreteCambial})-${freteBrlBruto}`,diferenca_cambial_frete},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
                     // #endregion
                 } else {
                     // Para outras nacionalizações: fórmula original
                     // Usar cotação do frete ao invés da cotação da moeda do processo
                     const cotacaoFreteCambial = MoneyUtils.parseMoney($('#cotacao_frete_internacional').val()) || dolar;
                     diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - (freteUsdInt * cotacaoFreteCambial);
-                    console.log(`[atualizarCamposCambial] Linha ${rowId} - FÓRMULA OUTRAS: (${freteUsdInt} * ${dif_cambial_frete_processo}) - (${freteUsdInt} * ${dolar}) = ${diferenca_cambial_frete}`);
                 }
                 
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
@@ -2997,22 +3033,12 @@
                 // Como o campo é readonly, sempre atualizar com o valor calculado
                 const diferencaCambialFreteValidada = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const campoDiferencaCambialFrete = $(`#diferenca_cambial_frete-${rowId}`);
-                console.log(`[atualizarCamposCambial] Linha ${rowId} - DIF. CAMBIAL FRETE calculado:`, {
-                    freteUsdInt_bruto: freteUsdIntBruto,
-                    freteBrl_bruto: freteBrlBruto,
-                    dolar,
-                    freteBrl_calculado: freteUsdIntBruto * dolar,
-                    diferenca_cambial_frete_calculado: diferenca_cambial_frete,
-                    diferenca_cambial_frete_validado: diferencaCambialFreteValidada,
-                    nacionalizacao: nacionalizacaoCambial
-                });
+            
                 if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
                     campoDiferencaCambialFrete.val('');
-                    console.log(`[atualizarCamposCambial] Linha ${rowId} - Campo setado como vazio (valor inválido)`);
                 } else {
                     const valorFormatado = MoneyUtils.formatMoney(diferencaCambialFreteValidada, 4);
                     campoDiferencaCambialFrete.val(valorFormatado);
-                    console.log(`[atualizarCamposCambial] Linha ${rowId} - Campo setado com valor:`, valorFormatado);
                 }
                 
                 // Armazenar valor bruto em valoresBrutosPorLinha e valoresBrutosCamposExternos
@@ -3932,7 +3958,6 @@
             $(`#frete_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.freteUsdInt, 2));
             const freteBrlCalculadoAtualizar = valores.freteUsdInt * valores.dolar;
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/110fafe9-38f5-4b75-8965-0b46efd90519',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'form-aereo.blade.php:3821',message:'SET frete_brl campo DOM',data:{rowId,funcao:'atualizarCampos',freteUsdInt:valores.freteUsdInt,freteBrlCalculado:freteBrlCalculadoAtualizar,dolar:valores.dolar,valorFormatado:MoneyUtils.formatMoney(freteBrlCalculadoAtualizar,2)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
             // #endregion
             $(`#frete_brl-${rowId}`).val(MoneyUtils.formatMoney(freteBrlCalculadoAtualizar, 2));
 
@@ -4123,7 +4148,7 @@
             
             if (!window.valoresBrutosCamposExternos) {
                 window.valoresBrutosCamposExternos = {};
-            }
+                }
             if (!window.valoresBrutosCamposExternos.diferenca_cambial_frete) {
                 window.valoresBrutosCamposExternos.diferenca_cambial_frete = {};
             }
@@ -5074,8 +5099,11 @@
             // let moedaProcesso = $('#moeda_processo').val(); // Nova variável
             
             // Gerar select de produtos (options em cache para reduzir custo)
+            const selectOptions = useProductsAjax
+                ? '<option></option>'
+                : `<option selected disabled>Selecione uma opção</option>${productOptionsHtml}`;
             let select = `<select data-row="${newIndex}" class="custom-select selectProduct w-100 select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
-        <option selected disabled>Selecione uma opção</option>${productOptionsHtml}</select>`;
+        ${selectOptions}</select>`;
 
             // Gerar colunas condicionais
             let colunaFreteMoeda = '';
@@ -5231,9 +5259,13 @@
                 $(`#row-${newIndex} .td-peso-liq-total-kg`).show();
             }
 
+            if (useProductsAjax) {
+                initProductSelectAjax($(`#produto_id-${newIndex}`));
+            } else {
             $(`#produto_id-${newIndex}`).select2({
                 width: '100%'
             });
+            }
             if (typeof debouncedRecalcular === 'function') {
                 debouncedRecalcular();
             }
@@ -5355,7 +5387,6 @@
                     
                     const data = await response.json();
                     if (data.success) {
-                        console.log('Tipo peso salvo com sucesso:', tipoPeso);
                     } else {
                         console.error('Erro ao salvar tipo peso:', data.error);
                     }
@@ -5756,7 +5787,7 @@
 
                 fragment.appendChild(entrada.linha);
                 ultimaAdicao = entrada.adicao;
-            });
+                });
 
             tbody.textContent = '';
             tbody.appendChild(fragment);

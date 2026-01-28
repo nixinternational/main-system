@@ -58,6 +58,9 @@ Route::post('/processo-produtos/batch-delete', [ProcessoProdutoController::class
 Route::post('/processo-produtos-multa/batch-delete', [ProcessoController::class, 'batchDeleteMulta'])
     ->middleware('permission.map:processo_produto')
     ->name('processo.produtos.multa.batchDelete');
+Route::get('/produtos/buscar', [ProdutoController::class, 'searchByCatalogo'])
+    ->middleware('permission.map:processo')
+    ->name('produtos.search');
     Route::get('/processo-criar/{cliente_id}', [ProcessoController::class, 'create'])
     ->middleware('permission.map:processo')
     ->name('processo.criar');

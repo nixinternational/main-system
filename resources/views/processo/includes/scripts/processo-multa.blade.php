@@ -1,6 +1,67 @@
 {{-- ==================== LÓGICA DA TABELA MULTA ==================== --}}
 {{-- Este arquivo contém toda a lógica JavaScript para a tabela de multas --}}
 
+        const useProductsAjaxMulta = $('#useProductsAjax').val() === '1';
+        const productsSearchUrlMulta = $('#productsSearchUrl').val();
+        const catalogoIdMulta = $('#catalogoId').val();
+        let productsCacheMulta = [];
+        try {
+            productsCacheMulta = JSON.parse($('#productsClient').val() || '[]');
+        } catch (e) {
+            productsCacheMulta = [];
+        }
+
+        function initProductSelectAjaxIfAvailable($select, dropdownParent = null) {
+            if (!useProductsAjaxMulta) {
+                return;
+            }
+            if (typeof initProductSelectAjax === 'function') {
+                initProductSelectAjax($select);
+                return;
+            }
+            if (!$select?.length || typeof $.fn.select2 !== 'function') {
+                return;
+            }
+            if ($select.hasClass('select2-hidden-accessible')) {
+                return;
+            }
+            const options = {
+                width: '100%',
+                allowClear: true,
+                ajax: {
+                    url: productsSearchUrlMulta,
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term,
+                            page: params.page || 1,
+                            catalogo_id: catalogoIdMulta
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.results || [],
+                            pagination: data.pagination || {}
+                        };
+                    }
+                }
+            };
+            if (dropdownParent && dropdownParent.length) {
+                options.dropdownParent = dropdownParent;
+            }
+            $select.select2(options);
+        }
+
+        $(document).ready(function() {
+            if (useProductsAjaxMulta) {
+                const $dropdownParent = $('#custom-tabs-three-multa');
+                $('.selectProductMulta').each(function() {
+                    initProductSelectAjaxIfAvailable($(this), $dropdownParent);
+                });
+            }
+        });
+
         // Classe para salvamento em fases (evitar erro 413)
         class SalvamentoProdutosMultaFases {
             constructor(processoId) {
@@ -469,16 +530,21 @@
         }
 
         // Event listeners para copiar valores quando campos são preenchidos
-        $(document).on('change select2:select', '.selectProductMulta', function() {
+        $(document).on('change select2:select', '.selectProductMulta', function(e) {
             const rowId = $(this).data('row');
             if (rowId !== undefined) {
                 // Preencher campos de código, NCM e descrição quando produto é selecionado
-                let products = JSON.parse($('#productsClient').val());
-                let productObject = products.find(el => el.id == this.value);
+                let productObject = null;
+                if (useProductsAjaxMulta && e?.params?.data) {
+                    productObject = e.params.data;
+                } else {
+                    const productsList = Array.isArray(productsCacheMulta) ? productsCacheMulta : [];
+                    productObject = productsList.find(el => String(el.id) === String(this.value));
+                }
                 
                 if (productObject) {
-                    $(`#codigo_multa-${rowId}`).val(productObject.codigo);
-                    $(`#ncm_multa-${rowId}`).val(productObject.ncm);
+                    $(`#codigo_multa-${rowId}`).val(productObject.codigo || '');
+                    $(`#ncm_multa-${rowId}`).val(productObject.ncm || '');
                     $(`#descricao_multa-${rowId}`).val(productObject.descricao || '');
                 }
                 
@@ -1111,12 +1177,13 @@
             let lengthOptions = $('#productsBodyMulta tr.linhas-input').length;
             let newIndex = lengthOptions;
 
+            const optionsMulta = useProductsAjaxMulta
+                ? '<option></option>'
+                : `<option selected disabled>Selecione uma opção</option>${(Array.isArray(productsCacheMulta) ? productsCacheMulta : [])
+                    .map(produto => `<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`)
+                    .join('')}`;
             let select = `<select data-row="${newIndex}" class="custom-select selectProductMulta w-100 select2" name="produtos_multa[${newIndex}][produto_id]" id="produto_multa_id-${newIndex}">
-                <option selected disabled>Selecione uma opção</option>`;
-            for (let produto of products) {
-                select += `<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`;
-            }
-            select += '</select>';
+                ${optionsMulta}</select>`;
 
             const colunasMulta = [
                 {name: 'adicao', type: 'text', class: 'form-control'},
@@ -1206,7 +1273,11 @@
             </tr>`;
 
             $('#productsBodyMulta').append(tr);
+            if (useProductsAjaxMulta) {
+                initProductSelectAjaxIfAvailable($(`#produto_multa_id-${newIndex}`), $('#custom-tabs-three-multa'));
+            } else {
             $(`#produto_multa_id-${newIndex}`).select2({ dropdownParent: $('#custom-tabs-three-multa') });
+            }
             // Recalcular para preencher os campos automaticamente na nova linha
             setTimeout(function() {
                 recalcularTodaTabelaMulta();

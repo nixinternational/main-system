@@ -143,93 +143,93 @@
                                     ];
                                 } else {
                                     // Ordem padrão: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
-                                    $campos = [
-                                        'outras_taxas_agente',
-                                        'delivery_fee',
-                                        'collect_fee',
-                                        'desconsolidacao',
-                                        'handling',
-                                        'dai',
-                                        'dape',
-                                        'correios',
-                                        'li_dta_honor_nix',
+                                $campos = [
+                                    'outras_taxas_agente',
+                                    'delivery_fee',
+                                    'collect_fee',
+                                    'desconsolidacao',
+                                    'handling',
+                                    'dai',
+                                    'dape',
+                                    'correios',
+                                    'li_dta_honor_nix',
                                         'honorarios_nix',
-                                    ];
+                                ];
                                 }
                                 $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
 
                             @foreach ($campos as $campo)
                                 @if ($campo === 'outras_taxas_agente')
-                                    {{-- OUTRAS TX AGENTE --}}
+                            {{-- OUTRAS TX AGENTE --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'delivery_fee')
-                                    {{-- DELIVERY FEE --}}
+                            {{-- DELIVERY FEE --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'collect_fee')
-                                    {{-- COLLECT FEE --}}
+                            {{-- COLLECT FEE --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'desconsolidacao')
-                                    {{-- DESCONSOLIDAÇÃO --}}
+                            {{-- DESCONSOLIDAÇÃO --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'handling')
-                                    {{-- HANDLING --}}
+                            {{-- HANDLING --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'dai')
-                                    {{-- DAI --}}
+                            {{-- DAI --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'dape')
-                                    {{-- DAPE --}}
+                            {{-- DAPE --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'rep_itj')
                                     {{-- REP.ITJ --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 2, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'frete_nvg_x_gyn')
                                     {{-- FRETE NVG X GYN --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 2, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'honorarios_nix')
-                                    {{-- HONORÁRIOS NIX --}}
+                            {{-- HONORÁRIOS NIX --}}
                                     <th class="middleRowInputTh" data-campo="{{ $campo }}">
-                                        <input type="text" class="form-control cabecalhoInputs moneyReal"
+                                <input type="text" class="form-control cabecalhoInputs moneyReal"
                                             name="{{ $campo }}" id="{{ $campo }}"
                                             value="{{ number_format($processo->$campo ?? 0, 5, ',', '.') }}">
-                                    </th>
+                            </th>
                                 @elseif ($campo === 'correios')
                                     {{-- CORREIOS (apenas para não Santa Catarina) --}}
                                     @if ($nacionalizacaoAtual !== 'santa_catarina')
@@ -339,7 +339,7 @@
                             @if ($nacionalizacaoAtual === 'santa_catarina')
                                 <th>CODIGO GIIRO</th>
                             @else
-                                <th>ORIGEM</th>
+                            <th>ORIGEM</th>
                             @endif
                             <th>CODIGO</th>
                             <th>NCM</th>
@@ -449,16 +449,16 @@
                                 <th>HONORÁRIOS NIX</th>
                             @else
                                 {{-- Ordem padrão para outras nacionalizações --}}
-                                <th>OUTRAS TX AGENTE</th>
-                                <th>DELIVERY FEE</th>
-                                <th>COLLECT FEE</th>
-                                <th>Desconsolidação</th>
-                                <th>HANDLING</th>
-                                <th>DAI</th>
-                                <th>DAPE</th>
-                                <th>CORREIOS</th>
-                                <th>LI+DTA+HONOR.NIX</th>
-                                <th>HONORÁRIOS NIX</th>
+                            <th>OUTRAS TX AGENTE</th>
+                            <th>DELIVERY FEE</th>
+                            <th>COLLECT FEE</th>
+                            <th>Desconsolidação</th>
+                            <th>HANDLING</th>
+                            <th>DAI</th>
+                            <th>DAPE</th>
+                            <th>CORREIOS</th>
+                            <th>LI+DTA+HONOR.NIX</th>
+                            <th>HONORÁRIOS NIX</th>
                             @endif
                             <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
                             <th>DIF. CAMBIAL FRETE</th>
@@ -496,6 +496,14 @@
                                         name="produtos[{{ $index }}][produto_id]"
                                         id="produto_id-{{ $index }}">
                                         <option selected disabled>Selecione uma opção</option>
+                                        @if (!empty($useProductsAjax))
+                                            @if ($processoProduto->produto)
+                                                <option value="{{ $processoProduto->produto_id }}" selected>
+                                                    {{ $processoProduto->produto->modelo ?? '' }} -
+                                                    {{ $processoProduto->produto->codigo ?? '' }}
+                                                </option>
+                                            @endif
+                                        @else
                                         @foreach ($productsClient as $produto)
                                             <option value="{{ $produto->id }}"
                                                 {{ $processoProduto->produto_id == $produto->id ? 'selected' : '' }}>
@@ -503,6 +511,7 @@
                                                 {{ $produto->codigo }}
                                             </option>
                                         @endforeach
+                                        @endif
                                     </select>
                                 </td>
 
@@ -535,11 +544,11 @@
                                             value="{{ $processoProduto->codigo_giiro ?? '' }}">
                                     </td>
                                 @else
-                                    <td>
-                                        <input data-row="{{ $index }}" type="text" class=" form-control"
-                                            name="produtos[{{ $index }}][origem]" id="origem-{{ $index }}"
-                                            value="{{ $processoProduto->origem ?? '' }}">
-                                    </td>
+                                <td>
+                                    <input data-row="{{ $index }}" type="text" class=" form-control"
+                                        name="produtos[{{ $index }}][origem]" id="origem-{{ $index }}"
+                                        value="{{ $processoProduto->origem ?? '' }}">
+                                </td>
                                 @endif
 
                                 <td>
@@ -1108,21 +1117,21 @@
                                 @else
                                     {{-- CORREIOS (apenas para não Santa Catarina) --}}
                                     <td data-campo="correios">
-                                        <input type="text" data-row="{{ $index }}"
-                                            class=" form-control moneyReal7" readonly
-                                            name="produtos[{{ $index }}][correios]"
-                                            id="correios-{{ $index }}"
-                                            value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 7, ',', '.') : '' }}">
-                                    </td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][correios]"
+                                        id="correios-{{ $index }}"
+                                        value="{{ $processoProduto->correios ? number_format($processoProduto->correios, 7, ',', '.') : '' }}">
+                                </td>
 
                                     {{-- LI+DTA+HONOR.NIX (apenas para não Santa Catarina) --}}
                                     <td data-campo="li_dta_honor_nix">
-                                        <input type="text" data-row="{{ $index }}"
-                                            class=" form-control moneyReal7" readonly
-                                            name="produtos[{{ $index }}][li_dta_honor_nix]"
-                                            id="li_dta_honor_nix-{{ $index }}"
-                                            value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 7, ',', '.') : '' }}">
-                                    </td>
+                                    <input type="text" data-row="{{ $index }}"
+                                        class=" form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][li_dta_honor_nix]"
+                                        id="li_dta_honor_nix-{{ $index }}"
+                                        value="{{ $processoProduto->li_dta_honor_nix ? number_format($processoProduto->li_dta_honor_nix, 7, ',', '.') : '' }}">
+                                </td>
                                 @endif
 
                                 <td>
@@ -1285,7 +1294,6 @@
                 }
 
                 async iniciarProcessoSalvamento() {
-                    console.log('Iniciando processo de salvamento. Total de blocos:', this.blocos.length);
 
                     // Mostrar modal de progresso com SweetAlert2
                     this.swalProgress = Swal.fire({
@@ -1301,11 +1309,9 @@
                         }
                     });
 
-                    console.log('Modal de progresso aberto');
 
                     try {
                         // PRIMEIRO: Salvar os cabecalhoInputs antes de salvar os produtos
-                        console.log('Salvando cabecalhoInputs antes de salvar produtos...');
                         const cabecalhoSalvo = await this.salvarCabecalhoInputs();
                         if (!cabecalhoSalvo) {
                             console.error('Falha ao salvar cabecalhoInputs');
@@ -1318,11 +1324,9 @@
                             });
                             return false;
                         }
-                        console.log('CabecalhoInputs salvos com sucesso!');
                         
                         // DEPOIS: Processar bloco por bloco
                         for (let i = 0; i < this.blocos.length; i++) {
-                            console.log(`Iniciando processamento do bloco ${i + 1}`);
                             const sucesso = await this.salvarBloco(i);
                             if (!sucesso) {
                                 console.error(`Falha no bloco ${i + 1}`);
@@ -1338,7 +1342,6 @@
                             }
                         }
 
-                        console.log('Todos os blocos processados com sucesso');
 
                         // Fechar o modal de progresso e mostrar sucesso
                         await Swal.close();
@@ -1376,7 +1379,6 @@
                 }
 
                 async atualizarProgressoSweetAlert(blocoAtual, totalBlocos, registrosSalvos) {
-                    console.log(`Atualizando progresso: ${blocoAtual}/${totalBlocos}, registros: ${registrosSalvos}`);
 
                     // Atualizar o modal existente
                     Swal.update({
@@ -1422,7 +1424,6 @@
                                     
                                     // Debug para campos de peso
                                     if (['peso_liq_lbs', 'peso_liq_total_kg', 'peso_liquido_unitario'].includes(fieldName)) {
-                                        console.log(`Campo ${fieldName} coletado para linha ${rowIndex}:`, value, 'Tipo:', typeof value);
                                     }
                                 }
                             }
@@ -1447,14 +1448,11 @@
                             }
 
                             produtos.push(produto);
-                            console.log(`Linha ${rowIndex} coletada:`, produto);
                             rowIndex++;
                         } else {
-                            console.log(`Linha ${index} ignorada - sem produto_id ou dados:`, produto);
                         }
                     });
 
-                    console.log('Total de produtos coletados:', produtos.length);
                     return produtos;
                 }
 
@@ -1471,7 +1469,6 @@
                  */
                 async salvarCabecalhoInputs() {
                     try {
-                        console.log('Iniciando salvamento dos cabecalhoInputs...');
                         
                         const formData = new FormData();
                         formData.append('_token', '{{ csrf_token() }}');
@@ -1516,7 +1513,6 @@
                         formData.append('tipo_peso_aereo', tipoPeso || 'lbs');
                         
                         const url = '{{ route("processo.salvar.cabecalho.inputs.aereo", $processo->id ?? 0) }}';
-                        console.log('Enviando cabecalhoInputs para:', url);
                         
                         const response = await fetch(url, {
                             method: 'POST',
@@ -1526,7 +1522,6 @@
                         const data = await response.json();
                         
                         if (data.success) {
-                            console.log('CabecalhoInputs salvos com sucesso:', data);
                             return true;
                         } else {
                             console.error('Erro ao salvar cabecalhoInputs:', data.error);
@@ -1540,7 +1535,6 @@
 
                 async salvarBloco(indiceBloco) {
                     const blocoProdutos = this.blocos[indiceBloco];
-                    console.log(`Iniciando salvamento do bloco ${indiceBloco + 1} com ${blocoProdutos.length} produtos`);
 
                     try {
                         // Usar FormData que é mais adequado para envio de arquivos e dados complexos
@@ -1569,7 +1563,6 @@
                             });
                         });
 
-                        console.log('Enviando requisição para o servidor...');
 
                         const response = await fetch(`/processo/${this.processoId}`, {
                             method: 'POST',
@@ -1580,18 +1573,15 @@
                             body: formData
                         });
 
-                        console.log('Resposta recebida, status:', response.status);
 
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
 
                         const data = await response.json();
-                        console.log('Dados da resposta:', data);
 
                         if (data.success) {
                             this.totalSalvos += blocoProdutos.length;
-                            console.log(`Bloco ${indiceBloco + 1} salvo com sucesso. Total salvo: ${this.totalSalvos}`);
                             await this.atualizarProgressoSweetAlert(
                                 indiceBloco + 1,
                                 this.blocos.length,

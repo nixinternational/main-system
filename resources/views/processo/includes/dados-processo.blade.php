@@ -761,8 +761,6 @@
 
                // Monitora mudanças de valor
                campo.on('input change', function(e) {
-                   console.log('🚨 THC Capatazia alterado por EVENTO:', e.type);
-                   console.log('Valor atual:', this.value);
                    console.trace('Stack trace do evento');
                });
 
@@ -770,8 +768,6 @@
                const originalVal = $.fn.val;
                $.fn.val = function(value) {
                    if (value !== undefined && this.is('#thc_capatazia')) {
-                       console.log('🚨 THC Capatazia alterado via .val()');
-                       console.log('Novo valor:', value);
                        console.trace('Stack trace do .val()');
                    }
                    return originalVal.apply(this, arguments);
@@ -779,11 +775,9 @@
 
                // Monitora focos e blurs para debug
                campo.on('focus', function() {
-                   console.log('THC Capatazia em foco, valor:', this.value);
                });
 
                campo.on('blur', function() {
-                   console.log('THC Capatazia perdeu foco, valor:', this.value);
                });
            }
 
@@ -877,7 +871,6 @@
                                let html = '';
                                Object.keys(cotacoes).forEach(function(codigo) {
                                    let cotacao = cotacoes[codigo];
-                                   console.log(cotacao);
                                    html += `<div class="col-md-3 mb-2">
                                 <label class="form-label">${cotacao.nome ?? codigo} (${codigo})</label>
                                 <input type="hidden" name="cotacao_moeda_processo[${codigo}][nome]" 
