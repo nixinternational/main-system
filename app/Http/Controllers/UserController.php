@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\AuditLog;
+use App\Models\AuditLogCatalogo;
+use App\Models\AuditLogCliente;
 use App\Models\Permissao;
 use App\Models\User;
 use Exception;
@@ -25,8 +28,7 @@ class UserController extends Controller
             $sortColumn = 'id';
         }
         
-        $users = User::whereNotIn('email', User::superAdminEmails())
-            ->orderBy($sortColumn, $sortDirection)
+        $users = User::orderBy($sortColumn, $sortDirection)
             ->paginate(request()->paginacao ?? 10)
             ->appends(request()->except('page'));
 
@@ -109,8 +111,31 @@ class UserController extends Controller
         $clientes = Cliente::orderBy('nome')->select('id', 'nome')->get();
         $permissoesSelecionadas = $user->permissoes()->pluck('permissao_id')->toArray();
         $clientesSelecionados = $user->clientesPermitidos()->pluck('cliente_id')->toArray();
+        $processLogs = AuditLog::where('user_id', $user->id)->get();
+        $processLogs->each(function ($log) {
+            $log->origin = 'Processos';
+            $log->origin_tab = 'processos';
+        });
 
-        return view('users.form', compact('user', 'permissoes', 'clientes', 'permissoesSelecionadas', 'clientesSelecionados'));
+        $clienteLogs = AuditLogCliente::where('user_id', $user->id)->get();
+        $clienteLogs->each(function ($log) {
+            $log->origin = 'Clientes';
+            $log->origin_tab = 'clientes';
+        });
+
+        $catalogoLogs = AuditLogCatalogo::where('user_id', $user->id)->get();
+        $catalogoLogs->each(function ($log) {
+            $log->origin = 'Catálogo';
+            $log->origin_tab = 'catalogos';
+        });
+
+        $auditLogs = $processLogs
+            ->merge($clienteLogs)
+            ->merge($catalogoLogs)
+            ->sortByDesc('created_at')
+            ->values();
+
+        return view('users.form', compact('user', 'permissoes', 'clientes', 'permissoesSelecionadas', 'clientesSelecionados', 'auditLogs'));
     }
 
     /**

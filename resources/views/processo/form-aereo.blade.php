@@ -275,6 +275,17 @@
     <script>
         let reordenando = false;
         let products = JSON.parse($('#productsClient').val());
+        let productsById = new Map();
+        let productOptionsHtml = '';
+
+        if (Array.isArray(products)) {
+            const options = [];
+            for (const produto of products) {
+                productsById.set(String(produto.id), produto);
+                options.push(`<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`);
+            }
+            productOptionsHtml = options.join('');
+        }
         let debugStore = {};
         let debugGlobals = {};
 
@@ -1050,7 +1061,7 @@
             if (tipoPeso === 'lbs') {
                 // Em modo LBS: mostrar LBS e calcular/mostrar KG
                 tr += `<td data-field="peso-liq-lbs" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.peso_liq_lbs || 0, 6)}</td>`;
-                tr += '<td data-field="peso-liq-unit"></td>';
+            tr += '<td data-field="peso-liq-unit"></td>';
                 // Mostrar o valor de peso_liq_total_kg quando estiver em modo LBS (calculado a partir de LBS)
                 tr += `<td data-field="peso-liq-total-kg" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(pesoLiqTotalKg, 2)}</td>`;
             } else {
@@ -1847,8 +1858,10 @@
 
         setTimeout(function() {
             $(document).on('change', '.selectProduct', function(e) {
-                let products = JSON.parse($('#productsClient').val());
-                let productObject = products.find(el => el.id == this.value);
+                const productId = String(this.value);
+                let productObject = productsById.size
+                    ? productsById.get(productId)
+                    : (products || []).find(el => String(el.id) === productId);
                 let rowId = $(this).data('row');
 
                 if (productObject) {
@@ -2112,7 +2125,7 @@
         })
 
         function showDeleteConfirmation(documentId) {
-            const deleteUrl = '/destroy-produto-processo/' + documentId; // Ajuste a URL conforme necessário
+            const deleteUrl = '/destroy-produto-processo/' + documentId + '?tipo_processo=aereo';
 
             Swal.fire({
                 title: 'Você tem certeza que deseja excluir este registro?',
@@ -5060,14 +5073,9 @@
             let moedaProcesso = 'USD'; // Nova variável
             // let moedaProcesso = $('#moeda_processo').val(); // Nova variável
             
-            // Gerar select de produtos
+            // Gerar select de produtos (options em cache para reduzir custo)
             let select = `<select data-row="${newIndex}" class="custom-select selectProduct w-100 select2" name="produtos[${newIndex}][produto_id]" id="produto_id-${newIndex}">
-        <option selected disabled>Selecione uma opção</option>`;
-
-            for (let produto of products) {
-                select += `<option value="${produto.id}">${produto.modelo} - ${produto.codigo}</option>`;
-            }
-            select += '</select>';
+        <option selected disabled>Selecione uma opção</option>${productOptionsHtml}</select>`;
 
             // Gerar colunas condicionais
             let colunaFreteMoeda = '';
@@ -5226,7 +5234,9 @@
             $(`#produto_id-${newIndex}`).select2({
                 width: '100%'
             });
-            $('input[data-row="' + newIndex + '"]').trigger('change');
+            if (typeof debouncedRecalcular === 'function') {
+                debouncedRecalcular();
+            }
 
             $(`#row-${newIndex} input, #row-${newIndex} select, #row-${newIndex} textarea`).each(function() {
                 initialInputs.add(this);
@@ -5711,57 +5721,45 @@
             const tbody = document.getElementById('productsBody');
             const linhas = Array.from(tbody.querySelectorAll('tr:not(.separador-adicao)'));
 
-            // Primeiro remove todos os separadores existentes
-            document.querySelectorAll('.separador-adicao').forEach(el => el.remove());
-
             if (linhas.length === 0) return;
 
-            // Ordenar as linhas por adição e depois por item
-            linhas.sort((a, b) => {
-                const inputAdicaoA = a.querySelector('input[name*="[adicao]"]');
-                const inputAdicaoB = b.querySelector('input[name*="[adicao]"]');
-                const adicaoA = inputAdicaoA ? parseFloat(inputAdicaoA.value) || 0 : 0;
-                const adicaoB = inputAdicaoB ? parseFloat(inputAdicaoB.value) || 0 : 0;
+            const linhasOrdenadas = linhas
+                .map((linha, index) => {
+                    const inputAdicao = linha.querySelector('input[name*="[adicao]"]');
+                    const inputItem = linha.querySelector('input[name*="[item]"]');
+                    const adicao = inputAdicao ? parseFloat(inputAdicao.value) || 0 : 0;
+                    const item = inputItem ? parseFloat(inputItem.value) || 0 : 0;
+                    return {
+                        linha,
+                        adicao,
+                        item,
+                        index
+                    };
+                })
+                .sort((a, b) => {
+                    if (a.adicao !== b.adicao) return a.adicao - b.adicao;
+                    if (a.item !== b.item) return a.item - b.item;
+                    return a.index - b.index; // estabilidade para valores iguais
+                });
 
-                if (adicaoA !== adicaoB) {
-                    return adicaoA - adicaoB; // primeiro pela adição
-                }
+            const fragment = document.createDocumentFragment();
+            let ultimaAdicao = null;
 
-                const inputItemA = a.querySelector('input[name*="[item]"]');
-                const inputItemB = b.querySelector('input[name*="[item]"]');
-                const itemA = inputItemA ? parseFloat(inputItemA.value) || 0 : 0;
-                const itemB = inputItemB ? parseFloat(inputItemB.value) || 0 : 0;
-                return itemA - itemB; // depois pelo item
-            });
-
-            // Agrupar linhas por adição
-            const grupos = {};
-            linhas.forEach(linha => {
-                const inputAdicao = linha.querySelector('input[name*="[adicao]"]');
-                const adicao = inputAdicao ? parseFloat(inputAdicao.value) || 0 : 0;
-                if (!grupos[adicao]) grupos[adicao] = [];
-                grupos[adicao].push(linha);
-            });
-
-            // Limpar o tbody
-            while (tbody.firstChild) {
-                tbody.removeChild(tbody.firstChild);
-            }
-
-            // Adicionar linhas com separadores
-            Object.keys(grupos).sort((a, b) => a - b).forEach((adicao, index) => {
-                if (index > 0) {
+            linhasOrdenadas.forEach((entrada) => {
+                if (ultimaAdicao !== null && entrada.adicao !== ultimaAdicao) {
                     const separador = document.createElement('tr');
                     separador.className = 'separador-adicao';
                     separador.innerHTML =
                         `<td colspan="100" style="background-color: #000 !important; height: 2px; padding: 0;"></td>`;
-                    tbody.appendChild(separador);
+                    fragment.appendChild(separador);
                 }
 
-                grupos[adicao].forEach(linha => {
-                    tbody.appendChild(linha);
-                });
+                fragment.appendChild(entrada.linha);
+                ultimaAdicao = entrada.adicao;
             });
+
+            tbody.textContent = '';
+            tbody.appendChild(fragment);
         }
 
 
@@ -5775,10 +5773,12 @@
 
             adicionarSeparadoresAdicao();
 
-            $('#productsBody input:not([name*="[adicao]"])').trigger('change');
-            $('#productsBody select').trigger('change');
-
             reordenando = false;
+
+            // Um único recálculo após reorganizar evita disparos em massa
+            if (typeof debouncedRecalcular === 'function') {
+                debouncedRecalcular();
+            }
         }
 
         // Adicionar CSS para os separadores
@@ -5796,7 +5796,13 @@
 `;
         document.head.appendChild(style);
 
-        $(document).on('change', 'input[name*="[adicao]"]', reordenarLinhas);
+        let reordenarTimeout = null;
+        function agendarReordenacao() {
+            clearTimeout(reordenarTimeout);
+            reordenarTimeout = setTimeout(reordenarLinhas, 80);
+        }
+
+        $(document).on('change', 'input[name*="[adicao]"]', agendarReordenacao);
         $(document).on('click', '.btn-reordenar', reordenarLinhas);
         
         // Botão para salvar campos do cabeçalho

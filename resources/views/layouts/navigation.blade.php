@@ -47,6 +47,17 @@
                 </li>
             @endif
 
+        @if(auth()->user()?->hasPermission('auditoria_listar'))
+            <li class="nav-item">
+                <a href="{{ route('auditoria.index') }}" class="nav-link">
+                    <i class="nav-icon fas fa-shield-alt"></i>
+                    <p>
+                        Auditoria
+                    </p>
+                </a>
+            </li>
+        @endif
+
             @if(auth()->user()?->hasPermission('admin') || auth()->user()?->isSuperUser())
                 <li class="nav-item">
                     <a href="#" class="nav-link">
@@ -85,7 +96,7 @@
                             <a href="{{ route('logs.index') }}" class="nav-link">
                                 <i class="nav-icon fas fa-file-alt"></i>
                                 <p>
-                                    Logs do Sistema
+                                    Logs do Servidor
                                 </p>
                             </a>
                         </li>

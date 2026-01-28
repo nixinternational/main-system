@@ -577,41 +577,45 @@
                        $cotacoes = isset($processo->cotacao_moeda_processo)
                            ? (is_array($processo->cotacao_moeda_processo)
                                ? $processo->cotacao_moeda_processo
-                               : $processo->cotacao_moeda_processo)
+                               : (is_string($processo->cotacao_moeda_processo)
+                                   ? json_decode($processo->cotacao_moeda_processo, true)
+                                   : []))
                            : [];
+                       // Garantir que é um array
+                       if (!is_array($cotacoes)) {
+                           $cotacoes = [];
+                       }
                    @endphp
 
-                   @if (!empty($cotacoes))
-                       <div class="col-12 mt-4">
-                           <div class="card-item shadow-sm" style="flex: 1 1 100%;">
-                               <div class="card-header-primary">
-                                   <i class="fas fa-edit me-3"></i>
-                                   <span>Editar valores de venda das moedas do dia</span>
-                                   <span class="badge-custom ms-3" id="cotacao-data-exibicao">
-                                       {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
-                                   </span>
-                               </div>
-                               <div class="card-body p-3">
-                                   <div class="row" id="cotacoes-moedas-row">
-                                       @foreach ($cotacoes as $codigo => $cotacao)
-                                           <div class="col-md-3 mb-3">
-                                               <label class="form-label fw-bold small text-muted">
-                                                   {{ $cotacao['nome'] ?? $codigo }} ({{ $codigo }})
-                                               </label>
-                                               <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
-                                                   value="{{ $cotacao['nome'] ?? $codigo }}">
-                                               <input type="text" step="0.0001" min="0"
-                                                   class="form-control cotacao shadow-sm"
-                                                   name="cotacao_moeda_processo[{{ $codigo }}][venda]"
-                                                   value="{{ number_format($cotacao['venda'], 4, ',', '.') }}"
-                                                   aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
-                                           </div>
-                                       @endforeach
-                                   </div>
+                   <div class="col-12 mt-4">
+                       <div class="card-item shadow-sm" style="flex: 1 1 100%;">
+                           <div class="card-header-primary">
+                               <i class="fas fa-edit me-3"></i>
+                               <span>Editar valores de venda das moedas do dia</span>
+                               <span class="badge-custom ms-3" id="cotacao-data-exibicao">
+                                   {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
+                               </span>
+                           </div>
+                           <div class="card-body p-3">
+                               <div class="row" id="cotacoes-moedas-row">
+                                   @foreach ($cotacoes as $codigo => $cotacao)
+                                       <div class="col-md-3 mb-3">
+                                           <label class="form-label fw-bold small text-muted">
+                                               {{ $cotacao['nome'] ?? $codigo }} ({{ $codigo }})
+                                           </label>
+                                           <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
+                                               value="{{ $cotacao['nome'] ?? $codigo }}">
+                                           <input type="text" step="0.0001" min="0"
+                                               class="form-control cotacao shadow-sm"
+                                               name="cotacao_moeda_processo[{{ $codigo }}][venda]"
+                                               value="{{ number_format($cotacao['venda'], 4, ',', '.') }}"
+                                               aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
+                                       </div>
+                                   @endforeach
                                </div>
                            </div>
                        </div>
-                   @endif
+                   </div>
                </div>
 
 

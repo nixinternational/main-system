@@ -81,6 +81,7 @@ class ProcessoRodoviario extends Model
         'transportadora_cnpj',
         'info_complementar_nf',
         'multa',
+        'tx_def_li',
         'thc_capatazia',
         // Campos específicos rodoviário
         'desp_fronteira',

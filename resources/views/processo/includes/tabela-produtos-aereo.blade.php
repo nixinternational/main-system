@@ -1757,7 +1757,8 @@
                                 'X-CSRF-TOKEN': csrfToken
                             },
                             body: JSON.stringify({
-                                ids: ids
+                                ids: ids,
+                                tipo_processo: 'aereo'
                             })
                         });
 

@@ -12,9 +12,11 @@ use App\Models\ProcessoRodoviarioProduto;
 use App\Models\ProcessoProduto;
 use App\Models\ProcessoProdutoMulta;
 use App\Models\Fornecedor;
+use App\Services\Auditoria\ProcessoAuditService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
@@ -186,19 +188,63 @@ class ProcessoController extends Controller
             
             // Criar processo na tabela correta
             if ($tipo_processo === 'aereo') {
-                $processo = ProcessoAereo::create([
+                $dadosCriacao = [
                     'codigo_interno' => '-',
                     'numero_processo' => '-',
                     'cliente_id' => $cliente_id,
-                ]);
+                ];
+                $processo = ProcessoAereo::create($dadosCriacao);
+                DB::afterCommit(function () use ($processo, $cliente_id, $dadosCriacao) {
+                    $auditService = app(ProcessoAuditService::class);
+                    $auditService->logCreate([
+                        'auditable_type' => ProcessoAereo::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => 'aereo',
+                        'process_id' => $processo->id,
+                        'client_id' => $cliente_id,
+                        'context' => 'processo.create',
+                    ], $dadosCriacao);
+                });
                 return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => 'aereo']))->with('messages', ['success' => ['Processo aéreo criado com sucesso!']]);
+            } elseif ($tipo_processo === 'rodoviario') {
+                $dadosCriacao = [
+                    'codigo_interno' => '-',
+                    'numero_processo' => '-',
+                    'cliente_id' => $cliente_id,
+                ];
+                $processo = ProcessoRodoviario::create($dadosCriacao);
+                DB::afterCommit(function () use ($processo, $cliente_id, $dadosCriacao) {
+                    $auditService = app(ProcessoAuditService::class);
+                    $auditService->logCreate([
+                        'auditable_type' => ProcessoRodoviario::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => 'rodoviario',
+                        'process_id' => $processo->id,
+                        'client_id' => $cliente_id,
+                        'context' => 'processo.create',
+                    ], $dadosCriacao);
+                });
+                return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => 'rodoviario']))->with('messages', ['success' => ['Processo rodoviário criado com sucesso!']]);
             } else {
-                $processo = Processo::create([
+                // Apenas marítimo cai aqui
+                $dadosCriacao = [
                     'codigo_interno' => '-',
                     'numero_processo' => '-',
                     'cliente_id' => $cliente_id,
                     'tipo_processo' => $tipo_processo
-                ]);
+                ];
+                $processo = Processo::create($dadosCriacao);
+                DB::afterCommit(function () use ($processo, $cliente_id, $dadosCriacao, $tipo_processo) {
+                    $auditService = app(ProcessoAuditService::class);
+                    $auditService->logCreate([
+                        'auditable_type' => Processo::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => $tipo_processo,
+                        'process_id' => $processo->id,
+                        'client_id' => $cliente_id,
+                        'context' => 'processo.create',
+                    ], $dadosCriacao);
+                });
                 return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => $tipo_processo]))->with('messages', ['success' => ['Processo criado com sucesso!']]);
             }
         } catch (\Exception $e) {
@@ -233,26 +279,62 @@ class ProcessoController extends Controller
             
             // Criar processo na tabela correta
             if ($tipo_processo === 'aereo') {
-                $processo = ProcessoAereo::create([
+                $dadosCriacao = [
                     'codigo_interno' => '-',
                     'numero_processo' => '-',
                     'cliente_id' => $cliente_id,
-                ]);
+                ];
+                $processo = ProcessoAereo::create($dadosCriacao);
+                DB::afterCommit(function () use ($processo, $cliente_id, $dadosCriacao) {
+                    $auditService = app(ProcessoAuditService::class);
+                    $auditService->logCreate([
+                        'auditable_type' => ProcessoAereo::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => 'aereo',
+                        'process_id' => $processo->id,
+                        'client_id' => $cliente_id,
+                        'context' => 'processo.create',
+                    ], $dadosCriacao);
+                });
                 return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => 'aereo']))->with('messages', ['success' => ['Processo aéreo criado com sucesso!']]);
             } elseif ($tipo_processo === 'rodoviario') {
-                $processo = ProcessoRodoviario::create([
+                $dadosCriacao = [
                     'codigo_interno' => '-',
                     'numero_processo' => '-',
                     'cliente_id' => $cliente_id,
-                ]);
+                ];
+                $processo = ProcessoRodoviario::create($dadosCriacao);
+                DB::afterCommit(function () use ($processo, $cliente_id, $dadosCriacao) {
+                    $auditService = app(ProcessoAuditService::class);
+                    $auditService->logCreate([
+                        'auditable_type' => ProcessoRodoviario::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => 'rodoviario',
+                        'process_id' => $processo->id,
+                        'client_id' => $cliente_id,
+                        'context' => 'processo.create',
+                    ], $dadosCriacao);
+                });
                 return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => 'rodoviario']))->with('messages', ['success' => ['Processo rodoviário criado com sucesso!']]);
             } else {
-                $processo = Processo::create([
+                $dadosCriacao = [
                     'codigo_interno' => '-',
                     'numero_processo' => '-',
                     'cliente_id' => $cliente_id,
                     'tipo_processo' => $tipo_processo
-                ]);
+                ];
+                $processo = Processo::create($dadosCriacao);
+                DB::afterCommit(function () use ($processo, $cliente_id, $dadosCriacao, $tipo_processo) {
+                    $auditService = app(ProcessoAuditService::class);
+                    $auditService->logCreate([
+                        'auditable_type' => Processo::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => $tipo_processo,
+                        'process_id' => $processo->id,
+                        'client_id' => $cliente_id,
+                        'context' => 'processo.create',
+                    ], $dadosCriacao);
+                });
                 return redirect(route('processo.edit', ['processo' => $processo->id, 'tipo_processo' => $tipo_processo]))->with('messages', ['success' => ['Processo criado com sucesso!']]);
             }
         } catch (\Exception $e) {
@@ -422,37 +504,44 @@ class ProcessoController extends Controller
     {
         try {
             // Obter o tipo de processo do query param ou tentar detectar
-            $tipoProcessoRequest = request()->get('tipo_processo', 'maritimo');
+            $tipoProcessoRequest = request()->get('tipo_processo', null);
             $processoModel = null;
             $tipoProcesso = 'maritimo';
             $processoProdutosCollection = null;
             
-            // Buscar na tabela correta baseado no tipo_processo
+            // Se o tipo foi especificado no query param, buscar diretamente na tabela específica
             if ($tipoProcessoRequest === 'aereo') {
-                $processoModel = ProcessoAereo::findOrFail($id);
-                $tipoProcesso = 'aereo';
-                $this->ensureClienteAccess($processoModel->cliente_id);
-                $processoModel->loadMissing([
-                    'cliente.fornecedores',
-                    'processoAereoProdutos.produto.fornecedor',
-                    'fornecedor'
-                ]);
-                $processoProdutosCollection = $processoModel->processoAereoProdutos;
-            } elseif ($tipoProcessoRequest === 'rodoviario') {
-                $processoModel = ProcessoRodoviario::findOrFail($id);
-                $tipoProcesso = 'rodoviario';
-                $this->ensureClienteAccess($processoModel->cliente_id);
-                $processoModel->loadMissing([
-                    'cliente.fornecedores',
-                    'processoRodoviarioProdutos.produto.fornecedor',
-                    'fornecedor'
-                ]);
-                $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
-            } else {
-                // Tentar buscar em todas as tabelas se o tipo não foi especificado
-                $processoModel = Processo::find($id);
+                $processoModel = ProcessoAereo::find($id);
                 if ($processoModel) {
-                    $tipoProcesso = $processoModel->tipo_processo ?? 'maritimo';
+                    $tipoProcesso = 'aereo';
+                    $this->ensureClienteAccess($processoModel->cliente_id);
+                    $processoModel->loadMissing([
+                        'cliente.fornecedores',
+                        'processoAereoProdutos.produto.fornecedor',
+                        'fornecedor'
+                    ]);
+                    $processoProdutosCollection = $processoModel->processoAereoProdutos;
+                }
+            } elseif ($tipoProcessoRequest === 'rodoviario') {
+                $processoModel = ProcessoRodoviario::find($id);
+                if ($processoModel) {
+                    $tipoProcesso = 'rodoviario';
+                    $this->ensureClienteAccess($processoModel->cliente_id);
+                    $processoModel->loadMissing([
+                        'cliente.fornecedores',
+                        'processoRodoviarioProdutos.produto.fornecedor',
+                        'fornecedor'
+                    ]);
+                    $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
+                }
+            } else {
+                // Se tipo não foi especificado ou é marítimo, buscar na tabela principal Processo
+                $processoPrincipal = Processo::find($id);
+                
+                if ($processoPrincipal) {
+                    // Se encontrou na tabela principal, usar o tipo_processo dela
+                    $tipoProcesso = $processoPrincipal->tipo_processo ?? 'maritimo';
+                    $processoModel = $processoPrincipal;
                     $this->ensureClienteAccess($processoModel->cliente_id);
                     $processoModel->loadMissing([
                         'cliente.fornecedores',
@@ -462,7 +551,7 @@ class ProcessoController extends Controller
                     ]);
                     $processoProdutosCollection = $processoModel->processoProdutos;
                 } else {
-                    // Tentar como processo aéreo
+                    // Se não encontrou na tabela principal e tipo não foi especificado, tentar em todas as tabelas
                     $processoModel = ProcessoAereo::find($id);
                     if ($processoModel) {
                         $tipoProcesso = 'aereo';
@@ -474,18 +563,24 @@ class ProcessoController extends Controller
                         ]);
                         $processoProdutosCollection = $processoModel->processoAereoProdutos;
                     } else {
-                        // Tentar como processo rodoviário
-                        $processoModel = ProcessoRodoviario::findOrFail($id);
-                        $tipoProcesso = 'rodoviario';
-                        $this->ensureClienteAccess($processoModel->cliente_id);
-                        $processoModel->loadMissing([
-                            'cliente.fornecedores',
-                            'processoRodoviarioProdutos.produto.fornecedor',
-                            'fornecedor'
-                        ]);
-                        $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
+                        $processoModel = ProcessoRodoviario::find($id);
+                        if ($processoModel) {
+                            $tipoProcesso = 'rodoviario';
+                            $this->ensureClienteAccess($processoModel->cliente_id);
+                            $processoModel->loadMissing([
+                                'cliente.fornecedores',
+                                'processoRodoviarioProdutos.produto.fornecedor',
+                                'fornecedor'
+                            ]);
+                            $processoProdutosCollection = $processoModel->processoRodoviarioProdutos;
+                        }
                     }
                 }
+            }
+            
+            // Se não encontrou em nenhuma tabela, lançar erro
+            if (!$processoModel) {
+                return redirect(route('processo.index'))->with('messages', ['error' => ['Processo não encontrado!']]);
             }
             
             $processo = $this->parseModelFieldsFromModel($processoModel);
@@ -556,9 +651,15 @@ class ProcessoController extends Controller
                 'podeSelecionarFornecedor',
                 'tipoProcesso'
             ));
-        } catch (Exception $e) {
-            dd($e);
+        } catch (ModelNotFoundException $e) {
             return redirect(route('processo.index'))->with('messages', ['error' => ['Processo não encontrado!']]);
+        } catch (Exception $e) {
+            Log::error('Erro ao editar processo: ' . $e->getMessage(), [
+                'id' => $id,
+                'tipo_processo' => request()->get('tipo_processo'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect(route('processo.index'))->with('messages', ['error' => ['Erro ao carregar o processo. Por favor, tente novamente.']]);
         }
     }
 
@@ -614,6 +715,13 @@ class ProcessoController extends Controller
             }
             
             $this->ensureClienteAccess($processo->cliente_id);
+            $auditService = app(ProcessoAuditService::class);
+            $processoOriginal = $processo->getAttributes();
+            $processType = $isAereo ? 'aereo' : ($isRodoviario ? 'rodoviario' : ($processo->tipo_processo ?? 'maritimo'));
+            $auditService = app(ProcessoAuditService::class);
+            $auditEntries = [];
+            $processoOriginal = $processo->getAttributes();
+            $processType = $isAereo ? 'aereo' : ($isRodoviario ? 'rodoviario' : ($processo->tipo_processo ?? 'maritimo'));
             DB::beginTransaction();
 
             $validator = Validator::make($request->all(), [], []);
@@ -648,6 +756,17 @@ class ProcessoController extends Controller
                             ->keyBy('id')
                             ->toArray();
                     }
+                }
+            }
+
+            $produtosMultaExistentes = [];
+            if ($request->produtos_multa && count($request->produtos_multa) > 0) {
+                $idsProdutosMulta = array_filter(array_column($request->produtos_multa, 'processo_produto_multa_id'));
+                if (!empty($idsProdutosMulta)) {
+                    $produtosMultaExistentes = ProcessoProdutoMulta::whereIn('id', $idsProdutosMulta)
+                        ->get()
+                        ->keyBy('id')
+                        ->toArray();
                 }
             }
 
@@ -736,12 +855,7 @@ class ProcessoController extends Controller
                             }
                         }
                         
-                        $processoProduto = ProcessoAereoProduto::updateOrCreate(
-                            [
-                                'id' => $produto['processo_produto_id'] ?? null,
-                                'processo_aereo_id' => $id ?? 0,
-                            ],
-                            [
+                        $dadosProduto = [
                             'item' => $produto['item'],
                             'produto_id' => $produto['produto_id'],
                             'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
@@ -751,7 +865,7 @@ class ProcessoController extends Controller
                             'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) && $produto['peso_liquido_unitario'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
                             'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
                             'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
-                            'fob_unit_usd' => isset($produto['fob_unit_usd']) ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : null,
+                            'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
                             'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
                             'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
                             'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
@@ -871,15 +985,37 @@ class ProcessoController extends Controller
                             'peso_liq_lbs' => $pesoLiqLbsValue,
                             'peso_liq_kg' => $pesoLiqKgValue ?? null,
                             'peso_liq_total_kg' => $pesoLiqTotalKgValue,
-                        ]);
-                        
-                    } elseif ($isRodoviario) {
-                        $processoProduto = ProcessoRodoviarioProduto::updateOrCreate(
+                        ];
+
+                        $processoProduto = ProcessoAereoProduto::updateOrCreate(
                             [
                                 'id' => $produto['processo_produto_id'] ?? null,
-                                'processo_rodoviario_id' => $id ?? 0,
+                                'processo_aereo_id' => $id ?? 0,
                             ],
-                            [
+                            $dadosProduto
+                        );
+
+                        $produtoAntesId = $produto['processo_produto_id'] ?? null;
+                        $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
+                            ? $produtosExistentes[$produtoAntesId]
+                            : null;
+
+                        $auditEntries[] = [
+                            'action' => $produtoAntes ? 'update' : 'create',
+                            'meta' => [
+                                'auditable_type' => ProcessoAereoProduto::class,
+                                'auditable_id' => $processoProduto->id,
+                                'process_type' => $processType,
+                                'process_id' => $id,
+                                'client_id' => $processo->cliente_id,
+                                'context' => 'processo.produto',
+                            ],
+                            'before' => $produtoAntes,
+                            'after' => $dadosProduto,
+                        ];
+                        
+                    } elseif ($isRodoviario) {
+                        $dadosProduto = [
                             'item' => $produto['item'],
                             'produto_id' => $produto['produto_id'],
                             'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
@@ -891,7 +1027,7 @@ class ProcessoController extends Controller
                             'peso_liquido_total' => isset($produto['peso_liquido_total']) && $produto['peso_liquido_total'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
                             'peso_liq_total_kg' => isset($produto['peso_liq_total_kg']) && $produto['peso_liq_total_kg'] !== '' ? $this->parseMoneyToFloat($produto['peso_liq_total_kg']) : null,
                             'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
-                            'fob_unit_usd' => isset($produto['fob_unit_usd']) ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : null,
+                            'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
                             'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
                             'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
                             'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
@@ -976,14 +1112,36 @@ class ProcessoController extends Controller
                             'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
                             'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
                             'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
-                        ]);
-                    } else {
-                        $processoProduto = ProcessoProduto::updateOrCreate(
+                        ];
+
+                        $processoProduto = ProcessoRodoviarioProduto::updateOrCreate(
                             [
                                 'id' => $produto['processo_produto_id'] ?? null,
-                                'processo_id' => $id ?? 0,
+                                'processo_rodoviario_id' => $id ?? 0,
                             ],
-                            [
+                            $dadosProduto
+                        );
+
+                        $produtoAntesId = $produto['processo_produto_id'] ?? null;
+                        $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
+                            ? $produtosExistentes[$produtoAntesId]
+                            : null;
+
+                        $auditEntries[] = [
+                            'action' => $produtoAntes ? 'update' : 'create',
+                            'meta' => [
+                                'auditable_type' => ProcessoRodoviarioProduto::class,
+                                'auditable_id' => $processoProduto->id,
+                                'process_type' => $processType,
+                                'process_id' => $id,
+                                'client_id' => $processo->cliente_id,
+                                'context' => 'processo.produto',
+                            ],
+                            'before' => $produtoAntes,
+                            'after' => $dadosProduto,
+                        ];
+                    } else {
+                        $dadosProduto = [
                                 'item' => $produto['item'],
                                 'produto_id' => $produto['produto_id'],
                                 'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
@@ -991,7 +1149,7 @@ class ProcessoController extends Controller
                                 'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
                                 'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
                                 'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
-                                'fob_unit_usd' => isset($produto['fob_unit_usd']) ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : null,
+                                'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
                                 'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
                                 'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
                                 'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
@@ -1098,7 +1256,34 @@ class ProcessoController extends Controller
                                 'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
                                 'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
                                 'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
-                            ]);
+                        ];
+
+                        $processoProduto = ProcessoProduto::updateOrCreate(
+                            [
+                                'id' => $produto['processo_produto_id'] ?? null,
+                                'processo_id' => $id ?? 0,
+                            ],
+                            $dadosProduto
+                        );
+
+                        $produtoAntesId = $produto['processo_produto_id'] ?? null;
+                        $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
+                            ? $produtosExistentes[$produtoAntesId]
+                            : null;
+
+                        $auditEntries[] = [
+                            'action' => $produtoAntes ? 'update' : 'create',
+                            'meta' => [
+                                'auditable_type' => ProcessoProduto::class,
+                                'auditable_id' => $processoProduto->id,
+                                'process_type' => $processType,
+                                'process_id' => $id,
+                                'client_id' => $processo->cliente_id,
+                                'context' => 'processo.produto',
+                            ],
+                            'before' => $produtoAntes,
+                            'after' => $dadosProduto,
+                        ];
                     }
 
                     $produtosProcessados++;
@@ -1214,13 +1399,32 @@ class ProcessoController extends Controller
                             : null;
                     }
 
-                    ProcessoProdutoMulta::updateOrCreate(
+                    $produtoMultaModel = ProcessoProdutoMulta::updateOrCreate(
                         [
                             'id' => $produtoMulta['processo_produto_multa_id'] ?? null,
                             'processo_id' => $id ?? 0,
                         ],
                         $dadosMulta
                     );
+
+                    $produtoMultaAntesId = $produtoMulta['processo_produto_multa_id'] ?? null;
+                    $produtoMultaAntes = $produtoMultaAntesId && isset($produtosMultaExistentes[$produtoMultaAntesId])
+                        ? $produtosMultaExistentes[$produtoMultaAntesId]
+                        : null;
+
+                    $auditEntries[] = [
+                        'action' => $produtoMultaAntes ? 'update' : 'create',
+                        'meta' => [
+                            'auditable_type' => ProcessoProdutoMulta::class,
+                            'auditable_id' => $produtoMultaModel->id,
+                            'process_type' => $processType,
+                            'process_id' => $id,
+                            'client_id' => $processo->cliente_id,
+                            'context' => 'processo.produto.multa',
+                        ],
+                        'before' => $produtoMultaAntes,
+                        'after' => $dadosMulta,
+                    ];
                 }
             }
 
@@ -1291,8 +1495,8 @@ class ProcessoController extends Controller
                 $dadosProcesso['service_charges'] = $this->parseMoneyToFloat($request->service_charges);
             }
             
-            // Campos específicos para processos marítimos
-            if (!$isAereo) {
+            // Campos específicos para processos marítimos (não para aéreo nem rodoviário)
+            if (!$isAereo && !$isRodoviario) {
                 $dadosProcesso['liberacao_bl'] = $this->parseMoneyToFloat($request->liberacao_bl);
                 $dadosProcesso['isps_code'] = $this->parseMoneyToFloat($request->isps_code);
                 $dadosProcesso['capatazia'] = $this->parseMoneyToFloat($request->thc_capatazia);
@@ -1403,7 +1607,10 @@ class ProcessoController extends Controller
                 $dadosProcesso['service_charges_brl'] = $processoExistente->service_charges_brl ?? null;
             }
 
-            if ($request->has('nacionalizacao') && $request->nacionalizacao !== null) {
+            // Processo rodoviário sempre usa nacionalização 'outros'
+            if ($isRodoviario) {
+                $dadosProcesso['nacionalizacao'] = 'outros';
+            } elseif ($request->has('nacionalizacao') && $request->nacionalizacao !== null) {
                 $dadosProcesso['nacionalizacao'] = $request->nacionalizacao;
             }
             
@@ -1411,6 +1618,27 @@ class ProcessoController extends Controller
                 $dadosProcesso['cotacao_service_charges'] = $this->parseMoneyToFloat($request->cotacao_service_charges, 4);
             } else {
                 $dadosProcesso['cotacao_service_charges'] = $processoExistente->cotacao_service_charges ?? null;
+            }
+
+            $auditProcessoChanges = array_intersect_key($dadosProcesso, $request->all());
+            if (isset($pesoLiquidoFinal) && $request->has('peso_liquido_total_cabecalho')) {
+                $auditProcessoChanges['peso_liquido'] = $pesoLiquidoFinal;
+            }
+
+            if (!empty($auditProcessoChanges)) {
+                $auditEntries[] = [
+                    'action' => 'update',
+                    'meta' => [
+                        'auditable_type' => get_class($processo),
+                        'auditable_id' => $processo->id,
+                        'process_type' => $processType,
+                        'process_id' => $processo->id,
+                        'client_id' => $processo->cliente_id,
+                        'context' => 'processo.update',
+                    ],
+                    'before' => $processoOriginal,
+                    'after' => $auditProcessoChanges,
+                ];
             }
 
             // Atualizar processo na tabela correta
@@ -1425,6 +1653,18 @@ class ProcessoController extends Controller
             } else {
                 Processo::where('id', $id)->update($dadosProcesso);
             }
+
+            DB::afterCommit(function () use ($auditEntries, $auditService) {
+                foreach ($auditEntries as $entry) {
+                    if ($entry['action'] === 'create') {
+                        $auditService->logCreate($entry['meta'], $entry['after'] ?? []);
+                    } elseif ($entry['action'] === 'update') {
+                        $auditService->logUpdate($entry['meta'], $entry['before'] ?? [], $entry['after'] ?? []);
+                    } elseif ($entry['action'] === 'delete') {
+                        $auditService->logDelete($entry['meta'], $entry['before'] ?? []);
+                    }
+                }
+            });
             DB::commit();
 
             // Retorno para requisições AJAX (salvamento por blocos)
@@ -1475,77 +1715,103 @@ class ProcessoController extends Controller
 
     public function updateProcesso(Request $request, $id)
     {
-        // Detectar tipo de processo pelo query param ou tentar encontrar em todas as tabelas
-        $tipoProcessoRequest = request()->get('tipo_processo', null);
-        $processo = null;
-        $isAereo = false;
-        $isRodoviario = false;
-        
-        if ($tipoProcessoRequest === 'aereo') {
-            $processo = ProcessoAereo::findOrFail($id);
-            $isAereo = true;
-        } elseif ($tipoProcessoRequest === 'rodoviario') {
-            $processo = ProcessoRodoviario::findOrFail($id);
-            $isRodoviario = true;
-        } else {
-            // Tentar buscar como processo marítimo primeiro
-            $processo = Processo::find($id);
-            if ($processo) {
-                // Processo marítimo encontrado
-            } else {
-                // Se não encontrar, tentar como processo aéreo
-                $processo = ProcessoAereo::find($id);
-                if ($processo) {
-                    $isAereo = true;
-                } else {
-                    // Se não encontrar, tentar como processo rodoviário
+        try {
+            // Detectar tipo de processo pelo query param ou tentar encontrar em todas as tabelas
+            $tipoProcessoRequest = request()->get('tipo_processo', null);
+            $processo = null;
+            $isAereo = false;
+            $isRodoviario = false;
+            
+            
+     
+                // Se não encontrou na tabela principal, tentar nas tabelas específicas
+                if ($tipoProcessoRequest === 'aereo') {
+                    $processo = ProcessoAereo::find($id);
+                    if ($processo) {
+                        $isAereo = true;
+                    }
+                } elseif ($tipoProcessoRequest === 'rodoviario') {
                     $processo = ProcessoRodoviario::find($id);
                     if ($processo) {
                         $isRodoviario = true;
+                    }
+                } else {
+                    // Se tipo não foi especificado, tentar em todas as tabelas
+                    $processo = ProcessoAereo::find($id);
+                    if ($processo) {
+                        $isAereo = true;
                     } else {
-                        // Se não encontrou em nenhuma tabela, lançar exceção
-                        throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
-                            "Processo com ID {$id} não encontrado em nenhuma tabela (marítimo, aéreo ou rodoviário)."
-                        );
+                        $processo = ProcessoRodoviario::find($id);
+                        if ($processo) {
+                            $isRodoviario = true;
+                        }
+                    }
+                }
+        
+            
+            // Se não encontrou em nenhuma tabela, retornar erro
+            if (!$processo) {
+                return back()->with('messages', ['error' => ['Processo não encontrado!']])->withInput($request->all());
+            }
+            
+            $this->ensureClienteAccess($processo->cliente_id);
+            $auditService = app(ProcessoAuditService::class);
+            $processoOriginal = $processo->getAttributes();
+            $processType = $isAereo ? 'aereo' : ($isRodoviario ? 'rodoviario' : ($processo->tipo_processo ?? 'maritimo'));
+
+            $validator = Validator::make($request->all(), [], []);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $message = $errors->unique();
+                return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
+            }
+
+            // Monta o JSON das cotações das moedas do processo
+            $cotacoesMoedaProcesso = [];
+            $objeto = null;
+
+            // Primeiro, tentar obter dos campos individuais do formulário (prioridade)
+            if ($request->has('cotacao_moeda_processo') && is_array($request->cotacao_moeda_processo)) {
+                $objeto = $request->cotacao_moeda_processo;
+            } 
+            // Se não houver campos individuais, tentar usar o campo hidden JSON
+            elseif ($request->has('cotacao_moeda_processo') && is_string($request->cotacao_moeda_processo)) {
+                $cotacaoString = trim($request->cotacao_moeda_processo);
+                if (!empty($cotacaoString)) {
+                    $decoded = json_decode($cotacaoString, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $objeto = $decoded;
                     }
                 }
             }
-        }
-        
-        $this->ensureClienteAccess($processo->cliente_id);
 
-        $validator = Validator::make($request->all(), [], []);
-
-        if ($validator->fails()) {
-            $errors = $validator->errors();
-            $message = $errors->unique();
-            return back()->with('messages', ['error' => [implode('<br> ', $message)]])->withInput($request->all());
-        }
-
-        // Monta o JSON das cotações das moedas do processo
-        $cotacoesMoedaProcesso = [];
-
-        if ($request->has('cotacao_moeda_processo')) {
-
-            $objeto = is_array($request->cotacao_moeda_processo) ? $request->cotacao_moeda_processo : json_decode($request->cotacao_moeda_processo, true);
-
-            foreach ($objeto as $codigo => $cotacao) {
-                $nome = $cotacao['nome'] ?? null;
-                $compra = isset($cotacao['compra']) ? $this->parseMoneyToFloat($cotacao['compra'], 6) : null;
-                $venda = isset($cotacao['venda']) ? $this->parseMoneyToFloat($cotacao['venda'], 6) : null;
-                $data = $request->data_cotacao ?? date('d-m-Y');
-                $cotacoesMoedaProcesso[$codigo] = [
-                    'nome' => $nome,
-                    'data' => $data,
-                    'moeda' => $codigo,
-                    'compra' => $compra,
-                    'venda' => $venda,
-                    'erro' => null,
-                ];
+            // Processar o objeto se foi obtido com sucesso
+            if ($objeto && is_array($objeto) && !empty($objeto)) {
+                foreach ($objeto as $codigo => $cotacao) {
+                    if (!is_array($cotacao)) {
+                        continue;
+                    }
+                    $nome = $cotacao['nome'] ?? $codigo;
+                    $compra = isset($cotacao['compra']) && $cotacao['compra'] !== '' ? $this->parseMoneyToFloat($cotacao['compra'], 6) : null;
+                    $venda = isset($cotacao['venda']) && $cotacao['venda'] !== '' ? $this->parseMoneyToFloat($cotacao['venda'], 6) : null;
+                    $data = $request->data_cotacao ?? ($cotacao['data'] ?? date('d-m-Y'));
+                    
+                    // Só adicionar se pelo menos venda ou compra estiver preenchido
+                    if ($venda !== null || $compra !== null) {
+                        $cotacoesMoedaProcesso[$codigo] = [
+                            'nome' => $nome,
+                            'data' => $data,
+                            'moeda' => $codigo,
+                            'compra' => $compra,
+                            'venda' => $venda,
+                            'erro' => null,
+                        ];
+                    }
+                }
             }
-        }
-        // Campos comuns entre marítimo e aéreo
-        $dadosProcesso = [
+            // Campos comuns entre marítimo e aéreo
+            $dadosProcesso = [
             "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
             "seguro_internacional" => $this->parseMoneyToFloat($request->seguro_internacional),
             "acrescimo_frete" => $this->parseMoneyToFloat($request->acrescimo_frete),
@@ -1562,7 +1828,8 @@ class ProcessoController extends Controller
             "codigo_interno" => $request->codigo_interno ?? $id,
             "descricao" => $request->descricao,
             "canal" => $request->canal,
-            'nacionalizacao' => $request->nacionalizacao ?? $processo->nacionalizacao ?? 'outros',
+            // Processo rodoviário sempre usa nacionalização 'outros'
+            'nacionalizacao' => $isRodoviario ? 'outros' : ($request->nacionalizacao ?? $processo->nacionalizacao ?? 'outros'),
             'multa' => isset($request->multa) ? $this->parseMoneyToFloat($request->multa) : null,
             "status" => $request->status,
             "data_desembaraco_inicio" => $request->data_desembaraco_inicio,
@@ -1575,13 +1842,13 @@ class ProcessoController extends Controller
             'data_moeda_frete_internacional' => $request->data_cotacao,
             'data_moeda_seguro_internacional' => $request->data_cotacao,
             'data_moeda_acrescimo_frete' => $request->data_cotacao,
-            'cotacao_moeda_processo' => !empty($cotacoesMoedaProcesso) ? json_encode($cotacoesMoedaProcesso, JSON_UNESCAPED_UNICODE) : null,
+            'cotacao_moeda_processo' => !empty($cotacoesMoedaProcesso) ? $cotacoesMoedaProcesso : null,
             'data_cotacao_processo' => $request->data_cotacao,
-            'moeda_processo' => $request->moeda_processo,
-        ];
-        
-        // Adicionar campos específicos baseado no tipo de processo
-        if ($isAereo) {
+                'moeda_processo' => $request->moeda_processo,
+            ];
+            
+            // Adicionar campos específicos baseado no tipo de processo
+            if ($isAereo) {
             // Campos específicos do transporte aéreo
             $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
             $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
@@ -1600,51 +1867,97 @@ class ProcessoController extends Controller
             $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
             $dadosProcesso['thc_capatazia'] = isset($request->thc_capatazia) ? $this->parseMoneyToFloat($request->thc_capatazia) : null;
             
-            ProcessoAereo::where('id', $id)->update($dadosProcesso);
-        } elseif ($isRodoviario) {
-            // Campos específicos do transporte rodoviário
-            $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
-            $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
-            $dadosProcesso['dai'] = isset($request->dai) ? $this->parseMoneyToFloat($request->dai) : null;
-            $dadosProcesso['dape'] = isset($request->dape) ? $this->parseMoneyToFloat($request->dape) : null;
-            $dadosProcesso['outras_taxas_agente'] = isset($request->outras_taxas_agente) ? $this->parseMoneyToFloat($request->outras_taxas_agente) : null;
-            $dadosProcesso['desconsolidacao'] = isset($request->desconsolidacao) ? $this->parseMoneyToFloat($request->desconsolidacao) : null;
-            $dadosProcesso['handling'] = isset($request->handling) ? $this->parseMoneyToFloat($request->handling) : null;
-            $dadosProcesso['correios'] = isset($request->correios) ? $this->parseMoneyToFloat($request->correios) : null;
-            $dadosProcesso['li_dta_honor_nix'] = isset($request->li_dta_honor_nix) ? $this->parseMoneyToFloat($request->li_dta_honor_nix) : null;
-            $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
-            $dadosProcesso['thc_capatazia'] = isset($request->thc_capatazia) ? $this->parseMoneyToFloat($request->thc_capatazia) : null;
-            // Campos específicos rodoviário
-            $dadosProcesso['desp_fronteira'] = isset($request->desp_fronteira) ? $this->parseMoneyToFloat($request->desp_fronteira) : null;
-            $dadosProcesso['das_fronteira'] = isset($request->das_fronteira) ? $this->parseMoneyToFloat($request->das_fronteira) : null;
-            $dadosProcesso['armazenagem'] = isset($request->armazenagem) ? $this->parseMoneyToFloat($request->armazenagem) : null;
-            $dadosProcesso['frete_foz_gyn'] = isset($request->frete_foz_gyn) ? $this->parseMoneyToFloat($request->frete_foz_gyn) : null;
-            $dadosProcesso['rep_fronteira'] = isset($request->rep_fronteira) ? $this->parseMoneyToFloat($request->rep_fronteira) : null;
-            $dadosProcesso['armaz_anapolis'] = isset($request->armaz_anapolis) ? $this->parseMoneyToFloat($request->armaz_anapolis) : null;
-            $dadosProcesso['mov_anapolis'] = isset($request->mov_anapolis) ? $this->parseMoneyToFloat($request->mov_anapolis) : null;
-            $dadosProcesso['rep_anapolis'] = isset($request->rep_anapolis) ? $this->parseMoneyToFloat($request->rep_anapolis) : null;
-            
-            ProcessoRodoviario::where('id', $id)->update($dadosProcesso);
-        } else {
-            // Campos específicos do transporte marítimo (incluindo campos _usd e _brl que não existem no aéreo)
-            $dadosProcesso['frete_internacional_usd'] = $this->parseMoneyToFloat($request->frete_internacional_usd);
-            $dadosProcesso['frete_internacional_brl'] = $this->parseMoneyToFloat($request->frete_internacional_brl);
-            $dadosProcesso['seguro_internacional_usd'] = $this->parseMoneyToFloat($request->seguro_internacional_usd);
-            $dadosProcesso['seguro_internacional_brl'] = $this->parseMoneyToFloat($request->seguro_internacional_brl);
-            $dadosProcesso['acrescimo_frete_usd'] = $this->parseMoneyToFloat($request->acrescimo_frete_usd);
-            $dadosProcesso['acrescimo_frete_brl'] = $this->parseMoneyToFloat($request->acrescimo_frete_brl);
-            $dadosProcesso['thc_capatazia'] = $this->parseMoneyToFloat($request->thc_capatazia);
-            
-            Processo::where('id', $id)->update($dadosProcesso);
-        }
+                ProcessoAereo::where('id', $id)->update($dadosProcesso);
+            } elseif ($isRodoviario) {
+                // Campos específicos do transporte rodoviário
+                $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
+                $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
+                $dadosProcesso['dai'] = isset($request->dai) ? $this->parseMoneyToFloat($request->dai) : null;
+                $dadosProcesso['dape'] = isset($request->dape) ? $this->parseMoneyToFloat($request->dape) : null;
+                $dadosProcesso['outras_taxas_agente'] = isset($request->outras_taxas_agente) ? $this->parseMoneyToFloat($request->outras_taxas_agente) : null;
+                $dadosProcesso['desconsolidacao'] = isset($request->desconsolidacao) ? $this->parseMoneyToFloat($request->desconsolidacao) : null;
+                $dadosProcesso['handling'] = isset($request->handling) ? $this->parseMoneyToFloat($request->handling) : null;
+                $dadosProcesso['correios'] = isset($request->correios) ? $this->parseMoneyToFloat($request->correios) : null;
+                $dadosProcesso['li_dta_honor_nix'] = isset($request->li_dta_honor_nix) ? $this->parseMoneyToFloat($request->li_dta_honor_nix) : null;
+                $dadosProcesso['honorarios_nix'] = isset($request->honorarios_nix) ? $this->parseMoneyToFloat($request->honorarios_nix) : null;
+                // Campos específicos rodoviário (não incluir thc_capatazia pois não existe na tabela processo_rodoviarios)
+                $dadosProcesso['desp_fronteira'] = isset($request->desp_fronteira) ? $this->parseMoneyToFloat($request->desp_fronteira) : null;
+                $dadosProcesso['das_fronteira'] = isset($request->das_fronteira) ? $this->parseMoneyToFloat($request->das_fronteira) : null;
+                $dadosProcesso['armazenagem'] = isset($request->armazenagem) ? $this->parseMoneyToFloat($request->armazenagem) : null;
+                $dadosProcesso['frete_foz_gyn'] = isset($request->frete_foz_gyn) ? $this->parseMoneyToFloat($request->frete_foz_gyn) : null;
+                $dadosProcesso['rep_fronteira'] = isset($request->rep_fronteira) ? $this->parseMoneyToFloat($request->rep_fronteira) : null;
+                $dadosProcesso['armaz_anapolis'] = isset($request->armaz_anapolis) ? $this->parseMoneyToFloat($request->armaz_anapolis) : null;
+                $dadosProcesso['mov_anapolis'] = isset($request->mov_anapolis) ? $this->parseMoneyToFloat($request->mov_anapolis) : null;
+                $dadosProcesso['rep_anapolis'] = isset($request->rep_anapolis) ? $this->parseMoneyToFloat($request->rep_anapolis) : null;
+                
+                // Remover campos marítimos que não existem na tabela processo_rodoviarios
+                $camposMaritimos = [
+                    'capatazia',
+                    'tx_correcao_lacre',
+                    'afrmm',
+                    'armazenagem_sts',
+                    'armazenagem_porto',
+                    'frete_dta_sts_ana',
+                    'frete_rodoviario',
+                    'dif_frete_rodoviario',
+                    'sda',
+                    'rep_sts',
+                    'rep_porto',
+                    'armaz_ana',
+                    'lavagem_container',
+                    'desp_anapolis'
+                ];
+                
+                foreach ($camposMaritimos as $campo) {
+                    unset($dadosProcesso[$campo]);
+                }
+                ProcessoRodoviario::where('id', $id)->update($dadosProcesso);
+            } else {
+                // Campos específicos do transporte marítimo (incluindo campos _usd e _brl que não existem no aéreo)
+                $dadosProcesso['frete_internacional_usd'] = $this->parseMoneyToFloat($request->frete_internacional_usd);
+                $dadosProcesso['frete_internacional_brl'] = $this->parseMoneyToFloat($request->frete_internacional_brl);
+                $dadosProcesso['seguro_internacional_usd'] = $this->parseMoneyToFloat($request->seguro_internacional_usd);
+                $dadosProcesso['seguro_internacional_brl'] = $this->parseMoneyToFloat($request->seguro_internacional_brl);
+                $dadosProcesso['acrescimo_frete_usd'] = $this->parseMoneyToFloat($request->acrescimo_frete_usd);
+                $dadosProcesso['acrescimo_frete_brl'] = $this->parseMoneyToFloat($request->acrescimo_frete_brl);
+                $dadosProcesso['thc_capatazia'] = $this->parseMoneyToFloat($request->thc_capatazia);
+                
+                Processo::where('id', $id)->update($dadosProcesso);
+            }
+
+            $auditProcessoChanges = array_intersect_key($dadosProcesso, $request->all());
+            if (!empty($auditProcessoChanges)) {
+                DB::afterCommit(function () use ($auditService, $processo, $processType, $processoOriginal, $auditProcessoChanges) {
+                    $auditService->logUpdate([
+                        'auditable_type' => get_class($processo),
+                        'auditable_id' => $processo->id,
+                        'process_type' => $processType,
+                        'process_id' => $processo->id,
+                        'client_id' => $processo->cliente_id,
+                        'context' => 'processo.update',
+                    ], $processoOriginal, $auditProcessoChanges);
+                });
+            }
         
-        return back()->with('messages', ['success' => ['Dados do processo atualizado com sucesso!']]);
+            return back()->with('messages', ['success' => ['Dados do processo atualizado com sucesso!']]);
+        } catch (ModelNotFoundException $e) {
+            return back()->with('messages', ['error' => ['Processo não encontrado!']])->withInput($request->all());
+        } catch (Exception $e) {
+            Log::error('Erro ao atualizar processo: ' . $e->getMessage(), [
+                'id' => $id,
+                'tipo_processo' => request()->get('tipo_processo'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('messages', ['error' => ['Erro ao atualizar o processo. Por favor, tente novamente.']])->withInput($request->all());
+        }
     }
 
     public function camposCabecalho(Request $request, $id)
     {
         $processo = Processo::findOrFail($id);
         $this->ensureClienteAccess($processo->cliente_id);
+        $auditService = app(ProcessoAuditService::class);
+        $processoOriginal = $processo->getAttributes();
         $dadosProcesso = [
             'outras_taxas_agente' => $this->parseMoneyToFloat($request->outras_taxas_agente),
             'liberacao_bl' => $this->parseMoneyToFloat($request->liberacao_bl),
@@ -1673,6 +1986,19 @@ class ProcessoController extends Controller
             'peso_liquido' => $this->parseMoneyToFloat($request->peso_liquido),
         ];
         Processo::where('id', $id)->update($dadosProcesso);
+        $auditProcessoChanges = array_intersect_key($dadosProcesso, $request->all());
+        if (!empty($auditProcessoChanges)) {
+            DB::afterCommit(function () use ($auditService, $processo, $processoOriginal, $auditProcessoChanges) {
+                $auditService->logUpdate([
+                    'auditable_type' => Processo::class,
+                    'auditable_id' => $processo->id,
+                    'process_type' => $processo->tipo_processo ?? 'maritimo',
+                    'process_id' => $processo->id,
+                    'client_id' => $processo->cliente_id,
+                    'context' => 'processo.cabecalho',
+                ], $processoOriginal, $auditProcessoChanges);
+            });
+        }
         return back()->with('messages', ['success' => ['Cabeçalho do processo atualizado com sucesso!']]);
     }
 
@@ -1684,6 +2010,8 @@ class ProcessoController extends Controller
         try {
             $processo = ProcessoAereo::findOrFail($id);
             $this->ensureClienteAccess($processo->cliente_id);
+            $auditService = app(ProcessoAuditService::class);
+            $processoOriginal = $processo->getAttributes();
             
             DB::beginTransaction();
             
@@ -1755,6 +2083,16 @@ class ProcessoController extends Controller
             if (!empty($dadosCabecalho)) {
                 ProcessoAereo::where('id', $id)->update($dadosCabecalho);
                 \Log::info('CabecalhoInputs salvos para ProcessoAereo ID: ' . $id, ['dadosCabecalho' => $dadosCabecalho]);
+                DB::afterCommit(function () use ($auditService, $processo, $processoOriginal, $dadosCabecalho) {
+                    $auditService->logUpdate([
+                        'auditable_type' => ProcessoAereo::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => 'aereo',
+                        'process_id' => $processo->id,
+                        'client_id' => $processo->cliente_id,
+                        'context' => 'processo.cabecalho',
+                    ], $processoOriginal, $dadosCabecalho);
+                });
             }
             
             DB::commit();
@@ -1785,6 +2123,8 @@ class ProcessoController extends Controller
         try {
             $processo = Processo::findOrFail($id);
             $this->ensureClienteAccess($processo->cliente_id);
+            $auditService = app(ProcessoAuditService::class);
+            $processoOriginal = $processo->getAttributes();
             
             DB::beginTransaction();
             
@@ -1857,6 +2197,16 @@ class ProcessoController extends Controller
             if (!empty($dadosCabecalho)) {
                 Processo::where('id', $id)->update($dadosCabecalho);
                 \Log::info('CabecalhoInputs salvos para Processo ID: ' . $id, ['dadosCabecalho' => $dadosCabecalho]);
+                DB::afterCommit(function () use ($auditService, $processo, $processoOriginal, $dadosCabecalho) {
+                    $auditService->logUpdate([
+                        'auditable_type' => Processo::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => $processo->tipo_processo ?? 'maritimo',
+                        'process_id' => $processo->id,
+                        'client_id' => $processo->cliente_id,
+                        'context' => 'processo.cabecalho',
+                    ], $processoOriginal, $dadosCabecalho);
+                });
             }
             
             DB::commit();
@@ -1885,8 +2235,26 @@ class ProcessoController extends Controller
     public function salvarCabecalhoInputsRodoviario(Request $request, $id)
     {
         try {
-            $processo = ProcessoRodoviario::findOrFail($id);
+            
+            // Buscar o processo rodoviário diretamente na tabela específica
+            $processo = ProcessoRodoviario::find($id);
+            
+            // Se não encontrou, retornar erro informativo
+            if (!$processo) {
+                \Log::error('Erro ao salvar cabecalhoInputs do ProcessoRodoviario ' . $id . ': Processo não encontrado na tabela processo_rodoviarios', [
+                    'id' => $id,
+                    'request_data' => $request->all(),
+                    'existe_em_processos' => Processo::find($id) ? 'sim' : 'não'
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Processo rodoviário não encontrado! O processo com ID ' . $id . ' não existe na tabela processo_rodoviarios. Por favor, certifique-se de que o processo foi criado corretamente.'
+                ], 404);
+            }
+            
             $this->ensureClienteAccess($processo->cliente_id);
+            $auditService = app(ProcessoAuditService::class);
+            $processoOriginal = $processo->getAttributes();
             
             DB::beginTransaction();
             
@@ -1895,14 +2263,8 @@ class ProcessoController extends Controller
             
             // Campos do cabeçalho que devem ser salvos (sem delivery_fee e collect_fee)
             $camposCabecalho = [
-                'outras_taxas_agente',
-                'desconsolidacao',
-                'handling',
-                'dai',
-                'dape',
-                'correios',
-                'li_dta_honor_nix',
-                'honorarios_nix',
+                'multa',
+                'tx_def_li',
                 'desp_fronteira',
                 'das_fronteira',
                 'armazenagem',
@@ -1911,6 +2273,14 @@ class ProcessoController extends Controller
                 'armaz_anapolis',
                 'mov_anapolis',
                 'rep_anapolis',
+                'correios',
+                'li_dta_honor_nix',
+                'honorarios_nix',
+                'outras_taxas_agente',
+                'desconsolidacao',
+                'handling',
+                'dai',
+                'dape',
                 'diferenca_cambial_frete',
                 'diferenca_cambial_fob',
                 'opcional_1_valor',
@@ -1942,10 +2312,23 @@ class ProcessoController extends Controller
                 $dadosCabecalho['peso_liquido'] = $pesoLiquido !== null ? $pesoLiquido : 0;
             }
             
+            // Processo rodoviário sempre usa nacionalização 'outros'
+            $dadosCabecalho['nacionalizacao'] = 'outros';
+            
             // Atualizar no banco
             if (!empty($dadosCabecalho)) {
                 ProcessoRodoviario::where('id', $id)->update($dadosCabecalho);
                 \Log::info('CabecalhoInputs salvos para ProcessoRodoviario ID: ' . $id, ['dadosCabecalho' => $dadosCabecalho]);
+                DB::afterCommit(function () use ($auditService, $processo, $processoOriginal, $dadosCabecalho) {
+                    $auditService->logUpdate([
+                        'auditable_type' => ProcessoRodoviario::class,
+                        'auditable_id' => $processo->id,
+                        'process_type' => 'rodoviario',
+                        'process_id' => $processo->id,
+                        'client_id' => $processo->cliente_id,
+                        'context' => 'processo.cabecalho',
+                    ], $processoOriginal, $dadosCabecalho);
+                });
             }
             
             DB::commit();
@@ -1971,24 +2354,170 @@ class ProcessoController extends Controller
     public function destroy(int $id)
     {
         try {
-            $processo = Processo::findOrFail($id);
+            // Obter o tipo de processo do query param ou tentar detectar
+            $tipoProcessoRequest = request()->get('tipo_processo', null);
+            $processo = null;
+            $isAereo = false;
+            $isRodoviario = false;
+            
+            // Se o tipo foi especificado no query param, buscar diretamente na tabela específica
+            if ($tipoProcessoRequest === 'aereo') {
+                $processo = ProcessoAereo::find($id);
+                if ($processo) {
+                    $isAereo = true;
+                }
+            } elseif ($tipoProcessoRequest === 'rodoviario') {
+                $processo = ProcessoRodoviario::find($id);
+                if ($processo) {
+                    $isRodoviario = true;
+                }
+            } else {
+                // Se tipo não foi especificado, tentar buscar em todas as tabelas
+                // Primeiro na tabela principal Processo (marítimo)
+                $processo = Processo::find($id);
+                
+                if (!$processo) {
+                    // Se não encontrou na tabela principal, tentar aéreo
+                    $processo = ProcessoAereo::find($id);
+                    if ($processo) {
+                        $isAereo = true;
+                    } else {
+                        // Se não encontrou, tentar rodoviário
+                        $processo = ProcessoRodoviario::find($id);
+                        if ($processo) {
+                            $isRodoviario = true;
+                        }
+                    }
+                }
+            }
+            
+            // Se não encontrou em nenhuma tabela, retornar erro
+            if (!$processo) {
+                return back()->with('messages', ['error' => ['Processo não encontrado!']]);
+            }
+            
             $this->ensureClienteAccess($processo->cliente_id);
-            ProcessoProduto::where('processo_id', $id)->delete();
+            $auditService = app(ProcessoAuditService::class);
+            $processType = $isAereo ? 'aereo' : ($isRodoviario ? 'rodoviario' : ($processo->tipo_processo ?? 'maritimo'));
+            $processoSnapshot = $processo->getAttributes();
+            $produtosSnapshot = collect();
+            if ($isAereo) {
+                $produtosSnapshot = ProcessoAereoProduto::where('processo_aereo_id', $id)->get();
+            } elseif ($isRodoviario) {
+                $produtosSnapshot = ProcessoRodoviarioProduto::where('processo_rodoviario_id', $id)->get();
+            } else {
+                $produtosSnapshot = ProcessoProduto::where('processo_id', $id)->get();
+            }
+            
+            // Excluir produtos da tabela correta
+            if ($isAereo) {
+                ProcessoAereoProduto::where('processo_aereo_id', $id)->delete();
+            } elseif ($isRodoviario) {
+                ProcessoRodoviarioProduto::where('processo_rodoviario_id', $id)->delete();
+            } else {
+                // Processo marítimo
+                ProcessoProduto::where('processo_id', $id)->delete();
+            }
+            
+            // Excluir o processo
             $processo->delete();
+
+            foreach ($produtosSnapshot as $produto) {
+                $auditService->logDelete([
+                    'auditable_type' => get_class($produto),
+                    'auditable_id' => $produto->id,
+                    'process_type' => $processType,
+                    'process_id' => $processo->id,
+                    'client_id' => $processo->cliente_id,
+                    'context' => 'processo.produto.delete',
+                ], $produto->getAttributes());
+            }
+
+            $auditService->logDelete([
+                'auditable_type' => get_class($processo),
+                'auditable_id' => $processo->id,
+                'process_type' => $processType,
+                'process_id' => $processo->id,
+                'client_id' => $processo->cliente_id,
+                'context' => 'processo.delete',
+            ], $processoSnapshot);
+            
             return back()->with('messages', ['success' => ['Processo excluído com sucesso!']]);
         } catch (\Exception $e) {
-            return back()->with('messages', ['error' => ['Não foi possível excluír o processo!']]);
+            \Log::error('Erro ao excluir processo: ' . $e->getMessage(), [
+                'id' => $id,
+                'tipo_processo' => request()->get('tipo_processo'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('messages', ['error' => ['Não foi possível excluir o processo!']]);
         }
     }
     public function destroyProduto(int $id)
     {
         try {
-            $produtoProcesso = ProcessoProduto::with('processo')->findOrFail($id);
-            $clienteId = $produtoProcesso->processo->cliente_id ?? null;
+            $tipoProcesso = request()->input('tipo_processo') ?? request()->query('tipo_processo');
+            $resolverProduto = function (string $modelClass, string $relation, string $tipo) use ($id) {
+                $item = $modelClass::with($relation)->find($id);
+                if (!$item) {
+                    return null;
+                }
+                $processo = $item->$relation ?? null;
+                if (!$processo) {
+                    return null;
+                }
+                return [
+                    'item' => $item,
+                    'processo' => $processo,
+                    'type' => $tipo,
+                    'auditable' => $modelClass,
+                ];
+            };
+
+            $candidato = null;
+            if ($tipoProcesso === 'aereo') {
+                $candidato = $resolverProduto(ProcessoAereoProduto::class, 'processoAereo', 'aereo');
+            } elseif ($tipoProcesso === 'rodoviario') {
+                $candidato = $resolverProduto(ProcessoRodoviarioProduto::class, 'processoRodoviario', 'rodoviario');
+            } elseif ($tipoProcesso === 'maritimo') {
+                $candidato = $resolverProduto(ProcessoProduto::class, 'processo', 'maritimo');
+            } else {
+                $candidatos = array_values(array_filter([
+                    $resolverProduto(ProcessoAereoProduto::class, 'processoAereo', 'aereo'),
+                    $resolverProduto(ProcessoRodoviarioProduto::class, 'processoRodoviario', 'rodoviario'),
+                    $resolverProduto(ProcessoProduto::class, 'processo', 'maritimo'),
+                ]));
+
+                if (count($candidatos) > 1) {
+                    return back()->with('messages', [
+                        'error' => ['Tipo de processo não informado. Atualize a página e tente novamente.'],
+                    ]);
+                }
+
+                $candidato = $candidatos[0] ?? null;
+            }
+
+            if (!$candidato) {
+                return back()->with('messages', ['error' => ['Produto não encontrado para o tipo de processo informado.']]);
+            }
+
+            $produtoProcesso = $candidato['item'];
+            $processo = $candidato['processo'];
+            $processType = $processo->tipo_processo ?? $candidato['type'];
+            $clienteId = $processo->cliente_id ?? null;
             if ($clienteId !== null) {
                 $this->ensureClienteAccess($clienteId);
             }
+            $auditService = app(ProcessoAuditService::class);
+            $produtoSnapshot = $produtoProcesso->getAttributes();
             $produtoProcesso->delete();
+            $auditService->logDelete([
+                'auditable_type' => $candidato['auditable'],
+                'auditable_id' => $produtoSnapshot['id'] ?? $id,
+                'process_type' => $processType,
+                'process_id' => $processo->id ?? null,
+                'client_id' => $clienteId,
+                'context' => 'processo.produto.delete',
+            ], $produtoSnapshot);
             return back()->with('messages', ['success' => ['Produto excluído com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluír o Produto !']]);
@@ -2031,6 +2560,18 @@ class ProcessoController extends Controller
             }
 
             $deleted = ProcessoProdutoMulta::whereIn('id', $ids)->delete();
+            $auditService = app(ProcessoAuditService::class);
+            foreach ($produtosMulta as $produtoMulta) {
+                $processo = $produtoMulta->processo;
+                $auditService->logDelete([
+                    'auditable_type' => ProcessoProdutoMulta::class,
+                    'auditable_id' => $produtoMulta->id,
+                    'process_type' => $processo->tipo_processo ?? 'maritimo',
+                    'process_id' => $processo->id ?? null,
+                    'client_id' => $processo->cliente_id ?? null,
+                    'context' => 'processo.produto.multa.delete',
+                ], $produtoMulta->getAttributes());
+            }
 
             return response()->json([
                 'success' => true,

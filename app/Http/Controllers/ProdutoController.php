@@ -13,6 +13,7 @@ use App\Models\PedidoProduto;
 use App\Models\Producao;
 use App\Models\Produto;
 use App\Repositories\ProdutoRepository;
+use App\Services\Auditoria\CatalogoAuditService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
@@ -98,7 +99,16 @@ class ProdutoController extends Controller
 
             $catalogo = Catalogo::findOrFail($request->catalogo_id);
 
-            Produto::create($data);
+            $produto = Produto::create($data);
+            $auditService = app(CatalogoAuditService::class);
+            $auditService->logCreate([
+                'auditable_type' => Produto::class,
+                'auditable_id' => $produto->id,
+                'process_type' => 'catalogo',
+                'process_id' => $produto->catalogo_id,
+                'client_id' => $catalogo->cliente_id,
+                'context' => 'catalogo.produto.create',
+            ], $produto->getAttributes());
 
             if ($request->has('add_more') && $request->add_more == 1) {
                 return redirect(route('catalogo.edit', $catalogo->id) . '?page=' . $request->page)
@@ -151,6 +161,8 @@ class ProdutoController extends Controller
                     ->with('edit_product_id', $id);
             }
             $produto = Produto::findOrFail($id);
+            $auditService = app(CatalogoAuditService::class);
+            $produtoOriginal = $produto->getAttributes();
 
             $produto->update([
                 'modelo' => $request->modelo_edit,
@@ -160,6 +172,16 @@ class ProdutoController extends Controller
                 'fornecedor_id' => $request->fornecedor_id_edit,
 
             ]);
+            $produto->refresh();
+            $catalogo = Catalogo::find($produto->catalogo_id);
+            $auditService->logUpdate([
+                'auditable_type' => Produto::class,
+                'auditable_id' => $produto->id,
+                'process_type' => 'catalogo',
+                'process_id' => $produto->catalogo_id,
+                'client_id' => $catalogo?->cliente_id,
+                'context' => 'catalogo.produto.update',
+            ], $produtoOriginal, $produto->getAttributes());
 
 
             if ($request->has('add_more_edit') && $request->add_more_edit == 1) {
@@ -182,7 +204,19 @@ class ProdutoController extends Controller
     public function destroy(int $id): RedirectResponse
     {
         try {
-            Produto::findOrFail($id)->delete();
+            $produto = Produto::findOrFail($id);
+            $auditService = app(CatalogoAuditService::class);
+            $produtoSnapshot = $produto->getAttributes();
+            $catalogo = Catalogo::find($produto->catalogo_id);
+            $produto->delete();
+            $auditService->logDelete([
+                'auditable_type' => Produto::class,
+                'auditable_id' => $produto->id,
+                'process_type' => 'catalogo',
+                'process_id' => $produto->catalogo_id,
+                'client_id' => $catalogo?->cliente_id,
+                'context' => 'catalogo.produto.delete',
+            ], $produtoSnapshot);
             return back()->with('messages', ['success' => ['Produto excluído com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluír o produto!']]);

@@ -158,7 +158,7 @@
                        <label for="peso_liquido" class="form-label">PESO LÍQUIDO</label>
                        <input type="text"
                            value="{{ isset($processo->peso_liquido) ? number_format($processo->peso_liquido, 4, ',', '.') : '' }}"
-                           class="form-control moneyReal" readonly id="peso_liquido">
+                           class="form-control moneyReal" name="peso_liquido" readonly id="peso_liquido">
                    </div>
                   <div class="col-md-2">
                       <label for="multa" class="form-label">MULTA</label>
@@ -186,45 +186,32 @@
                </div>
                
                @php
-                   $nacionalizacaoSelecionada = $processo->nacionalizacao ?? 'outros';
+                   // Processo rodoviário não tem nacionalização, usar valor padrão 'outros'
+                   $nacionalizacaoSelecionada = 'outros';
                @endphp
-               <div class="row mt-3">
+               <!-- Campo de nacionalização oculto para processo rodoviário (valor padrão: outros) -->
+               <div class="row mt-3" style="display: none;">
                    <div class="col-md-4">
                        <label for="nacionalizacao" class="form-label">Local de Nacionalização</label>
                        <select class="custom-select" name="nacionalizacao" id="nacionalizacao">
-                           <option value="santa_catarina" {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'selected' : '' }}>Santa Catarina</option>
-                           <option value="outros" {{ $nacionalizacaoSelecionada === 'outros' ? 'selected' : '' }}>Geral</option>
+                           <option value="outros" selected>Geral</option>
                        </select>
                    </div>
                </div>
                
                <div class="row mt-3">
                    <div class="col-md-3">
-                       <label for="valor_exw_usd" class="form-label">VALOR EXW (USD)</label>
+                       <label for="valor_cpt_usd" class="form-label">VALOR CPT (USD)</label>
                        <div class="input-group">
                            <span class="input-group-text">USD</span>
-                           <input type="text" readonly class="form-control moneyReal2" id="valor_exw_usd">
+                           <input type="text" readonly class="form-control moneyReal2" id="valor_cpt_usd">
                        </div>
                    </div>
                    <div class="col-md-3">
-                       <label for="valor_exw_brl" class="form-label">VALOR EXW (BRL)</label>
+                       <label for="valor_cpt_brl" class="form-label">VALOR CPT (BRL)</label>
                        <div class="input-group">
                            <span class="input-group-text">R$</span>
-                           <input type="text" readonly class="form-control moneyReal2" id="valor_exw_brl">
-                       </div>
-                   </div>
-                   <div class="col-md-3">
-                       <label for="valor_cif_usd" class="form-label">VALOR CIF (USD)</label>
-                       <div class="input-group">
-                           <span class="input-group-text">USD</span>
-                           <input type="text" readonly class="form-control moneyReal2" id="valor_cif_usd">
-                       </div>
-                   </div>
-                   <div class="col-md-3">
-                       <label for="valor_cif_brl" class="form-label">VALOR CIF (BRL)</label>
-                       <div class="input-group">
-                           <span class="input-group-text">R$</span>
-                           <input type="text" readonly class="form-control moneyReal2" id="valor_cif_brl">
+                           <input type="text" readonly class="form-control moneyReal2" id="valor_cpt_brl">
                        </div>
                    </div>
                </div>
@@ -534,7 +521,7 @@
                                        : '' }}"
                                    class="form-control cotacao" name="display_cotacao" id="display_cotacao">
                                <input type="hidden" id="cotacao_moeda_processo" name="cotacao_moeda_processo"
-                                   value="{{ json_encode($processo->cotacao_moeda_processo ?? $dolar) }}">
+                                   value="{{ isset($processo->cotacao_moeda_processo) && !empty($processo->cotacao_moeda_processo) ? json_encode($processo->cotacao_moeda_processo) : (isset($dolar) && !empty($dolar) ? json_encode($dolar) : '{}') }}">
                            </div>
                            <div class="col-12 col-sm-6">
                                <label class="form-label ">MOEDA</label>
@@ -580,37 +567,35 @@
                       }
                   @endphp
 
-                  @if (!empty($cotacoes))
-                      <div class="col-12 mt-4">
-                          <div class="card-item shadow-sm" style="flex: 1 1 100%;">
-                              <div class="card-header-primary">
-                                  <i class="fas fa-edit me-3"></i>
-                                  <span>Editar valores de venda das moedas do dia</span>
-                                  <span class="badge-custom ms-3" id="cotacao-data-exibicao">
-                                      {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
-                                  </span>
-                              </div>
-                              <div class="card-body p-3">
-                                  <div class="row" id="cotacoes-moedas-row">
-                                      @foreach ($cotacoes as $codigo => $cotacao)
-                                           <div class="col-md-3 mb-3">
-                                               <label class="form-label fw-bold small text-muted">
-                                                   {{ $cotacao['nome'] ?? $codigo }} ({{ $codigo }})
-                                               </label>
-                                               <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
-                                                   value="{{ $cotacao['nome'] ?? $codigo }}">
-                                               <input type="text" step="0.0001" min="0"
-                                                   class="form-control cotacao shadow-sm"
-                                                   name="cotacao_moeda_processo[{{ $codigo }}][venda]"
-                                                   value="{{ number_format($cotacao['venda'], 4, ',', '.') }}"
-                                                   aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
-                                           </div>
-                                       @endforeach
-                                   </div>
+                  <div class="col-12 mt-4">
+                      <div class="card-item shadow-sm" style="flex: 1 1 100%;">
+                          <div class="card-header-primary">
+                              <i class="fas fa-edit me-3"></i>
+                              <span>Editar valores de venda das moedas do dia</span>
+                              <span class="badge-custom ms-3" id="cotacao-data-exibicao">
+                                  {{ Carbon\Carbon::parse($processo->data_moeda_frete_internacional)->format('d/m/Y') }}
+                              </span>
+                          </div>
+                          <div class="card-body p-3">
+                              <div class="row" id="cotacoes-moedas-row">
+                                  @foreach ($cotacoes as $codigo => $cotacao)
+                                       <div class="col-md-3 mb-3">
+                                           <label class="form-label fw-bold small text-muted">
+                                               {{ $cotacao['nome'] ?? $codigo }} ({{ $codigo }})
+                                           </label>
+                                           <input type="hidden" name="cotacao_moeda_processo[{{ $codigo }}][nome]"
+                                               value="{{ $cotacao['nome'] ?? $codigo }}">
+                                           <input type="text" step="0.0001" min="0"
+                                               class="form-control cotacao shadow-sm"
+                                               name="cotacao_moeda_processo[{{ $codigo }}][venda]"
+                                               value="{{ number_format($cotacao['venda'], 4, ',', '.') }}"
+                                               aria-label="Valor de venda para {{ $cotacao['nome'] ?? $codigo }}">
+                                       </div>
+                                   @endforeach
                                </div>
                            </div>
                        </div>
-                   @endif
+                   </div>
                </div>
 
 

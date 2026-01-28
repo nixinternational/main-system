@@ -1389,7 +1389,7 @@
         })
 
         function showDeleteConfirmation(documentId) {
-            const deleteUrl = '/destroy-produto-processo/' + documentId; // Ajuste a URL conforme necessário
+            const deleteUrl = '/destroy-produto-processo/' + documentId + '?tipo_processo={{ $tipoProcesso ?? 'maritimo' }}';
 
             Swal.fire({
                 title: 'Você tem certeza que deseja excluir este registro?',

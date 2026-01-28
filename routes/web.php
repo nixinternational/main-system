@@ -19,6 +19,7 @@ use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\AuditoriaController;
 
 use Illuminate\Support\Facades\Auth;
 
@@ -108,7 +109,7 @@ Route::post('/processo-produtos-multa/batch-delete', [ProcessoController::class,
         ->name('cabecalho.atualizar');
 
 
-    Route::put('updateProcesso/{id}',[ProcessoController::class,'updateProcesso'])
+    Route::match(['put', 'post'], 'updateProcesso/{id}',[ProcessoController::class,'updateProcesso'])
         ->middleware('permission.map:processo_extras')
         ->name('update.processo');
     //  Route::get('settings/bid', [ProdutoController::class, 'getBid'])->withoutMiddleware('auth:sanctum');
@@ -158,4 +159,8 @@ Route::post('/processo-produtos-multa/batch-delete', [ProcessoController::class,
     Route::get('logs/download', [LogController::class, 'download'])
         ->middleware('permission:admin|root')
         ->name('logs.download');
+
+    Route::get('auditoria', [AuditoriaController::class, 'index'])
+        ->middleware('permission:auditoria_listar')
+        ->name('auditoria.index');
 });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Catalogo;
 use App\Models\Cliente;
 use App\Models\Produto;
+use App\Services\Auditoria\CatalogoAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -70,6 +71,15 @@ class CatalogoController extends Controller
                 'cpf_cnpj' => $cliente->cnpj ?? null,
             ];
             $catalogo = Catalogo::create($data);
+            $auditService = app(CatalogoAuditService::class);
+            $auditService->logCreate([
+                'auditable_type' => Catalogo::class,
+                'auditable_id' => $catalogo->id,
+                'process_type' => 'catalogo',
+                'process_id' => $catalogo->id,
+                'client_id' => $catalogo->cliente_id,
+                'context' => 'catalogo.create',
+            ], $catalogo->getAttributes());
             return redirect(route('catalogo.edit', $catalogo->id))->with('messages', ['success' => ['Catálogo criado com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível cadastrar o catálogo!']])->withInput($request->all());
@@ -124,8 +134,18 @@ class CatalogoController extends Controller
         try {
             $catalogo = Catalogo::findOrFail($id);
             $this->ensureClienteAccess($catalogo->cliente_id);
+            $auditService = app(CatalogoAuditService::class);
+            $catalogoSnapshot = $catalogo->getAttributes();
             Produto::where('catalogo_id', $catalogo->id)->delete();
             $catalogo->delete();
+            $auditService->logDelete([
+                'auditable_type' => Catalogo::class,
+                'auditable_id' => $catalogo->id,
+                'process_type' => 'catalogo',
+                'process_id' => $catalogo->id,
+                'client_id' => $catalogo->cliente_id,
+                'context' => 'catalogo.delete',
+            ], $catalogoSnapshot);
             return redirect(route('catalogo.index',))->with('messages', ['success' => ['Catálogo excluído com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível excluir o catálogo!']]);

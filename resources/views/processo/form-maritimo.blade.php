@@ -1601,7 +1601,7 @@
         })
 
         function showDeleteConfirmation(documentId) {
-            const deleteUrl = '/destroy-produto-processo/' + documentId; 
+            const deleteUrl = '/destroy-produto-processo/' + documentId + '?tipo_processo=maritimo'; 
 
             Swal.fire({
                 title: 'Você tem certeza que deseja excluir este registro?',

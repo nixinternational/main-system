@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\ProcessoAereoProduto;
 use App\Models\ProcessoProduto;
+use App\Models\ProcessoRodoviarioProduto;
+use App\Services\Auditoria\ProcessoAuditService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -29,13 +32,40 @@ class ProcessoProdutoController extends Controller
         }
 
         $ids = $request->input('ids', []);
+        $tipoProcesso = $request->input('tipo_processo');
+        if (!$tipoProcesso) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tipo de processo não informado.',
+            ], 422);
+        }
 
         $user = $request->user();
         try {
-            $produtos = ProcessoProduto::with('processo.cliente')->whereIn('id', $ids)->get();
+            $modelClass = ProcessoProduto::class;
+            $relation = 'processo';
+            $defaultProcessType = 'maritimo';
+
+            if ($tipoProcesso === 'aereo') {
+                $modelClass = ProcessoAereoProduto::class;
+                $relation = 'processoAereo';
+                $defaultProcessType = 'aereo';
+            } elseif ($tipoProcesso === 'rodoviario') {
+                $modelClass = ProcessoRodoviarioProduto::class;
+                $relation = 'processoRodoviario';
+                $defaultProcessType = 'rodoviario';
+            } elseif ($tipoProcesso !== 'maritimo') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tipo de processo inválido.',
+                ], 422);
+            }
+
+            $produtos = $modelClass::with($relation . '.cliente')->whereIn('id', $ids)->get();
 
             foreach ($produtos as $produto) {
-                $clienteId = $produto->processo->cliente_id ?? null;
+                $processo = $produto->$relation ?? null;
+                $clienteId = $processo?->cliente_id ?? null;
                 if ($clienteId !== null && $user && !$user->canAccessCliente($clienteId)) {
                     return response()->json([
                         'success' => false,
@@ -44,7 +74,19 @@ class ProcessoProdutoController extends Controller
                 }
             }
 
-            $deleted = ProcessoProduto::whereIn('id', $ids)->delete();
+            $deleted = $modelClass::whereIn('id', $ids)->delete();
+            $auditService = app(ProcessoAuditService::class);
+            foreach ($produtos as $produto) {
+                $processo = $produto->$relation ?? null;
+                $auditService->logDelete([
+                    'auditable_type' => $modelClass,
+                    'auditable_id' => $produto->id,
+                    'process_type' => $processo->tipo_processo ?? $defaultProcessType,
+                    'process_id' => $processo?->id ?? null,
+                    'client_id' => $processo?->cliente_id ?? null,
+                    'context' => 'processo.produto.delete',
+                ], $produto->getAttributes());
+            }
 
             return response()->json([
                 'success' => true,

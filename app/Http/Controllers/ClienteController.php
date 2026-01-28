@@ -14,6 +14,9 @@ use App\Models\ClienteEmail;
 use App\Models\ClienteResponsavelProcesso;
 use App\Models\Pedido;
 use App\Models\TipoDocumento;
+use App\Services\Auditoria\ClienteAuditService;
+use App\Services\Auditoria\CatalogoAuditService;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Repositories\ClienteRepository;
@@ -84,12 +87,32 @@ class ClienteController extends Controller
                 'telefone_celular_responsavel_legal' => $request->telefone_celular_responsavel_legal,
             ];
             $newCliente = Cliente::create($clientData);
-            
+
             // Criar catálogo automaticamente para o novo cliente
-            Catalogo::create([
+            $catalogo = Catalogo::create([
                 'cliente_id' => $newCliente->id,
                 'cpf_cnpj' => $newCliente->cnpj,
             ]);
+
+            $clienteAuditService = app(ClienteAuditService::class);
+            $catalogoAuditService = app(CatalogoAuditService::class);
+            $clienteAuditService->logCreate([
+                'auditable_type' => Cliente::class,
+                'auditable_id' => $newCliente->id,
+                'process_type' => 'cliente',
+                'process_id' => $newCliente->id,
+                'client_id' => $newCliente->id,
+                'context' => 'cliente.create',
+            ], $newCliente->getAttributes());
+
+            $catalogoAuditService->logCreate([
+                'auditable_type' => Catalogo::class,
+                'auditable_id' => $catalogo->id,
+                'process_type' => 'catalogo',
+                'process_id' => $catalogo->id,
+                'client_id' => $newCliente->id,
+                'context' => 'catalogo.create.auto',
+            ], $catalogo->getAttributes());
             
             return redirect(route('cliente.edit', $newCliente->id))->with('messages', ['success' => ['Cliente criado com sucesso!']]);
         } catch (\Exception $e) {
@@ -112,6 +135,8 @@ class ClienteController extends Controller
             $bancosNix = BancoNix::all();
             $bancosCliente = BancoCliente::where('cliente_id', $id)->get();
             $cliente = Cliente::findOrFail($id);
+            $auditService = app(ClienteAuditService::class);
+            $clienteOriginal = $cliente->getAttributes();
             $tipoDocumentos = TipoDocumento::all();
             return view('cliente.form', compact('cliente', 'bancosNix', 'bancosCliente', 'tipoDocumentos'));
         } catch (\Exception $e) {
@@ -163,6 +188,8 @@ class ClienteController extends Controller
                 return back()->withErrors($validator)->withInput();
             }
             $cliente = Cliente::findOrFail($id);
+            $auditService = app(ClienteAuditService::class);
+            $clienteOriginal = $cliente->getAttributes();
             $clientData = [
                 'nome' => $request->name,
                 'cnpj' => $request->cnpj,
@@ -181,9 +208,18 @@ class ClienteController extends Controller
                 'telefone_celular_responsavel_legal' => $request->telefone_celular_responsavel_legal,
             ];
             $cliente->update($clientData);
+            $cliente->refresh();
+            $auditService->logUpdate([
+                'auditable_type' => Cliente::class,
+                'auditable_id' => $cliente->id,
+                'process_type' => 'cliente',
+                'process_id' => $cliente->id,
+                'client_id' => $cliente->id,
+                'context' => 'cliente.update',
+            ], $clienteOriginal, $cliente->getAttributes());
             return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Cliente atualizado com sucesso!']]);
         } catch (\Exception $e) {
-            return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cliente!!']])->withInput($request->all());
+            return redirect(to: route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível atualizar o cliente!!']])->withInput($request->all());
         }
     }
 
@@ -197,7 +233,18 @@ class ClienteController extends Controller
     public function destroy($id)
     {
         try {
-            Cliente::findOrFail($id)->delete();
+            $cliente = Cliente::findOrFail($id);
+            $auditService = app(ClienteAuditService::class);
+            $clienteSnapshot = $cliente->getAttributes();
+            $cliente->delete();
+            $auditService->logDelete([
+                'auditable_type' => Cliente::class,
+                'auditable_id' => $cliente->id,
+                'process_type' => 'cliente',
+                'process_id' => $cliente->id,
+                'client_id' => $cliente->id,
+                'context' => 'cliente.delete',
+            ], $clienteSnapshot);
             return redirect(to: route('cliente.index'))->with('messages', ['success' => ['Cliente desativado com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possícel editar a cliente!']]);
@@ -207,7 +254,23 @@ class ClienteController extends Controller
     public function ativar(int $id)
     {
         try {
+            $cliente = Cliente::withTrashed()->findOrFail($id);
+            $auditService = app(ClienteAuditService::class);
+            $before = [
+                'status' => $cliente->deleted_at ? 'Inativo' : 'Ativo',
+            ];
             Cliente::withTrashed()->where('id', $id)->update(['deleted_at' => null]);
+            $after = [
+                'status' => 'Ativo',
+            ];
+            $auditService->logUpdate([
+                'auditable_type' => Cliente::class,
+                'auditable_id' => $cliente->id,
+                'process_type' => 'cliente',
+                'process_id' => $cliente->id,
+                'client_id' => $cliente->id,
+                'context' => 'cliente.status',
+            ], $before, $after);
             return back()->with('messages', ['success' => ['Cliente ativado com sucesso!']]);
         } catch (\Exception $e) {
             return back()->with('messages', ['error' => ['Não foi possível ativar a categoria!' . $e->getMessage()]]);
@@ -251,6 +314,17 @@ class ClienteController extends Controller
         ClienteEmail::where('cliente_id', $id)
             ->whereIn('email', $emailsRemovidos)
             ->delete();
+        $auditService = app(ClienteAuditService::class);
+        $cliente = Cliente::findOrFail($id);
+        $emailsAtualizados = array_values(array_filter($request->emails ?? []));
+        $auditService->logUpdate([
+            'auditable_type' => Cliente::class,
+            'auditable_id' => $cliente->id,
+            'process_type' => 'cliente',
+            'process_id' => $cliente->id,
+            'client_id' => $cliente->id,
+            'context' => 'cliente.emails',
+        ], ['emails' => $emailsExistentes], ['emails' => $emailsAtualizados]);
         return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Emails atualizados com sucesso!']]);
     }
     public function updateClientAduanas(Request $request, $id)
@@ -279,6 +353,7 @@ class ClienteController extends Controller
                     'modalidade' => $aduana->modalidade,
                 ];
             });
+        $aduanasAntes = $aduanasExistentes->values()->toArray();
 
         $novasAduanas = [];
         $aduanasParaRemover = $aduanasExistentes->toArray();
@@ -322,6 +397,30 @@ class ClienteController extends Controller
                 ->where('modalidade', $aduana['modalidade'])
                 ->delete();
         }
+
+        $aduanasDepois = [];
+        foreach ($request->urf_despacho as $index => $urf_despacho) {
+            if (empty($urf_despacho)) {
+                continue;
+            }
+            $aduanasDepois[] = [
+                'urf_despacho' => $urf_despacho,
+                'modalidade' => $request->modalidades[$index] ?? null,
+            ];
+        }
+        usort($aduanasAntes, fn ($a, $b) => ($a['urf_despacho'] . $a['modalidade']) <=> ($b['urf_despacho'] . $b['modalidade']));
+        usort($aduanasDepois, fn ($a, $b) => ($a['urf_despacho'] . $a['modalidade']) <=> ($b['urf_despacho'] . $b['modalidade']));
+
+        $auditService = app(ClienteAuditService::class);
+        $cliente = Cliente::findOrFail($id);
+        $auditService->logUpdate([
+            'auditable_type' => Cliente::class,
+            'auditable_id' => $cliente->id,
+            'process_type' => 'cliente',
+            'process_id' => $cliente->id,
+            'client_id' => $cliente->id,
+            'context' => 'cliente.aduanas',
+        ], ['aduanas' => $aduanasAntes], ['aduanas' => $aduanasDepois]);
 
         return redirect(route('cliente.edit', $id))
             ->with('messages', ['success' => ['Aduanas atualizadas com sucesso!']]);
@@ -396,6 +495,37 @@ class ClienteController extends Controller
                 $registro->delete(); // Ou $registro->forceDelete(); se precisar remover permanentemente
             }
 
+            $responsaveisAntes = array_values(array_map(function ($responsavel) {
+                return [
+                    'nome' => $responsavel['nome'] ?? null,
+                    'telefone' => $responsavel['telefone'] ?? null,
+                    'email' => $responsavel['email'] ?? null,
+                    'departamento' => $responsavel['departamento'] ?? null,
+                ];
+            }, $responsaveisExistentes));
+            $responsaveisDepois = [];
+            foreach ($responsaveisEnviados as $nome => $dados) {
+                $responsaveisDepois[] = [
+                    'nome' => $nome,
+                    'telefone' => $dados['telefone'] ?? null,
+                    'email' => $dados['email'] ?? null,
+                    'departamento' => $dados['departamento'] ?? null,
+                ];
+            }
+            usort($responsaveisAntes, fn ($a, $b) => ($a['nome'] ?? '') <=> ($b['nome'] ?? ''));
+            usort($responsaveisDepois, fn ($a, $b) => ($a['nome'] ?? '') <=> ($b['nome'] ?? ''));
+
+            $auditService = app(ClienteAuditService::class);
+            $cliente = Cliente::findOrFail($id);
+            $auditService->logUpdate([
+                'auditable_type' => Cliente::class,
+                'auditable_id' => $cliente->id,
+                'process_type' => 'cliente',
+                'process_id' => $cliente->id,
+                'client_id' => $cliente->id,
+                'context' => 'cliente.responsaveis',
+            ], ['responsaveis' => $responsaveisAntes], ['responsaveis' => $responsaveisDepois]);
+
             return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Responsáveis atualizados com sucesso!']]);
         } catch (\Exception $e) {
             dd($e);
@@ -406,6 +536,23 @@ class ClienteController extends Controller
         try {
             DB::beginTransaction();
             $cliente = Cliente::findOrFail($id);
+            $auditService = app(ClienteAuditService::class);
+            $especificidadesKeys = [
+                'credenciamento_radar_inicial',
+                'marinha_mercante_inicial',
+                'afrmm_bb',
+                'itau_di',
+                'modalidade_radar',
+                'beneficio_fiscal',
+                'observacoes',
+                'debito_impostos',
+                'data_vencimento_procuracao',
+                'data_procuracao',
+            ];
+            $especificidadesAntes = Arr::only($cliente->getAttributes(), $especificidadesKeys);
+            $bancosAntes = BancoCliente::where('cliente_id', $id)
+                ->get(['numero_banco', 'nome', 'agencia', 'conta_corrente', 'banco_nix'])
+                ->toArray();
             $clientData = [
                 'credenciamento_radar_inicial' => $request->credenciamento_radar_inicial != null ? Carbon::parse($request->credenciamento_radar_inicial) : null,
                 'marinha_mercante_inicial' => $request->marinha_mercante_inicial != null ? Carbon::parse($request->marinha_mercante_inicial) : null,
@@ -469,6 +616,26 @@ class ClienteController extends Controller
             }
             DB::commit();
 
+            $cliente->refresh();
+            $especificidadesDepois = Arr::only($cliente->getAttributes(), $especificidadesKeys);
+            $bancosDepois = BancoCliente::where('cliente_id', $id)
+                ->get(['numero_banco', 'nome', 'agencia', 'conta_corrente', 'banco_nix'])
+                ->toArray();
+            $auditService->logUpdate([
+                'auditable_type' => Cliente::class,
+                'auditable_id' => $cliente->id,
+                'process_type' => 'cliente',
+                'process_id' => $cliente->id,
+                'client_id' => $cliente->id,
+                'context' => 'cliente.especificidades',
+            ], [
+                'especificidades' => $especificidadesAntes,
+                'bancos' => $bancosAntes,
+            ], [
+                'especificidades' => $especificidadesDepois,
+                'bancos' => $bancosDepois,
+            ]);
+
             return redirect(route('cliente.edit', $id) . '?tab=custom-tabs-two-home-tab')->with('messages', ['success' => ['Informações específicas atualizadas com sucesso!']]);
         } catch (\Exception $e) {
             dd($e, $request->all());
@@ -482,7 +649,19 @@ class ClienteController extends Controller
         $bancoCliente = BancoCliente::find($id);
         $clienteId = $bancoCliente->cliente_id;
         try {
+            $auditService = app(ClienteAuditService::class);
+            $bancoSnapshot = $bancoCliente?->getAttributes() ?? [];
             $bancoCliente->delete();
+            if (!empty($bancoSnapshot)) {
+                $auditService->logDelete([
+                    'auditable_type' => BancoCliente::class,
+                    'auditable_id' => $bancoCliente->id,
+                    'process_type' => 'cliente',
+                    'process_id' => $clienteId,
+                    'client_id' => $clienteId,
+                    'context' => 'cliente.banco.delete',
+                ], $bancoSnapshot);
+            }
             return redirect(route('cliente.edit', $clienteId))->with('messages', ['success' => ['Banco excluido com sucesso!']]);
         } catch (\Exception $e) {
             return redirect(route('cliente.edit', $clienteId))->with('messages', ['error' => ['Não foi possível excluir o banco do cliente!']]);
@@ -493,6 +672,11 @@ class ClienteController extends Controller
     {
 
         try {
+            $auditService = app(ClienteAuditService::class);
+            $cliente = Cliente::findOrFail($id);
+            $documentosAntes = ClienteDocumento::where('cliente_id', $id)
+                ->get(['tipo_documento', 'path_file', 'url'])
+                ->toArray();
             $validator = Validator::make($request->all(), [
                 'tipoDocumentos' => 'required|array|min:1',
                 'tipoDocumentos.*' => 'required|distinct|not_in:null,""',
@@ -548,6 +732,17 @@ class ClienteController extends Controller
                     ]);
                 }
             }
+            $documentosDepois = ClienteDocumento::where('cliente_id', $id)
+                ->get(['tipo_documento', 'path_file', 'url'])
+                ->toArray();
+            $auditService->logUpdate([
+                'auditable_type' => Cliente::class,
+                'auditable_id' => $cliente->id,
+                'process_type' => 'cliente',
+                'process_id' => $cliente->id,
+                'client_id' => $cliente->id,
+                'context' => 'cliente.documentos',
+            ], ['documentos' => $documentosAntes], ['documentos' => $documentosDepois]);
             return redirect(route('cliente.edit', $id))->with('messages', ['success' => ['Documento Adicionado com sucesso!']]);
         } catch (\Exception $e) {
             dd($e);
@@ -563,7 +758,17 @@ class ClienteController extends Controller
             $cliente_id = $documentoExistente->cliente_id;
 
             Storage::disk('documentos')->delete($documentoExistente->path_file);
+            $auditService = app(ClienteAuditService::class);
+            $documentoSnapshot = $documentoExistente->getAttributes();
             $documentoExistente->delete();
+            $auditService->logDelete([
+                'auditable_type' => ClienteDocumento::class,
+                'auditable_id' => $documentoExistente->id,
+                'process_type' => 'cliente',
+                'process_id' => $cliente_id,
+                'client_id' => $cliente_id,
+                'context' => 'cliente.documento.delete',
+            ], $documentoSnapshot);
             return redirect(route('cliente.edit', $cliente_id))->with('messages', ['success' => ['Documento excluído com sucesso!']]);
         } catch (\Exception $e) {
             return redirect(route('cliente.edit', $id))->with('messages', ['error' => ['Não foi possível excluir o documento do cliente!']]);

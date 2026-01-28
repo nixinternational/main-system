@@ -36,14 +36,14 @@
                                     <td>
                                         @php
                                             $tiposMap = [
-                                                'maritimo' => ['nome' => 'Marítimo', 'cor' => 'badge-info'],
-                                                'aereo' => ['nome' => 'Aéreo', 'cor' => 'badge-success'],
-                                                'rodoviario' => ['nome' => 'Rodoviário', 'cor' => 'badge-warning'],
+                                                'maritimo' => ['nome' => 'Marítimo', 'cor' => 'badge-maritimo'],
+                                                'aereo' => ['nome' => 'Aéreo', 'cor' => 'badge-aereo'],
+                                                'rodoviario' => ['nome' => 'Rodoviário', 'cor' => 'badge-rodoviario'],
                                             ];
                                             $tipo = $processo->tipo_processo ?? 'maritimo';
                                             $tipoInfo = $tiposMap[$tipo] ?? $tiposMap['maritimo'];
                                         @endphp
-                                        <span class="badge {{ $tipoInfo['cor'] }}">{{ $tipoInfo['nome'] }}</span>
+                                        <span class="badge {{ $tipoInfo['cor'] }} badge-tipo-processo">{{ $tipoInfo['nome'] }}</span>
                                     </td>
                                     <td>
                                         @php
@@ -52,7 +52,7 @@
                                                 'anapolis' => 'Anápolis',
                                                 'santa_catarina' => 'Santa Catarina',
                                                 'mato_grosso' => 'Mato Grosso',
-                                                'outros' => 'Outros',
+                                                'outros' => 'Geral',
                                             ];
                                             $nacionalizacao = $processo->nacionalizacao ?? 'outros';
                                             $nacionalizacaoTexto = $nacionalizacaoMap[$nacionalizacao] ?? ucfirst($nacionalizacao);
@@ -89,7 +89,7 @@
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <form method="POST" class="form-delete-processo d-inline"
-                                                action="{{ route('processo.destroy', $processo->id) }}"
+                                                action="{{ route('processo.destroy', $processo->id) }}?tipo_processo={{ $processo->tipo_processo ?? 'maritimo' }}"
                                                 enctype="multipart/form-data">
                                                 @method('DELETE')
                                                 @csrf
@@ -118,6 +118,29 @@
 
 @push('styles')
     <style>
+        /* Estilos para badges de tipo de processo */
+        .badge-tipo-processo {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            padding: 8px 14px !important;
+            border-radius: 6px !important;
+        }
+        
+        .badge-maritimo {
+            background-color: #17a2b8 !important;
+            color: #ffffff !important;
+        }
+        
+        .badge-aereo {
+            background-color: #28a745 !important;
+            color: #ffffff !important;
+        }
+        
+        .badge-rodoviario {
+            background-color: #ffc107 !important;
+            color: #000000 !important;
+        }
+        
         .swal2-popup-custom {
             overflow: visible !important;
             max-height: none !important;

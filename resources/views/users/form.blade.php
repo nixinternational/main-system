@@ -218,6 +218,94 @@
                 </div>
 
             </form>
+
+            @if (isset($user))
+                <hr class="my-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>Auditoria do usuário
+                    </h5>
+                    <a href="{{ route('auditoria.index', ['user_id' => $user->id, 'tab' => 'processos']) }}" class="btn btn-outline-primary btn-sm">
+                        Ver na auditoria
+                    </a>
+                </div>
+
+                @if (!empty($auditLogs) && $auditLogs->count())
+                    @php
+                        $auditableMap = [
+                            'Processo' => 'Processo Marítimo',
+                            'ProcessoAereo' => 'Processo Aéreo',
+                            'ProcessoRodoviario' => 'Processo Rodoviário',
+                            'ProcessoProduto' => 'Produto',
+                            'ProcessoAereoProduto' => 'Produto Aéreo',
+                            'ProcessoRodoviarioProduto' => 'Produto Rodoviário',
+                            'ProcessoProdutoMulta' => 'Produto Multa',
+                            'Cliente' => 'Cliente',
+                            'Catalogo' => 'Catálogo',
+                            'Produto' => 'Produto do Catálogo',
+                            'BancoCliente' => 'Banco do Cliente',
+                            'ClienteDocumento' => 'Documento do Cliente',
+                        ];
+                    @endphp
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Origem</th>
+                                    <th>Ação</th>
+                                    <th>Item</th>
+                                    <th>Campos</th>
+                                    <th>Contexto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($auditLogs as $log)
+                                    @php
+                                        $actionLabel = match ($log->action) {
+                                            'create' => 'Criação',
+                                            'update' => 'Atualização',
+                                            'delete' => 'Exclusão',
+                                            default => ucfirst($log->action ?? '-'),
+                                        };
+                                        $auditableBase = class_basename($log->auditable_type ?? '');
+                                        $auditableLabel = $auditableMap[$auditableBase] ?? $auditableBase;
+                                        $fieldsCount = $log->changed_fields_count ?? 0;
+                                        if (!$fieldsCount) {
+                                            $changedFields = $log->changed_fields ?? [];
+                                            if (is_array($changedFields) && !empty($changedFields)) {
+                                                $fieldsCount = count($changedFields);
+                                            } else {
+                                                $oldValues = $log->old_values ?? [];
+                                                $newValues = $log->new_values ?? [];
+                                                $mergedKeys = array_unique(array_merge(array_keys((array) $oldValues), array_keys((array) $newValues)));
+                                                $fieldsCount = count($mergedKeys);
+                                            }
+                                        }
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $log->created_at?->format('d/m/Y H:i:s') }}</td>
+                                        <td>
+                                            <a class="badge bg-light text-dark"
+                                                href="{{ route('auditoria.index', ['user_id' => $user->id, 'tab' => $log->origin_tab ?? 'processos']) }}">
+                                                {{ $log->origin ?? 'Processos' }}
+                                            </a>
+                                        </td>
+                                        <td>{{ $actionLabel }}</td>
+                                        <td>{{ $auditableLabel }} #{{ $log->auditable_id ?? '-' }}</td>
+                                        <td class="text-center">{{ $fieldsCount }}</td>
+                                        <td>{{ $log->context ?? '-' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="alert alert-light border mb-0">
+                        Nenhuma ação registrada para este usuário.
+                    </div>
+                @endif
+            @endif
         </div>
     </div>
 
