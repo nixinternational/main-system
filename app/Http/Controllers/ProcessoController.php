@@ -627,7 +627,13 @@ class ProcessoController extends Controller
             $catalogoId = $catalogo->id;
             $catalogoProductsThreshold = config('app.catalogo_produtos_ajax_threshold', 2000);
             $catalogoProductsCount = $catalogo->produtos()->count();
-            $useProductsAjax = $catalogoProductsCount > $catalogoProductsThreshold;
+            $processoProdutosCount = $processoProdutosCollection ? $processoProdutosCollection->count() : 0;
+            $produtosMultaCount = ($processoModel instanceof Processo && $processoModel->relationLoaded('processoProdutosMulta'))
+                ? $processoModel->processoProdutosMulta->count()
+                : 0;
+            $optionsBudget = config('app.catalogo_produtos_ajax_options_budget', 30000);
+            $estimatedOptions = max(1, $processoProdutosCount + $produtosMultaCount) * $catalogoProductsCount;
+            $useProductsAjax = $catalogoProductsCount > $catalogoProductsThreshold || $estimatedOptions > $optionsBudget;
 
             $produtoIds = $processoProdutosCollection
                 ? $processoProdutosCollection->pluck('produto_id')->filter()->unique()
