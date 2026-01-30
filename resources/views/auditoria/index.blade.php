@@ -78,7 +78,7 @@
                                     <i class="fas fa-filter me-1"></i>Filtrar
                                 </button>
                                 @if ($hasFilters)
-                                    <a href="{{ route('auditoria.index', ['tab' => 'processos']) }}" class="btn btn-outline-secondary">
+                                    <a style="margin-top: 1.35rem;" href="{{ route('auditoria.index', ['tab' => 'processos']) }}" class="btn btn-outline-secondary">
                                         <i class="fas fa-times me-1"></i>Limpar
                                     </a>
                                 @endif
