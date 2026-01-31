@@ -186,19 +186,23 @@
                </div>
                
                @php
-                   $nacionalizacaoSelecionada = $processo->nacionalizacao ?? 'outros';
+                   $nacionalizacaoSelecionada = strtolower($processo->nacionalizacao ?? 'geral');
+                   // Normalizar valores antigos: 'outros' -> 'geral'
+                   if ($nacionalizacaoSelecionada === 'outros') {
+                       $nacionalizacaoSelecionada = 'geral';
+                   }
                @endphp
                <div class="row mt-3">
                    <div class="col-md-4">
                        <label for="nacionalizacao" class="form-label">Local de Nacionalização</label>
                        <select class="custom-select" name="nacionalizacao" id="nacionalizacao">
                            <option value="santa_catarina" {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'selected' : '' }}>Santa Catarina</option>
-                           <option value="outros" {{ $nacionalizacaoSelecionada === 'outros' ? 'selected' : '' }}>Geral</option>
+                           <option value="geral" {{ $nacionalizacaoSelecionada === 'geral' ? 'selected' : '' }}>Geral</option>
                        </select>
                    </div>
                </div>
                
-               <div class="row mt-3">
+               <div class="row mt-3" id="campos-exw-cif" style="display: {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'none' : 'block' }};">
                    <div class="col-md-3">
                        <label for="valor_exw_usd" class="form-label">VALOR EXW (USD)</label>
                        <div class="input-group">
@@ -225,6 +229,23 @@
                        <div class="input-group">
                            <span class="input-group-text">R$</span>
                            <input type="text" readonly class="form-control moneyReal2" id="valor_cif_brl">
+                       </div>
+                   </div>
+               </div>
+               
+               <div class="row mt-3" id="campos-cpt" style="display: {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'block' : 'none' }};">
+                   <div class="col-md-3">
+                       <label for="valor_cpt_usd" class="form-label">VALOR CPT (USD)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">USD</span>
+                           <input type="text" readonly class="form-control moneyReal2" id="valor_cpt_usd">
+                       </div>
+                   </div>
+                   <div class="col-md-3">
+                       <label for="valor_cpt_brl" class="form-label">VALOR CPT (BRL)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">R$</span>
+                           <input type="text" readonly class="form-control moneyReal2" id="valor_cpt_brl">
                        </div>
                    </div>
                </div>

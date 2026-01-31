@@ -740,50 +740,569 @@ class ProcessoController extends Controller
         // dump($value);
         return (float) $value;
     }
-    public function update(Request $request, $id)
+    /**
+     * Processar produtos aéreos
+     */
+    private function processarProdutosAereos($request, $id, $processo, $produtosExistentes, $processType, &$pesoLiquidoTotal, &$produtosProcessados, &$auditEntries)
     {
-        try {
-            // Detectar tipo de processo pelo query param, FormData ou tentar encontrar em todas as tabelas
-            $tipoProcessoRequest = $request->input('tipo_processo') ?? $request->query('tipo_processo') ?? $request->get('tipo_processo');
-            $processo = null;
-            $isAereo = false;
-            $isRodoviario = false;
+        foreach ($request->produtos as $key => $produto) {
+            $pesoLiquidoTotal += isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
             
-            if ($tipoProcessoRequest === 'aereo') {
-                $processo = ProcessoAereo::findOrFail($id);
-                $isAereo = true;
-            } elseif ($tipoProcessoRequest === 'rodoviario') {
-                $processo = ProcessoRodoviario::findOrFail($id);
-                $isRodoviario = true;
+            // Verificar tipo de peso do processo
+            $tipoPeso = $processo->tipo_peso ?? 'lbs';
+            
+            $pesoLiqLbsValue = null;
+            $pesoLiqKgValue = null;
+            $pesoLiqTotalKgValue = null;
+            
+            if ($tipoPeso === 'kg') {
+                // Modo KG: usar peso_liq_kg
+                if (isset($produto['peso_liq_kg']) && $produto['peso_liq_kg'] !== '') {
+                    $pesoLiqKgValue = $this->parseMoneyToFloat($produto['peso_liq_kg']);
+                    // peso_liq_total_kg = peso_liq_kg (sem conversão)
+                    $pesoLiqTotalKgValue = $pesoLiqKgValue;
+                }
             } else {
-                // Tentar buscar como processo marítimo primeiro
-                $processo = Processo::find($id);
-                if ($processo) {
-                    // Processo marítimo encontrado
-                } else {
-                    // Se não encontrar, tentar como processo aéreo
-                    $processo = ProcessoAereo::find($id);
-                    if ($processo) {
-                        $isAereo = true;
-                    } else {
-                        // Se não encontrar, tentar como processo rodoviário
-                        $processo = ProcessoRodoviario::find($id);
-                        if ($processo) {
-                            $isRodoviario = true;
-                        } else {
-                            // Se não encontrou em nenhuma tabela, lançar exceção
-                            throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
-                                "Processo com ID {$id} não encontrado em nenhuma tabela (marítimo, aéreo ou rodoviário)."
-                            );
-                        }
-                    }
+                // Modo LBS: usar peso_liq_lbs
+                if (isset($produto['peso_liq_lbs']) && $produto['peso_liq_lbs'] !== '') {
+                    $pesoLiqLbsValue = $this->parseMoneyToFloat($produto['peso_liq_lbs']);
+                }
+                // peso_liq_total_kg será calculado a partir de peso_liq_lbs * fator
+                if (isset($produto['peso_liq_total_kg']) && $produto['peso_liq_total_kg'] !== '') {
+                    $pesoLiqTotalKgValue = $this->parseMoneyToFloat($produto['peso_liq_total_kg']);
                 }
             }
             
+            $dadosProduto = [
+                'item' => $produto['item'],
+                'produto_id' => $produto['produto_id'],
+                'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
+                'origem' => isset($produto['origem']) ? $produto['origem'] : null,
+                'codigo_giiro' => isset($produto['codigo_giiro']) ? $produto['codigo_giiro'] : null,
+                'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
+                'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) && $produto['peso_liquido_unitario'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
+                'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
+                'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
+                'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
+                'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
+                'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
+                'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
+                'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
+                'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
+                'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
+                'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
+                'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
+                'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
+                'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
+                // Campos específicos do transporte aéreo
+                'delivery_fee' => isset($produto['delivery_fee']) ? $this->parseMoneyToFloat($produto['delivery_fee']) : null,
+                'delivery_fee_brl' => isset($produto['delivery_fee_brl']) ? $this->parseMoneyToFloat($produto['delivery_fee_brl']) : null,
+                'collect_fee' => isset($produto['collect_fee']) ? $this->parseMoneyToFloat($produto['collect_fee']) : null,
+                'collect_fee_brl' => isset($produto['collect_fee_brl']) ? $this->parseMoneyToFloat($produto['collect_fee_brl']) : null,
+                'dai' => isset($produto['dai']) ? $this->parseMoneyToFloat($produto['dai']) : null,
+                'dape' => isset($produto['dape']) ? $this->parseMoneyToFloat($produto['dape']) : null,
+                'vlr_cfr_unit' => isset($produto['vlr_cfr_unit']) ? $this->parseMoneyToFloat($produto['vlr_cfr_unit']) : null,
+                'vlr_cfr_total' => isset($produto['vlr_cfr_total']) ? $this->parseMoneyToFloat($produto['vlr_cfr_total']) : null,
+                'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
+                'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
+                'ii_percent' => isset($produto['ii_percent']) && trim($produto['ii_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ii_percent'])) !== '' ? $this->safePercentage($produto['ii_percent']) : null,
+                'ipi_percent' => isset($produto['ipi_percent']) && trim($produto['ipi_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ipi_percent'])) !== '' ? $this->safePercentage($produto['ipi_percent']) : null,
+                'pis_percent' => isset($produto['pis_percent']) && trim($produto['pis_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['pis_percent'])) !== '' ? $this->safePercentage($produto['pis_percent']) : null,
+                'cofins_percent' => isset($produto['cofins_percent']) && trim($produto['cofins_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['cofins_percent'])) !== '' ? $this->safePercentage($produto['cofins_percent']) : null,
+                'icms_percent' => isset($produto['icms_percent']) && trim($produto['icms_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_percent'])) !== '' ? $this->safePercentage($produto['icms_percent']) : null,
+                'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) && trim($produto['icms_reduzido_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_reduzido_percent'])) !== '' ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
+                'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
+                'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
+                'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
+                'frete_moeda' => $request->frete_internacional_moeda,
+                'seguro_moeda' => $request->seguro_internacional_moeda,
+                'acrescimo_moeda' => $request->acrescimo_frete_moeda,
+                'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
+                'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
+                'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
+                'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
+                'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
+                'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
+                'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
+                'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
+                'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
+                'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
+                'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
+                'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
+                'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
+                'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
+                'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
+                'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
+                'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
+                'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
+                'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
+                'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
+                'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
+                'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
+                'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
+                'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
+                'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
+                'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
+                'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
+                'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
+                'capatazia' => isset($produto['capatazia']) ? $this->parseMoneyToFloat($produto['capatazia']) : null,
+                'tx_correcao_lacre' => isset($produto['tx_correcao_lacre']) ? $this->parseMoneyToFloat($produto['tx_correcao_lacre']) : null,
+                'afrmm' => isset($produto['afrmm']) ? $this->parseMoneyToFloat($produto['afrmm']) : null,
+                'armazenagem_sts' => isset($produto['armazenagem_sts']) ? $this->parseMoneyToFloat($produto['armazenagem_sts']) : null,
+                'frete_dta_sts_ana' => isset($produto['frete_dta_sts_ana']) ? $this->parseMoneyToFloat($produto['frete_dta_sts_ana']) : null,
+                'frete_sts_cgb' => isset($produto['frete_sts_cgb']) ? $this->parseMoneyToFloat($produto['frete_sts_cgb']) : null,
+                'diarias' => isset($produto['diarias']) ? $this->parseMoneyToFloat($produto['diarias']) : null,
+                'sda' => isset($produto['sda']) ? $this->parseMoneyToFloat($produto['sda']) : null,
+                'rep_sts' => isset($produto['rep_sts']) ? $this->parseMoneyToFloat($produto['rep_sts']) : null,
+                'armaz_cgb' => isset($produto['armaz_cgb']) ? $this->parseMoneyToFloat($produto['armaz_cgb']) : null,
+                'rep_cgb' => isset($produto['rep_cgb']) ? $this->parseMoneyToFloat($produto['rep_cgb']) : null,
+                'demurrage' => isset($produto['demurrage']) ? $this->parseMoneyToFloat($produto['demurrage']) : null,
+                'armaz_ana' => isset($produto['armaz_ana']) ? $this->parseMoneyToFloat($produto['armaz_ana']) : null,
+                'lavagem_container' => isset($produto['lavagem_container']) ? $this->parseMoneyToFloat($produto['lavagem_container']) : null,
+                'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
+                // Campos aéreos já adicionados acima (dai, dape)
+                'desp_anapolis' => isset($produto['desp_anapolis']) ? $this->parseMoneyToFloat($produto['desp_anapolis']) : null,
+                'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
+                'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
+                'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
+                // Campos específicos de Santa Catarina
+                'rep_itj' => isset($produto['rep_itj']) ? $this->parseMoneyToFloat($produto['rep_itj']) : null,
+                'frete_nvg_x_gyn' => isset($produto['frete_nvg_x_gyn']) ? $this->parseMoneyToFloat($produto['frete_nvg_x_gyn']) : null,
+                'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
+                'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
+                'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
+                'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
+                'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
+                'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
+                // Campos específicos de Mato Grosso
+                'dez_porcento' => isset($produto['dez_porcento']) ? $this->parseMoneyToFloat($produto['dez_porcento']) : null,
+                'custo_com_margem' => isset($produto['custo_com_margem']) ? $this->parseMoneyToFloat($produto['custo_com_margem']) : null,
+                'vlr_ipi_mg' => isset($produto['vlr_ipi_mg']) ? $this->parseMoneyToFloat($produto['vlr_ipi_mg']) : null,
+                'vlr_icms_mg' => isset($produto['vlr_icms_mg']) ? $this->parseMoneyToFloat($produto['vlr_icms_mg']) : null,
+                'pis_mg' => isset($produto['pis_mg']) ? $this->parseMoneyToFloat($produto['pis_mg']) : null,
+                'cofins_mg' => isset($produto['cofins_mg']) ? $this->parseMoneyToFloat($produto['cofins_mg']) : null,
+                'custo_total_final_credito' => isset($produto['custo_total_final_credito']) ? $this->parseMoneyToFloat($produto['custo_total_final_credito']) : null,
+                'custo_unit_credito' => isset($produto['custo_unit_credito']) ? $this->parseMoneyToFloat($produto['custo_unit_credito']) : null,
+                'mva_mg' => isset($produto['mva_mg']) ? $this->safePercentage($produto['mva_mg']) : null,
+                'icms_st_mg' => isset($produto['icms_st_mg']) ? $this->safePercentage($produto['icms_st_mg']) : null,
+                'bc_icms_st_mg' => isset($produto['bc_icms_st_mg']) ? $this->parseMoneyToFloat($produto['bc_icms_st_mg']) : null,
+                'vlr_icms_st_mg' => isset($produto['vlr_icms_st_mg']) ? $this->parseMoneyToFloat($produto['vlr_icms_st_mg']) : null,
+                'custo_total_c_icms_st' => isset($produto['custo_total_c_icms_st']) ? $this->parseMoneyToFloat($produto['custo_total_c_icms_st']) : null,
+                'custo_unit_c_icms_st' => isset($produto['custo_unit_c_icms_st']) ? $this->parseMoneyToFloat($produto['custo_unit_c_icms_st']) : null,
+                'exportador_mg' => isset($produto['exportador_mg']) ? $this->parseMoneyToFloat($produto['exportador_mg']) : null,
+                'tributos_mg' => isset($produto['tributos_mg']) ? $this->parseMoneyToFloat($produto['tributos_mg']) : null,
+                'despesas_mg' => isset($produto['despesas_mg']) ? $this->parseMoneyToFloat($produto['despesas_mg']) : null,
+                'total_pago_mg' => isset($produto['total_pago_mg']) ? $this->parseMoneyToFloat($produto['total_pago_mg']) : null,
+                'percentual_s_fob_mg' => isset($produto['percentual_s_fob_mg']) ? $this->parseMoneyToFloat($produto['percentual_s_fob_mg']) : null,
+                "descricao" => $produto['descricao'],
+                'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
+                'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
+                'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
+                'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
+                // Preservar valores existentes de service_charges se não foram enviados ou estão vazios
+                'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
+                // Campos de peso específicos do aéreo
+                'peso_liq_lbs' => $pesoLiqLbsValue,
+                'peso_liq_kg' => $pesoLiqKgValue ?? null,
+                'peso_liq_total_kg' => $pesoLiqTotalKgValue,
+            ];
+            
+            $processoProduto = ProcessoAereoProduto::updateOrCreate(
+                [
+                    'id' => $produto['processo_produto_id'] ?? null,
+                    'processo_aereo_id' => $id ?? 0,
+                ],
+                $dadosProduto
+            );
+
+            $produtoAntesId = $produto['processo_produto_id'] ?? null;
+            $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
+                ? $produtosExistentes[$produtoAntesId]
+                : null;
+
+            $auditEntries[] = [
+                'action' => $produtoAntes ? 'update' : 'create',
+                'meta' => [
+                    'auditable_type' => ProcessoAereoProduto::class,
+                    'auditable_id' => $processoProduto->id,
+                    'process_type' => $processType,
+                    'process_id' => $id,
+                    'client_id' => $processo->cliente_id,
+                    'context' => 'processo.produto',
+                ],
+                'before' => $produtoAntes,
+                'after' => $dadosProduto,
+            ];
+            
+            $produtosProcessados++;
+        }
+    }
+
+    /**
+     * Processar produtos rodoviários
+     */
+    private function processarProdutosRodoviarios($request, $id, $processo, $produtosExistentes, $processType, &$pesoLiquidoTotal, &$produtosProcessados, &$auditEntries)
+    {
+        foreach ($request->produtos as $key => $produto) {
+            $pesoLiquidoTotal += isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
+            
+            $dadosProduto = [
+                'item' => $produto['item'],
+                'produto_id' => $produto['produto_id'],
+                'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
+                'origem' => isset($produto['origem']) ? $produto['origem'] : null,
+                'codigo_giiro' => isset($produto['codigo_giiro']) ? $produto['codigo_giiro'] : null,
+                'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
+                'peso_liq_lbs' => isset($produto['peso_liq_lbs']) && $produto['peso_liq_lbs'] !== '' ? $this->parseMoneyToFloat($produto['peso_liq_lbs']) : null,
+                'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) && $produto['peso_liquido_unitario'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
+                'peso_liquido_total' => isset($produto['peso_liquido_total']) && $produto['peso_liquido_total'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
+                'peso_liq_total_kg' => isset($produto['peso_liq_total_kg']) && $produto['peso_liq_total_kg'] !== '' ? $this->parseMoneyToFloat($produto['peso_liq_total_kg']) : null,
+                'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
+                'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
+                'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
+                'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
+                'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
+                'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
+                'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
+                'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
+                'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
+                'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
+                'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
+                'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
+                // Campos específicos rodoviário (sem delivery_fee e collect_fee)
+                'dai' => isset($produto['dai']) ? $this->parseMoneyToFloat($produto['dai']) : null,
+                'dape' => isset($produto['dape']) ? $this->parseMoneyToFloat($produto['dape']) : null,
+                'vlr_cfr_unit' => isset($produto['vlr_cfr_unit']) ? $this->parseMoneyToFloat($produto['vlr_cfr_unit']) : null,
+                'vlr_cfr_total' => isset($produto['vlr_cfr_total']) ? $this->parseMoneyToFloat($produto['vlr_cfr_total']) : null,
+                'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
+                'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
+                'ii_percent' => isset($produto['ii_percent']) && trim($produto['ii_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ii_percent'])) !== '' ? $this->safePercentage($produto['ii_percent']) : null,
+                'ipi_percent' => isset($produto['ipi_percent']) && trim($produto['ipi_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ipi_percent'])) !== '' ? $this->safePercentage($produto['ipi_percent']) : null,
+                'pis_percent' => isset($produto['pis_percent']) && trim($produto['pis_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['pis_percent'])) !== '' ? $this->safePercentage($produto['pis_percent']) : null,
+                'cofins_percent' => isset($produto['cofins_percent']) && trim($produto['cofins_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['cofins_percent'])) !== '' ? $this->safePercentage($produto['cofins_percent']) : null,
+                'icms_percent' => isset($produto['icms_percent']) && trim($produto['icms_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_percent'])) !== '' ? $this->safePercentage($produto['icms_percent']) : null,
+                'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) && trim($produto['icms_reduzido_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_reduzido_percent'])) !== '' ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
+                'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
+                'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
+                'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
+                'frete_moeda' => $request->frete_internacional_moeda,
+                'seguro_moeda' => $request->seguro_internacional_moeda,
+                'acrescimo_moeda' => $request->acrescimo_frete_moeda,
+                'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
+                'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
+                'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
+                'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
+                'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
+                'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
+                'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
+                'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
+                'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
+                'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
+                'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
+                'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
+                'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
+                'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
+                'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
+                'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
+                'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
+                'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
+                'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
+                'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
+                'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
+                'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
+                'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
+                'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
+                'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
+                'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
+                'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
+                'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
+                'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
+                'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
+                'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
+                'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
+                // Campos específicos rodoviário
+                'desp_fronteira' => isset($produto['desp_fronteira']) ? $this->parseMoneyToFloat($produto['desp_fronteira']) : null,
+                'das_fronteira' => isset($produto['das_fronteira']) ? $this->parseMoneyToFloat($produto['das_fronteira']) : null,
+                'armazenagem' => isset($produto['armazenagem']) ? $this->parseMoneyToFloat($produto['armazenagem']) : null,
+                'frete_foz_gyn' => isset($produto['frete_foz_gyn']) ? $this->parseMoneyToFloat($produto['frete_foz_gyn']) : null,
+                'rep_fronteira' => isset($produto['rep_fronteira']) ? $this->parseMoneyToFloat($produto['rep_fronteira']) : null,
+                'armaz_anapolis' => isset($produto['armaz_anapolis']) ? $this->parseMoneyToFloat($produto['armaz_anapolis']) : null,
+                'mov_anapolis' => isset($produto['mov_anapolis']) ? $this->parseMoneyToFloat($produto['mov_anapolis']) : null,
+                'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
+                'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
+                'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
+                'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
+                'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
+                'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
+                "descricao" => $produto['descricao'],
+                'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
+                'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
+                'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
+                'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
+                'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
+                'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
+                'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
+            ];
+
+            $processoProduto = ProcessoRodoviarioProduto::updateOrCreate(
+                [
+                    'id' => $produto['processo_produto_id'] ?? null,
+                    'processo_rodoviario_id' => $id ?? 0,
+                ],
+                $dadosProduto
+            );
+
+            $produtoAntesId = $produto['processo_produto_id'] ?? null;
+            $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
+                ? $produtosExistentes[$produtoAntesId]
+                : null;
+
+            $auditEntries[] = [
+                'action' => $produtoAntes ? 'update' : 'create',
+                'meta' => [
+                    'auditable_type' => ProcessoRodoviarioProduto::class,
+                    'auditable_id' => $processoProduto->id,
+                    'process_type' => $processType,
+                    'process_id' => $id,
+                    'client_id' => $processo->cliente_id,
+                    'context' => 'processo.produto',
+                ],
+                'before' => $produtoAntes,
+                'after' => $dadosProduto,
+            ];
+            
+            $produtosProcessados++;
+        }
+    }
+
+    /**
+     * Processar produtos marítimos
+     */
+    private function processarProdutosMaritimos($request, $id, $processo, $produtosExistentes, $processType, &$pesoLiquidoTotal, &$produtosProcessados, &$auditEntries)
+    {
+        foreach ($request->produtos as $key => $produto) {
+            $pesoLiquidoTotal += isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
+            
+            $dadosProduto = [
+                'item' => $produto['item'],
+                'produto_id' => $produto['produto_id'],
+                'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
+                'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
+                'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
+                'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
+                'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
+                'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
+                'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
+                'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
+                'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
+                'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
+                'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
+                'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
+                'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
+                'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
+                'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
+                'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
+                'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
+                'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
+                'ii_percent' => isset($produto['ii_percent']) ? $this->safePercentage($produto['ii_percent']) : null,
+                'ipi_percent' => isset($produto['ipi_percent']) ? $this->safePercentage($produto['ipi_percent']) : null,
+                'pis_percent' => isset($produto['pis_percent']) ? $this->safePercentage($produto['pis_percent']) : null,
+                'cofins_percent' => isset($produto['cofins_percent']) ? $this->safePercentage($produto['cofins_percent']) : null,
+                'icms_percent' => isset($produto['icms_percent']) ? $this->safePercentage($produto['icms_percent']) : null,
+                'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
+                'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
+                'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
+                'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
+                'frete_moeda' => $request->frete_internacional_moeda,
+                'seguro_moeda' => $request->seguro_internacional_moeda,
+                'acrescimo_moeda' => $request->acrescimo_frete_moeda,
+                'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
+                'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
+                'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
+                'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
+                'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
+                'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
+                'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
+                'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
+                'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
+                'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
+                'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
+                'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
+                'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
+                'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
+                'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
+                'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
+                'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
+                'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
+                'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
+                'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
+                'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
+                'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
+                'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
+                'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
+                'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
+                'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
+                'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
+                'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
+                'capatazia' => isset($produto['capatazia']) ? $this->parseMoneyToFloat($produto['capatazia']) : null,
+                'tx_correcao_lacre' => isset($produto['tx_correcao_lacre']) ? $this->parseMoneyToFloat($produto['tx_correcao_lacre']) : null,
+                'afrmm' => isset($produto['afrmm']) ? $this->parseMoneyToFloat($produto['afrmm']) : null,
+                'armazenagem_sts' => isset($produto['armazenagem_sts']) ? $this->parseMoneyToFloat($produto['armazenagem_sts']) : null,
+                'frete_dta_sts_ana' => isset($produto['frete_dta_sts_ana']) ? $this->parseMoneyToFloat($produto['frete_dta_sts_ana']) : null,
+                'frete_sts_cgb' => isset($produto['frete_sts_cgb']) ? $this->parseMoneyToFloat($produto['frete_sts_cgb']) : null,
+                'diarias' => isset($produto['diarias']) ? $this->parseMoneyToFloat($produto['diarias']) : null,
+                'sda' => isset($produto['sda']) ? $this->parseMoneyToFloat($produto['sda']) : null,
+                'rep_sts' => isset($produto['rep_sts']) ? $this->parseMoneyToFloat($produto['rep_sts']) : null,
+                'armaz_cgb' => isset($produto['armaz_cgb']) ? $this->parseMoneyToFloat($produto['armaz_cgb']) : null,
+                'rep_cgb' => isset($produto['rep_cgb']) ? $this->parseMoneyToFloat($produto['rep_cgb']) : null,
+                'demurrage' => isset($produto['demurrage']) ? $this->parseMoneyToFloat($produto['demurrage']) : null,
+                'armaz_ana' => isset($produto['armaz_ana']) ? $this->parseMoneyToFloat($produto['armaz_ana']) : null,
+                'lavagem_container' => isset($produto['lavagem_container']) ? $this->parseMoneyToFloat($produto['lavagem_container']) : null,
+                'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
+                'desp_anapolis' => isset($produto['desp_anapolis']) ? $this->parseMoneyToFloat($produto['desp_anapolis']) : null,
+                'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
+                'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
+                'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
+                'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
+                'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
+                'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
+                'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
+                'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
+                'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
+                'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
+                // Campos específicos de Mato Grosso
+                'dez_porcento' => isset($produto['dez_porcento']) ? $this->parseMoneyToFloat($produto['dez_porcento']) : null,
+                'custo_com_margem' => isset($produto['custo_com_margem']) ? $this->parseMoneyToFloat($produto['custo_com_margem']) : null,
+                'vlr_ipi_mg' => isset($produto['vlr_ipi_mg']) ? $this->parseMoneyToFloat($produto['vlr_ipi_mg']) : null,
+                'vlr_icms_mg' => isset($produto['vlr_icms_mg']) ? $this->parseMoneyToFloat($produto['vlr_icms_mg']) : null,
+                'pis_mg' => isset($produto['pis_mg']) ? $this->parseMoneyToFloat($produto['pis_mg']) : null,
+                'cofins_mg' => isset($produto['cofins_mg']) ? $this->parseMoneyToFloat($produto['cofins_mg']) : null,
+                'custo_total_final_credito' => isset($produto['custo_total_final_credito']) ? $this->parseMoneyToFloat($produto['custo_total_final_credito']) : null,
+                'custo_unit_credito' => isset($produto['custo_unit_credito']) ? $this->parseMoneyToFloat($produto['custo_unit_credito']) : null,
+                'mva_mg' => isset($produto['mva_mg']) ? $this->safePercentage($produto['mva_mg']) : null,
+                'icms_st_mg' => isset($produto['icms_st_mg']) ? $this->safePercentage($produto['icms_st_mg']) : null,
+                'bc_icms_st_mg' => isset($produto['bc_icms_st_mg']) ? $this->parseMoneyToFloat($produto['bc_icms_st_mg']) : null,
+                'vlr_icms_st_mg' => isset($produto['vlr_icms_st_mg']) ? $this->parseMoneyToFloat($produto['vlr_icms_st_mg']) : null,
+                'custo_total_c_icms_st' => isset($produto['custo_total_c_icms_st']) ? $this->parseMoneyToFloat($produto['custo_total_c_icms_st']) : null,
+                'custo_unit_c_icms_st' => isset($produto['custo_unit_c_icms_st']) ? $this->parseMoneyToFloat($produto['custo_unit_c_icms_st']) : null,
+                'exportador_mg' => isset($produto['exportador_mg']) ? $this->parseMoneyToFloat($produto['exportador_mg']) : null,
+                'tributos_mg' => isset($produto['tributos_mg']) ? $this->parseMoneyToFloat($produto['tributos_mg']) : null,
+                'despesas_mg' => isset($produto['despesas_mg']) ? $this->parseMoneyToFloat($produto['despesas_mg']) : null,
+                'total_pago_mg' => isset($produto['total_pago_mg']) ? $this->parseMoneyToFloat($produto['total_pago_mg']) : null,
+                'percentual_s_fob_mg' => isset($produto['percentual_s_fob_mg']) ? $this->parseMoneyToFloat($produto['percentual_s_fob_mg']) : null,
+                "descricao" => $produto['descricao'],
+                'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
+                'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
+                'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
+                'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
+                'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
+                'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
+                'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
+            ];
+
+            $processoProduto = ProcessoProduto::updateOrCreate(
+                [
+                    'id' => $produto['processo_produto_id'] ?? null,
+                    'processo_id' => $id ?? 0,
+                ],
+                $dadosProduto
+            );
+
+            $produtoAntesId = $produto['processo_produto_id'] ?? null;
+            $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
+                ? $produtosExistentes[$produtoAntesId]
+                : null;
+
+            $auditEntries[] = [
+                'action' => $produtoAntes ? 'update' : 'create',
+                'meta' => [
+                    'auditable_type' => ProcessoProduto::class,
+                    'auditable_id' => $processoProduto->id,
+                    'process_type' => $processType,
+                    'process_id' => $id,
+                    'client_id' => $processo->cliente_id,
+                    'context' => 'processo.produto',
+                ],
+                'before' => $produtoAntes,
+                'after' => $dadosProduto,
+            ];
+            
+            $produtosProcessados++;
+        }
+    }
+
+    /**
+     * Detectar e carregar o processo baseado no tipo
+     * Retorna array com processo e flags, ou array com 'error' se não encontrado
+     */
+    private function detectarECarregarProcesso($request, $id)
+    {
+        $tipoProcessoRequest = $request->input('tipo_processo') ?? $request->query('tipo_processo') ?? $request->get('tipo_processo');
+        $processo = null;
+        $isAereo = false;
+        $isRodoviario = false;
+
+        if ($tipoProcessoRequest === 'aereo') {
+            $processo = ProcessoAereo::find($id);
+            if (!$processo) {
+                return ['error' => 'Processo não encontrado'];
+            }
+            $isAereo = true;
+        } elseif ($tipoProcessoRequest === 'rodoviario') {
+            $processo = ProcessoRodoviario::find($id);
+            if (!$processo) {
+                return ['error' => 'Processo não encontrado'];
+            }
+            $isRodoviario = true;
+        } else {
+            // Tentar buscar como processo marítimo primeiro
+            $processo = Processo::find($id);
+            if ($processo) {
+                // Processo marítimo encontrado
+            } else {
+                // Se não encontrar, tentar como processo aéreo
+                $processo = ProcessoAereo::find($id);
+                if ($processo) {
+                    $isAereo = true;
+                } else {
+                    // Se não encontrar, tentar como processo rodoviário
+                    $processo = ProcessoRodoviario::find($id);
+                    if ($processo) {
+                        $isRodoviario = true;
+                    } else {
+                        // Se não encontrou em nenhuma tabela, retornar erro
+                        return ['error' => 'Processo não encontrado'];
+                    }
+                }
+            }
+        }
+        
+        return [
+            'processo' => $processo,
+            'isAereo' => $isAereo,
+            'isRodoviario' => $isRodoviario
+        ];
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            // Detectar e carregar processo
+            $processoInfo = $this->detectarECarregarProcesso($request, $id);
+            if (isset($processoInfo['error'])) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $processoInfo['error']
+                ], 404);
+            }
+            
+            $processo = $processoInfo['processo'];
+            $isAereo = $processoInfo['isAereo'];
+            $isRodoviario = $processoInfo['isRodoviario'];
+            
             $this->ensureClienteAccess($processo->cliente_id);
-            $auditService = app(ProcessoAuditService::class);
-            $processoOriginal = $processo->getAttributes();
-            $processType = $isAereo ? 'aereo' : ($isRodoviario ? 'rodoviario' : ($processo->tipo_processo ?? 'maritimo'));
             $auditService = app(ProcessoAuditService::class);
             $auditEntries = [];
             $processoOriginal = $processo->getAttributes();
@@ -874,15 +1393,6 @@ class ProcessoController extends Controller
             }
 
             if ($request->produtos && count($request->produtos) > 0) {
-                // DEBUG: Log completo de TODOS os produtos recebidos da tabela ANTES de processar
-                \Log::info("DEBUG PROCESSO AEREO - TODOS OS PRODUTOS RECEBIDOS DA TABELA", [
-                    'total_produtos' => count($request->produtos),
-                    'tipo_processo' => $isAereo ? 'AEREO' : ($isRodoviario ? 'RODOVIARIO' : 'MARITIMO'),
-                    'processo_id' => $id,
-                    'request_all_keys' => array_keys($request->all()),
-                    'produtos_array_completo' => $request->produtos
-                ]);
-
                 foreach ($request->produtos as $key => $produto) {
                     if (!isset($produto['produto_id']) || empty($produto['produto_id'])) {
                         DB::rollBack();
@@ -893,468 +1403,17 @@ class ProcessoController extends Controller
                     }
                 }
 
-                foreach ($request->produtos as $key => $produto) {
-                    $pesoLiquidoTotal += isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : 0;
-                    if ($isAereo) {
-                        // Verificar tipo de peso do processo
-                        $tipoPeso = $processo->tipo_peso ?? 'lbs';
-                        
-                        $pesoLiqLbsValue = null;
-                        $pesoLiqKgValue = null;
-                        $pesoLiqTotalKgValue = null;
-                        
-                        if ($tipoPeso === 'kg') {
-                            // Modo KG: usar peso_liq_kg
-                            if (isset($produto['peso_liq_kg']) && $produto['peso_liq_kg'] !== '') {
-                                $pesoLiqKgValue = $this->parseMoneyToFloat($produto['peso_liq_kg']);
-                                // peso_liq_total_kg = peso_liq_kg (sem conversão)
-                                $pesoLiqTotalKgValue = $pesoLiqKgValue;
-                            }
-                        } else {
-                            // Modo LBS: usar peso_liq_lbs
-                            if (isset($produto['peso_liq_lbs']) && $produto['peso_liq_lbs'] !== '') {
-                                $pesoLiqLbsValue = $this->parseMoneyToFloat($produto['peso_liq_lbs']);
-                            }
-                            // peso_liq_total_kg será calculado a partir de peso_liq_lbs * fator
-                            if (isset($produto['peso_liq_total_kg']) && $produto['peso_liq_total_kg'] !== '') {
-                                $pesoLiqTotalKgValue = $this->parseMoneyToFloat($produto['peso_liq_total_kg']);
-                            }
-                        }
-                        
-                        $dadosProduto = [
-                            'item' => $produto['item'],
-                            'produto_id' => $produto['produto_id'],
-                            'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
-                            'origem' => isset($produto['origem']) ? $produto['origem'] : null,
-                            'codigo_giiro' => isset($produto['codigo_giiro']) ? $produto['codigo_giiro'] : null,
-                            'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
-                            'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) && $produto['peso_liquido_unitario'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
-                            'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
-                            'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
-                            'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
-                            'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
-                            'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
-                            'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
-                            'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
-                            'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
-                            'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
-                            'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
-                            'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
-                            'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
-                            'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
-                            // Campos específicos do transporte aéreo
-                            'delivery_fee' => isset($produto['delivery_fee']) ? $this->parseMoneyToFloat($produto['delivery_fee']) : null,
-                            'delivery_fee_brl' => isset($produto['delivery_fee_brl']) ? $this->parseMoneyToFloat($produto['delivery_fee_brl']) : null,
-                            'collect_fee' => isset($produto['collect_fee']) ? $this->parseMoneyToFloat($produto['collect_fee']) : null,
-                            'collect_fee_brl' => isset($produto['collect_fee_brl']) ? $this->parseMoneyToFloat($produto['collect_fee_brl']) : null,
-                            'dai' => isset($produto['dai']) ? $this->parseMoneyToFloat($produto['dai']) : null,
-                            'dape' => isset($produto['dape']) ? $this->parseMoneyToFloat($produto['dape']) : null,
-                            'vlr_cfr_unit' => isset($produto['vlr_cfr_unit']) ? $this->parseMoneyToFloat($produto['vlr_cfr_unit']) : null,
-                            'vlr_cfr_total' => isset($produto['vlr_cfr_total']) ? $this->parseMoneyToFloat($produto['vlr_cfr_total']) : null,
-                            'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
-                            'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
-                            'ii_percent' => isset($produto['ii_percent']) && trim($produto['ii_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ii_percent'])) !== '' ? $this->safePercentage($produto['ii_percent']) : null,
-                            'ipi_percent' => isset($produto['ipi_percent']) && trim($produto['ipi_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ipi_percent'])) !== '' ? $this->safePercentage($produto['ipi_percent']) : null,
-                            'pis_percent' => isset($produto['pis_percent']) && trim($produto['pis_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['pis_percent'])) !== '' ? $this->safePercentage($produto['pis_percent']) : null,
-                            'cofins_percent' => isset($produto['cofins_percent']) && trim($produto['cofins_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['cofins_percent'])) !== '' ? $this->safePercentage($produto['cofins_percent']) : null,
-                            'icms_percent' => isset($produto['icms_percent']) && trim($produto['icms_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_percent'])) !== '' ? $this->safePercentage($produto['icms_percent']) : null,
-                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) && trim($produto['icms_reduzido_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_reduzido_percent'])) !== '' ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
-                            'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
-                            'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
-                            'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
-                            'frete_moeda' => $request->frete_internacional_moeda,
-                            'seguro_moeda' => $request->seguro_internacional_moeda,
-                            'acrescimo_moeda' => $request->acrescimo_frete_moeda,
-                            'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
-                            'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
-                            'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
-                            'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
-                            'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
-                            'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
-                            'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
-                            'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
-                            'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
-                            'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
-                            'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
-                            'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
-                            'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
-                            'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
-                            'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
-                            'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
-                            'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
-                            'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
-                            'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
-                            'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
-                            'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
-                            'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
-                            'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
-                            'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
-                            'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
-                            'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
-                            'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
-                            'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
-                            'capatazia' => isset($produto['capatazia']) ? $this->parseMoneyToFloat($produto['capatazia']) : null,
-                            'tx_correcao_lacre' => isset($produto['tx_correcao_lacre']) ? $this->parseMoneyToFloat($produto['tx_correcao_lacre']) : null,
-                            'afrmm' => isset($produto['afrmm']) ? $this->parseMoneyToFloat($produto['afrmm']) : null,
-                            'armazenagem_sts' => isset($produto['armazenagem_sts']) ? $this->parseMoneyToFloat($produto['armazenagem_sts']) : null,
-                            'frete_dta_sts_ana' => isset($produto['frete_dta_sts_ana']) ? $this->parseMoneyToFloat($produto['frete_dta_sts_ana']) : null,
-                            'frete_sts_cgb' => isset($produto['frete_sts_cgb']) ? $this->parseMoneyToFloat($produto['frete_sts_cgb']) : null,
-                            'diarias' => isset($produto['diarias']) ? $this->parseMoneyToFloat($produto['diarias']) : null,
-                            'sda' => isset($produto['sda']) ? $this->parseMoneyToFloat($produto['sda']) : null,
-                            'rep_sts' => isset($produto['rep_sts']) ? $this->parseMoneyToFloat($produto['rep_sts']) : null,
-                            'armaz_cgb' => isset($produto['armaz_cgb']) ? $this->parseMoneyToFloat($produto['armaz_cgb']) : null,
-                            'rep_cgb' => isset($produto['rep_cgb']) ? $this->parseMoneyToFloat($produto['rep_cgb']) : null,
-                            'demurrage' => isset($produto['demurrage']) ? $this->parseMoneyToFloat($produto['demurrage']) : null,
-                            'armaz_ana' => isset($produto['armaz_ana']) ? $this->parseMoneyToFloat($produto['armaz_ana']) : null,
-                            'lavagem_container' => isset($produto['lavagem_container']) ? $this->parseMoneyToFloat($produto['lavagem_container']) : null,
-                            'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
-                            // Campos aéreos já adicionados acima (dai, dape)
-                            'desp_anapolis' => isset($produto['desp_anapolis']) ? $this->parseMoneyToFloat($produto['desp_anapolis']) : null,
-                            'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
-                            'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
-                            'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
-                            'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
-                            'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
-                            'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
-                            'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
-                            'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
-                            'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
-                            'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
-                            // Campos específicos de Mato Grosso
-                            'dez_porcento' => isset($produto['dez_porcento']) ? $this->parseMoneyToFloat($produto['dez_porcento']) : null,
-                            'custo_com_margem' => isset($produto['custo_com_margem']) ? $this->parseMoneyToFloat($produto['custo_com_margem']) : null,
-                            'vlr_ipi_mg' => isset($produto['vlr_ipi_mg']) ? $this->parseMoneyToFloat($produto['vlr_ipi_mg']) : null,
-                            'vlr_icms_mg' => isset($produto['vlr_icms_mg']) ? $this->parseMoneyToFloat($produto['vlr_icms_mg']) : null,
-                            'pis_mg' => isset($produto['pis_mg']) ? $this->parseMoneyToFloat($produto['pis_mg']) : null,
-                            'cofins_mg' => isset($produto['cofins_mg']) ? $this->parseMoneyToFloat($produto['cofins_mg']) : null,
-                            'custo_total_final_credito' => isset($produto['custo_total_final_credito']) ? $this->parseMoneyToFloat($produto['custo_total_final_credito']) : null,
-                            'custo_unit_credito' => isset($produto['custo_unit_credito']) ? $this->parseMoneyToFloat($produto['custo_unit_credito']) : null,
-                            'mva_mg' => isset($produto['mva_mg']) ? $this->safePercentage($produto['mva_mg']) : null,
-                            'icms_st_mg' => isset($produto['icms_st_mg']) ? $this->safePercentage($produto['icms_st_mg']) : null,
-                            'bc_icms_st_mg' => isset($produto['bc_icms_st_mg']) ? $this->parseMoneyToFloat($produto['bc_icms_st_mg']) : null,
-                            'vlr_icms_st_mg' => isset($produto['vlr_icms_st_mg']) ? $this->parseMoneyToFloat($produto['vlr_icms_st_mg']) : null,
-                            'custo_total_c_icms_st' => isset($produto['custo_total_c_icms_st']) ? $this->parseMoneyToFloat($produto['custo_total_c_icms_st']) : null,
-                            'custo_unit_c_icms_st' => isset($produto['custo_unit_c_icms_st']) ? $this->parseMoneyToFloat($produto['custo_unit_c_icms_st']) : null,
-                            'exportador_mg' => isset($produto['exportador_mg']) ? $this->parseMoneyToFloat($produto['exportador_mg']) : null,
-                            'tributos_mg' => isset($produto['tributos_mg']) ? $this->parseMoneyToFloat($produto['tributos_mg']) : null,
-                            'despesas_mg' => isset($produto['despesas_mg']) ? $this->parseMoneyToFloat($produto['despesas_mg']) : null,
-                            'total_pago_mg' => isset($produto['total_pago_mg']) ? $this->parseMoneyToFloat($produto['total_pago_mg']) : null,
-                            'percentual_s_fob_mg' => isset($produto['percentual_s_fob_mg']) ? $this->parseMoneyToFloat($produto['percentual_s_fob_mg']) : null,
-                            "descricao" => $produto['descricao'],
-                            'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
-                            'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
-                            'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
-                            'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
-                            // Preservar valores existentes de service_charges se não foram enviados ou estão vazios
-                            'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
-                            // Campos de peso específicos do aéreo
-                            'peso_liq_lbs' => $pesoLiqLbsValue,
-                            'peso_liq_kg' => $pesoLiqKgValue ?? null,
-                            'peso_liq_total_kg' => $pesoLiqTotalKgValue,
-                        ];
-                        
-                        $processoProduto = ProcessoAereoProduto::updateOrCreate(
-                            [
-                                'id' => $produto['processo_produto_id'] ?? null,
-                                'processo_aereo_id' => $id ?? 0,
-                            ],
-                            $dadosProduto
-                        );
-
-                        $produtoAntesId = $produto['processo_produto_id'] ?? null;
-                        $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
-                            ? $produtosExistentes[$produtoAntesId]
-                            : null;
-
-                        $auditEntries[] = [
-                            'action' => $produtoAntes ? 'update' : 'create',
-                            'meta' => [
-                                'auditable_type' => ProcessoAereoProduto::class,
-                                'auditable_id' => $processoProduto->id,
-                                'process_type' => $processType,
-                                'process_id' => $id,
-                                'client_id' => $processo->cliente_id,
-                                'context' => 'processo.produto',
-                            ],
-                            'before' => $produtoAntes,
-                            'after' => $dadosProduto,
-                        ];
-                        
-                    } elseif ($isRodoviario) {
-                        $dadosProduto = [
-                            'item' => $produto['item'],
-                            'produto_id' => $produto['produto_id'],
-                            'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
-                            'origem' => isset($produto['origem']) ? $produto['origem'] : null,
-                            'codigo_giiro' => isset($produto['codigo_giiro']) ? $produto['codigo_giiro'] : null,
-                            'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
-                            'peso_liq_lbs' => isset($produto['peso_liq_lbs']) && $produto['peso_liq_lbs'] !== '' ? $this->parseMoneyToFloat($produto['peso_liq_lbs']) : null,
-                            'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) && $produto['peso_liquido_unitario'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
-                            'peso_liquido_total' => isset($produto['peso_liquido_total']) && $produto['peso_liquido_total'] !== '' ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
-                            'peso_liq_total_kg' => isset($produto['peso_liq_total_kg']) && $produto['peso_liq_total_kg'] !== '' ? $this->parseMoneyToFloat($produto['peso_liq_total_kg']) : null,
-                            'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
-                            'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
-                            'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
-                            'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
-                            'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
-                            'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
-                            'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
-                            'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
-                            'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
-                            'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
-                            'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
-                            'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
-                            // Campos específicos rodoviário (sem delivery_fee e collect_fee)
-                            'dai' => isset($produto['dai']) ? $this->parseMoneyToFloat($produto['dai']) : null,
-                            'dape' => isset($produto['dape']) ? $this->parseMoneyToFloat($produto['dape']) : null,
-                            'vlr_cfr_unit' => isset($produto['vlr_cfr_unit']) ? $this->parseMoneyToFloat($produto['vlr_cfr_unit']) : null,
-                            'vlr_cfr_total' => isset($produto['vlr_cfr_total']) ? $this->parseMoneyToFloat($produto['vlr_cfr_total']) : null,
-                            'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
-                            'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
-                            'ii_percent' => isset($produto['ii_percent']) && trim($produto['ii_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ii_percent'])) !== '' ? $this->safePercentage($produto['ii_percent']) : null,
-                            'ipi_percent' => isset($produto['ipi_percent']) && trim($produto['ipi_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['ipi_percent'])) !== '' ? $this->safePercentage($produto['ipi_percent']) : null,
-                            'pis_percent' => isset($produto['pis_percent']) && trim($produto['pis_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['pis_percent'])) !== '' ? $this->safePercentage($produto['pis_percent']) : null,
-                            'cofins_percent' => isset($produto['cofins_percent']) && trim($produto['cofins_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['cofins_percent'])) !== '' ? $this->safePercentage($produto['cofins_percent']) : null,
-                            'icms_percent' => isset($produto['icms_percent']) && trim($produto['icms_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_percent'])) !== '' ? $this->safePercentage($produto['icms_percent']) : null,
-                            'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) && trim($produto['icms_reduzido_percent']) !== '' && trim(str_replace(['%', ' '], '', $produto['icms_reduzido_percent'])) !== '' ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
-                            'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
-                            'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
-                            'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
-                            'frete_moeda' => $request->frete_internacional_moeda,
-                            'seguro_moeda' => $request->seguro_internacional_moeda,
-                            'acrescimo_moeda' => $request->acrescimo_frete_moeda,
-                            'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
-                            'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
-                            'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
-                            'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
-                            'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
-                            'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
-                            'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
-                            'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
-                            'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
-                            'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
-                            'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
-                            'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
-                            'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
-                            'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
-                            'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
-                            'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
-                            'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
-                            'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
-                            'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
-                            'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
-                            'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
-                            'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
-                            'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
-                            'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
-                            'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
-                            'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
-                            'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
-                            'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
-                            'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
-                            'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
-                            'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
-                            'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
-                            // Campos específicos rodoviário
-                            'desp_fronteira' => isset($produto['desp_fronteira']) ? $this->parseMoneyToFloat($produto['desp_fronteira']) : null,
-                            'das_fronteira' => isset($produto['das_fronteira']) ? $this->parseMoneyToFloat($produto['das_fronteira']) : null,
-                            'armazenagem' => isset($produto['armazenagem']) ? $this->parseMoneyToFloat($produto['armazenagem']) : null,
-                            'frete_foz_gyn' => isset($produto['frete_foz_gyn']) ? $this->parseMoneyToFloat($produto['frete_foz_gyn']) : null,
-                            'rep_fronteira' => isset($produto['rep_fronteira']) ? $this->parseMoneyToFloat($produto['rep_fronteira']) : null,
-                            'armaz_anapolis' => isset($produto['armaz_anapolis']) ? $this->parseMoneyToFloat($produto['armaz_anapolis']) : null,
-                            'mov_anapolis' => isset($produto['mov_anapolis']) ? $this->parseMoneyToFloat($produto['mov_anapolis']) : null,
-                            'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
-                            'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
-                            'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
-                            'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
-                            'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
-                            'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
-                            'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
-                            "descricao" => $produto['descricao'],
-                            'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
-                            'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
-                            'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
-                            'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
-                            'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
-                            'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
-                            'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
-                        ];
-
-                        $processoProduto = ProcessoRodoviarioProduto::updateOrCreate(
-                            [
-                                'id' => $produto['processo_produto_id'] ?? null,
-                                'processo_rodoviario_id' => $id ?? 0,
-                            ],
-                            $dadosProduto
-                        );
-
-                        $produtoAntesId = $produto['processo_produto_id'] ?? null;
-                        $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
-                            ? $produtosExistentes[$produtoAntesId]
-                            : null;
-
-                        $auditEntries[] = [
-                            'action' => $produtoAntes ? 'update' : 'create',
-                            'meta' => [
-                                'auditable_type' => ProcessoRodoviarioProduto::class,
-                                'auditable_id' => $processoProduto->id,
-                                'process_type' => $processType,
-                                'process_id' => $id,
-                                'client_id' => $processo->cliente_id,
-                                'context' => 'processo.produto',
-                            ],
-                            'before' => $produtoAntes,
-                            'after' => $dadosProduto,
-                        ];
-                    } else {
-                        $dadosProduto = [
-                                'item' => $produto['item'],
-                                'produto_id' => $produto['produto_id'],
-                                'adicao' => isset($produto['adicao']) ? (int)$produto['adicao'] : null,
-                                'quantidade' => isset($produto['quantidade']) ? $this->parseMoneyToFloat($produto['quantidade']) : null,
-                                'peso_liquido_unitario' => isset($produto['peso_liquido_unitario']) ? $this->parseMoneyToFloat($produto['peso_liquido_unitario']) : null,
-                                'peso_liquido_total' => isset($produto['peso_liquido_total']) ? $this->parseMoneyToFloat($produto['peso_liquido_total']) : null,
-                                'fator_peso' => isset($produto['fator_peso']) ? $this->parseMoneyToFloat($produto['fator_peso']) : null,
-                                'fob_unit_usd' => (isset($produto['fob_unit_usd']) && trim($produto['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produto['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produto) ? null : null),
-                                'fob_total_usd' => isset($produto['fob_total_usd']) ? $this->parseMoneyToFloat($produto['fob_total_usd']) : null,
-                                'fob_total_brl' => isset($produto['fob_total_brl']) ? $this->parseMoneyToFloat($produto['fob_total_brl']) : null,
-                                'frete_usd' => isset($produto['frete_usd']) ? $this->parseMoneyToFloat($produto['frete_usd']) : null,
-                                'frete_brl' => isset($produto['frete_brl']) ? $this->parseMoneyToFloat($produto['frete_brl']) : null,
-                                'seguro_usd' => isset($produto['seguro_usd']) ? $this->parseMoneyToFloat($produto['seguro_usd']) : null,
-                                'seguro_brl' => isset($produto['seguro_brl']) ? $this->parseMoneyToFloat($produto['seguro_brl']) : null,
-                                'acresc_frete_usd' => isset($produto['acresc_frete_usd']) ? $this->parseMoneyToFloat($produto['acresc_frete_usd']) : null,
-                                'acresc_frete_brl' => isset($produto['acresc_frete_brl']) ? $this->parseMoneyToFloat($produto['acresc_frete_brl']) : null,
-                                'thc_usd' => isset($produto['thc_usd']) ? $this->parseMoneyToFloat($produto['thc_usd']) : null,
-                                'thc_brl' => isset($produto['thc_brl']) ? $this->parseMoneyToFloat($produto['thc_brl']) : null,
-                                'valor_aduaneiro_usd' => isset($produto['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_usd']) : null,
-                                'valor_aduaneiro_brl' => isset($produto['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produto['valor_aduaneiro_brl']) : null,
-                                'ii_percent' => isset($produto['ii_percent']) ? $this->safePercentage($produto['ii_percent']) : null,
-                                'ipi_percent' => isset($produto['ipi_percent']) ? $this->safePercentage($produto['ipi_percent']) : null,
-                                'pis_percent' => isset($produto['pis_percent']) ? $this->safePercentage($produto['pis_percent']) : null,
-                                'cofins_percent' => isset($produto['cofins_percent']) ? $this->safePercentage($produto['cofins_percent']) : null,
-                                'icms_percent' => isset($produto['icms_percent']) ? $this->safePercentage($produto['icms_percent']) : null,
-                                'icms_reduzido_percent' => isset($produto['icms_reduzido_percent']) ? $this->safePercentage($produto['icms_reduzido_percent']) : null,
-                                'frete_moeda_estrangeira' => isset($produto['frete_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['frete_moeda_estrangeira']) : null,
-                                'seguro_moeda_estrangeira' => isset($produto['seguro_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['seguro_moeda_estrangeira']) : null,
-                                'acrescimo_moeda_estrangeira' => isset($produto['acrescimo_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['acrescimo_moeda_estrangeira']) : null,
-                                'frete_moeda' => $request->frete_internacional_moeda,
-                                'seguro_moeda' => $request->seguro_internacional_moeda,
-                                'acrescimo_moeda' => $request->acrescimo_frete_moeda,
-                                'valor_ii' => isset($produto['valor_ii']) ? $this->parseMoneyToFloat($produto['valor_ii']) : null,
-                                'base_ipi' => isset($produto['base_ipi']) ? $this->parseMoneyToFloat($produto['base_ipi']) : null,
-                                'valor_ipi' => isset($produto['valor_ipi']) ? $this->parseMoneyToFloat($produto['valor_ipi']) : null,
-                                'base_pis_cofins' => isset($produto['base_pis_cofins']) ? $this->parseMoneyToFloat($produto['base_pis_cofins']) : null,
-                                'valor_pis' => isset($produto['valor_pis']) ? $this->parseMoneyToFloat($produto['valor_pis']) : null,
-                                'valor_cofins' => isset($produto['valor_cofins']) ? $this->parseMoneyToFloat($produto['valor_cofins']) : null,
-                                'despesa_aduaneira' => isset($produto['despesa_aduaneira']) ? $this->parseMoneyToFloat($produto['despesa_aduaneira']) : null,
-                                'base_icms_sem_reducao' => isset($produto['base_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['base_icms_sem_reducao']) : null,
-                                'valor_icms_sem_reducao' => isset($produto['valor_icms_sem_reducao']) ? $this->parseMoneyToFloat($produto['valor_icms_sem_reducao']) : null,
-                                'base_icms_reduzido' => isset($produto['base_icms_reduzido']) ? $this->parseMoneyToFloat($produto['base_icms_reduzido']) : null,
-                                'valor_icms_reduzido' => isset($produto['valor_icms_reduzido']) ? $this->parseMoneyToFloat($produto['valor_icms_reduzido']) : null,
-                                'valor_unit_nf' => isset($produto['valor_unit_nf']) ? $this->parseMoneyToFloat($produto['valor_unit_nf']) : null,
-                                'valor_total_nf' => isset($produto['valor_total_nf']) ? $this->parseMoneyToFloat($produto['valor_total_nf']) : null,
-                                'base_icms_st' => isset($produto['base_icms_st']) ? $this->parseMoneyToFloat($produto['base_icms_st']) : null,
-                                'mva' => isset($produto['mva']) ? $this->parseMoneyToFloat($produto['mva']) : null,
-                                'valor_icms_st' => isset($produto['valor_icms_st']) ? $this->parseMoneyToFloat($produto['valor_icms_st']) : null,
-                                'icms_st' => isset($produto['icms_st']) ? $this->parseMoneyToFloat($produto['icms_st']) : null,
-                                'valor_total_nf_com_icms_st' => isset($produto['valor_total_nf_com_icms_st']) ? $this->parseMoneyToFloat($produto['valor_total_nf_com_icms_st']) : null,
-                                'fator_valor_fob' => isset($produto['fator_valor_fob']) ? $this->parseMoneyToFloat($produto['fator_valor_fob']) : null,
-                                'fator_tx_siscomex' => isset($produto['fator_tx_siscomex']) ? $this->parseMoneyToFloat($produto['fator_tx_siscomex']) : null,
-                                'multa' => isset($produto['multa']) ? $this->parseMoneyToFloat($produto['multa']) : null,
-                                'tx_def_li' => isset($produto['tx_def_li']) && trim($produto['tx_def_li']) !== '' && trim(str_replace(['%', ' '], '', $produto['tx_def_li'])) !== '' ? $this->safePercentage($produto['tx_def_li']) : null,
-                                'taxa_siscomex' => isset($produto['taxa_siscomex']) ? $this->parseMoneyToFloat($produto['taxa_siscomex']) : null,
-                                'outras_taxas_agente' => isset($produto['outras_taxas_agente']) ? $this->parseMoneyToFloat($produto['outras_taxas_agente']) : null,
-                                'liberacao_bl' => isset($produto['liberacao_bl']) ? $this->parseMoneyToFloat($produto['liberacao_bl']) : null,
-                                'desconsolidacao' => isset($produto['desconsolidacao']) ? $this->parseMoneyToFloat($produto['desconsolidacao']) : null,
-                                'isps_code' => isset($produto['isps_code']) ? $this->parseMoneyToFloat($produto['isps_code']) : null,
-                                'handling' => isset($produto['handling']) ? $this->parseMoneyToFloat($produto['handling']) : null,
-                                'capatazia' => isset($produto['capatazia']) ? $this->parseMoneyToFloat($produto['capatazia']) : null,
-                                'tx_correcao_lacre' => isset($produto['tx_correcao_lacre']) ? $this->parseMoneyToFloat($produto['tx_correcao_lacre']) : null,
-                                'afrmm' => isset($produto['afrmm']) ? $this->parseMoneyToFloat($produto['afrmm']) : null,
-                                'armazenagem_sts' => isset($produto['armazenagem_sts']) ? $this->parseMoneyToFloat($produto['armazenagem_sts']) : null,
-                                'frete_dta_sts_ana' => isset($produto['frete_dta_sts_ana']) ? $this->parseMoneyToFloat($produto['frete_dta_sts_ana']) : null,
-                                'frete_sts_cgb' => isset($produto['frete_sts_cgb']) ? $this->parseMoneyToFloat($produto['frete_sts_cgb']) : null,
-                                'diarias' => isset($produto['diarias']) ? $this->parseMoneyToFloat($produto['diarias']) : null,
-                                'sda' => isset($produto['sda']) ? $this->parseMoneyToFloat($produto['sda']) : null,
-                                'rep_sts' => isset($produto['rep_sts']) ? $this->parseMoneyToFloat($produto['rep_sts']) : null,
-                                'armaz_cgb' => isset($produto['armaz_cgb']) ? $this->parseMoneyToFloat($produto['armaz_cgb']) : null,
-                                'rep_cgb' => isset($produto['rep_cgb']) ? $this->parseMoneyToFloat($produto['rep_cgb']) : null,
-                                'demurrage' => isset($produto['demurrage']) ? $this->parseMoneyToFloat($produto['demurrage']) : null,
-                                'armaz_ana' => isset($produto['armaz_ana']) ? $this->parseMoneyToFloat($produto['armaz_ana']) : null,
-                                'lavagem_container' => isset($produto['lavagem_container']) ? $this->parseMoneyToFloat($produto['lavagem_container']) : null,
-                                'rep_anapolis' => isset($produto['rep_anapolis']) ? $this->parseMoneyToFloat($produto['rep_anapolis']) : null,
-                                'desp_anapolis' => isset($produto['desp_anapolis']) ? $this->parseMoneyToFloat($produto['desp_anapolis']) : null,
-                                'correios' => isset($produto['correios']) ? $this->parseMoneyToFloat($produto['correios']) : null,
-                                'li_dta_honor_nix' => isset($produto['li_dta_honor_nix']) ? $this->parseMoneyToFloat($produto['li_dta_honor_nix']) : null,
-                                'honorarios_nix' => isset($produto['honorarios_nix']) ? $this->parseMoneyToFloat($produto['honorarios_nix']) : null,
-                                'desp_desenbaraco' => isset($produto['desp_desenbaraco']) ? $this->parseMoneyToFloat($produto['desp_desenbaraco']) : null,
-                                'diferenca_cambial_frete' => isset($produto['diferenca_cambial_frete']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_frete']) : null,
-                                'diferenca_cambial_fob' => isset($produto['diferenca_cambial_fob']) ? $this->parseMoneyToFloat($produto['diferenca_cambial_fob']) : null,
-                                'opcional_1_valor' => isset($produto['opcional_1_valor']) ? $this->parseMoneyToFloat($produto['opcional_1_valor']) : null,
-                                'opcional_2_valor' => isset($produto['opcional_2_valor']) ? $this->parseMoneyToFloat($produto['opcional_2_valor']) : null,
-                                'custo_unitario_final' => isset($produto['custo_unitario_final']) ? $this->parseMoneyToFloat($produto['custo_unitario_final']) : null,
-                                'custo_total_final' => isset($produto['custo_total_final']) ? $this->parseMoneyToFloat($produto['custo_total_final']) : null,
-                                // Campos específicos de Mato Grosso
-                                'dez_porcento' => isset($produto['dez_porcento']) ? $this->parseMoneyToFloat($produto['dez_porcento']) : null,
-                                'custo_com_margem' => isset($produto['custo_com_margem']) ? $this->parseMoneyToFloat($produto['custo_com_margem']) : null,
-                                'vlr_ipi_mg' => isset($produto['vlr_ipi_mg']) ? $this->parseMoneyToFloat($produto['vlr_ipi_mg']) : null,
-                                'vlr_icms_mg' => isset($produto['vlr_icms_mg']) ? $this->parseMoneyToFloat($produto['vlr_icms_mg']) : null,
-                                'pis_mg' => isset($produto['pis_mg']) ? $this->parseMoneyToFloat($produto['pis_mg']) : null,
-                                'cofins_mg' => isset($produto['cofins_mg']) ? $this->parseMoneyToFloat($produto['cofins_mg']) : null,
-                                'custo_total_final_credito' => isset($produto['custo_total_final_credito']) ? $this->parseMoneyToFloat($produto['custo_total_final_credito']) : null,
-                                'custo_unit_credito' => isset($produto['custo_unit_credito']) ? $this->parseMoneyToFloat($produto['custo_unit_credito']) : null,
-                                'mva_mg' => isset($produto['mva_mg']) ? $this->safePercentage($produto['mva_mg']) : null,
-                                'icms_st_mg' => isset($produto['icms_st_mg']) ? $this->safePercentage($produto['icms_st_mg']) : null,
-                                'bc_icms_st_mg' => isset($produto['bc_icms_st_mg']) ? $this->parseMoneyToFloat($produto['bc_icms_st_mg']) : null,
-                                'vlr_icms_st_mg' => isset($produto['vlr_icms_st_mg']) ? $this->parseMoneyToFloat($produto['vlr_icms_st_mg']) : null,
-                                'custo_total_c_icms_st' => isset($produto['custo_total_c_icms_st']) ? $this->parseMoneyToFloat($produto['custo_total_c_icms_st']) : null,
-                                'custo_unit_c_icms_st' => isset($produto['custo_unit_c_icms_st']) ? $this->parseMoneyToFloat($produto['custo_unit_c_icms_st']) : null,
-                                'exportador_mg' => isset($produto['exportador_mg']) ? $this->parseMoneyToFloat($produto['exportador_mg']) : null,
-                                'tributos_mg' => isset($produto['tributos_mg']) ? $this->parseMoneyToFloat($produto['tributos_mg']) : null,
-                                'despesas_mg' => isset($produto['despesas_mg']) ? $this->parseMoneyToFloat($produto['despesas_mg']) : null,
-                                'total_pago_mg' => isset($produto['total_pago_mg']) ? $this->parseMoneyToFloat($produto['total_pago_mg']) : null,
-                                'percentual_s_fob_mg' => isset($produto['percentual_s_fob_mg']) ? $this->parseMoneyToFloat($produto['percentual_s_fob_mg']) : null,
-                                "descricao" => $produto['descricao'],
-                                'fob_unit_moeda_estrangeira' => isset($produto['fob_unit_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_unit_moeda_estrangeira']) : null,
-                                'fob_total_moeda_estrangeira' => isset($produto['fob_total_moeda_estrangeira']) ? $this->parseMoneyToFloat($produto['fob_total_moeda_estrangeira']) : null,
-                                'vlr_crf_total' => isset($produto['vlr_crf_total']) ? $this->parseMoneyToFloat($produto['vlr_crf_total']) : null,
-                                'vlr_crf_unit' => isset($produto['vlr_crf_unit']) ? $this->parseMoneyToFloat($produto['vlr_crf_unit']) : null,
-                                'service_charges' => isset($produto['service_charges']) && $produto['service_charges'] !== '' ? $this->parseMoneyToFloat($produto['service_charges']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges'] ?? null : null),
-                                'service_charges_brl' => isset($produto['service_charges_brl']) && $produto['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_brl']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_brl'] ?? null : null),
-                                'service_charges_moeda_estrangeira' => isset($produto['service_charges_moeda_estrangeira']) && $produto['service_charges_moeda_estrangeira'] !== '' ? $this->parseMoneyToFloat($produto['service_charges_moeda_estrangeira']) : (isset($produto['processo_produto_id']) && $produto['processo_produto_id'] && isset($produtosExistentes[$produto['processo_produto_id']]) ? $produtosExistentes[$produto['processo_produto_id']]['service_charges_moeda_estrangeira'] ?? null : null),
-                        ];
-
-                        $processoProduto = ProcessoProduto::updateOrCreate(
-                            [
-                                'id' => $produto['processo_produto_id'] ?? null,
-                                'processo_id' => $id ?? 0,
-                            ],
-                            $dadosProduto
-                        );
-
-                        $produtoAntesId = $produto['processo_produto_id'] ?? null;
-                        $produtoAntes = $produtoAntesId && isset($produtosExistentes[$produtoAntesId])
-                            ? $produtosExistentes[$produtoAntesId]
-                            : null;
-
-                        $auditEntries[] = [
-                            'action' => $produtoAntes ? 'update' : 'create',
-                            'meta' => [
-                                'auditable_type' => ProcessoProduto::class,
-                                'auditable_id' => $processoProduto->id,
-                                'process_type' => $processType,
-                                'process_id' => $id,
-                                'client_id' => $processo->cliente_id,
-                                'context' => 'processo.produto',
-                            ],
-                            'before' => $produtoAntes,
-                            'after' => $dadosProduto,
-                        ];
-                    }
-
-                    $produtosProcessados++;
+                // Processar produtos baseado no tipo de processo
+                if ($isAereo) {
+                    $this->processarProdutosAereos($request, $id, $processo, $produtosExistentes, $processType, $pesoLiquidoTotal, $produtosProcessados, $auditEntries);
+                } elseif ($isRodoviario) {
+                    $this->processarProdutosRodoviarios($request, $id, $processo, $produtosExistentes, $processType, $pesoLiquidoTotal, $produtosProcessados, $auditEntries);
+                } else {
+                    $this->processarProdutosMaritimos($request, $id, $processo, $produtosExistentes, $processType, $pesoLiquidoTotal, $produtosProcessados, $auditEntries);
                 }
             }
+
+            // Processamento de produtos agora é feito pelos métodos privados acima
 
             if ($request->produtos_multa && count($request->produtos_multa) > 0) {
                 foreach ($request->produtos_multa as $produtoMulta) {
@@ -1402,7 +1461,6 @@ class ProcessoController extends Controller
                     'thc_brl',
                     'valor_aduaneiro_usd',
                     'valor_aduaneiro_brl',
-                    'reducao',
                     'valor_ii',
                     'base_ipi',
                     'valor_ipi',
@@ -1410,67 +1468,116 @@ class ProcessoController extends Controller
                     'valor_pis',
                     'valor_cofins',
                     'despesa_aduaneira',
-                    'vlr_ii_pos_despesa',
-                    'vlr_ipi_pos_despesa',
-                    'vlr_pis_pos_despesa',
-                    'vlr_cofins_pos_despesa',
-                    'vlr_ii_nova_ncm',
-                    'vlr_ipi_nova_ncm',
-                    'vlr_pis_nova_ncm',
-                    'vlr_cofins_nova_ncm',
-                    'vlr_ii_recalc',
-                    'vlr_ipi_recalc',
-                    'vlr_pis_recalc',
-                    'vlr_cofins_recalc',
-                    'valor_aduaneiro_multa',
-                    'ii_percent_aduaneiro',
-                    'ipi_percent_aduaneiro',
-                    'pis_percent_aduaneiro',
-                    'cofins_percent_aduaneiro',
+                    'base_icms_sem_reducao',
+                    'valor_icms_sem_reducao',
+                    'base_icms_reduzido',
+                    'valor_icms_reduzido',
+                    'valor_unit_nf',
+                    'valor_total_nf',
+                    'base_icms_st',
+                    'mva',
+                    'valor_icms_st',
+                    'icms_st',
+                    'valor_total_nf_com_icms_st',
+                    'fator_valor_fob',
+                    'fator_tx_siscomex',
+                    'multa',
+                    'taxa_siscomex',
+                    'outras_taxas_agente',
+                    'liberacao_bl',
+                    'desconsolidacao',
+                    'isps_code',
+                    'handling',
+                    'capatazia',
+                    'tx_correcao_lacre',
+                    'afrmm',
+                    'armazenagem_sts',
+                    'frete_dta_sts_ana',
+                    'frete_sts_cgb',
+                    'diarias',
+                    'sda',
+                    'rep_sts',
+                    'armaz_cgb',
+                    'rep_cgb',
+                    'demurrage',
+                    'armaz_ana',
+                    'lavagem_container',
+                    'rep_anapolis',
+                    'desp_anapolis',
+                    'correios',
+                    'li_dta_honor_nix',
+                    'honorarios_nix',
+                    'desp_desenbaraco',
+                    'diferenca_cambial_frete',
+                    'diferenca_cambial_fob',
+                    'opcional_1_valor',
+                    'opcional_2_valor',
+                    'custo_unitario_final',
+                    'custo_total_final',
                 ];
 
                 foreach ($request->produtos_multa as $produtoMulta) {
-                    // Limpar e converter adicao e item para inteiros
-                    $adicao = null;
-                    if (isset($produtoMulta['adicao']) && $produtoMulta['adicao'] !== '' && $produtoMulta['adicao'] !== null) {
-                        // Remover formatação (vírgulas, pontos, espaços) e converter para inteiro
-                        $adicaoLimpa = preg_replace('/[^0-9]/', '', (string)$produtoMulta['adicao']);
-                        $adicao = $adicaoLimpa !== '' ? (int)$adicaoLimpa : null;
-                    }
-                    
-                    $item = null;
-                    if (isset($produtoMulta['item']) && $produtoMulta['item'] !== '' && $produtoMulta['item'] !== null) {
-                        // Remover formatação (vírgulas, pontos, espaços) e converter para inteiro
-                        $itemLimpo = preg_replace('/[^0-9]/', '', (string)$produtoMulta['item']);
-                        $item = $itemLimpo !== '' ? (int)$itemLimpo : null;
-                    }
-                    
-                    $dadosMulta = [
-                        'processo_id' => $id,
+                    $dadosProdutoMulta = [
+                        'item' => $produtoMulta['item'],
                         'produto_id' => $produtoMulta['produto_id'],
-                        'adicao' => $adicao,
-                        'item' => $item,
-                        'nova_ncm' => $produtoMulta['nova_ncm'] ?? null,
+                        'adicao' => isset($produtoMulta['adicao']) ? (int)$produtoMulta['adicao'] : null,
+                        'quantidade' => isset($produtoMulta['quantidade']) ? $this->parseMoneyToFloat($produtoMulta['quantidade']) : null,
+                        'peso_liquido_unitario' => isset($produtoMulta['peso_liquido_unitario']) ? $this->parseMoneyToFloat($produtoMulta['peso_liquido_unitario']) : null,
+                        'peso_liquido_total' => isset($produtoMulta['peso_liquido_total']) ? $this->parseMoneyToFloat($produtoMulta['peso_liquido_total']) : null,
+                        'fator_peso' => isset($produtoMulta['fator_peso']) ? $this->parseMoneyToFloat($produtoMulta['fator_peso']) : null,
+                        'fob_unit_usd' => (isset($produtoMulta['fob_unit_usd']) && trim($produtoMulta['fob_unit_usd']) !== '') ? $this->parseMoneyToFloat($produtoMulta['fob_unit_usd']) : (array_key_exists('fob_unit_usd', $produtoMulta) ? null : null),
+                        'fob_total_usd' => isset($produtoMulta['fob_total_usd']) ? $this->parseMoneyToFloat($produtoMulta['fob_total_usd']) : null,
+                        'fob_total_brl' => isset($produtoMulta['fob_total_brl']) ? $this->parseMoneyToFloat($produtoMulta['fob_total_brl']) : null,
+                        'service_charges' => isset($produtoMulta['service_charges']) && $produtoMulta['service_charges'] !== '' ? $this->parseMoneyToFloat($produtoMulta['service_charges']) : (isset($produtoMulta['processo_produto_multa_id']) && $produtoMulta['processo_produto_multa_id'] && isset($produtosMultaExistentes[$produtoMulta['processo_produto_multa_id']]) ? $produtosMultaExistentes[$produtoMulta['processo_produto_multa_id']]['service_charges'] ?? null : null),
+                        'service_charges_brl' => isset($produtoMulta['service_charges_brl']) && $produtoMulta['service_charges_brl'] !== '' ? $this->parseMoneyToFloat($produtoMulta['service_charges_brl']) : (isset($produtoMulta['processo_produto_multa_id']) && $produtoMulta['processo_produto_multa_id'] && isset($produtosMultaExistentes[$produtoMulta['processo_produto_multa_id']]) ? $produtosMultaExistentes[$produtoMulta['processo_produto_multa_id']]['service_charges_brl'] ?? null : null),
+                        'frete_usd' => isset($produtoMulta['frete_usd']) ? $this->parseMoneyToFloat($produtoMulta['frete_usd']) : null,
+                        'frete_brl' => isset($produtoMulta['frete_brl']) ? $this->parseMoneyToFloat($produtoMulta['frete_brl']) : null,
+                        'acresc_frete_usd' => isset($produtoMulta['acresc_frete_usd']) ? $this->parseMoneyToFloat($produtoMulta['acresc_frete_usd']) : null,
+                        'acresc_frete_brl' => isset($produtoMulta['acresc_frete_brl']) ? $this->parseMoneyToFloat($produtoMulta['acresc_frete_brl']) : null,
+                        'vlr_crf_unit' => isset($produtoMulta['vlr_crf_unit']) ? $this->parseMoneyToFloat($produtoMulta['vlr_crf_unit']) : null,
+                        'vlr_crf_total' => isset($produtoMulta['vlr_crf_total']) ? $this->parseMoneyToFloat($produtoMulta['vlr_crf_total']) : null,
+                        'seguro_usd' => isset($produtoMulta['seguro_usd']) ? $this->parseMoneyToFloat($produtoMulta['seguro_usd']) : null,
+                        'seguro_brl' => isset($produtoMulta['seguro_brl']) ? $this->parseMoneyToFloat($produtoMulta['seguro_brl']) : null,
+                        'thc_usd' => isset($produtoMulta['thc_usd']) ? $this->parseMoneyToFloat($produtoMulta['thc_usd']) : null,
+                        'thc_brl' => isset($produtoMulta['thc_brl']) ? $this->parseMoneyToFloat($produtoMulta['thc_brl']) : null,
+                        'valor_aduaneiro_usd' => isset($produtoMulta['valor_aduaneiro_usd']) ? $this->parseMoneyToFloat($produtoMulta['valor_aduaneiro_usd']) : null,
+                        'valor_aduaneiro_brl' => isset($produtoMulta['valor_aduaneiro_brl']) ? $this->parseMoneyToFloat($produtoMulta['valor_aduaneiro_brl']) : null,
                     ];
 
-                    foreach ($camposNumericosMulta as $campo) {
-                        $dadosMulta[$campo] = isset($produtoMulta[$campo]) && $produtoMulta[$campo] !== ''
-                            ? $this->parseMoneyToFloat($produtoMulta[$campo])
-                            : null;
-                    }
-
                     foreach ($camposPercentuaisMulta as $campo) {
-                        $dadosMulta[$campo] = isset($produtoMulta[$campo]) && trim($produtoMulta[$campo]) !== ''
-                            ? $this->safePercentage($produtoMulta[$campo])
-                            : null;
+                        if (isset($produtoMulta[$campo]) && trim($produtoMulta[$campo]) !== '' && trim(str_replace(['%', ' '], '', $produtoMulta[$campo])) !== '') {
+                            $dadosProdutoMulta[$campo] = $this->safePercentage($produtoMulta[$campo]);
+                        } else {
+                            $dadosProdutoMulta[$campo] = null;
+                        }
                     }
 
-                    $produtoMultaModel = ProcessoProdutoMulta::updateOrCreate(
+                    foreach ($camposNumericosMulta as $campo) {
+                        if (isset($produtoMulta[$campo]) && $produtoMulta[$campo] !== '') {
+                            $dadosProdutoMulta[$campo] = $this->parseMoneyToFloat($produtoMulta[$campo]);
+                        } else {
+                            $dadosProdutoMulta[$campo] = null;
+                        }
+                    }
+
+                    $dadosProdutoMulta['frete_moeda'] = $request->frete_internacional_moeda;
+                    $dadosProdutoMulta['seguro_moeda'] = $request->seguro_internacional_moeda;
+                    $dadosProdutoMulta['acrescimo_moeda'] = $request->acrescimo_frete_moeda;
+
+                    if ($isAereo) {
+                        $dadosProdutoMulta['processo_aereo_id'] = $id;
+                    } elseif ($isRodoviario) {
+                        $dadosProdutoMulta['processo_rodoviario_id'] = $id;
+                    } else {
+                        $dadosProdutoMulta['processo_id'] = $id;
+                    }
+
+                    $processoProdutoMulta = ProcessoProdutoMulta::updateOrCreate(
                         [
                             'id' => $produtoMulta['processo_produto_multa_id'] ?? null,
-                            'processo_id' => $id ?? 0,
+                            $isAereo ? 'processo_aereo_id' : ($isRodoviario ? 'processo_rodoviario_id' : 'processo_id') => $id ?? 0,
                         ],
-                        $dadosMulta
+                        $dadosProdutoMulta
                     );
 
                     $produtoMultaAntesId = $produtoMulta['processo_produto_multa_id'] ?? null;
@@ -1482,121 +1589,100 @@ class ProcessoController extends Controller
                         'action' => $produtoMultaAntes ? 'update' : 'create',
                         'meta' => [
                             'auditable_type' => ProcessoProdutoMulta::class,
-                            'auditable_id' => $produtoMultaModel->id,
+                            'auditable_id' => $processoProdutoMulta->id,
                             'process_type' => $processType,
                             'process_id' => $id,
                             'client_id' => $processo->cliente_id,
-                            'context' => 'processo.produto.multa',
+                            'context' => 'processo.produto_multa',
                         ],
                         'before' => $produtoMultaAntes,
-                        'after' => $dadosMulta,
+                        'after' => $dadosProdutoMulta,
                     ];
                 }
             }
 
-            $salvarApenasMulta = $request->has('salvar_apenas_produtos_multa');
-
-            if (!$salvarApenasMulta) {
-                // Atualizar peso líquido na tabela correta
-                // Se peso_liquido_total_cabecalho foi enviado, usar ele; caso contrário, usar a soma dos produtos
-                $pesoLiquidoFinal = $request->has('peso_liquido_total_cabecalho') 
-                    ? $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho) 
-                    : $pesoLiquidoTotal;
-                
-                if ($isAereo) {
-                    ProcessoAereo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
-                    $processoExistente = ProcessoAereo::find($id);
-                } elseif ($isRodoviario) {
-                    ProcessoRodoviario::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
-                    $processoExistente = ProcessoRodoviario::find($id);
-                } else {
-                    Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
-                    $processoExistente = Processo::find($id);
-                }
+            // Atualizar peso líquido total
+            if ($request->has('peso_liquido_total_cabecalho')) {
+                $pesoLiquidoFinal = $this->parseMoneyToFloat($request->peso_liquido_total_cabecalho);
             } else {
-                $processoExistente = $processo;
+                $pesoLiquidoFinal = $pesoLiquidoTotal;
             }
-            
-            // Campos comuns a ambos os tipos de processo
-            // Garantir que os valores sejam salvos mesmo quando são 0 ou vazios
-            // Quando salvar_apenas_produtos é true, sempre atualizar os campos enviados
+
+            if ($isAereo) {
+                ProcessoAereo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
+                $processoExistente = ProcessoAereo::find($id);
+            } elseif ($isRodoviario) {
+                ProcessoRodoviario::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
+                $processoExistente = ProcessoRodoviario::find($id);
+            } else {
+                Processo::where('id', $id)->update(['peso_liquido' => $pesoLiquidoFinal]);
+                $processoExistente = Processo::find($id);
+            }
+
+            // Preparar dados do processo
             $dadosProcesso = [];
             
-            // Campos que sempre devem ser atualizados quando enviados
-            $camposComuns = [
-                'outras_taxas_agente',
-                'desconsolidacao',
-                'handling',
-                'correios',
-                'li_dta_honor_nix',
-                'honorarios_nix',
-                'diferenca_cambial_frete',
-                'diferenca_cambial_fob',
-                'opcional_1_valor',
-                'opcional_1_descricao',
-                'opcional_1_compoe_despesas',
-                'opcional_2_valor',
-                'opcional_2_descricao',
-                'opcional_2_compoe_despesas'
-            ];
-            
-            foreach ($camposComuns as $campo) {
-                // Sempre incluir o campo no array quando enviado, mesmo que seja 0 ou vazio
-                if ($request->has($campo)) {
-                    // Campos booleanos e strings são tratados separadamente
-                    if (in_array($campo, ['opcional_1_compoe_despesas', 'opcional_2_compoe_despesas'])) {
-                        $dadosProcesso[$campo] = $request->$campo == 'on' || $request->$campo == '1' || $request->$campo === true;
-                    } elseif (in_array($campo, ['opcional_1_descricao', 'opcional_2_descricao'])) {
-                        $dadosProcesso[$campo] = $request->$campo;
-                    } else {
-                        $valor = $this->parseMoneyToFloat($request->$campo);
-                        // Se o valor for null (campo vazio), salvar como 0
-                        $dadosProcesso[$campo] = $valor !== null ? $valor : 0;
-                    }
-                }
+            if ($request->has('numero_processo')) {
+                $dadosProcesso['numero_processo'] = $this->normalizeNullableString($request->numero_processo);
             }
-            
-            // Preservar service_charges do processo se não foi enviado ou está vazio
-            if ($request->has('service_charges') && $request->service_charges !== '' && $request->service_charges !== null) {
-                $dadosProcesso['service_charges'] = $this->parseMoneyToFloat($request->service_charges);
+
+            if ($request->has('data_entrada')) {
+                $dadosProcesso['data_entrada'] = $request->data_entrada ? \Carbon\Carbon::parse($request->data_entrada)->format('Y-m-d') : null;
             }
-            
-            // Campos específicos para processos marítimos (não para aéreo nem rodoviário)
-            if (!$isAereo && !$isRodoviario) {
-                $dadosProcesso['liberacao_bl'] = $this->parseMoneyToFloat($request->liberacao_bl);
-                $dadosProcesso['isps_code'] = $this->parseMoneyToFloat($request->isps_code);
-                $dadosProcesso['capatazia'] = $this->parseMoneyToFloat($request->thc_capatazia);
-                $dadosProcesso['tx_correcao_lacre'] = $this->parseMoneyToFloat($request->tx_correcao_lacre);
-                $dadosProcesso['afrmm'] = $this->parseMoneyToFloat($request->afrmm);
-                $dadosProcesso['armazenagem_sts'] = $this->parseMoneyToFloat($request->armazenagem_sts);
-                $dadosProcesso['armazenagem_porto'] = $this->parseMoneyToFloat($request->armazenagem_porto);
-                $dadosProcesso['frete_dta_sts_ana'] = $this->parseMoneyToFloat($request->frete_dta_sts_ana);
-                $dadosProcesso['frete_rodoviario'] = $this->parseMoneyToFloat($request->frete_rodoviario);
-                $dadosProcesso['dif_frete_rodoviario'] = $this->parseMoneyToFloat($request->dif_frete_rodoviario);
-                $dadosProcesso['sda'] = $this->parseMoneyToFloat($request->sda);
-                $dadosProcesso['rep_sts'] = $this->parseMoneyToFloat($request->rep_sts);
-                $dadosProcesso['rep_porto'] = $this->parseMoneyToFloat($request->rep_porto);
-                $dadosProcesso['armaz_ana'] = $this->parseMoneyToFloat($request->armaz_ana);
-                $dadosProcesso['lavagem_container'] = $this->parseMoneyToFloat($request->lavagem_container);
-                $dadosProcesso['rep_anapolis'] = $this->parseMoneyToFloat($request->rep_anapolis);
-                $dadosProcesso['desp_anapolis'] = $this->parseMoneyToFloat($request->desp_anapolis);
+
+            if ($request->has('data_saida')) {
+                $dadosProcesso['data_saida'] = $request->data_saida ? \Carbon\Carbon::parse($request->data_saida)->format('Y-m-d') : null;
             }
-            
+
+            if ($request->has('cliente_id')) {
+                $dadosProcesso['cliente_id'] = $request->cliente_id;
+            }
+
+            if ($request->has('catalogo_id')) {
+                $dadosProcesso['catalogo_id'] = $request->catalogo_id;
+            }
+
+            if ($request->has('frete_internacional_moeda')) {
+                $dadosProcesso['frete_internacional_moeda'] = $request->frete_internacional_moeda;
+            }
+
+            if ($request->has('seguro_internacional_moeda')) {
+                $dadosProcesso['seguro_internacional_moeda'] = $request->seguro_internacional_moeda;
+            }
+
+            if ($request->has('acrescimo_frete_moeda')) {
+                $dadosProcesso['acrescimo_frete_moeda'] = $request->acrescimo_frete_moeda;
+            }
+
+            if ($request->has('cotacao_frete')) {
+                $dadosProcesso['cotacao_frete'] = $this->parseMoneyToFloat($request->cotacao_frete, 4);
+            }
+
+            if ($request->has('cotacao_seguro')) {
+                $dadosProcesso['cotacao_seguro'] = $this->parseMoneyToFloat($request->cotacao_seguro, 4);
+            }
+
+            if ($request->has('cotacao_acrescimo')) {
+                $dadosProcesso['cotacao_acrescimo'] = $this->parseMoneyToFloat($request->cotacao_acrescimo, 4);
+            }
+
             // Campos específicos para processos aéreos
             if ($isAereo) {
                 // Sempre atualizar os campos se foram enviados, mesmo que sejam 0
                 $camposAereos = [
+                    'peso_liquido_total_cabecalho',
+                    'outras_taxas_agente',
                     'delivery_fee',
-                    'delivery_fee_brl',
                     'collect_fee',
-                    'collect_fee_brl',
+                    'desconsolidacao',
+                    'handling',
                     'dai',
                     'dape'
                 ];
                 
                 foreach ($camposAereos as $campo) {
                     // Sempre incluir o campo no array quando enviado, mesmo que seja 0 ou vazio
-                    if ($request->has($campo)) {
+                    if ($request->input($campo) !== null) {
                         $valor = $this->parseMoneyToFloat($request->$campo);
                         // Se o valor for null (campo vazio), salvar como 0
                         $dadosProcesso[$campo] = $valor !== null ? $valor : 0;
@@ -1676,8 +1762,11 @@ class ProcessoController extends Controller
             // Processo rodoviário sempre usa nacionalização 'outros'
             if ($isRodoviario) {
                 $dadosProcesso['nacionalizacao'] = 'outros';
-            } elseif ($request->has('nacionalizacao') && $request->nacionalizacao !== null) {
+            } elseif ($request->has('nacionalizacao') && $request->nacionalizacao !== null && $request->nacionalizacao !== '') {
                 $dadosProcesso['nacionalizacao'] = $request->nacionalizacao;
+            } else {
+                // Se não foi enviado, manter o valor existente ou usar 'geral' como padrão para aéreo
+                $dadosProcesso['nacionalizacao'] = $processoExistente->nacionalizacao ?? 'geral';
             }
             
             if ($request->has('cotacao_service_charges') && $request->cotacao_service_charges !== '' && $request->cotacao_service_charges !== null) {
@@ -1691,28 +1780,8 @@ class ProcessoController extends Controller
                 $auditProcessoChanges['peso_liquido'] = $pesoLiquidoFinal;
             }
 
-            if (!empty($auditProcessoChanges)) {
-                $auditEntries[] = [
-                    'action' => 'update',
-                    'meta' => [
-                        'auditable_type' => get_class($processo),
-                        'auditable_id' => $processo->id,
-                        'process_type' => $processType,
-                        'process_id' => $processo->id,
-                        'client_id' => $processo->cliente_id,
-                        'context' => 'processo.update',
-                    ],
-                    'before' => $processoOriginal,
-                    'after' => $auditProcessoChanges,
-                ];
-            }
-
             // Atualizar processo na tabela correta
             if ($isAereo) {
-                // Log para debug - remover depois
-                if (!empty($dadosProcesso)) {
-                    \Log::info('Atualizando ProcessoAereo ID: ' . $id, ['dadosProcesso' => $dadosProcesso]);
-                }
                 ProcessoAereo::where('id', $id)->update($dadosProcesso);
             } elseif ($isRodoviario) {
                 ProcessoRodoviario::where('id', $id)->update($dadosProcesso);
@@ -1720,7 +1789,8 @@ class ProcessoController extends Controller
                 Processo::where('id', $id)->update($dadosProcesso);
             }
 
-            DB::afterCommit(function () use ($auditEntries, $auditService) {
+            // Salvar auditoria
+            if (!empty($auditEntries)) {
                 foreach ($auditEntries as $entry) {
                     if ($entry['action'] === 'create') {
                         $auditService->logCreate($entry['meta'], $entry['after'] ?? []);
@@ -1730,52 +1800,58 @@ class ProcessoController extends Controller
                         $auditService->logDelete($entry['meta'], $entry['before'] ?? []);
                     }
                 }
-            });
+            }
+
+            if (!empty($auditProcessoChanges)) {
+                $auditService->logUpdate(
+                    [
+                        'auditable_type' => $isAereo ? ProcessoAereo::class : ($isRodoviario ? ProcessoRodoviario::class : Processo::class),
+                        'auditable_id' => $id,
+                        'process_type' => $processType,
+                        'process_id' => $id,
+                        'client_id' => $processo->cliente_id,
+                        'context' => 'processo',
+                    ],
+                    $processoOriginal,
+                    $auditProcessoChanges
+                );
+            }
+
             DB::commit();
 
-            // Retorno para requisições AJAX (salvamento por blocos)
-            if ($request->ajax() || $request->has('salvar_apenas_produtos')) {
+            // Retornar resposta baseada no tipo de requisição
+            if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
+                    'message' => 'Processo atualizado com sucesso!',
+                    'processo' => $processoExistente,
                     'produtos_processados' => $produtosProcessados,
-                    'peso_liquido_total' => $pesoLiquidoTotal,
-                    'bloco' => $request->bloco_indice ?? 1,
-                    'total_blocos' => $request->total_blocos ?? 1
-                ]);
-            }
-            
-            // Retorno para requisições AJAX de produtos multa (salvamento por blocos)
-            if ($request->ajax() && $request->has('salvar_apenas_produtos_multa')) {
-                $produtosMultaProcessados = $request->produtos_multa ? count($request->produtos_multa) : 0;
-                return response()->json([
-                    'success' => true,
-                    'produtos_multa_processados' => $produtosMultaProcessados,
-                    'bloco' => $request->bloco_indice ?? 1,
-                    'total_blocos' => $request->total_blocos ?? 1
                 ]);
             }
 
-            // Retorno para requisições normais
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
+            return redirect()->route('processo.index')
+                ->with('success', 'Processo atualizado com sucesso!');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             DB::rollBack();
-
-            Log::error('Erro ao salvar processo ' . $id . ': ' . $e->getMessage());
-            Log::error($e->getTraceAsString());
-
-            // Retorno para requisições AJAX
-            if ($request->ajax() || $request->has('salvar_apenas_produtos') || $request->has('salvar_apenas_produtos_multa')) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Erro interno do servidor: ' . $e->getMessage()
-                ]);
-            }
-
-            // Retorno para requisições normais
             return response()->json([
                 'success' => false,
-                'error' => 'Erro ao salvar: ' . $e->getMessage()
+                'error' => 'Processo não encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erro ao atualizar processo: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
             ]);
+            
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Erro ao atualizar processo: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->withErrors(['error' => 'Erro ao atualizar processo: ' . $e->getMessage()]);
         }
     }
 
@@ -1895,7 +1971,8 @@ class ProcessoController extends Controller
             "descricao" => $request->descricao,
             "canal" => $request->canal,
             // Processo rodoviário sempre usa nacionalização 'outros'
-            'nacionalizacao' => $isRodoviario ? 'outros' : ($request->nacionalizacao ?? $processo->nacionalizacao ?? 'outros'),
+            // Para processos aéreos, usar 'geral' como padrão se não for especificado
+            'nacionalizacao' => $isRodoviario ? 'outros' : ($request->nacionalizacao ?? $processo->nacionalizacao ?? 'geral'),
             'multa' => isset($request->multa) ? $this->parseMoneyToFloat($request->multa) : null,
             "status" => $request->status,
             "data_desembaraco_inicio" => $request->data_desembaraco_inicio,
@@ -2003,7 +2080,7 @@ class ProcessoController extends Controller
                         'context' => 'processo.update',
                     ], $processoOriginal, $auditProcessoChanges);
                 });
-            }
+        }
         
         return back()->with('messages', ['success' => ['Dados do processo atualizado com sucesso!']]);
         } catch (ModelNotFoundException $e) {
@@ -2114,17 +2191,22 @@ class ProcessoController extends Controller
             ];
             
             foreach ($camposCabecalho as $campo) {
-                if ($request->has($campo)) {
-                    // Campos booleanos e strings são tratados separadamente
-                    if (in_array($campo, ['opcional_1_compoe_despesas', 'opcional_2_compoe_despesas'])) {
+                // Campos booleanos e strings são tratados separadamente
+                if (in_array($campo, ['opcional_1_compoe_despesas', 'opcional_2_compoe_despesas'])) {
+                    if ($request->has($campo)) {
                         $dadosCabecalho[$campo] = $request->$campo == 'on' || $request->$campo == '1' || $request->$campo === true;
-                    } elseif (in_array($campo, ['opcional_1_descricao', 'opcional_2_descricao'])) {
-                        $dadosCabecalho[$campo] = $request->$campo;
-                    } else {
-                        $valor = $this->parseMoneyToFloat($request->$campo);
-                        // Se o valor for null (campo vazio), salvar como 0
-                        $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
                     }
+                } elseif (in_array($campo, ['opcional_1_descricao', 'opcional_2_descricao'])) {
+                    if ($request->has($campo)) {
+                        $dadosCabecalho[$campo] = $request->$campo;
+                    }
+                } else {
+                    // Para campos numéricos, sempre tentar processar usando input() que retorna null se não existir
+                    // Isso garante que campos enviados com valor vazio ou 0 sejam salvos corretamente
+                    $valorInput = $request->input($campo);
+                    $valor = $this->parseMoneyToFloat($valorInput);
+                    // Se o valor for null (campo não enviado ou vazio), salvar como 0
+                    $dadosCabecalho[$campo] = $valor !== null ? $valor : 0;
                 }
             }
             

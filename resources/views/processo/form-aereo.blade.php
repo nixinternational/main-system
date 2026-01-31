@@ -831,8 +831,12 @@
             // Variáveis para calcular DESP. ADUANEIRA corretamente (processo aéreo)
             let txDefLiTotal = 0;
             
-            rows.each(function() {
+            const totalRows = rows.length;
+            const ultimaLinhaIndex = totalRows - 1;
+            
+            rows.each(function(index) {
                 const rowId = this.id.replace('row-', '')
+                const isUltimaLinha = (index === ultimaLinhaIndex);
                 
                 // FORÇAR uso de valores brutos - não usar fallback para valores formatados
                 const valoresBrutos = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId];
@@ -854,8 +858,15 @@
                     const serviceChargesUsd = MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
                     const thcUsd = MoneyUtils.parseMoney($(`#thc_usd-${rowId}`).val()) || 0;
                     const thcBrl = MoneyUtils.parseMoney($(`#thc_brl-${rowId}`).val()) || 0;
-                    const vlrAduaneiroUsd = MoneyUtils.parseMoney($(`#valor_aduaneiro_usd-${rowId}`).val()) || 0;
-                const vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
+                    // Usar valor bruto se disponível, senão ler do campo formatado
+                    let vlrAduaneiroUsd = valoresBrutos?.valor_aduaneiro_usd;
+                    if (vlrAduaneiroUsd === undefined || vlrAduaneiroUsd === null) {
+                        vlrAduaneiroUsd = MoneyUtils.parseMoney($(`#valor_aduaneiro_usd-${rowId}`).val()) || 0;
+                    }
+                    let vlrAduaneiroBrl = valoresBrutos?.valor_aduaneiro_brl;
+                    if (vlrAduaneiroBrl === undefined || vlrAduaneiroBrl === null) {
+                        vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
+                    }
                     
                     // Calcular impostos a partir dos valores brutos
                     const impostos = {
@@ -928,7 +939,8 @@
                             valor = validarDiferencaCambialFrete(valor);
                         }
                         valor = (typeof valor === 'number' && !isNaN(valor)) ? valor : 0;
-                            totais[campo] += valor;
+                        
+                        totais[campo] += valor;
                     });
                     
                     // Campos calculados
@@ -967,7 +979,9 @@
                     totais.custo_total_final += custoTotalFinal;
                 } else {
                     // Usar valores brutos armazenados (máxima precisão)
+                    const vlrAduaneiroUsdBruto = valoresBrutos.valor_aduaneiro_usd || 0;
                     const vlrAduaneiroBrl = valoresBrutos.valor_aduaneiro_brl || 0;
+                    
                     const txDefLiPercent = MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) || 0;
                     const txDefLiLinha = vlrAduaneiroBrl * txDefLiPercent;
                     txDefLiTotal += txDefLiLinha;
@@ -1283,7 +1297,13 @@
             // DESP. DESEMBARAÇO, DIF. CAMBIAL FRETE, DIF.CAMBIAL FOB, CUSTO UNIT FINAL, CUSTO TOTAL FINAL
             tr += `<td data-field="desp-desembaraco" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desp_desenbaraco, 2)}</td>`;
             tr += `<td data-field="dif-cambial-frete" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(validarDiferencaCambialFrete(totais.diferenca_cambial_frete), 4)}</td>`;
-            tr += `<td data-field="dif-cambial-fob" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>`;
+            
+            // Para nacionalização "geral", não exibir diferenca_cambial_fob
+            const nacionalizacaoAtualTotalizador = getNacionalizacaoAtual();
+            if (nacionalizacaoAtualTotalizador !== 'geral' && nacionalizacaoAtualTotalizador !== 'Geral') {
+                tr += `<td data-field="dif-cambial-fob" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.diferenca_cambial_fob, 2)}</td>`;
+            }
+            
             tr += `<td data-field="opcional-1-valor" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_1_valor || 0, 7)}</td>`;
             tr += `<td data-field="opcional-2-valor" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.opcional_2_valor || 0, 7)}</td>`;
             tr += `<td data-field="custo-unit-final" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.custo_unitario_final, 2)}</td>`;
@@ -2556,8 +2576,10 @@
 
                     const vlrAduaneiroUsd = calcularValorAduaneiroAereo(fobTotal, freteUsdInt, acrescimoFreteUsdRow,
                         seguroIntUsdRow, deliveryFeeRow, collectFeeRow, dolar, vlrCrfTotal, serviceChargesRowAtual, thcRow, nacionalizacao);
+                    
                     // Multiplicação exata sem arredondamento - manter precisão máxima
                     const vlrAduaneiroBrl = vlrAduaneiroUsd * dolar;
+                    
 
                     const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
                     // Para processo aéreo: taxa_siscomex = fator_tx_siscomex * fob_total_brl da linha
@@ -2701,6 +2723,12 @@
                         diferenca_cambial_frete = (freteUsdIntBruto * cotacaoFrete) - freteBrlBruto;
                         // #region agent log
                         // #endregion
+                    } else if (nacionalizacaoCambial === 'geral' || nacionalizacaoCambial === 'Geral') {
+                        // Para nacionalização GERAL: (O17 * $BN$15) - P17
+                        // O17 = FRETE INT USD (freteUsdIntBruto)
+                        // BN15 = diferenca_cambial_frete do CABECALHO INPUT (#diferenca_cambial_frete)
+                        // P17 = FRETE INT R$ (freteBrlBruto)
+                        diferenca_cambial_frete = (freteUsdIntBruto * dif_cambial_frete_processo) - freteBrlBruto;
                     } else {
                         // Para outras nacionalizações: calcular diferença cambial proporcional ao frete
                     // Se há diferença cambial no processo, distribuir proporcionalmente
@@ -2742,12 +2770,20 @@
                     }
                     window.valoresBrutosCamposExternos.diferenca_cambial_frete[rowId] = diferencaCambialFreteValidadaRecalc;
                     
-                    // BS23 = (($BS$21*BC23)-M23) (DIF. CAMBIAL FOB)
-                    // Onde: $BS$21 = diferença cambial FOB do processo, BC23 = FATOR_VLR_FOB, M23 = FOB_TOTAL_BRL
-                    // BS23 = ((DIF_CAMBIAL_FOB_PROCESSO * FATOR_VLR_FOB) - FOB_TOTAL_BRL)
-                    const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val()) || 0;
-                    const fobTotalBrl = fobTotal * dolar;
-                    const diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (dif_cambial_fob_processo * fatorVlrFob_AX) - fobTotalBrl : 0;
+                    // Para nacionalização "geral", não calcular diferenca_cambial_fob
+                    let diferenca_cambial_fob = 0;
+                    let dif_cambial_fob_processo = 0;
+                    if (nacionalizacaoCambial !== 'geral' && nacionalizacaoCambial !== 'Geral') {
+                        // BS23 = (($BS$21*BC23)-M23) (DIF. CAMBIAL FOB)
+                        // Onde: $BS$21 = diferença cambial FOB do processo, BC23 = FATOR_VLR_FOB, M23 = FOB_TOTAL_BRL
+                        // BS23 = ((DIF_CAMBIAL_FOB_PROCESSO * FATOR_VLR_FOB) - FOB_TOTAL_BRL)
+                        const $campoDifCambialFob = $('#diferenca_cambial_fob');
+                        if ($campoDifCambialFob.length) {
+                            dif_cambial_fob_processo = MoneyUtils.parseMoney($campoDifCambialFob.val()) || 0;
+                        }
+                        const fobTotalBrl = fobTotal * dolar;
+                        diferenca_cambial_fob = dif_cambial_fob_processo > 0 ? (dif_cambial_fob_processo * fatorVlrFob_AX) - fobTotalBrl : 0;
+                    }
                     // Usar parseMoney pois redução é uma fração decimal (ex: 0,46315789), não uma porcentagem
                     const reducaoPercent = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val());
                     const custoUnitarioFinal = MoneyUtils.parseMoney($(`#custo_unitario_final-${rowId}`).val()) || 0;
@@ -2923,11 +2959,20 @@
 
                 const fatorVlrFob_AX = fobTotal / fobTotalGeral;
                 const dif_cambial_frete_processo = MoneyUtils.parseMoney($('#diferenca_cambial_frete').val()) || 0;
-                const dif_cambial_fob_processo = MoneyUtils.parseMoney($('#diferenca_cambial_fob').val()) || 0;
                 
                 // Calcular diferença cambial frete conforme nacionalização
                 // Usar valores brutos se disponíveis, caso contrário calcular
                 const nacionalizacaoCambial = getNacionalizacaoAtual();
+                
+                // Para nacionalização "geral", não usar diferenca_cambial_fob
+                // Verificar se o campo existe antes de tentar ler o valor
+                let dif_cambial_fob_processo = 0;
+                if (nacionalizacaoCambial !== 'geral' && nacionalizacaoCambial !== 'Geral') {
+                    const $campoDifCambialFob = $('#diferenca_cambial_fob');
+                    if ($campoDifCambialFob.length) {
+                        dif_cambial_fob_processo = MoneyUtils.parseMoney($campoDifCambialFob.val()) || 0;
+                    }
+                }
                 let diferenca_cambial_frete = 0;
                 
                 // Obter valores brutos de frete
@@ -3020,6 +3065,13 @@
                     diferenca_cambial_frete = (freteUsdIntBruto * cotacaoFreteCambial) - freteBrlBruto;
                     // #region agent log
                     // #endregion
+                } else if (nacionalizacaoCambial === 'geral' || nacionalizacaoCambial === 'Geral') {
+                    // Para nacionalização GERAL: (O17 * $BN$15) - P17
+                    // O17 = FRETE INT USD (freteUsdInt)
+                    // BN15 = diferenca_cambial_frete do CABECALHO INPUT (#diferenca_cambial_frete)
+                    // P17 = FRETE INT R$ (frete_brl do produto)
+                    const freteBrlProduto = MoneyUtils.parseMoney($(`#frete_brl-${rowId}`).val()) || 0;
+                    diferenca_cambial_frete = (freteUsdInt * dif_cambial_frete_processo) - freteBrlProduto;
                 } else {
                     // Para outras nacionalizações: fórmula original
                     // Usar cotação do frete ao invés da cotação da moeda do processo
@@ -3028,15 +3080,19 @@
                 }
                 
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
-                const diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
+                // Para nacionalização "geral", não calcular diferenca_cambial_fob
+                let diferenca_cambial_fob = 0;
+                if (nacionalizacaoCambial !== 'geral' && nacionalizacaoCambial !== 'Geral') {
+                    diferenca_cambial_fob = (fatorVlrFob_AX * dif_cambial_fob_processo) - (fobTotal * dolar);
+                }
 
                 // Como o campo é readonly, sempre atualizar com o valor calculado
                 const diferencaCambialFreteValidada = validarDiferencaCambialFrete(diferenca_cambial_frete);
                 const campoDiferencaCambialFrete = $(`#diferenca_cambial_frete-${rowId}`);
             
                 if (diferencaCambialFreteValidada === 0 || isNaN(diferencaCambialFreteValidada) || !isFinite(diferencaCambialFreteValidada) || diferencaCambialFreteValidada < 0) {
-                    campoDiferencaCambialFrete.val('');
-                } else {
+                        campoDiferencaCambialFrete.val('');
+                    } else {
                     const valorFormatado = MoneyUtils.formatMoney(diferencaCambialFreteValidada, 4);
                     campoDiferencaCambialFrete.val(valorFormatado);
                 }
@@ -3052,12 +3108,18 @@
                 
                 if (!window.valoresBrutosCamposExternos) {
                     window.valoresBrutosCamposExternos = {};
-                }
+                    }
                 if (!window.valoresBrutosCamposExternos.diferenca_cambial_frete) {
                     window.valoresBrutosCamposExternos.diferenca_cambial_frete = {};
                 }
                 window.valoresBrutosCamposExternos.diferenca_cambial_frete[rowId] = diferencaCambialFreteValidada;
-                $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob, 2));
+                
+                // Para nacionalização "geral", não exibir diferenca_cambial_fob
+                if (nacionalizacaoCambial === 'geral' || nacionalizacaoCambial === 'Geral') {
+                    $(`#diferenca_cambial_fob-${rowId}`).val('');
+                } else {
+                    $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(diferenca_cambial_fob, 7));
+                }
 
 
             }
@@ -3152,6 +3214,23 @@
             return await salvamento.salvarProdutosEmFases(true);
         }
 
+        function atualizarVisibilidadeCamposValor() {
+            const nacionalizacao = getNacionalizacaoAtual();
+            
+            if (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') {
+                // Para Santa Catarina: mostrar apenas CPT
+                $('#campos-exw-cif').hide();
+                $('#campos-cpt').show();
+            } else {
+                // Para outros: mostrar EXW e CIF
+                $('#campos-exw-cif').show();
+                $('#campos-cpt').hide();
+            }
+            
+            // Atualizar valores
+            atualizarValoresExwECif();
+        }
+        
         async function processarMudancaNacionalizacao(selectElement) {
             if (salvandoAutomaticamenteNacionalizacao) {
                 return;
@@ -3542,6 +3621,8 @@
         }
         
         function atualizarValoresExwECif() {
+            const nacionalizacao = getNacionalizacaoAtual();
+            
             // Calcular FOB Total USD (soma de todos os fob_total_usd)
             let fobTotalUsd = 0;
             $('[id^="fob_total_usd-"]').each(function() {
@@ -3552,24 +3633,35 @@
             const cotacoes = getCotacaoesProcesso();
             const cotacaoUSD = cotacoes['USD']?.venda || MoneyUtils.parseMoney($('#cotacao_frete_internacional').val()) || 1;
             
-            // VALOR EXW USD = FOB Total USD
-            const valorExwUsd = fobTotalUsd;
-            const valorExwBrl = valorExwUsd * cotacaoUSD;
-            
             // Obter valores de frete, seguro e acréscimo em USD
             const freteUsd = MoneyUtils.parseMoney($('#frete_internacional_usd').val()) || 0;
             const seguroUsd = MoneyUtils.parseMoney($('#seguro_internacional_usd').val()) || 0;
             const acrescimoUsd = MoneyUtils.parseMoney($('#acrescimo_frete_usd').val()) || 0;
             
-            // VALOR CIF = VALOR EXW + FRETE + SEGURO + ACRESCIMO
-            const valorCifUsd = valorExwUsd + freteUsd + seguroUsd + acrescimoUsd;
-            const valorCifBrl = valorCifUsd * cotacaoUSD;
-            
-            // Atualizar campos readonly
-            $('#valor_exw_usd').val(MoneyUtils.formatMoney(valorExwUsd, 2));
-            $('#valor_exw_brl').val(MoneyUtils.formatMoney(valorExwBrl, 2));
-            $('#valor_cif_usd').val(MoneyUtils.formatMoney(valorCifUsd, 2));
-            $('#valor_cif_brl').val(MoneyUtils.formatMoney(valorCifBrl, 2));
+            if (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') {
+                // Para Santa Catarina: mostrar apenas CPT
+                // VALOR CPT = FOB + FRETE INTERNACIONAL + SEGURO INTERNACIONAL + ACRESCIMO DO FRETE
+                const valorCptUsd = fobTotalUsd + freteUsd + seguroUsd + acrescimoUsd;
+                const valorCptBrl = valorCptUsd * cotacaoUSD;
+                
+                $('#valor_cpt_usd').val(MoneyUtils.formatMoney(valorCptUsd, 2));
+                $('#valor_cpt_brl').val(MoneyUtils.formatMoney(valorCptBrl, 2));
+            } else {
+                // Para outros: mostrar EXW e CIF
+                // VALOR EXW USD = FOB Total USD
+                const valorExwUsd = fobTotalUsd;
+                const valorExwBrl = valorExwUsd * cotacaoUSD;
+                
+                // VALOR CIF = VALOR EXW + FRETE + SEGURO + ACRESCIMO
+                const valorCifUsd = valorExwUsd + freteUsd + seguroUsd + acrescimoUsd;
+                const valorCifBrl = valorCifUsd * cotacaoUSD;
+                
+                // Atualizar campos readonly
+                $('#valor_exw_usd').val(MoneyUtils.formatMoney(valorExwUsd, 2));
+                $('#valor_exw_brl').val(MoneyUtils.formatMoney(valorExwBrl, 2));
+                $('#valor_cif_usd').val(MoneyUtils.formatMoney(valorCifUsd, 2));
+                $('#valor_cif_brl').val(MoneyUtils.formatMoney(valorCifBrl, 2));
+            }
         }
 
         function atualizarTotaisGlobais(fobTotalGeral, dolar) {
@@ -3714,8 +3806,14 @@
             const thcUsd = safeDolar > 0 ? safeThc / safeDolar : 0;
 
             // Verificar nacionalização para calcular valor aduaneiro
-            // Fórmula do JSON: Z23 = U23+V23+X23 (para Santa Catarina)
-            if (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') {
+            if (nacionalizacao === 'geral' || nacionalizacao === 'Geral') {
+                // Para nacionalização GERAL: vlr_aduaneiro = VLR CFR TOTAL + SEGURO INT USD
+                // R = VLR CFR TOTAL
+                // S = SEGURO INT USD
+                // Usar valores brutos sem arredondamento para máxima precisão
+                const resultado = Number((safeVlrCrfTotal + safeSeguro).toFixed(10));
+                return resultado;
+            } else if (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') {
                 // Para Santa Catarina: Z23 = U23+V23+X23
                 // VALOR ADUANEIRO USD = VLR CFR TOTAL (U) + SEGURO INT USD (V) + THC USD (X)
                 return safeVlrCrfTotal + safeSeguro + thcUsd;
@@ -4078,6 +4176,17 @@
             $(`#thc_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.thcRow || 0, 2));
             $(`#vlr_cfr_unit-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfUnit || 0, 7));
             $(`#vlr_cfr_total-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrCrfTotal || 0, 7));
+            // Armazenar valor bruto antes de formatar
+            if (!window.valoresBrutosPorLinha) {
+                window.valoresBrutosPorLinha = {};
+            }
+            if (!window.valoresBrutosPorLinha[rowId]) {
+                window.valoresBrutosPorLinha[rowId] = {};
+            }
+            // Armazenar valores brutos (sem formatação) para precisão no totalizador
+            window.valoresBrutosPorLinha[rowId].valor_aduaneiro_usd = valores.vlrAduaneiroUsd;
+            window.valoresBrutosPorLinha[rowId].valor_aduaneiro_brl = valores.vlrAduaneiroBrl;
+            
             $(`#valor_aduaneiro_usd-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroUsd, 2));
             $(`#valor_aduaneiro_brl-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl, 2));
             $(`#valor_ii-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.ii, 2));
@@ -4153,7 +4262,14 @@
                 window.valoresBrutosCamposExternos.diferenca_cambial_frete = {};
             }
             window.valoresBrutosCamposExternos.diferenca_cambial_frete[rowId] = diferencaCambialFreteValidada;
-            $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob, 2));
+            
+            // Para nacionalização "geral", não exibir diferenca_cambial_fob
+            const nacionalizacaoAtual = getNacionalizacaoAtual();
+            if (nacionalizacaoAtual === 'geral' || nacionalizacaoAtual === 'Geral') {
+                $(`#diferenca_cambial_fob-${rowId}`).val('');
+            } else {
+                $(`#diferenca_cambial_fob-${rowId}`).val(MoneyUtils.formatMoney(valores.diferenca_cambial_fob || 0, 7));
+            }
 
             // Armazenar valores brutos (sem arredondamento) para uso nos totalizadores
             if (!window.valoresBrutosPorLinha) {
@@ -4330,11 +4446,21 @@
             atualizarCamposCabecalho();
         }
 
-        // Evento blur para preservar EXATAMENTE o valor digitado (sem arredondar ou truncar)
+        // Evento blur para formatar campos do cabeçalho
         $('.cabecalhoInputs').on('blur', function() {
             const val = $(this).val();
             if (val && val.trim() !== '') {
-                // Preservar o valor exato digitado, apenas normalizar formatação
+                // Verificar se é um campo moneyReal (deve ter 2 casas decimais)
+                if ($(this).hasClass('moneyReal')) {
+                    // Normalizar o valor e formatar com 2 casas decimais
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 2));
+                } else if ($(this).hasClass('moneyReal7')) {
+                    // Campos com 7 casas decimais
+                    const numero = normalizeNumericValue(val);
+                    $(this).val(formatTruncatedNumber(numero, 7));
+                } else {
+                    // Para outros campos, preservar o valor exato digitado, apenas normalizar formatação
                 let originalVal = val.toString().trim();
                 
                 // Encontrar a última vírgula ou ponto como separador decimal
@@ -4366,6 +4492,7 @@
                     $(this).val(`${integerPart},${decimalPart}`);
                 } else {
                     $(this).val(integerPart);
+                    }
                 }
             }
         });
@@ -4468,11 +4595,28 @@
             debouncedAtualizarCambial();
         });
 
+        // Sincronizar campo hidden ao carregar a página
+        $(document).ready(function() {
+            const valorNacionalizacao = $('#nacionalizacao').val();
+            if (valorNacionalizacao) {
+                $('#nacionalizacao-hidden').val(valorNacionalizacao);
+            }
+            // Atualizar visibilidade dos campos EXW/CIF e CPT ao carregar
+            atualizarVisibilidadeCamposValor();
+        });
+
         $(document).on('focusin', '#nacionalizacao', function() {
             $(this).data('valor-anterior', $(this).val());
         });
 
         $(document).on('change', '#nacionalizacao', function() {
+            // Sincronizar campo hidden no formulário de produtos
+            const valorNacionalizacao = $(this).val();
+            $('#nacionalizacao-hidden').val(valorNacionalizacao);
+            
+            // Atualizar visibilidade dos campos EXW/CIF e CPT
+            atualizarVisibilidadeCamposValor();
+            
             processarMudancaNacionalizacao(this);
             // Recalcular toda a tabela quando nacionalização mudar
             setTimeout(function() {
@@ -4505,6 +4649,86 @@
                         }
                     }
                     continue;
+                }
+                
+                // Para rep_itj e frete_nvg_x_gyn, verificar se já existem valores salvos antes de redistribuir
+                // Se o campo já tiver valores salvos (não vazios), preservar esses valores ao invés de redistribuir
+                const camposPreservar = ['rep_itj', 'frete_nvg_x_gyn'];
+                if (camposPreservar.includes(campo)) {
+                    let temValoresSalvos = false;
+                    let valoresSalvos = {};
+                    
+                    // Verificar se há valores salvos (não vazios) nas linhas
+                    for (let i = 0; i < lengthTable; i++) {
+                        const valorSalvo = MoneyUtils.parseMoney($(`#${campo}-${i}`).val());
+                        if (valorSalvo !== null && valorSalvo !== undefined && valorSalvo !== 0) {
+                            temValoresSalvos = true;
+                            valoresSalvos[i] = valorSalvo;
+                        }
+                    }
+                    
+                    // Se houver valores salvos, preservá-los e não redistribuir
+                    if (temValoresSalvos) {
+                        // Preservar valores salvos e atualizar apenas os campos vazios
+                        let somaValoresSalvos = 0;
+                        for (let i = 0; i < lengthTable; i++) {
+                            if (valoresSalvos[i] !== undefined) {
+                                somaValoresSalvos += valoresSalvos[i];
+                                // Garantir que o valor bruto está armazenado
+                                if (!window.valoresBrutosCamposExternos[campo]) {
+                                    window.valoresBrutosCamposExternos[campo] = [];
+                                }
+                                window.valoresBrutosCamposExternos[campo][i] = valoresSalvos[i];
+                            }
+                        }
+                        
+                        // Se a soma dos valores salvos for menor que o valor do cabeçalho, distribuir a diferença
+                        const diferenca = valorCampo - somaValoresSalvos;
+                        if (Math.abs(diferenca) > 0.01 && diferenca > 0) {
+                            // Distribuir apenas a diferença para as linhas que não têm valor salvo
+                            let linhasSemValor = [];
+                            for (let i = 0; i < lengthTable; i++) {
+                                if (valoresSalvos[i] === undefined) {
+                                    linhasSemValor.push(i);
+                                }
+                            }
+                            
+                            if (linhasSemValor.length > 0) {
+                                // Distribuir a diferença proporcionalmente ao FOB das linhas sem valor
+                                let fobTotalLinhasSemValor = 0;
+                                for (let idx of linhasSemValor) {
+                                    const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${idx}`).val()) || 0;
+                                    fobTotalLinhasSemValor += fobTotal;
+                                }
+                                
+                                let somaDistribuida = 0;
+                                for (let idx = 0; idx < linhasSemValor.length - 1; idx++) {
+                                    const linhaIdx = linhasSemValor[idx];
+                                    const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${linhaIdx}`).val()) || 0;
+                                    const fator = fobTotalLinhasSemValor > 0 ? (fobTotal / fobTotalLinhasSemValor) : 0;
+                                    const valorDistribuido = diferenca * fator;
+                                    valoresSalvos[linhaIdx] = valorDistribuido;
+                                    somaDistribuida += valorDistribuido;
+                                    
+                                    if (!window.valoresBrutosCamposExternos[campo]) {
+                                        window.valoresBrutosCamposExternos[campo] = [];
+                                    }
+                                    window.valoresBrutosCamposExternos[campo][linhaIdx] = valorDistribuido;
+                                    $(`#${campo}-${linhaIdx}`).val(MoneyUtils.formatMoney(valorDistribuido, 2));
+                                }
+                                
+                                // Última linha recebe a diferença exata
+                                const ultimaLinhaIdx = linhasSemValor[linhasSemValor.length - 1];
+                                const valorUltimaLinha = diferenca - somaDistribuida;
+                                valoresSalvos[ultimaLinhaIdx] = valorUltimaLinha;
+                                window.valoresBrutosCamposExternos[campo][ultimaLinhaIdx] = valorUltimaLinha;
+                                $(`#${campo}-${ultimaLinhaIdx}`).val(MoneyUtils.formatMoney(valorUltimaLinha, 2));
+                            }
+                        }
+                        
+                        // Continuar para o próximo campo sem redistribuir tudo
+                        continue;
+                    }
                 }
 
                 // Fórmulas do JSON: Todos os campos externos usam FATOR_VLR_FOB (BC23 = L23/$L$64)
@@ -4706,93 +4930,83 @@
                     ? valoresBrutos.valor_aduaneiro_brl 
                     : (MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${i}`).val()) || 0);
                 
-                if (nacionalizacao === 'santa_catarina') {
-                    // Para Santa Catarina: DESP. DESEMBARAÇO = SOMA(BE23:BQ23) - (BE23+BF23+BG23)
-                    // BE = MULTA (do cabeçalho)
-                    // BF = TX DEF. LI (calculado do cabeçalho sobre valor aduaneiro)
-                    // BG = TAXA SISCOMEX (da linha)
-                    // BH = OUTRAS TX AGENTE
-                    // BI = DELIVERY FEE
-                    // BJ = DESCONS. (desconsolidacao)
-                    // BK = COLLECT FEE
-                    // BL = HANDLING
-                    // BM = DAI
-                    // BN = DAPE
-                    // BO = REP.ITJ
-                    // BP = FRETE NVG X GYN
-                    // BQ = HONORÁRIOS NIX
+                if (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') {
+                    // Para Santa Catarina: DESP. DESEMBARAÇO = 
+                    // (outras tx agente + delivery fee + desconsolidação + collect fee + handling + DAI + DAPE + rep. ITJ + frete NVG-GYN + honorários NIX + multa + tx. def. LI + tx. Siscomex) 
+                    // – (multa + tx. def. LI + taxa Siscomex)
                     
-                    // BE = MULTA (do cabeçalho)
-                    multa = $('#multa').val() ? MoneyUtils.parseMoney($('#multa').val()) : 0;
+                    // MULTA - usar valor bruto se disponível, senão ler do cabeçalho
+                    multa = (window.valoresBrutosCamposExternos?.multa?.[i] !== undefined) 
+                        ? window.valoresBrutosCamposExternos.multa[i] 
+                        : ($('#multa').val() ? MoneyUtils.parseMoney($('#multa').val()) : 0);
                     
-                    // BF = TX DEF. LI (calculado do cabeçalho sobre valor aduaneiro)
+                    // TX DEF. LI - calcular do cabeçalho sobre valor aduaneiro da linha
                     const txDefLiPercent = $('#tx_def_li').val() ? MoneyUtils.parsePercentage($('#tx_def_li').val()) : 0;
                     txDefLi = vlrAduaneiroBrl * txDefLiPercent;
                     
-                    // BG = TAXA SISCOMEX (da linha)
+                    // TAXA SISCOMEX (da linha)
                     taxaSiscomex = valoresBrutos?.taxa_siscomex !== undefined 
                         ? valoresBrutos.taxa_siscomex 
                         : ((window.valoresBrutosCamposExternos?.taxa_siscomex?.[i] !== undefined) 
                             ? window.valoresBrutosCamposExternos.taxa_siscomex[i] 
                             : (MoneyUtils.parseMoney($(`#taxa_siscomex-${i}`).val()) || 0));
                     
-                    // BH = OUTRAS TX AGENTE
+                    // OUTRAS TX AGENTE
                     outrasTxAgente = (window.valoresBrutosCamposExternos?.outras_taxas_agente?.[i] !== undefined) 
-                    ? window.valoresBrutosCamposExternos.outras_taxas_agente[i] 
-                    : (MoneyUtils.parseMoney($(`#outras_taxas_agente-${i}`).val()) || 0);
+                        ? window.valoresBrutosCamposExternos.outras_taxas_agente[i] 
+                        : (MoneyUtils.parseMoney($(`#outras_taxas_agente-${i}`).val()) || 0);
                     
-                    // BI = DELIVERY FEE
+                    // DELIVERY FEE
                     deliveryFee = (window.valoresBrutosCamposExternos?.delivery_fee?.[i] !== undefined) 
-                    ? window.valoresBrutosCamposExternos.delivery_fee[i] 
-                    : (MoneyUtils.parseMoney($(`#delivery_fee-${i}`).val()) || 0);
+                        ? window.valoresBrutosCamposExternos.delivery_fee[i] 
+                        : (MoneyUtils.parseMoney($(`#delivery_fee-${i}`).val()) || 0);
                     
-                    // BJ = DESCONS. (desconsolidacao)
+                    // DESCONSOLIDAÇÃO
                     desconsolidacao = (window.valoresBrutosCamposExternos?.desconsolidacao?.[i] !== undefined) 
                         ? window.valoresBrutosCamposExternos.desconsolidacao[i] 
                         : (MoneyUtils.parseMoney($(`#desconsolidacao-${i}`).val()) || 0);
                     
-                    // BK = COLLECT FEE
+                    // COLLECT FEE
                     collectFee = (window.valoresBrutosCamposExternos?.collect_fee?.[i] !== undefined) 
-                    ? window.valoresBrutosCamposExternos.collect_fee[i] 
-                    : (MoneyUtils.parseMoney($(`#collect_fee-${i}`).val()) || 0);
+                        ? window.valoresBrutosCamposExternos.collect_fee[i] 
+                        : (MoneyUtils.parseMoney($(`#collect_fee-${i}`).val()) || 0);
                     
-                    // BL = HANDLING
+                    // HANDLING
                     handling = (window.valoresBrutosCamposExternos?.handling?.[i] !== undefined) 
                         ? window.valoresBrutosCamposExternos.handling[i] 
                         : (MoneyUtils.parseMoney($(`#handling-${i}`).val()) || 0);
                     
-                    // BM = DAI
+                    // DAI
                     dai = (window.valoresBrutosCamposExternos?.dai?.[i] !== undefined) 
                         ? window.valoresBrutosCamposExternos.dai[i] 
                         : (MoneyUtils.parseMoney($(`#dai-${i}`).val()) || 0);
                     
-                    // BN = DAPE
+                    // DAPE
                     dape = (window.valoresBrutosCamposExternos?.dape?.[i] !== undefined) 
                         ? window.valoresBrutosCamposExternos.dape[i] 
                         : (MoneyUtils.parseMoney($(`#dape-${i}`).val()) || 0);
                     
-                    // BO = REP.ITJ
+                    // REP.ITJ
                     repItj = (window.valoresBrutosCamposExternos?.rep_itj?.[i] !== undefined) 
                         ? window.valoresBrutosCamposExternos.rep_itj[i] 
                         : (MoneyUtils.parseMoney($(`#rep_itj-${i}`).val()) || 0);
                     
-                    // BP = FRETE NVG X GYN
+                    // FRETE NVG X GYN
                     freteNvgXGyn = (window.valoresBrutosCamposExternos?.frete_nvg_x_gyn?.[i] !== undefined) 
                         ? window.valoresBrutosCamposExternos.frete_nvg_x_gyn[i] 
                         : (MoneyUtils.parseMoney($(`#frete_nvg_x_gyn-${i}`).val()) || 0);
                     
-                    // BQ = HONORÁRIOS NIX
+                    // HONORÁRIOS NIX
                     honorariosNix = (window.valoresBrutosCamposExternos?.honorarios_nix?.[i] !== undefined) 
                         ? window.valoresBrutosCamposExternos.honorarios_nix[i] 
                         : (MoneyUtils.parseMoney($(`#honorarios_nix-${i}`).val()) || 0);
                     
-                    // Parte 1: SOMA(BE23:BQ23) = MULTA + TX DEF. LI + TAXA SISCOMEX + OUTRAS TX AGENTE + DELIVERY FEE + 
-                    //                            DESCONS. + COLLECT FEE + HANDLING + DAI + DAPE + REP.ITJ + FRETE NVG X GYN + HONORÁRIOS NIX
-                    desp_desenbaraco_parte_1 = multa + txDefLi + taxaSiscomex + outrasTxAgente + deliveryFee + 
-                                              desconsolidacao + collectFee + handling + dai + dape + repItj + 
-                                              freteNvgXGyn + honorariosNix;
+                    // Parte 1: Soma de TODAS as despesas incluindo multa, tx. def. LI e tx. Siscomex
+                    // (outras tx agente + delivery fee + desconsolidação + collect fee + handling + DAI + DAPE + rep. ITJ + frete NVG-GYN + honorários NIX + multa + tx. def. LI + tx. Siscomex)
+                    desp_desenbaraco_parte_1 = outrasTxAgente + deliveryFee + desconsolidacao + collectFee + handling + 
+                                              dai + dape + repItj + freteNvgXGyn + honorariosNix + multa + txDefLi + taxaSiscomex;
                     
-                    // Parte 2: (BE23+BF23+BG23) = MULTA + TX DEF. LI + TAXA SISCOMEX
+                    // Parte 2: Subtrair (multa + tx. def. LI + taxa Siscomex)
                     desp_desenbaraco_parte_2 = multa + txDefLi + taxaSiscomex;
                 } else {
                     // Para processo aéreo do tipo geral: SOMA(AZ17:BL17) - (AZ17+BA17+BB17+BH17+BL17)
@@ -4893,10 +5107,24 @@
                 // G23 = QUANTIDADE
                 
                 let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0;
-                const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val()) || 0; // BA23
-                let diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val()) || 0; // BR23
+                
+                // Priorizar valores brutos quando disponíveis para evitar arredondamentos
+                const valoresBrutosLinha = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i];
+                
+                const vlrTotalNfComIcms = valoresBrutosLinha?.valor_total_nf_com_icms_st !== undefined 
+                    ? valoresBrutosLinha.valor_total_nf_com_icms_st 
+                    : (MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val()) || 0); // BA23
+                
+                // Usar valor bruto de diferença cambial frete se disponível
+                let diferenca_cambial_frete = valoresBrutosLinha?.diferenca_cambial_frete !== undefined 
+                    ? valoresBrutosLinha.diferenca_cambial_frete 
+                    : (MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val()) || 0); // BR23
                 diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
-                const diferenca_cambial_fob = MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val()) || 0; // BS23
+                
+                // Usar valor bruto de diferença cambial FOB se disponível
+                const diferenca_cambial_fob = valoresBrutosLinha?.diferenca_cambial_fob !== undefined 
+                    ? valoresBrutosLinha.diferenca_cambial_fob 
+                    : (MoneyUtils.parseMoney($(`#diferenca_cambial_fob-${i}`).val()) || 0); // BS23
                 
                 // BQ23 = SUM(BE23:BP23)-(BE23+BF23+BG23+BM23+BP23)
                 // Usar despesa_desembaraco calculada (que é a DESP. DESEMBARAÇO)
@@ -4912,6 +5140,28 @@
                 }
                 window.valoresBrutosCamposExternos.desp_desenbaraco[i] = despesa_desembaraco;
                 
+                // Debug no cálculo de Desp. Desembaraço
+                console.log('[DESP. DESEMBARAÇO] Linha ' + i + ':', {
+                    nacionalizacao: nacionalizacao,
+                    outrasTxAgente: outrasTxAgente,
+                    deliveryFee: deliveryFee,
+                    desconsolidacao: desconsolidacao,
+                    collectFee: collectFee,
+                    handling: handling,
+                    dai: dai,
+                    dape: dape,
+                    repItj: repItj,
+                    freteNvgXGyn: freteNvgXGyn,
+                    honorariosNix: honorariosNix,
+                    multa: multa,
+                    txDefLi: txDefLi,
+                    taxaSiscomex: taxaSiscomex,
+                    parte_1: desp_desenbaraco_parte_1,
+                    parte_2: desp_desenbaraco_parte_2,
+                    opcionais: despesasAdicionaisOpcionais,
+                    resultado: despesa_desembaraco
+                });
+                
                 // Usar o valor calculado diretamente (não ler do DOM para garantir precisão)
                 // IMPORTANTE: Garantir que despesa_desembaraco seja usado no cálculo
                 // Verificar se o valor é válido (não NaN, não undefined, não null)
@@ -4919,10 +5169,14 @@
                     ? despesa_desembaraco 
                     : 0;
                 
-                const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0; // AS23
+                // Usar valor bruto de ICMS reduzido se disponível
+                const vlrIcmsReduzido = valoresBrutosLinha?.valor_icms_reduzido !== undefined 
+                    ? valoresBrutosLinha.valor_icms_reduzido 
+                    : (MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0); // AS23
                 
                 // Calcular CUSTO UNIT TOTAL COMP conforme nacionalização
                 // (nacionalizacao já foi declarada no início da função)
+                // Usar valores brutos em todos os cálculos para evitar arredondamentos
                 let custo_unitario_final = 0;
                 
                 if (nacionalizacao === 'geral' || nacionalizacao === 'Geral') {
@@ -4932,6 +5186,7 @@
                     // BN17 = DIF CAMBIAL FRETE
                     // G17 = QUANTIDADE
                     // NOTA: Não inclui DIF CAMBIAL FOB e não subtrai ICMS reduzido
+                    // Usar valores brutos para cálculo preciso
                     const numerador = vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete;
                     custo_unitario_final = qquantidade > 0 ? numerador / qquantidade : 0;
                 } else if (nacionalizacao === 'santa_catarina' || nacionalizacao === 'santa catarina') {
@@ -4941,10 +5196,12 @@
                     // BS = DIF. CAMBIAL FRETE
                     // BT = DIF CAMBIAL FOB
                     // G = QUANTIDADE
+                    // Usar valores brutos para cálculo preciso
                     const numerador = vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete + diferenca_cambial_fob;
                     custo_unitario_final = qquantidade > 0 ? numerador / qquantidade : 0;
                 } else {
                     // Para outras nacionalizações: (Total NF c/ICMS + Desp. Desembaraço + Dif. Cambial FOB + Dif. Cambial Frete) ÷ Quantidade
+                    // Usar valores brutos para cálculo preciso
                     const numerador = vlrTotalNfComIcms + despesasAdicionais + diferenca_cambial_frete + diferenca_cambial_fob;
                     custo_unitario_final = qquantidade > 0 ? numerador / qquantidade : 0;
                 }
@@ -4952,13 +5209,15 @@
                 
 
                 // CUSTO TOTAL FINAL = CUSTO UNITÁRIO FINAL * QUANTIDADE
+                // Usar valor bruto calculado (sem arredondamento) para multiplicação
                 const custo_total_final = custo_unitario_final * qquantidade;
                 
                 // O campo desp_desenbaraco já foi atualizado acima
+                // Formatar apenas para exibição, mantendo valor bruto para cálculos
                 $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2));
                 $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2));
                 
-                // Armazenar valores brutos para uso no totalizador
+                // Armazenar valores brutos para uso no totalizador e em recálculos
                 // Garantir que o objeto existe e não sobrescrever campos existentes
                 if (!window.valoresBrutosPorLinha) {
                     window.valoresBrutosPorLinha = {};
@@ -4967,7 +5226,12 @@
                     window.valoresBrutosPorLinha[i] = {};
                 }
                 // Atualizar apenas os campos calculados nesta função, preservando os demais
+                // Armazenar valores brutos (sem arredondamento) para uso em cálculos futuros
                 window.valoresBrutosPorLinha[i].desp_desenbaraco = despesa_desembaraco;
+                window.valoresBrutosPorLinha[i].diferenca_cambial_frete = diferenca_cambial_frete;
+                window.valoresBrutosPorLinha[i].diferenca_cambial_fob = diferenca_cambial_fob;
+                window.valoresBrutosPorLinha[i].valor_total_nf_com_icms_st = vlrTotalNfComIcms;
+                window.valoresBrutosPorLinha[i].valor_icms_reduzido = vlrIcmsReduzido;
                 window.valoresBrutosPorLinha[i].custo_unitario_final = custo_unitario_final;
                 window.valoresBrutosPorLinha[i].custo_total_final = custo_total_final;
                 
@@ -5243,7 +5507,10 @@
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][honorarios_nix]" id="honorarios_nix-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal4" readonly name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][diferenca_cambial_fob]" id="diferenca_cambial_fob-${newIndex}" value=""></td>
+        ${getNacionalizacaoAtual() !== 'geral' && getNacionalizacaoAtual() !== 'Geral' 
+            ? '<td><input type="text" data-row="' + newIndex + '" class="form-control moneyReal7" readonly name="produtos[' + newIndex + '][diferenca_cambial_fob]" id="diferenca_cambial_fob-' + newIndex + '" value=""></td>'
+            : ''
+        }
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][opcional_1_valor]" id="opcional_1_valor-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][opcional_2_valor]" id="opcional_2_valor-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class="form-control moneyReal7" readonly name="produtos[${newIndex}][custo_unitario_final]" id="custo_unitario_final-${newIndex}" value=""></td>
@@ -5414,6 +5681,8 @@
                         'handling',
                         'dai',
                         'dape',
+                        'rep_itj',
+                        'frete_nvg_x_gyn',
                         'correios',
                         'li_dta_honor_nix',
                         'honorarios_nix',
@@ -5423,15 +5692,20 @@
                     
                     camposCabecalho.forEach(campo => {
                         let valor;
-                        if (campo === 'peso_liquido_total_cabecalho') {
                             const $campo = $(`#${campo}`);
+                        
+                        // Verificar se o campo existe no DOM antes de tentar ler seu valor
+                        if ($campo.length === 0) {
+                            // Campo não existe (pode ser que não esteja visível para esta nacionalização)
+                            valor = 0;
+                        } else if (campo === 'peso_liquido_total_cabecalho') {
                             if ($campo.is(':hidden') || $campo.closest('th').is(':hidden')) {
                                 valor = 1;
                             } else {
                                 valor = MoneyUtils.parseMoney($campo.val());
                             }
                         } else {
-                            valor = MoneyUtils.parseMoney($(`#${campo}`).val());
+                            valor = MoneyUtils.parseMoney($campo.val());
                         }
                         formDataCabecalho.append(campo, valor !== null && valor !== undefined ? valor : '0');
                     });
@@ -5835,107 +6109,5 @@
 
         $(document).on('change', 'input[name*="[adicao]"]', agendarReordenacao);
         $(document).on('click', '.btn-reordenar', reordenarLinhas);
-        
-        // Botão para salvar campos do cabeçalho
-        $('#btnSalvarCabecalho').on('click', async function() {
-            const btn = $(this);
-            const originalText = btn.html();
-            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Salvando...');
-            
-            try {
-                const formData = new FormData();
-                formData.append('_token', '{{ csrf_token() }}');
-                
-                // Campos do cabeçalho que devem ser salvos
-                let campos = [
-                    'multa',
-                    'tx_def_li',
-                    'taxa_siscomex',
-                    'outras_taxas_agente',
-                    'delivery_fee',
-                    'delivery_fee_brl',
-                    'collect_fee',
-                    'collect_fee_brl',
-                    'desconsolidacao',
-                    'handling',
-                    'dai',
-                    'dape',
-                    'rep_itj',
-                    'frete_nvg_x_gyn',
-                    'correios',
-                    'li_dta_honor_nix',
-                    'honorarios_nix',
-                    'diferenca_cambial_frete',
-                    'diferenca_cambial_fob',
-                    'opcional_1_valor',
-                    'opcional_1_descricao',
-                    'opcional_1_compoe_despesas',
-                    'opcional_2_valor',
-                    'opcional_2_descricao',
-                    'opcional_2_compoe_despesas'
-                ];
-
-                for (let campo of campos) {
-                    let valor;
-                    if (campo === 'opcional_1_compoe_despesas' || campo === 'opcional_2_compoe_despesas') {
-                        valor = $(`#${campo}`).is(':checked') ? '1' : '0';
-                    } else if (campo === 'opcional_1_descricao' || campo === 'opcional_2_descricao') {
-                        valor = $(`#${campo}`).val() || '';
-                    } else {
-                        const $campo = $(`#${campo}`);
-                        if ($campo.length) {
-                            valor = MoneyUtils.parseMoney($campo.val());
-                        } else {
-                            valor = 0;
-                        }
-                    }
-                    // Sempre enviar o valor, mesmo que seja 0 ou vazio
-                    formData.append(campo, valor !== null && valor !== undefined ? valor : (campo.includes('descricao') ? '' : '0'));
-                }
-                
-                // Adicionar tipo_peso_aereo se existir
-                const tipoPeso = $('input[name="tipo_peso_aereo"]:checked').val();
-                if (tipoPeso) {
-                    formData.append('tipo_peso_aereo', tipoPeso);
-                }
-                
-                // Adicionar peso_liquido_total_cabecalho se existir
-                const pesoLiquidoTotal = $('#peso_liquido_total_cabecalho').val();
-                if (pesoLiquidoTotal !== undefined) {
-                    const pesoLiquido = $('#peso_liquido_total_cabecalho').is(':hidden') ? 1 : MoneyUtils.parseMoney(pesoLiquidoTotal);
-                    formData.append('peso_liquido_total_cabecalho', pesoLiquido !== null ? pesoLiquido : 0);
-                }
-                
-                const url = '{{ route("processo.salvar.cabecalho.inputs.aereo", $processo->id ?? 0) }}';
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Sucesso!',
-                        text: data.message || 'Campos do cabeçalho salvos com sucesso!',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                } else {
-                    throw new Error(data.error || 'Erro ao salvar campos do cabeçalho');
-                }
-            } catch (error) {
-                console.error('Erro ao salvar cabecalhoInputs:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro!',
-                    text: error.message || 'Erro ao salvar campos do cabeçalho. Tente novamente.',
-                });
-            } finally {
-                btn.prop('disabled', false).html(originalText);
-            }
-        });
     </script>
 @endsection

@@ -4,6 +4,8 @@
             action="POST">
             @csrf
             @method('PUT')
+            {{-- Campo hidden para garantir que nacionalizacao seja enviado --}}
+            <input type="hidden" name="nacionalizacao" id="nacionalizacao-hidden" value="{{ strtolower($processo->nacionalizacao ?? 'geral') }}">
             <div class="d-flex flex-wrap mb-3" style="gap: 10px;">
                 <button type="button" class="btn btn-primary addProduct">
                     <i class="fas fa-plus me-2"></i>Adicionar Produto
@@ -11,14 +13,9 @@
                 <button id="btnDeleteSelectedProdutos" class="btn btn-danger" type="button">
                     <i class="fas fa-trash me-2"></i>Excluir Selecionados
                 </button>
-                <button type="button" class="btn btn-info" id="recalcularTabela">
-                    <i class="fas fa-calculator me-2"></i>Recalcular Toda a Tabela
-                </button>
+          
                 <button type="button" class="btn btn-secondary btn-reordenar">
                     <i class="fas fa-sort me-2"></i>Reordenar por Adição/Item
-                </button>
-                <button type="button" class="btn btn-success" id="btnSalvarCabecalho">
-                    <i class="fas fa-save me-2"></i>Salvar Campos do Cabeçalho
                 </button>
             </div>
             <div class="table-products-wrapper">
@@ -125,7 +122,11 @@
                             <th colspan="{{ $colspanBeforeMiddleRow - $colspanAntesPesoLiqUnit - 2 }}"></th>
 
                             @php
-                                $nacionalizacaoAtual = strtolower($processo->nacionalizacao ?? 'outros');
+                                $nacionalizacaoAtual = strtolower($processo->nacionalizacao ?? 'geral');
+                                // Normalizar valores antigos: 'outros' -> 'geral'
+                                if ($nacionalizacaoAtual === 'outros') {
+                                    $nacionalizacaoAtual = 'geral';
+                                }
                                 
                                 if ($nacionalizacaoAtual === 'santa_catarina') {
                                     // Ordem específica para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONS., HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
@@ -156,7 +157,11 @@
                                         'honorarios_nix',
                                 ];
                                 }
-                                $camposCambiais = ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
+                                // Para nacionalização "geral", não incluir diferenca_cambial_fob
+                                $nacionalizacaoParaCampos = strtolower($processo->nacionalizacao ?? 'outros');
+                                $camposCambiais = $nacionalizacaoParaCampos === 'geral' 
+                                    ? ['diferenca_cambial_frete'] 
+                                    : ['diferenca_cambial_frete', 'diferenca_cambial_fob'];
                             @endphp
 
                             @foreach ($campos as $campo)
@@ -462,7 +467,16 @@
                             @endif
                             <th style="min-width: 300px !important;">DESP. DESEMBARAÇO</th>
                             <th>DIF. CAMBIAL FRETE</th>
+                            @php
+                                $nacionalizacaoParaHeader = strtolower($processo->nacionalizacao ?? 'geral');
+                                // Normalizar valores antigos: 'outros' -> 'geral'
+                                if ($nacionalizacaoParaHeader === 'outros') {
+                                    $nacionalizacaoParaHeader = 'geral';
+                                }
+                            @endphp
+                            @if($nacionalizacaoParaHeader !== 'geral')
                             <th>DIF.CAMBIAL FOB</th>
+                            @endif
                             <th id="th-opcional-1-descricao">{{  'OPCIONAL 1' }}</th>
                             <th id="th-opcional-2-descricao">{{  'OPCIONAL 2' }}</th>
                             <th>CUSTO UNIT FINAL</th>
@@ -1158,6 +1172,10 @@
                                         value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 4, ',', '.') : '' }}">
                                 </td>
 
+                                @php
+                                    $nacionalizacaoParaCelula = strtolower($processo->nacionalizacao ?? 'outros');
+                                @endphp
+                                @if($nacionalizacaoParaCelula !== 'geral')
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7" readonly
@@ -1165,6 +1183,7 @@
                                         id="diferenca_cambial_fob-{{ $index }}"
                                         value="{{ $processoProduto->diferenca_cambial_fob ? number_format($processoProduto->diferenca_cambial_fob, 7, ',', '.') : '' }}">
                                 </td>
+                                @endif
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
@@ -1474,6 +1493,11 @@
                         formData.append('_token', '{{ csrf_token() }}');
                         
                         // Campos do cabeçalho que devem ser salvos
+                        let nacionalizacaoAtualJS = '{{ strtolower($processo->nacionalizacao ?? "geral") }}';
+                        // Normalizar valores antigos: 'outros' -> 'geral'
+                        if (nacionalizacaoAtualJS === 'outros') {
+                            nacionalizacaoAtualJS = 'geral';
+                        }
                         let campos = [
                             'peso_liquido_total_cabecalho',
                             'outras_taxas_agente',
@@ -1484,11 +1508,17 @@
                             'dai',
                             'dape',
                             'correios',
+                            'rep_itj',
+                            'frete_nvg_x_gyn',
                             'li_dta_honor_nix',
                             'honorarios_nix',
-                            'diferenca_cambial_frete',
-                            'diferenca_cambial_fob'
+                            'diferenca_cambial_frete'
                         ];
+                        
+                        // Para nacionalização "geral", não incluir diferenca_cambial_fob
+                        if (nacionalizacaoAtualJS !== 'geral') {
+                            campos.push('diferenca_cambial_fob');
+                        }
 
                         for (let campo of campos) {
                             let valor;

@@ -11,14 +11,9 @@
                 <button id="btnDeleteSelectedProdutos" class="btn btn-danger" type="button">
                     <i class="fas fa-trash me-2"></i>Excluir Selecionados
                 </button>
-                <button type="button" class="btn btn-info" id="recalcularTabela">
-                    <i class="fas fa-calculator me-2"></i>Recalcular Toda a Tabela
-                </button>
+             
                 <button type="button" class="btn btn-secondary btn-reordenar">
                     <i class="fas fa-sort me-2"></i>Reordenar por Adição/Item
-                </button>
-                <button type="button" class="btn btn-success" id="btnSalvarCabecalho">
-                    <i class="fas fa-save me-2"></i>Salvar Campos do Cabeçalho
                 </button>
             </div>
             <div class="table-products-wrapper">
@@ -1589,7 +1584,21 @@
 
 
                     try {
-                        // Processar bloco por bloco
+                        // PRIMEIRO: Salvar os cabecalhoInputs antes de salvar os produtos
+                        const cabecalhoSalvo = await this.salvarCabecalhoInputs();
+                        if (!cabecalhoSalvo) {
+                            console.error('Falha ao salvar cabecalhoInputs');
+                            await Swal.close();
+                            await Swal.fire({
+                                title: 'Erro',
+                                text: 'Erro ao salvar campos do cabeçalho',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                            return false;
+                        }
+                        
+                        // DEPOIS: Processar bloco por bloco
                         for (let i = 0; i < this.blocos.length; i++) {
                             const sucesso = await this.salvarBloco(i);
                             if (!sucesso) {
@@ -1714,6 +1723,97 @@
                         blocos.push(array.slice(i, i + tamanhoBloco));
                     }
                     return blocos;
+                }
+
+                /**
+                 * Salvar apenas os cabecalhoInputs antes de salvar os produtos
+                 */
+                async salvarCabecalhoInputs() {
+                    try {
+                        const formData = new FormData();
+                        formData.append('_token', '{{ csrf_token() }}');
+                        
+                        // Campos do cabeçalho que devem ser salvos
+                        let campos = [
+                            'outras_taxas_agente',
+                            'liberacao_bl',
+                            'desconsolidacao',
+                            'isps_code',
+                            'handling',
+                            'capatazia',
+                            'afrmm',
+                            'armazenagem_sts',
+                            'armazenagem_porto',
+                            'frete_dta_sts_ana',
+                            'frete_rodoviario',
+                            'dif_frete_rodoviario',
+                            'sda',
+                            'rep_sts',
+                            'rep_porto',
+                            'armaz_ana',
+                            'lavagem_container',
+                            'rep_anapolis',
+                            'desp_anapolis',
+                            'correios',
+                            'tx_correcao_lacre',
+                            'li_dta_honor_nix',
+                            'honorarios_nix',
+                            'diferenca_cambial_frete',
+                            'diferenca_cambial_fob'
+                        ];
+
+                        for (let campo of campos) {
+                            const $campo = $(`#${campo}`);
+                            let valor;
+                            if ($campo.length) {
+                                valor = MoneyUtils.parseMoney($campo.val());
+                            } else {
+                                valor = 0;
+                            }
+                            // Sempre enviar o valor, mesmo que seja 0 ou vazio
+                            formData.append(campo, valor !== null && valor !== undefined ? valor : '0');
+                        }
+
+                        // Campos opcionais com tratamento especial
+                        formData.append('opcional_1_valor', MoneyUtils.parseMoney($('#opcional_1_valor').val()) || 0);
+                        formData.append('opcional_1_descricao', $('#opcional_1_descricao').val() || '');
+                        formData.append('opcional_1_compoe_despesas', $('#opcional_1_compoe_despesas').is(':checked') ? '1' : '0');
+                        formData.append('opcional_2_valor', MoneyUtils.parseMoney($('#opcional_2_valor').val()) || 0);
+                        formData.append('opcional_2_descricao', $('#opcional_2_descricao').val() || '');
+                        formData.append('opcional_2_compoe_despesas', $('#opcional_2_compoe_despesas').is(':checked') ? '1' : '0');
+
+                        // Adicionar campos de service_charges do processo para preservar valores
+                        const serviceChargesVal = $('#service_charges').val();
+                        const serviceChargesMoedaVal = $('#service_charges_moeda').val();
+                        const serviceChargesUsdVal = $('#service_charges_usd').val();
+                        const serviceChargesBrlVal = $('#service_charges_brl').val();
+                        const cotacaoServiceChargesVal = $('#cotacao_service_charges').val();
+                        
+                        formData.append('service_charges', serviceChargesVal ? MoneyUtils.parseMoney(serviceChargesVal) : '');
+                        formData.append('service_charges_moeda', serviceChargesMoedaVal || '');
+                        formData.append('service_charges_usd', serviceChargesUsdVal ? MoneyUtils.parseMoney(serviceChargesUsdVal) : '');
+                        formData.append('service_charges_brl', serviceChargesBrlVal ? MoneyUtils.parseMoney(serviceChargesBrlVal) : '');
+                        formData.append('cotacao_service_charges', cotacaoServiceChargesVal ? MoneyUtils.parseMoney(cotacaoServiceChargesVal) : '');
+                        
+                        const url = '{{ route("processo.salvar.cabecalho.inputs.maritimo", $processo->id ?? 0) }}';
+                        
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            return true;
+                        } else {
+                            console.error('Erro ao salvar cabecalhoInputs:', data.error);
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error('Erro ao salvar cabecalhoInputs:', error);
+                        return false;
+                    }
                 }
 
                 async salvarBloco(indiceBloco) {

@@ -11,14 +11,9 @@
                 <button id="btnDeleteSelectedProdutos" class="btn btn-danger" type="button">
                     <i class="fas fa-trash me-2"></i>Excluir Selecionados
                 </button>
-                <button type="button" class="btn btn-info" id="recalcularTabela">
-                    <i class="fas fa-calculator me-2"></i>Recalcular Toda a Tabela
-                </button>
+               
                 <button type="button" class="btn btn-secondary btn-reordenar">
                     <i class="fas fa-sort me-2"></i>Reordenar por Adição/Item
-                </button>
-                <button type="button" class="btn btn-success" id="btnSalvarCabecalho">
-                    <i class="fas fa-save me-2"></i>Salvar Campos do Cabeçalho
                 </button>
             </div>
             <div class="table-products-wrapper">
