@@ -3005,24 +3005,50 @@
             $select.prop('disabled', true);
 
             try {
+                // Garantir que o valor da nacionalização está no formulário
+                const $form = $('#formProcesso');
+                const $nacionalizacaoInput = $form.find('select[name="nacionalizacao"]');
+                if ($nacionalizacaoInput.length) {
+                    $nacionalizacaoInput.val(novoValor);
+                }
 
-                const formData = new FormData();
-                formData.append('_token', '{{ csrf_token() }}');
-                formData.append('_method', 'PUT');
-                formData.append('nacionalizacao', novoValor);
+                // Coletar todos os dados do formulário
+                const formData = new FormData($form[0]);
 
-                const response = await fetch('{{ route("update.processo", $processo->id) }}', {
+                // Garantir que a nacionalização está no FormData
+                formData.set('nacionalizacao', novoValor);
+
+                // Mostrar indicador de salvamento
+                Swal.fire({
+                    title: 'Salvando...',
+                    text: 'Aguarde enquanto salvamos os dados.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const formAction = $form.attr('action');
+
+                // Fazer submit via AJAX
+                const response = await fetch(formAction, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
                 });
 
                 if (!response.ok) {
-                    throw new Error('Não foi possível salvar a nacionalização.');
+                    throw new Error('Não foi possível salvar os dados.');
                 }
 
-
+                // Recarregar a página após salvar
                 window.location.reload();
             } catch (error) {
+                Swal.close();
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro ao atualizar nacionalização',

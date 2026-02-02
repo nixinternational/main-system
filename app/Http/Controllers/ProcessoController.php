@@ -1297,7 +1297,6 @@ class ProcessoController extends Controller
                     'error' => $processoInfo['error']
                 ], 404);
             }
-            
             $processo = $processoInfo['processo'];
             $isAereo = $processoInfo['isAereo'];
             $isRodoviario = $processoInfo['isRodoviario'];
@@ -1768,7 +1767,7 @@ class ProcessoController extends Controller
                 // Se não foi enviado, manter o valor existente ou usar 'geral' como padrão para aéreo
                 $dadosProcesso['nacionalizacao'] = $processoExistente->nacionalizacao ?? 'geral';
             }
-            
+            dd($dadosProcesso);
             if ($request->has('cotacao_service_charges') && $request->cotacao_service_charges !== '' && $request->cotacao_service_charges !== null) {
                 $dadosProcesso['cotacao_service_charges'] = $this->parseMoneyToFloat($request->cotacao_service_charges, 4);
             } else {
@@ -1820,7 +1819,7 @@ class ProcessoController extends Controller
             DB::commit();
 
             // Retornar resposta baseada no tipo de requisição
-            if ($request->wantsJson() || $request->ajax()) {
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
                 return response()->json([
                     'success' => true,
                     'message' => 'Processo atualizado com sucesso!',
@@ -1864,6 +1863,8 @@ class ProcessoController extends Controller
         $isAereo = false;
         $isRodoviario = false;
         
+        // Primeiro tentar na tabela Processo (marítimo)
+        $processo = Processo::find($id);
             
      
                 // Se não encontrou na tabela principal, tentar nas tabelas específicas
@@ -1878,14 +1879,16 @@ class ProcessoController extends Controller
             $isRodoviario = true;
                     }
         } else {
-                    // Se tipo não foi especificado, tentar em todas as tabelas
-                $processo = ProcessoAereo::find($id);
-                if ($processo) {
-                    $isAereo = true;
-                } else {
-                    $processo = ProcessoRodoviario::find($id);
+                    // Se tipo não foi especificado e não encontrou em Processo, tentar em todas as tabelas
+                if (!$processo) {
+                    $processo = ProcessoAereo::find($id);
                     if ($processo) {
-                        $isRodoviario = true;
+                        $isAereo = true;
+                    } else {
+                        $processo = ProcessoRodoviario::find($id);
+                        if ($processo) {
+                            $isRodoviario = true;
+                        }
                     }
                 }
             }
@@ -1952,6 +1955,7 @@ class ProcessoController extends Controller
                     }
             }
         }
+        
         // Campos comuns entre marítimo e aéreo
         $dadosProcesso = [
             "frete_internacional" => $this->parseMoneyToFloat($request->frete_internacional),
