@@ -1109,10 +1109,14 @@
             });
 
             $('.moneyReal2').on('blur', function() {
+                // Não formatar se for cabeçalho input (já tem formatação específica)
+                if ($(this).hasClass('cabecalhoInputs')) {
+                    return;
+                }
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
-                    const numero = normalizeNumericValue(val);
-                    $(this).val(formatTruncatedNumber(numero, 2));
+                    // Passar a string original para preservar precisão
+                    $(this).val(formatTruncatedNumber(val, 2));
                 } else {
                     $(this).val('');
                 }
@@ -4184,7 +4188,60 @@
             atualizarCamposCabecalho();
         }
 
+        // Evento blur para formatar campos do cabeçalho
         $('.cabecalhoInputs').on('blur', function() {
+            const val = $(this).val();
+            if (val && val.trim() !== '') {
+                // Verificar se é um campo moneyReal (deve ter 2 casas decimais)
+                if ($(this).hasClass('moneyReal')) {
+                    // Normalizar o valor e formatar com 2 casas decimais
+                    // Passar a string original para preservar precisão
+                    $(this).val(formatTruncatedNumber(val, 2));
+                } else if ($(this).hasClass('moneyReal2')) {
+                    // Campos moneyReal2 com 2 casas decimais
+                    // Passar a string original para preservar precisão
+                    $(this).val(formatTruncatedNumber(val, 2));
+                } else if ($(this).hasClass('moneyReal7')) {
+                    // Campos com 7 casas decimais
+                    // Passar a string original para preservar precisão
+                    $(this).val(formatTruncatedNumber(val, 7));
+                } else {
+                    // Para outros campos, preservar o valor exato digitado, apenas normalizar formatação
+                    let originalVal = val.toString().trim();
+                    
+                    // Encontrar a última vírgula ou ponto como separador decimal
+                    let lastComma = originalVal.lastIndexOf(',');
+                    let lastDot = originalVal.lastIndexOf('.');
+                    let decimalSeparatorPos = Math.max(lastComma, lastDot);
+                    
+                    let integerPart = '';
+                    let decimalPart = '';
+                    
+                    if (decimalSeparatorPos >= 0) {
+                        // Tem separador decimal
+                        integerPart = originalVal.substring(0, decimalSeparatorPos).replace(/\./g, '');
+                        decimalPart = originalVal.substring(decimalSeparatorPos + 1);
+                    } else {
+                        // Não tem separador decimal
+                        integerPart = originalVal.replace(/\./g, '');
+                        decimalPart = '';
+                    }
+                    
+                    // Remover zeros à esquerda da parte inteira (mas manter pelo menos um zero se necessário)
+                    integerPart = integerPart.replace(/^0+/, '') || '0';
+                    
+                    // Formatar parte inteira com separadores de milhar
+                    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    
+                    // Retornar formatado preservando exatamente o que foi digitado
+                    if (decimalPart) {
+                        $(this).val(`${integerPart},${decimalPart}`);
+                    } else {
+                        $(this).val(integerPart);
+                    }
+                }
+            }
+            
             atualizarFatoresFob();
             atualizarCamposCabecalho();
             // Recalcular toda a tabela para atualizar valores brutos usados no totalizador

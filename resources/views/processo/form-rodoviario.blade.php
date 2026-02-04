@@ -352,17 +352,65 @@
         }
 
         function truncateNumber(value, decimals = 2) {
-            const num = normalizeNumericValue(value);
-            if (!isFinite(num)) return 0;
-            if (decimals <= 0) {
-                return num >= 0 ? Math.floor(num) : Math.ceil(num);
+            // Se for string, trabalhar diretamente com ela para evitar problemas de precisão
+            if (typeof value === 'string') {
+                // Normalizar: remover espaços
+                let str = value.trim().replace(/\s/g, '');
+                if (!str || str === '') return 0;
+                
+                // Encontrar separador decimal (última vírgula ou ponto)
+                let lastComma = str.lastIndexOf(',');
+                let lastDot = str.lastIndexOf('.');
+                let decimalPos = Math.max(lastComma, lastDot);
+                
+                if (decimalPos >= 0) {
+                    // Tem parte decimal
+                    let integerPart = str.substring(0, decimalPos).replace(/\./g, '').replace(/,/g, '');
+                    let decimalPart = str.substring(decimalPos + 1).replace(/,/g, '').replace(/\./g, '');
+                    
+                    // Validar que são apenas dígitos
+                    if (!/^\d*$/.test(integerPart) || !/^\d*$/.test(decimalPart)) {
+                        // Se não for válido, tentar normalizar como número
+                        const num = normalizeNumericValue(value);
+                        if (!isFinite(num)) return 0;
+                        let strFromNum = num.toFixed(Math.max(decimals, 15));
+                        return truncateNumber(strFromNum, decimals);
+                    }
+                    
+                    // Truncar parte decimal se necessário
+                    if (decimalPart.length > decimals) {
+                        decimalPart = decimalPart.substring(0, decimals);
+                    }
+                    
+                    // Reconstruir: inteiro + '.' + decimal (preenchido com zeros se necessário)
+                    let resultStr = integerPart + '.' + decimalPart.padEnd(decimals, '0');
+                    return parseFloat(resultStr);
+                } else {
+                    // Sem parte decimal
+                    let integerPart = str.replace(/\./g, '').replace(/,/g, '');
+                    if (!/^\d*$/.test(integerPart)) {
+                        const num = normalizeNumericValue(value);
+                        if (!isFinite(num)) return 0;
+                        let strFromNum = num.toFixed(Math.max(decimals, 15));
+                        return truncateNumber(strFromNum, decimals);
+                    }
+                    return parseFloat(integerPart + '.' + '0'.repeat(decimals));
+                }
             }
-
-            const factor = Math.pow(10, decimals);
-            if (num >= 0) {
-                return Math.floor(num * factor) / factor;
+            
+            // Se for número, converter para string com precisão alta
+            if (typeof value === 'number') {
+                if (!isFinite(value)) return 0;
+                if (decimals <= 0) {
+                    return value >= 0 ? Math.floor(value) : Math.ceil(value);
+                }
+                // Usar toFixed com precisão extra para evitar problemas
+                let str = value.toFixed(Math.max(decimals, 15));
+                // Agora trabalhar como string
+                return truncateNumber(str, decimals);
             }
-            return Math.ceil(num * factor) / factor;
+            
+            return 0;
         }
 
         function initProductSelectAjax($select) {
@@ -1421,10 +1469,14 @@
             });
             // Dinheiro com 2 casas decimais
             $('.moneyReal2').on('blur', function() {
+                // Não formatar se for cabeçalho input (já tem formatação específica)
+                if ($(this).hasClass('cabecalhoInputs')) {
+                    return;
+                }
                 const val = $(this).val();
                 if (val && val.trim() !== '') {
-                    const numero = normalizeNumericValue(val);
-                    $(this).val(formatTruncatedNumber(numero, 2));
+                    // Passar a string original para preservar precisão
+                    $(this).val(formatTruncatedNumber(val, 2));
                 } else {
                     $(this).val('');
                 }

@@ -1767,7 +1767,6 @@ class ProcessoController extends Controller
                 // Se não foi enviado, manter o valor existente ou usar 'geral' como padrão para aéreo
                 $dadosProcesso['nacionalizacao'] = $processoExistente->nacionalizacao ?? 'geral';
             }
-            dd($dadosProcesso);
             if ($request->has('cotacao_service_charges') && $request->cotacao_service_charges !== '' && $request->cotacao_service_charges !== null) {
                 $dadosProcesso['cotacao_service_charges'] = $this->parseMoneyToFloat($request->cotacao_service_charges, 4);
             } else {
