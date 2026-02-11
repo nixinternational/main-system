@@ -4695,6 +4695,7 @@
             // Para cada campo externo, garantir que a soma total seja exatamente igual ao valor do cabeçalho
             for (let campo of campos) {
                 const valorCampo = MoneyUtils.parseMoney($(`#${campo}`).val()) || 0;
+                
                 if (valorCampo === 0) {
                     // Se o valor for zero, limpar todos os campos
                     for (let i = 0; i < lengthTable; i++) {
@@ -4707,84 +4708,12 @@
                     continue;
                 }
                 
-                // Para rep_itj e frete_nvg_x_gyn, verificar se já existem valores salvos antes de redistribuir
-                // Se o campo já tiver valores salvos (não vazios), preservar esses valores ao invés de redistribuir
-                const camposPreservar = ['rep_itj', 'frete_nvg_x_gyn'];
-                if (camposPreservar.includes(campo)) {
-                    let temValoresSalvos = false;
-                    let valoresSalvos = {};
-                    
-                    // Verificar se há valores salvos (não vazios) nas linhas
-                    for (let i = 0; i < lengthTable; i++) {
-                        const valorSalvo = MoneyUtils.parseMoney($(`#${campo}-${i}`).val());
-                        if (valorSalvo !== null && valorSalvo !== undefined && valorSalvo !== 0) {
-                            temValoresSalvos = true;
-                            valoresSalvos[i] = valorSalvo;
-                        }
-                    }
-                    
-                    // Se houver valores salvos, preservá-los e não redistribuir
-                    if (temValoresSalvos) {
-                        // Preservar valores salvos e atualizar apenas os campos vazios
-                        let somaValoresSalvos = 0;
-                        for (let i = 0; i < lengthTable; i++) {
-                            if (valoresSalvos[i] !== undefined) {
-                                somaValoresSalvos += valoresSalvos[i];
-                                // Garantir que o valor bruto está armazenado
-                                if (!window.valoresBrutosCamposExternos[campo]) {
-                                    window.valoresBrutosCamposExternos[campo] = [];
-                                }
-                                window.valoresBrutosCamposExternos[campo][i] = valoresSalvos[i];
-                            }
-                        }
-                        
-                        // Se a soma dos valores salvos for menor que o valor do cabeçalho, distribuir a diferença
-                        const diferenca = valorCampo - somaValoresSalvos;
-                        if (Math.abs(diferenca) > 0.01 && diferenca > 0) {
-                            // Distribuir apenas a diferença para as linhas que não têm valor salvo
-                            let linhasSemValor = [];
-                            for (let i = 0; i < lengthTable; i++) {
-                                if (valoresSalvos[i] === undefined) {
-                                    linhasSemValor.push(i);
-                                }
-                            }
-                            
-                            if (linhasSemValor.length > 0) {
-                                // Distribuir a diferença proporcionalmente ao FOB das linhas sem valor
-                                let fobTotalLinhasSemValor = 0;
-                                for (let idx of linhasSemValor) {
-                                    const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${idx}`).val()) || 0;
-                                    fobTotalLinhasSemValor += fobTotal;
-                                }
-                                
-                                let somaDistribuida = 0;
-                                for (let idx = 0; idx < linhasSemValor.length - 1; idx++) {
-                                    const linhaIdx = linhasSemValor[idx];
-                                    const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${linhaIdx}`).val()) || 0;
-                                    const fator = fobTotalLinhasSemValor > 0 ? (fobTotal / fobTotalLinhasSemValor) : 0;
-                                    const valorDistribuido = diferenca * fator;
-                                    valoresSalvos[linhaIdx] = valorDistribuido;
-                                    somaDistribuida += valorDistribuido;
-                                    
-                                    if (!window.valoresBrutosCamposExternos[campo]) {
-                                        window.valoresBrutosCamposExternos[campo] = [];
-                                    }
-                                    window.valoresBrutosCamposExternos[campo][linhaIdx] = valorDistribuido;
-                                    $(`#${campo}-${linhaIdx}`).val(MoneyUtils.formatMoney(valorDistribuido, 2));
-                                }
-                                
-                                // Última linha recebe a diferença exata
-                                const ultimaLinhaIdx = linhasSemValor[linhasSemValor.length - 1];
-                                const valorUltimaLinha = diferenca - somaDistribuida;
-                                valoresSalvos[ultimaLinhaIdx] = valorUltimaLinha;
-                                window.valoresBrutosCamposExternos[campo][ultimaLinhaIdx] = valorUltimaLinha;
-                                $(`#${campo}-${ultimaLinhaIdx}`).val(MoneyUtils.formatMoney(valorUltimaLinha, 2));
-                            }
-                        }
-                        
-                        // Continuar para o próximo campo sem redistribuir tudo
-                        continue;
-                    }
+                // SEMPRE recalcular do zero para TODOS os campos externos
+                // O comportamento de preservar valores causava inconsistências quando o cabeçalho era alterado
+                // Agora sempre recalcula proporcionalmente ao FOB, garantindo valores corretos
+                // Limpar valores brutos para garantir recálculo limpo
+                if (window.valoresBrutosCamposExternos[campo]) {
+                    window.valoresBrutosCamposExternos[campo] = [];
                 }
 
                 // Fórmulas do JSON: Todos os campos externos usam FATOR_VLR_FOB (BC23 = L23/$L$64)
@@ -4797,6 +4726,7 @@
                 // BN23 = $BN$21*BC23 (DAPE)
                 // BO23 = $BO$21*BC23 (LI+DTA+HONOR.NIX)
                 // BP23 = $BP$21*BC23 (HONORÁRIOS NIX)
+                // BO23 = $BO$21*BC23 (REP.ITJ) - usar multiplicação simples, sem arredondar para cima
                 // IMPORTANTE: TODOS usam fator_valor_fob, não fator_peso!
                 
                 // Inicializar array de valores brutos para este campo
@@ -4804,23 +4734,32 @@
                     window.valoresBrutosCamposExternos[campo] = [];
                 }
                 
+                // TODOS os campos de cabeçalho agora usam arredondamento padrão (Math.round) para garantir precisão igual à planilha
+                // A variável abaixo é mantida para compatibilidade, mas não é mais usada no cálculo
+                const camposMultiplicacaoSimples = ['rep_itj', 'frete_nvg_x_gyn'];
+                const usarMultiplicacaoSimples = camposMultiplicacaoSimples.includes(campo);
+                
                 let somaDistribuida = 0;
                 const valoresPorLinha = [];
                 
                 // Primeira passada: distribuir para todas as linhas exceto a última
-                // Arredondar para cima, mas garantir que não ultrapasse o total
                 for (let i = 0; i < lengthTable - 1; i++) {
                     const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
                     // Todos os campos externos usam fator_valor_fob (BC23 = L23/$L$64)
                     const fator = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
                     
                     const valorCalculado = valorCampo * fator;
-                    // Arredondar para cima com 2 casas decimais
-                    const valorArredondado = Math.ceil(valorCalculado * 100) / 100;
                     
-                    // Verificar se não ultrapassa o valor total disponível
+                    let valorFinal;
+                    // TODOS os campos de cabeçalho usam arredondamento padrão (Math.round) para garantir precisão igual à planilha
+                    // Isso corrige a diferença de 1 centavo que ocorria com Math.ceil ou Math.floor
+                    valorFinal = Math.round(valorCalculado * 100) / 100;
+                    
+                    // Verificar se não ultrapassa o valor total disponível (apenas para segurança)
                     const valorDisponivel = valorCampo - somaDistribuida;
-                    const valorFinal = Math.min(valorArredondado, valorDisponivel);
+                    if (valorFinal > valorDisponivel) {
+                        valorFinal = valorDisponivel;
+                    }
                     
                     valoresPorLinha[i] = valorFinal;
                     somaDistribuida += valorFinal;
@@ -4848,14 +4787,14 @@
                 
                 // Garantir que o valor da última linha não seja negativo
                 if (valorUltimaLinha < 0) {
-                    // Se der negativo, redistribuir proporcionalmente (sem arredondar para cima)
+                    // Se der negativo, redistribuir proporcionalmente
                     const fatorAjuste = valorCampo / somaDistribuidaRecalculada;
                     somaDistribuidaRecalculada = 0;
                     for (let i = 0; i < lengthTable - 1; i++) {
                         if (valoresPorLinha[i] !== undefined) {
                             valoresPorLinha[i] = valoresPorLinha[i] * fatorAjuste;
-                            // Truncar para 2 casas (não arredondar para cima quando redistribuindo)
-                            valoresPorLinha[i] = Math.floor(valoresPorLinha[i] * 100) / 100;
+                            // TODOS os campos de cabeçalho usam arredondamento padrão (Math.round) para garantir precisão
+                            valoresPorLinha[i] = Math.round(valoresPorLinha[i] * 100) / 100;
                             somaDistribuidaRecalculada += valoresPorLinha[i];
                             
                             // Atualizar valor bruto
