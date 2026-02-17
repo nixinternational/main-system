@@ -539,7 +539,17 @@
                 return;
             }
             
-            let tr = '<tr><td colspan="7" style="text-align: right; font-weight: bold;">TOTAIS:</td>';
+            // Ajustar colspan baseado na nacionalização
+            // DESCRIÇÃO está presente em todas as nacionalizações
+            // CODIGO está presente apenas em Mato Grosso e Santa Catarina
+            const nacionalizacao = getNacionalizacaoAtual();
+            let colspanTotal;
+            if (nacionalizacao === 'anapolis' || nacionalizacao === 'santos') {
+                colspanTotal = 6; // Ações + PRODUTO + DESCRIÇÃO + ADIÇÃO + ITEM + NCM (sem CODIGO)
+            } else {
+                colspanTotal = 7; // Ações + PRODUTO + DESCRIÇÃO + CÓDIGO + ADIÇÃO + ITEM + NCM (Mato Grosso e Santa Catarina)
+            }
+            let tr = `<tr><td colspan="${colspanTotal}" style="text-align: right; font-weight: bold;">TOTAIS:</td>`;
 
 
             tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.quantidade, 2)}</td>`;
@@ -572,78 +582,234 @@
             tr +=
                 `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.fob_total_brl, 2)}</td>`;
 
-
+            // Ordem condicional baseada na nacionalização (nacionalizacao já foi definida acima)
             const moedaFrete = $('#frete_internacional_moeda').val();
-            if (moedaFrete && moedaFrete !== 'USD') {
-                let totalFreteMoeda = 0;
-                rows.each(function() {
-                    const rowId = this.id.replace('row-', '')
-
-
-                    totalFreteMoeda += MoneyUtils.parseMoney($(`#frete_moeda_estrangeira-${rowId}`).val()) || 0;
-                });
-                tr +=
-                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 2)}</td>`;
-            }
-
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
-
-
-            tr += `<td></td>`; 
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
-            
-
-            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
-                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 2)}</td>`;
-            }
-            
-
-            let totalServiceChargesUSD = 0;
-            if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
-                rows.each(function() {
-                    const rowId = this.id.replace('row-', '');
-                    totalServiceChargesUSD += MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
-                });
-            } else {
-                totalServiceChargesUSD = totais.service_charges;
-            }
-            
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalServiceChargesUSD, 2)}</td>`;
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 2)}</td>`;
-
-
             const moedaAcrescimo = $('#acrescimo_frete_moeda').val();
-            if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
-                let totalAcrescimoMoeda = 0;
-                rows.each(function() {
-                    const rowId = this.id.replace('row-', '')
-                    totalAcrescimoMoeda += MoneyUtils.parseMoney($(`#acrescimo_moeda_estrangeira-${rowId}`)
-                        .val()) || 0;
-                });
-                tr +=
-                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalAcrescimoMoeda, 2)}</td>`;
-            }
-
-            tr +=
-                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_usd, 2)}</td>`;
-            tr +=
-                `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 2)}</td>`;
-
-
             const moedaSeguro = $('#seguro_internacional_moeda').val();
-            if (moedaSeguro && moedaSeguro !== 'USD') {
-                let totalSeguroMoeda = 0;
-                rows.each(function() {
-                    const rowId = this.id.replace('row-', '')
-                    totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
-                });
-                tr +=
-                    `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 2)}</td>`;
-            }
 
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
-            tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
+            if (nacionalizacao === 'santa_catarina') {
+                // Ordem específica para Santa Catarina: SERVICE CHARGES antes de FRETE
+                // SERVICE CHARGES
+                if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 2)}</td>`;
+                }
+                
+                let totalServiceChargesUSD = 0;
+                if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '');
+                        totalServiceChargesUSD += MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
+                    });
+                } else {
+                    totalServiceChargesUSD = totais.service_charges;
+                }
+                
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalServiceChargesUSD, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 2)}</td>`;
+
+                // FRETE
+                if (moedaFrete && moedaFrete !== 'USD') {
+                    let totalFreteMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalFreteMoeda += MoneyUtils.parseMoney($(`#frete_moeda_estrangeira-${rowId}`).val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
+
+                // ACRESC
+                if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                    let totalAcrescimoMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalAcrescimoMoeda += MoneyUtils.parseMoney($(`#acrescimo_moeda_estrangeira-${rowId}`)
+                            .val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalAcrescimoMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 2)}</td>`;
+
+                // CFR
+                tr += `<td></td>`; 
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
+
+                // SEGURO
+                if (moedaSeguro && moedaSeguro !== 'USD') {
+                    let totalSeguroMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
+            } else if (nacionalizacao === 'anapolis') {
+                // Ordem específica para Anápolis: FRETE → CFR → SERVICE CHARGES → ACRESC → SEGURO
+                // FRETE
+                if (moedaFrete && moedaFrete !== 'USD') {
+                    let totalFreteMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalFreteMoeda += MoneyUtils.parseMoney($(`#frete_moeda_estrangeira-${rowId}`).val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
+
+                // CFR
+                tr += `<td></td>`; 
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
+
+                // SERVICE CHARGES
+                if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 2)}</td>`;
+                }
+                
+                let totalServiceChargesUSD = 0;
+                if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '');
+                        totalServiceChargesUSD += MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
+                    });
+                } else {
+                    totalServiceChargesUSD = totais.service_charges;
+                }
+                
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalServiceChargesUSD, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 2)}</td>`;
+
+                // ACRESC
+                if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                    let totalAcrescimoMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalAcrescimoMoeda += MoneyUtils.parseMoney($(`#acrescimo_moeda_estrangeira-${rowId}`)
+                            .val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalAcrescimoMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 2)}</td>`;
+
+                // SEGURO
+                if (moedaSeguro && moedaSeguro !== 'USD') {
+                    let totalSeguroMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
+            } else if (nacionalizacao === 'santos') {
+                // Ordem específica para Santos: FRETE → ACRESC → CFR → SEGURO (sem SERVICE CHARGES)
+                // FRETE
+                if (moedaFrete && moedaFrete !== 'USD') {
+                    let totalFreteMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalFreteMoeda += MoneyUtils.parseMoney($(`#frete_moeda_estrangeira-${rowId}`).val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
+
+                // ACRESC
+                if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                    let totalAcrescimoMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalAcrescimoMoeda += MoneyUtils.parseMoney($(`#acrescimo_moeda_estrangeira-${rowId}`)
+                            .val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalAcrescimoMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 2)}</td>`;
+
+                // CFR
+                tr += `<td></td>`; 
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
+
+                // SEGURO
+                if (moedaSeguro && moedaSeguro !== 'USD') {
+                    let totalSeguroMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
+            } else {
+                // Ordem para Mato Grosso: FRETE, SERVICE CHARGES, SEGURO, CFR, ACRESC
+                // FRETE
+                if (moedaFrete && moedaFrete !== 'USD') {
+                    let totalFreteMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalFreteMoeda += MoneyUtils.parseMoney($(`#frete_moeda_estrangeira-${rowId}`).val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalFreteMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
+
+                // SERVICE CHARGES
+                if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges, 2)}</td>`;
+                }
+                
+                let totalServiceChargesUSD = 0;
+                if (moedaServiceCharges && moedaServiceCharges !== 'USD') {
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '');
+                        totalServiceChargesUSD += MoneyUtils.parseMoney($(`#service_charges-${rowId}`).val()) || 0;
+                    });
+                } else {
+                    totalServiceChargesUSD = totais.service_charges;
+                }
+                
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalServiceChargesUSD, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.service_charges_brl, 2)}</td>`;
+
+                // SEGURO
+                if (moedaSeguro && moedaSeguro !== 'USD') {
+                    let totalSeguroMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalSeguroMoeda += MoneyUtils.parseMoney($(`#seguro_moeda_estrangeira-${rowId}`).val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalSeguroMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.seguro_brl, 2)}</td>`;
+
+                // CFR
+                tr += `<td></td>`; 
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.vlr_crf_total, 2)}</td>`;
+
+                // ACRESC
+                if (moedaAcrescimo && moedaAcrescimo !== 'USD') {
+                    let totalAcrescimoMoeda = 0;
+                    rows.each(function() {
+                        const rowId = this.id.replace('row-', '')
+                        totalAcrescimoMoeda += MoneyUtils.parseMoney($(`#acrescimo_moeda_estrangeira-${rowId}`)
+                            .val()) || 0;
+                    });
+                    tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totalAcrescimoMoeda, 2)}</td>`;
+                }
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_usd, 2)}</td>`;
+                tr += `<td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.acresc_frete_brl, 2)}</td>`;
+            }
 
 
             tr += `
@@ -1773,9 +1939,8 @@
                 
                 let processedValue;
 
-
                 if (decimals <= 2) {
-                    processedValue = Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+                    processedValue = parseFloat(num.toFixed(decimals));
                 } else {
                     processedValue = this.truncate(num, decimals);
                 }
@@ -1818,7 +1983,6 @@
 
 
         function recalcularTodaTabela() {
-
             if (isRecalculating) {
                 return;
             }
@@ -3500,7 +3664,7 @@
             } else {
                 $(`#multa-${rowId}`).prop('readonly', false);
             }
-
+     
             if (vlrAduaneiroBrl === null) {
                 vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
             }
@@ -3577,7 +3741,7 @@
                 despesas += opcional2Valor;
             }
 
-
+            
             return {
                 total: despesas,
                 componentes: {
@@ -4303,6 +4467,107 @@
             $(`#reducao-${rowId}`).val(MoneyUtils.formatPercentage(novoReducao , 2));
         }
 
+        // Função para atualizar despesa aduaneira em tempo real
+        function atualizarDespesaAduaneira(rowId) {
+            
+            const nacionalizacao = getNacionalizacaoAtual();
+            let despesaAduaneira = 0;
+            
+            if (nacionalizacao === 'mato_grosso') {
+                // Para Mato Grosso: taxa siscomex unitária + afrmm
+                // Calcular taxa siscomex unitária da mesma forma que no recalcularTodaTabela
+                const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
+                const fobTotalGeral = calcularFobTotalGeral();
+                const dolar = getCotacaoesProcesso()['USD']?.venda || 1;
+                const taxaSiscomexGeral = MoneyUtils.parseMoney($(`#taxa_siscomex`).val()) || 0;
+                const fatorTaxaSiscomex_AY = (fobTotalGeral > 0 && dolar > 0) ? taxaSiscomexGeral / (fobTotalGeral * dolar) : 0;
+                const taxaSiscomexUnitaria_BB = fatorTaxaSiscomex_AY * (fobTotal * dolar);
+                
+                const afrmm = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
+                despesaAduaneira = (taxaSiscomexUnitaria_BB ?? 0) + afrmm;
+            } else {
+                // Para outras nacionalizações: usar calcularDespesas
+                // Obter valores necessários
+                const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
+                const fobTotalGeral = calcularFobTotalGeral();
+                const fatorVlrFob_AX = fobTotalGeral > 0 ? fobTotal / fobTotalGeral : 0;
+                
+                const dolar = getCotacaoesProcesso()['USD']?.venda || 1;
+                const taxaSiscomexGeral = MoneyUtils.parseMoney($(`#taxa_siscomex`).val()) || 0;
+                const fatorTaxaSiscomex_AY = (fobTotalGeral > 0 && dolar > 0) ? taxaSiscomexGeral / (fobTotalGeral * dolar) : 0;
+                const taxaSiscomexUnit = fatorTaxaSiscomex_AY * (fobTotal * dolar);
+                
+                const vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
+                
+                const despesasInfo = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY, taxaSiscomexUnit, vlrAduaneiroBrl);
+                despesaAduaneira = despesasInfo.total;
+            }
+            
+            $(`#despesa_aduaneira-${rowId}`).val(MoneyUtils.formatMoney(despesaAduaneira, 2));
+        }
+
+        // Listeners para campos que compõem despesas aduaneiras
+        // Nota: O listener para multa já existe mais abaixo, então vamos adicionar a chamada lá
+
+        $(document).on('change blur keyup', '[id^="tx_def_li-"]', function() {
+            const rowId = $(this).attr('id').replace('tx_def_li-', '');
+            atualizarDespesaAduaneira(rowId);
+        });
+
+        $(document).on('change blur keyup', '[id^="taxa_siscomex-"]', function() {
+            const rowId = $(this).attr('id').replace('taxa_siscomex-', '');
+            atualizarDespesaAduaneira(rowId);
+        });
+
+        $(document).on('change blur keyup', '[id^="afrmm-"]', function() {
+            const rowId = $(this).attr('id').replace('afrmm-', '');
+            atualizarDespesaAduaneira(rowId);
+        });
+
+        $(document).on('change blur keyup', '[id^="honorarios_nix-"]', function() {
+            const rowId = $(this).attr('id').replace('honorarios_nix-', '');
+            atualizarDespesaAduaneira(rowId);
+        });
+
+        $(document).on('change blur keyup', '[id^="armazenagem_sts-"]', function() {
+            const rowId = $(this).attr('id').replace('armazenagem_sts-', '');
+            atualizarDespesaAduaneira(rowId);
+        });
+
+        $(document).on('change blur keyup', '[id^="frete_dta_sts_ana-"]', function() {
+            const rowId = $(this).attr('id').replace('frete_dta_sts_ana-', '');
+            atualizarDespesaAduaneira(rowId);
+        });
+
+        $(document).on('change blur keyup', '[id^="opcional_1_valor-"]', function() {
+            const rowId = $(this).attr('id').replace('opcional_1_valor-', '');
+            atualizarDespesaAduaneira(rowId);
+        });
+
+        $(document).on('change blur keyup', '[id^="opcional_2_valor-"]', function() {
+            const rowId = $(this).attr('id').replace('opcional_2_valor-', '');
+            atualizarDespesaAduaneira(rowId);
+        });
+
+        $(document).on('change', '#opcional_1_compoe_despesas, #opcional_2_compoe_despesas', function() {
+            // Quando o checkbox muda, atualizar todas as linhas
+            $('#productsBody tr.linhas-input').each(function() {
+                const rowId = this.id.toString().replace('row-', '');
+                if (rowId) {
+                    atualizarDespesaAduaneira(rowId);
+                }
+            });
+        });
+
+        // Listener para taxa_siscomex do cabeçalho (afeta todas as linhas)
+        $(document).on('change blur keyup', '#taxa_siscomex', function() {
+            $('#productsBody tr.linhas-input').each(function() {
+                const rowId = this.id.toString().replace('row-', '');
+                if (rowId) {
+                    atualizarDespesaAduaneira(rowId);
+                }
+            });
+        });
 
         let recalcularTimeout = null;
         let isRecalculating = false;
@@ -4324,9 +4589,28 @@
         }
 
 
-        $(document).on('blur', '[id^="multa-"]', function() {
+        // Listener melhorado para campo multa - atualiza valores brutos e recalcula despesas aduaneiras
+        $(document).on('change blur keyup', '[id^="multa-"]', function(event) {
             const rowId = $(this).data('row');
-            if (rowId != null) {
+            if (rowId != null && rowId !== '') {
+                // Atualizar valor bruto imediatamente quando o campo muda
+                const multaValor = MoneyUtils.parseMoney($(this).val()) || 0;
+                
+                // Garantir que valoresBrutosPorLinha existe
+                if (!window.valoresBrutosPorLinha) {
+                    window.valoresBrutosPorLinha = {};
+                }
+                if (!window.valoresBrutosPorLinha[rowId]) {
+                    window.valoresBrutosPorLinha[rowId] = {};
+                }
+                
+                // Atualizar valor bruto da multa
+                window.valoresBrutosPorLinha[rowId].multa = multaValor;
+                
+                // Atualizar despesa aduaneira em tempo real
+                atualizarDespesaAduaneira(rowId);
+                
+                // Recalcular despesas aduaneiras e toda a tabela
                 debouncedRecalcular();
             }
         });
@@ -5130,9 +5414,24 @@
         
         <td>${select}</td>
         <td><input data-row="${newIndex}" type="text" step="1" class="form-control" name="produtos[${newIndex}][descricao]" id="descricao-${newIndex}" value=""></td>
+        ${(() => {
+            const nacionalizacao = getNacionalizacaoAtual();
+            if (nacionalizacao === 'mato_grosso') {
+                // Mato Grosso: PRODUTO, DESCRIÇÃO, CÓDIGO, ADIÇÃO, ITEM, NCM
+                return `<td><input type="text" class="form-control" readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]" id="item-${newIndex}" value="${proximoItem}"></td>`;
+            } else if (nacionalizacao === 'santa_catarina') {
+                // Santa Catarina: PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, CODIGO, NCM
+                return `<td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]" id="item-${newIndex}" value="${proximoItem}"></td>
-        <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>
+        <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][codigo]" id="codigo-${newIndex}" value=""></td>`;
+            } else {
+                // Anápolis e Santos: PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, NCM (sem CODIGO)
+                return `<td><input data-row="${newIndex}" type="text" class="form-control" name="produtos[${newIndex}][adicao]" id="adicao-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="number" class="form-control" name="produtos[${newIndex}][item]" id="item-${newIndex}" value="${proximoItem}"></td>`;
+            }
+        })()}
         <td><input type="text" class="form-control" readonly name="produtos[${newIndex}][ncm]" id="ncm-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" name="produtos[${newIndex}][quantidade]" id="quantidade-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][peso_liquido_unitario]" id="peso_liquido_unitario-${newIndex}" value=""></td>
@@ -5142,12 +5441,64 @@
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_usd]" id="fob_total_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal7" readonly name="produtos[${newIndex}][fob_total_brl]" id="fob_total_brl-${newIndex}" value=""></td>
         
+        ${(() => {
+            const nacionalizacao = getNacionalizacaoAtual();
+            if (nacionalizacao === 'santa_catarina') {
+                // Ordem específica para Santa Catarina: SERVICE CHARGES antes de FRETE
+                return `
+        <!-- SERVICE CHARGES - Colunas condicionais (após FOB) -->
+        ${colunaServiceChargesMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges]" id="service_charges-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges_brl]" id="service_charges_brl-${newIndex}" value=""></td>
+        
         <!-- FRETE -->
         ${colunaFreteMoeda}
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
         
-        <!-- VLR CFR - Após FRETE -->
+        <!-- ACRÉSCIMO - Colunas condicionais (após FRETE) -->
+        ${colunaAcrescimoMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
+        
+        <!-- VLR CFR - Após ACRESC -->
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_unit]" id="vlr_crf_unit-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_total]" id="vlr_crf_total-${newIndex}" value=""></td>
+        
+        <!-- SEGURO - Colunas condicionais (após CFR) -->
+        ${colunaSeguroMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>`;
+            } else if (nacionalizacao === 'santos') {
+                // Ordem específica para Santos: FRETE → ACRESC → CFR → SEGURO (sem SERVICE CHARGES)
+                return `
+        <!-- FRETE -->
+        ${colunaFreteMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
+        
+        <!-- ACRÉSCIMO - Colunas condicionais (após FRETE) -->
+        ${colunaAcrescimoMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
+        
+        <!-- VLR CFR - Após ACRESC -->
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_unit]" id="vlr_crf_unit-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_total]" id="vlr_crf_total-${newIndex}" value=""></td>
+        
+        <!-- SEGURO - Colunas condicionais (após CFR) -->
+        ${colunaSeguroMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>`;
+            } else if (nacionalizacao === 'anapolis') {
+                // Ordem específica para Anápolis: FRETE → CFR → SERVICE CHARGES → ACRESC → SEGURO
+                return `
+        <!-- FRETE -->
+        ${colunaFreteMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
+        
+        <!-- VLR CFR - Após FRETE e antes de SERVICE CHARGES -->
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_unit]" id="vlr_crf_unit-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_total]" id="vlr_crf_total-${newIndex}" value=""></td>
         
@@ -5161,10 +5512,38 @@
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>
         
-        <!-- SEGURO - Colunas condicionais (após ACRÉSCIMO) -->
+        <!-- SEGURO - Colunas condicionais (após ACRESC) -->
+        ${colunaSeguroMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>`;
+            } else {
+                // Ordem para Mato Grosso: FRETE, SERVICE CHARGES, SEGURO, CFR, ACRESC
+                return `
+        <!-- FRETE -->
+        ${colunaFreteMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_usd]" id="frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][frete_brl]" id="frete_brl-${newIndex}" value=""></td>
+        
+        <!-- SERVICE CHARGES - Colunas condicionais (após FRETE) -->
+        ${colunaServiceChargesMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges]" id="service_charges-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][service_charges_brl]" id="service_charges_brl-${newIndex}" value=""></td>
+        
+        <!-- SEGURO - Colunas condicionais (após SERVICE CHARGES) -->
         ${colunaSeguroMoeda}
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_usd]" id="seguro_usd-${newIndex}" value=""></td>
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][seguro_brl]" id="seguro_brl-${newIndex}" value=""></td>
+        
+        <!-- VLR CFR - Após SEGURO -->
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_unit]" id="vlr_crf_unit-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][vlr_crf_total]" id="vlr_crf_total-${newIndex}" value=""></td>
+        
+        <!-- ACRÉSCIMO - Colunas condicionais (após CFR) -->
+        ${colunaAcrescimoMoeda}
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_usd]" id="acresc_frete_usd-${newIndex}" value=""></td>
+        <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][acresc_frete_brl]" id="acresc_frete_brl-${newIndex}" value=""></td>`;
+            }
+        })()}
         
         <!-- Resto das colunas permanecem iguais -->
         <td><input data-row="${newIndex}" type="text" class="form-control moneyReal" readonly name="produtos[${newIndex}][thc_usd]" id="thc_usd-${newIndex}" value=""></td>
@@ -5293,7 +5672,7 @@
             return html;
         })()}
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][desp_desenbaraco]" id="desp_desenbaraco-${newIndex}" value=""></td>
-        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
+        <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal4" readonly name="produtos[${newIndex}][diferenca_cambial_frete]" id="diferenca_cambial_frete-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][diferenca_cambial_fob]" id="diferenca_cambial_fob-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][opcional_1_valor]" id="opcional_1_valor-${newIndex}" value=""></td>
         <td><input type="text" data-row="${newIndex}" class=" form-control moneyReal" readonly name="produtos[${newIndex}][opcional_2_valor]" id="opcional_2_valor-${newIndex}" value=""></td>

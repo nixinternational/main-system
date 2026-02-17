@@ -398,16 +398,15 @@
                 }
             }
             
-            // Se for número, converter para string com precisão alta
+            // Se for número, usar toFixed diretamente com o número de decimais desejado
             if (typeof value === 'number') {
                 if (!isFinite(value)) return 0;
                 if (decimals <= 0) {
                     return value >= 0 ? Math.floor(value) : Math.ceil(value);
                 }
-                // Usar toFixed com precisão extra para evitar problemas
-                let str = value.toFixed(Math.max(decimals, 15));
-                // Agora trabalhar como string
-                return truncateNumber(str, decimals);
+                // Usar toFixed com o número exato de decimais para evitar erros de precisão
+                // parseFloat remove zeros desnecessários e garante precisão correta
+                return parseFloat(value.toFixed(decimals));
             }
             
             return 0;
@@ -449,7 +448,9 @@
 
         function formatTruncatedNumber(value, decimals = 2, options = {}) {
             const truncated = truncateNumber(value, decimals);
-            return truncated.toLocaleString('pt-BR', {
+            // Usar toFixed para garantir precisão correta antes de formatar
+            const fixedValue = parseFloat(truncated.toFixed(decimals));
+            return fixedValue.toLocaleString('pt-BR', {
                 minimumFractionDigits: decimals,
                 maximumFractionDigits: decimals,
                 useGrouping: options.useGrouping !== false
@@ -1024,7 +1025,13 @@
             tr += `<td data-field="frete-usd" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_usd, 2)}</td>`;
             tr += `<td data-field="frete-brl" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.frete_brl, 2)}</td>`;
 
-            // COLUNAS SEGURO (após FRETE)
+            // COLUNAS CFR (movido para antes de SEGURO)
+            tr += `<td data-field="vlr-cfr-unit"></td>`; // VLR CFR UNIT não é somado (é unitário)
+            // VLR CFR TOTAL = Soma de (FOB TOTAL USD + FRETE INT USD) de todas as linhas
+            const vlrCfrTotalCalculado = totais.fob_total_usd + totais.frete_usd;
+            tr += `<td data-field="vlr-cfr-total" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(vlrCfrTotalCalculado, 2)}</td>`;
+
+            // COLUNAS SEGURO (após CFR)
             const moedaSeguro = $('#seguro_internacional_moeda').val();
             if (moedaSeguro && moedaSeguro !== 'USD') {
                 let totalSeguroMoeda = 0;
@@ -1055,12 +1062,6 @@
             // COLUNAS THC (após ACRÉSCIMO)
             tr += `<td data-field="thc-usd" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_usd || 0, 2)}</td>`;
             tr += `<td data-field="thc-brl" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.thc_brl || 0, 2)}</td>`;
-
-            // COLUNAS CFR (após THC)
-            tr += `<td data-field="vlr-cfr-unit"></td>`; // VLR CFR UNIT não é somado (é unitário)
-            // VLR CFR TOTAL = Soma de (FOB TOTAL USD + FRETE INT USD) de todas as linhas
-            const vlrCfrTotalCalculado = totais.fob_total_usd + totais.frete_usd;
-            tr += `<td data-field="vlr-cfr-total" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(vlrCfrTotalCalculado, 2)}</td>`;
             
             // VLR ADUANEIRO USD e VLR ADUANEIRO R$
             tr += `<td data-field="vlr-aduaneiro-usd" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_aduaneiro_usd, 2)}</td>`;
@@ -2336,8 +2337,8 @@
                 // Para fatores (decimals > 2), usar truncamento para manter precisão
                 let processedValue;
                 if (decimals <= 2) {
-                    // Arredondar para valores monetários (evita perda de centavos na exibição)
-                    processedValue = Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+                    // Arredondar para valores monetários usando toFixed para evitar erros de precisão
+                    processedValue = parseFloat(num.toFixed(decimals));
                 } else {
                     // Truncar para fatores (maior precisão)
                     processedValue = this.truncate(num, decimals);

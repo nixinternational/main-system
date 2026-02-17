@@ -32,13 +32,13 @@
                                 $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
 
                             $totalColunas = 9; // Ações até Fator Peso
-                            $totalColunas += $moedaProcesso == 'USD' ? 3 : 4; // FOB
-                            $totalColunas += $moedaFrete != 'USD' ? 3 : 2; // Frete
-                            $totalColunas += $moedaSeguro != 'USD' ? 3 : 2; // Seguro
-                            $totalColunas += $moedaAcrescimo != 'USD' ? 3 : 2; // Acréscimo
-                            $totalColunas += 2; // THC
-                            $totalColunas += 2; // VLR CFR
-                            $totalColunas += 2; // VLR ADUANEIRO
+                            $totalColunas += $moedaProcesso == 'USD' ? 3 : 4; // FOB (FOB UNIT USD, FOB TOTAL USD, VLR TOTALFOB R$)
+                            $totalColunas += $moedaFrete != 'USD' ? 3 : 2; // Frete (FRETE INT.USD, FRETE INT.R$)
+                            $totalColunas += 2; // VLR CFR (VLR CFR UNIT, VLR CFR TOTAL) - movido para antes de SEGURO
+                            $totalColunas += $moedaSeguro != 'USD' ? 3 : 2; // Seguro (SEGURO INT.USD, SEGURO INT.R$)
+                            $totalColunas += $moedaAcrescimo != 'USD' ? 3 : 2; // Acréscimo (ACRESC. FRETE USD, ACRESC. FRETE R$)
+                            $totalColunas += 2; // THC (THC USD, THC R$)
+                            $totalColunas += 2; // VLR ADUANEIRO (VLR ADUANEIRO USD, VLR ADUANEIRO R$)
                             $totalColunas += 7; // ALÍQUOTAS
                             $totalColunas += 6; // VLR II
                             $totalColunas += 1; // DESP. ADUANEIRA
@@ -59,63 +59,54 @@
                             @php
                                 $colspanBeforeMiddleRow = 9; // Colunas fixas iniciais (sem Ações: PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, NCM, QUANTD, PESO LID. UNIT, PESO LIQ TOTAL, FATOR PESO)
 
-                                // Colunas FOB
+                                // Colunas FOB (nova ordem: FOB UNIT USD, FOB TOTAL USD, VLR TOTALFOB R$)
                                 if ($moedaProcesso == 'USD') {
-                                    $colspanBeforeMiddleRow += 3; // FOB UNIT USD + TOTALFOB USD + TOTALFOB R$
+                                    $colspanBeforeMiddleRow += 3; // FOB UNIT USD + FOB TOTAL USD + VLR TOTALFOB R$
                                 } else {
-                                    $colspanBeforeMiddleRow += 4; // FOB UNIT MOEDA + TOTALFOB MOEDA + TOTALFOB USD + TOTALFOB R$
+                                    $colspanBeforeMiddleRow += 4; // FOB UNIT MOEDA + VLR TOTALFOB MOEDA + FOB TOTAL USD + VLR TOTALFOB R$
                                 }
 
-                                // Colunas FRETE
+                                // Colunas FRETE (nova ordem: FRETE INT.USD, FRETE INT.R$)
                                 if ($moedaFrete != 'USD') {
                                     $colspanBeforeMiddleRow += 3; // FRETE MOEDA + FRETE USD + FRETE R$
                                 } else {
                                     $colspanBeforeMiddleRow += 2; // FRETE USD + FRETE R$
                                 }
 
-                                // Colunas SEGURO
+                                // Colunas VLR CFR (movido para antes de SEGURO)
+                                $colspanBeforeMiddleRow += 2; // VLR CFR UNIT + VLR CFR TOTAL
+
+                                // Colunas SEGURO (nova ordem: SEGURO INT.USD, SEGURO INT.R$)
                                 if ($moedaSeguro != 'USD') {
                                     $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
                                 } else {
                                     $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
                                 }
 
-                                // Colunas ACRÉSCIMO
+                                // Colunas ACRÉSCIMO (nova ordem: ACRESC. FRETE USD, ACRESC. FRETE R$)
                                 if ($moedaAcrescimo != 'USD') {
                                     $colspanBeforeMiddleRow += 3; // ACRESC MOEDA + ACRESC USD + ACRESC R$
                                 } else {
                                     $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
                                 }
 
-                                // Colunas THC (adicionadas)
-                                $colspanBeforeMiddleRow += 2; // THC USD + THC BRL
+                                // Colunas THC
+                                $colspanBeforeMiddleRow += 2; // THC USD + THC R$
 
-                                // Colunas fixas após (VLR CFR até VLR TOTAL NF C/ICMS-ST)
-                                $colspanBeforeMiddleRow += 30; // VLR CFR UNIT + VLR CFR TOTAL até VLR TOTAL NF C/ICMS-ST
+                                // Colunas fixas após (VLR ADUANEIRO até VLR TOTAL NF C/ICMS-ST)
+                                $colspanBeforeMiddleRow += 30; // VLR ADUANEIRO USD + VLR ADUANEIRO R$ até VLR TOTAL NF C/ICMS-ST
 
-                                // Colunas dos fatores (FATOR VLR FOB e FATOR TX SISCOMEX - MULTA e TX DEF. LI serão inputs no middleRow, TAXA SISCOMEX é calculada)
+                                // Colunas dos fatores (FATOR VLR FOB e FATOR TX SISCOMEX - TAXA SISCOMEX é calculada)
                                 $colspanBeforeMiddleRow += 2; // FATOR VLR FOB e FATOR TX SISCOMEX
+                                
+                                
+                                $colspanBeforeMiddleRow += 1; 
                             @endphp
 
                             <th style="background-color: #fff"> </th>
                             <th colspan="{{ $colspanBeforeMiddleRow }}"></th>
 
-                            {{-- MULTA --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="multa" id="multa"
-                                    value="{{ number_format($processo->multa ?? 0, 5, ',', '.') }}">
-                            </th>
-
-                            {{-- TX DEF. LI --}}
-                            <th class="middleRowInputTh">
-                                <input type="text" class="form-control cabecalhoInputs moneyReal"
-                                    name="tx_def_li" id="tx_def_li"
-                                    value="{{ number_format($processo->tx_def_li ?? 0, 5, ',', '.') }}">
-                            </th>
-
-                            {{-- TAXA SISCOMEX (calculada automaticamente - sem input) --}}
-                            <th></th>
+                           
 
                             {{-- DESP. FRONTEIRA --}}
                             <th class="middleRowInputTh">
@@ -225,11 +216,12 @@
                             <th>PESO LID. UNIT</th>
                             <th>PESO LIQ TOTAL</th>
                             <th>FATOR PESO</th>
-                            <!-- COLUNAS FOB CONDICIONAIS -->
-                            <!-- COLUNAS FOB CONDICIONAIS -->
-                            <!-- COLUNAS FOB - SEMPRE EXISTEM -->
+                            <!-- COLUNAS FOB - Ordem: FOB UNIT USD, FOB TOTAL USD, VLR TOTALFOB R$ -->
                             @php
                                 $moedaProcesso = $processo->moeda_processo ?? 'USD';
+                                $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
+                                $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
+                                $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
                             @endphp
 
                             @if ($moedaProcesso == 'USD')
@@ -241,39 +233,37 @@
                             @if ($moedaProcesso != 'USD')
                                 <th>VLR TOTALFOB {{ $moedaProcesso }}</th>
                             @endif
-                            <th>VLR TOTALFOB USD</th>
+                            <th>FOB TOTAL USD</th>
                             <th>VLR TOTALFOB R$</th>
-                            <!-- FRETE - Colunas condicionais -->
-                            @php
-                                $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
-                                $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
-                                $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
-                            @endphp
-
+                            
+                            <!-- FRETE - Ordem: FRETE INT.USD, FRETE INT.R$ -->
                             @if ($moedaFrete != 'USD')
                                 <th>FRETE INT.{{ $moedaFrete }}</th>
                             @endif
                             <th>FRETE INT.USD</th>
                             <th>FRETE INT.R$</th>
 
-                            <!-- SEGURO - Colunas condicionais -->
+                            <!-- VLR CFR - Movido para antes de SEGURO -->
+                            <th>VLR CFR UNIT</th>
+                            <th>VLR CFR TOTAL</th>
+
+                            <!-- SEGURO - Ordem: SEGURO INT.USD, SEGURO INT.R$ -->
                             @if ($moedaSeguro != 'USD')
                                 <th>SEGURO INT.{{ $moedaSeguro }}</th>
                             @endif
                             <th>SEGURO INT.USD</th>
                             <th>SEGURO INT.R$</th>
 
-                            <!-- ACRÉSCIMO - Colunas condicionais -->
+                            <!-- ACRÉSCIMO - Ordem: ACRESC. FRETE USD, ACRESC. FRETE R$ -->
                             @if ($moedaAcrescimo != 'USD')
                                 <th>ACRESC. FRETE {{ $moedaAcrescimo }}</th>
                             @endif
                             <th>ACRESC. FRETE USD</th>
                             <th>ACRESC. FRETE R$</th>
+                            
+                            <!-- THC -->
                             <th>THC USD</th>
                             <th>THC BRL</th>
-
-                            <th>VLR CFR UNIT</th>
-                            <th>VLR CFR TOTAL</th>
                             <th>VLR ADUANEIRO USD</th>
                             <th>VLR ADUANEIRO R$</th>
                             <th>II</th>
@@ -499,6 +489,22 @@
                                         value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 7, ',', '.') : '' }}">
                                 </td>
 
+                                <!-- VLR CFR - Movido para antes de SEGURO -->
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][vlr_cfr_unit]"
+                                        id="vlr_cfr_unit-{{ $index }}"
+                                        value="{{ $processoProduto->vlr_cfr_unit ? number_format($processoProduto->vlr_cfr_unit, 7, ',', '.') : '' }}">
+                                </td>
+                                <td>
+                                    <input data-row="{{ $index }}" type="text"
+                                        class="form-control moneyReal7" readonly
+                                        name="produtos[{{ $index }}][vlr_cfr_total]"
+                                        id="vlr_cfr_total-{{ $index }}"
+                                        value="{{ $processoProduto->vlr_cfr_total ? number_format($processoProduto->vlr_cfr_total, 7, ',', '.') : '' }}">
+                                </td>
+
                                 <!-- SEGURO - Colunas condicionais -->
                                 @if ($moedaSeguro != 'USD')
                                     <td>
@@ -549,6 +555,7 @@
                                         value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 7, ',', '.') : '' }}">
                                 </td>
 
+                                <!-- THC -->
                                 <td>
                                     <input data-row="{{ $index }}" type="text"
                                         class="form-control moneyReal" readonly
@@ -562,21 +569,6 @@
                                         name="produtos[{{ $index }}][thc_brl]"
                                         id="thc_brl-{{ $index }}"
                                         value="{{ $processoProduto->thc_brl ? number_format($processoProduto->thc_brl, 2, ',', '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][vlr_cfr_unit]"
-                                        id="vlr_cfr_unit-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_cfr_unit ? number_format($processoProduto->vlr_cfr_unit, 7, ',', '.') : '' }}">
-                                </td>
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][vlr_cfr_total]"
-                                        id="vlr_cfr_total-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_cfr_total ? number_format($processoProduto->vlr_cfr_total, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>

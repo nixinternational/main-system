@@ -53,6 +53,7 @@ class ProcessoController extends Controller
                 $resposta = Http::timeout(10)->get(
                     'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas?$format=json'
                 );
+                
                 $dados = $resposta->json()['value'] ?? [];
                 return collect($dados)
                     ->pluck('nomeFormatado', 'simbolo')
@@ -658,7 +659,6 @@ class ProcessoController extends Controller
             $dolar = self::getBid();
 
             $moedasSuportadas = self::buscarMoedasSuportadas();
-
             $fornecedoresPorProduto = $processoProdutosCollection
                 ? $processoProdutosCollection
                     ->map(function ($processoProduto) {

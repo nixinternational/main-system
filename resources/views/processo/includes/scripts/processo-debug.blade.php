@@ -106,16 +106,15 @@
                 }
             }
             
-            // Se for número, converter para string com precisão alta
+            // Se for número, usar toFixed diretamente com o número de decimais desejado
             if (typeof value === 'number') {
                 if (!isFinite(value)) return 0;
                 if (decimals <= 0) {
                     return value >= 0 ? Math.floor(value) : Math.ceil(value);
                 }
-                // Usar toFixed com precisão extra para evitar problemas
-                let str = value.toFixed(Math.max(decimals, 15));
-                // Agora trabalhar como string
-                return truncateNumber(str, decimals);
+                // Usar toFixed com o número exato de decimais para evitar erros de precisão
+                // parseFloat remove zeros desnecessários e garante precisão correta
+                return parseFloat(value.toFixed(decimals));
             }
             
             return 0;
@@ -123,7 +122,9 @@
 
         function formatTruncatedNumber(value, decimals = 2, options = {}) {
             const truncated = truncateNumber(value, decimals);
-            return truncated.toLocaleString('pt-BR', {
+            // Usar toFixed para garantir precisão correta antes de formatar
+            const fixedValue = parseFloat(truncated.toFixed(decimals));
+            return fixedValue.toLocaleString('pt-BR', {
                 minimumFractionDigits: decimals,
                 maximumFractionDigits: decimals,
                 useGrouping: options.useGrouping !== false

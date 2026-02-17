@@ -49,7 +49,16 @@
                                 $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
                                 $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
                                 $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
-                                $colspanBeforeMiddleRow = 10; // Colunas fixas iniciais (Ações até FATOR PESO)
+                                $nacionalizacaoTemp = $processo->nacionalizacao ?? 'outros';
+                                
+                                // Ajustar colunas fixas iniciais baseado na nacionalização
+                                // DESCRIÇÃO está presente em todas as nacionalizações
+                                // CODIGO está presente apenas em Mato Grosso e Santa Catarina
+                                if ($nacionalizacaoTemp === 'anapolis' || $nacionalizacaoTemp === 'santos') {
+                                    $colspanBeforeMiddleRow = 10; // Ações + PRODUTO + DESCRIÇÃO + ADIÇÃO + ITEM + NCM + QUANTD + PESO LIQ. UNIT + PESO LIQ TOTAL + FATOR PESO (sem CODIGO)
+                                } else {
+                                    $colspanBeforeMiddleRow = 11; // Ações + PRODUTO + DESCRIÇÃO + CODIGO + ADIÇÃO + ITEM + NCM + QUANTD + PESO LIQ. UNIT + PESO LIQ TOTAL + FATOR PESO (com CODIGO)
+                                }
 
                                 // Colunas FOB
                                 if ($moedaProcesso == 'USD') {
@@ -58,44 +67,137 @@
                                     $colspanBeforeMiddleRow += 4; // FOB UNIT MOEDA + TOTALFOB MOEDA + TOTALFOB USD + TOTALFOB R$
                                 }
 
-                                // Colunas FRETE
-                                if ($moedaFrete != 'USD') {
-                                    $colspanBeforeMiddleRow += 3; // FRETE MOEDA + FRETE USD + FRETE R$
-                                } else {
-                                    $colspanBeforeMiddleRow += 2; // FRETE USD + FRETE R$
-                                }
+                                // Ordem condicional baseada na nacionalização
+                                if ($nacionalizacaoTemp === 'santos') {
+                                    // Ordem específica para Santos: FRETE → ACRESC → CFR → SEGURO (sem SERVICE CHARGES)
+                                    // Colunas FRETE
+                                    if ($moedaFrete != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // FRETE MOEDA + FRETE USD + FRETE R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // FRETE USD + FRETE R$
+                                    }
 
-                                // Colunas VLR CFR (após FRETE)
-                                $colspanBeforeMiddleRow += 2; // VLR CFR UNIT + VLR CFR TOTAL
+                                    // Colunas ACRÉSCIMO (após FRETE)
+                                    if ($moedaAcrescimo != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // ACRESC MOEDA + ACRESC USD + ACRESC R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
+                                    }
 
-                                // Colunas SERVICE CHARGES (após CFR)
-                                $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
-                                if ($moedaServiceCharges != 'USD') {
-                                    $colspanBeforeMiddleRow += 3; // SERVICE CHARGES MOEDA + SERVICE CHARGES USD + SERVICE CHARGES R$
-                                } else {
-                                    $colspanBeforeMiddleRow += 2; // SERVICE CHARGES USD + SERVICE CHARGES R$
-                                }
+                                    // Colunas VLR CFR (após ACRESC)
+                                    $colspanBeforeMiddleRow += 2; // VLR CFR UNIT + VLR CFR TOTAL
 
-                                // Colunas ACRÉSCIMO (após SERVICE CHARGES)
-                                if ($moedaAcrescimo != 'USD') {
-                                    $colspanBeforeMiddleRow += 3; // ACRESC MOEDA + ACRESC USD + ACRESC R$
-                                } else {
-                                    $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
-                                }
+                                    // Colunas SEGURO (após CFR)
+                                    if ($moedaSeguro != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
+                                    }
+                                } elseif ($nacionalizacaoTemp === 'anapolis') {
+                                    // Ordem específica para Anápolis: FRETE → CFR → SERVICE CHARGES → ACRESC → SEGURO
+                                    // Colunas FRETE
+                                    if ($moedaFrete != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // FRETE MOEDA + FRETE USD + FRETE R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // FRETE USD + FRETE R$
+                                    }
 
-                                // Colunas SEGURO (após ACRÉSCIMO)
-                                if ($moedaSeguro != 'USD') {
-                                    $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
+                                    // Colunas VLR CFR (após FRETE)
+                                    $colspanBeforeMiddleRow += 2; // VLR CFR UNIT + VLR CFR TOTAL
+
+                                    // Colunas SERVICE CHARGES (após CFR)
+                                    $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
+                                    if ($moedaServiceCharges != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // SERVICE CHARGES MOEDA + SERVICE CHARGES USD + SERVICE CHARGES R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // SERVICE CHARGES USD + SERVICE CHARGES R$
+                                    }
+
+                                    // Colunas ACRÉSCIMO (após SERVICE CHARGES)
+                                    if ($moedaAcrescimo != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // ACRESC MOEDA + ACRESC USD + ACRESC R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
+                                    }
+
+                                    // Colunas SEGURO (após ACRÉSCIMO)
+                                    if ($moedaSeguro != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
+                                    }
+                                } elseif ($nacionalizacaoTemp === 'santa_catarina') {
+                                    // Ordem específica para Santa Catarina: SERVICE CHARGES → FRETE → ACRESC → CFR → SEGURO
+                                    // Colunas SERVICE CHARGES (após FOB)
+                                    $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
+                                    if ($moedaServiceCharges != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // SERVICE CHARGES MOEDA + SERVICE CHARGES USD + SERVICE CHARGES R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // SERVICE CHARGES USD + SERVICE CHARGES R$
+                                    }
+
+                                    // Colunas FRETE (após SERVICE CHARGES)
+                                    if ($moedaFrete != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // FRETE MOEDA + FRETE USD + FRETE R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // FRETE USD + FRETE R$
+                                    }
+
+                                    // Colunas ACRÉSCIMO (após FRETE)
+                                    if ($moedaAcrescimo != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // ACRESC MOEDA + ACRESC USD + ACRESC R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
+                                    }
+
+                                    // Colunas VLR CFR (após ACRESC)
+                                    $colspanBeforeMiddleRow += 2; // VLR CFR UNIT + VLR CFR TOTAL
+
+                                    // Colunas SEGURO (após CFR)
+                                    if ($moedaSeguro != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
+                                    }
                                 } else {
-                                    $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
+                                    // Ordem para Mato Grosso: FRETE → SERVICE CHARGES → SEGURO → CFR → ACRESC
+                                    // Colunas FRETE
+                                    if ($moedaFrete != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // FRETE MOEDA + FRETE USD + FRETE R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // FRETE USD + FRETE R$
+                                    }
+
+                                    // Colunas SERVICE CHARGES (após FRETE)
+                                    $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
+                                    if ($moedaServiceCharges != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // SERVICE CHARGES MOEDA + SERVICE CHARGES USD + SERVICE CHARGES R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // SERVICE CHARGES USD + SERVICE CHARGES R$
+                                    }
+
+                                    // Colunas SEGURO (após SERVICE CHARGES)
+                                    if ($moedaSeguro != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // SEGURO MOEDA + SEGURO USD + SEGURO R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // SEGURO USD + SEGURO R$
+                                    }
+
+                                    // Colunas VLR CFR (após SEGURO)
+                                    $colspanBeforeMiddleRow += 2; // VLR CFR UNIT + VLR CFR TOTAL
+
+                                    // Colunas ACRÉSCIMO (após CFR)
+                                    if ($moedaAcrescimo != 'USD') {
+                                        $colspanBeforeMiddleRow += 3; // ACRESC MOEDA + ACRESC USD + ACRESC R$
+                                    } else {
+                                        $colspanBeforeMiddleRow += 2; // ACRESC USD + ACRESC R$
+                                    }
                                 }
 
                                 // Colunas fixas após (THC até VLR TOTAL NF C/ICMS-ST)
                                 $colspanBeforeMiddleRow += 30; // THC USD até VLR TOTAL NF C/ICMS-ST
 
                                 // Colunas dos fatores (FATOR VLR FOB até TAXA SISCOMEX)
-                                $nacionalizacaoTemp = $processo->nacionalizacao ?? 'outros';
-                                
                                 // Para Mato Grosso, tx_def_li tem input de cabeçalho, então o colspan cobre apenas até MULTA
                                 if ($nacionalizacaoTemp === 'mato_grosso') {
                                     $colspanBeforeMiddleRow += 3; // FATOR VLR FOB, FATOR TX SISCOMEX, MULTA
@@ -277,9 +379,15 @@
 
                             @foreach ($camposCambiais as $campoCambial)
                                 <th class="middleRowInputTh">
-                                    <input type="text" class="form-control difCambial moneyReal2"
-                                        name="{{ $campoCambial }}" id="{{ $campoCambial }}"
-                                        value="{{ number_format($processo->$campoCambial ?? 0, 2, ',', '.') }}">
+                                    @if ($campoCambial === 'diferenca_cambial_frete')
+                                        <input type="text" class="form-control difCambial moneyReal4"
+                                            name="{{ $campoCambial }}" id="{{ $campoCambial }}"
+                                            value="{{ number_format($processo->$campoCambial ?? 0, 4, ',', '.') }}">
+                                    @else
+                                        <input type="text" class="form-control difCambial moneyReal2"
+                                            name="{{ $campoCambial }}" id="{{ $campoCambial }}"
+                                            value="{{ number_format($processo->$campoCambial ?? 0, 2, ',', '.') }}">
+                                    @endif
                                 </th>
                             @endforeach
                             
@@ -349,9 +457,21 @@
                                     style="margin-left: 10px" id="select-all-produtos" title="Selecionar todos"></th>
                             <th style="min-width: 300px !important;">PRODUTO</th>
                             <th style="min-width: 500px !important;">DESCRIÇÃO</th>
-                            <th>ADIÇÃO</th>
-                            <th>ITEM</th>
-                            <th>CODIGO</th>
+                            @if ($nacionalizacaoAtual === 'mato_grosso')
+                                {{-- Mato Grosso: PRODUTO, DESCRIÇÃO, CÓDIGO, ADIÇÃO, ITEM, NCM --}}
+                                <th>CODIGO</th>
+                                <th>ADIÇÃO</th>
+                                <th>ITEM</th>
+                            @elseif ($nacionalizacaoAtual === 'santa_catarina')
+                                {{-- Santa Catarina: PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, CODIGO, NCM --}}
+                                <th>ADIÇÃO</th>
+                                <th>ITEM</th>
+                                <th>CODIGO</th>
+                            @else
+                                {{-- Anápolis e Santos: PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, NCM (sem CODIGO) --}}
+                                <th>ADIÇÃO</th>
+                                <th>ITEM</th>
+                            @endif
                             <th>NCM</th>
                             <th>QUANTD</th>
                             <th>PESO LIQ. UNIT</th>
@@ -375,46 +495,140 @@
                             @endif
                             <th>VLR TOTALFOB USD</th>
                             <th>VLR TOTALFOB R$</th>
-                            <!-- FRETE - Colunas condicionais -->
+                            <!-- Ordem condicional baseada na nacionalização -->
                             @php
                                 $moedaFrete = $processo->frete_internacional_moeda ?? 'USD';
                                 $moedaSeguro = $processo->seguro_internacional_moeda ?? 'USD';
                                 $moedaAcrescimo = $processo->acrescimo_frete_moeda ?? 'USD';
-                            @endphp
-
-                            @if ($moedaFrete != 'USD')
-                                <th>FRETE INT.{{ $moedaFrete }}</th>
-                            @endif
-                            <th>FRETE INT.USD</th>
-                            <th>FRETE INT.R$</th>
-
-                            <!-- CFR - Após FRETE -->
-                            <th>VLR CFR UNIT</th>
-                            <th>VLR CFR TOTAL</th>
-
-                            <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
-                            @php
                                 $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
                             @endphp
-                            @if ($moedaServiceCharges != 'USD')
-                                <th>SERVICE CHARGES {{ $moedaServiceCharges }}</th>
-                            @endif
-                            <th>SERVICE CHARGES USD</th>
-                            <th>SERVICE CHARGES R$</th>
 
-                            <!-- ACRÉSCIMO - Colunas condicionais (após SERVICE CHARGES) -->
-                            @if ($moedaAcrescimo != 'USD')
-                                <th>ACRESC. FRETE {{ $moedaAcrescimo }}</th>
-                            @endif
-                            <th>ACRESC. FRETE USD</th>
-                            <th>ACRESC. FRETE R$</th>
+                            @if ($nacionalizacaoAtual === 'santa_catarina')
+                                {{-- Ordem específica para Santa Catarina: SERVICE CHARGES antes de FRETE --}}
+                                <!-- SERVICE CHARGES - Colunas condicionais (após FOB) -->
+                                @if ($moedaServiceCharges != 'USD')
+                                    <th>SERVICE CHARGES {{ $moedaServiceCharges }}</th>
+                                @endif
+                                <th>SERVICE CHARGES USD</th>
+                                <th>SERVICE CHARGES R$</th>
 
-                            <!-- SEGURO - Colunas condicionais (após ACRÉSCIMO) -->
-                            @if ($moedaSeguro != 'USD')
-                                <th>SEGURO INT.{{ $moedaSeguro }}</th>
+                                <!-- FRETE - Colunas condicionais (após SERVICE CHARGES) -->
+                                @if ($moedaFrete != 'USD')
+                                    <th>FRETE INT.{{ $moedaFrete }}</th>
+                                @endif
+                                <th>FRETE INT.USD</th>
+                                <th>FRETE INT.R$</th>
+
+                                <!-- ACRÉSCIMO - Colunas condicionais (após FRETE) -->
+                                @if ($moedaAcrescimo != 'USD')
+                                    <th>ACRESC. FRETE {{ $moedaAcrescimo }}</th>
+                                @endif
+                                <th>ACRESC. FRETE USD</th>
+                                <th>ACRESC. FRETE R$</th>
+
+                                <!-- CFR - Após ACRESC. FRETE R$ -->
+                                <th>VLR CFR UNIT</th>
+                                <th>VLR CFR TOTAL</th>
+
+                                <!-- SEGURO - Colunas condicionais (após CFR) -->
+                                @if ($moedaSeguro != 'USD')
+                                    <th>SEGURO INT.{{ $moedaSeguro }}</th>
+                                @endif
+                                <th>SEGURO INT.USD</th>
+                                <th>SEGURO INT.R$</th>
+                            @elseif ($nacionalizacaoAtual === 'anapolis')
+                                {{-- Ordem específica para Anápolis: FRETE → CFR → SERVICE CHARGES → ACRESC → SEGURO --}}
+                                <!-- FRETE - Colunas condicionais -->
+                                @if ($moedaFrete != 'USD')
+                                    <th>FRETE INT.{{ $moedaFrete }}</th>
+                                @endif
+                                <th>FRETE INT.USD</th>
+                                <th>FRETE INT.R$</th>
+
+                                <!-- CFR - Após FRETE e antes de SERVICE CHARGES -->
+                                <th>VLR CFR UNIT</th>
+                                <th>VLR CFR TOTAL</th>
+
+                                <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
+                                @if ($moedaServiceCharges != 'USD')
+                                    <th>SERVICE CHARGES {{ $moedaServiceCharges }}</th>
+                                @endif
+                                <th>SERVICE CHARGES USD</th>
+                                <th>SERVICE CHARGES R$</th>
+
+                                <!-- ACRÉSCIMO - Colunas condicionais (após SERVICE CHARGES) -->
+                                @if ($moedaAcrescimo != 'USD')
+                                    <th>ACRESC. FRETE {{ $moedaAcrescimo }}</th>
+                                @endif
+                                <th>ACRESC. FRETE USD</th>
+                                <th>ACRESC. FRETE R$</th>
+
+                                <!-- SEGURO - Colunas condicionais (após ACRESC) -->
+                                @if ($moedaSeguro != 'USD')
+                                    <th>SEGURO INT.{{ $moedaSeguro }}</th>
+                                @endif
+                                <th>SEGURO INT.USD</th>
+                                <th>SEGURO INT.R$</th>
+                            @elseif ($nacionalizacaoAtual === 'santos')
+                                {{-- Ordem específica para Santos: FRETE → ACRESC → CFR → SEGURO (sem SERVICE CHARGES) --}}
+                                <!-- FRETE - Colunas condicionais -->
+                                @if ($moedaFrete != 'USD')
+                                    <th>FRETE INT.{{ $moedaFrete }}</th>
+                                @endif
+                                <th>FRETE INT.USD</th>
+                                <th>FRETE INT.R$</th>
+
+                                <!-- ACRÉSCIMO - Colunas condicionais (após FRETE) -->
+                                @if ($moedaAcrescimo != 'USD')
+                                    <th>ACRESC. FRETE {{ $moedaAcrescimo }}</th>
+                                @endif
+                                <th>ACRESC. FRETE USD</th>
+                                <th>ACRESC. FRETE R$</th>
+
+                                <!-- CFR - Após ACRESC -->
+                                <th>VLR CFR UNIT</th>
+                                <th>VLR CFR TOTAL</th>
+
+                                <!-- SEGURO - Colunas condicionais (após CFR) -->
+                                @if ($moedaSeguro != 'USD')
+                                    <th>SEGURO INT.{{ $moedaSeguro }}</th>
+                                @endif
+                                <th>SEGURO INT.USD</th>
+                                <th>SEGURO INT.R$</th>
+                            @else
+                                {{-- Ordem para Mato Grosso: FRETE, SERVICE CHARGES, SEGURO, CFR, ACRESC --}}
+                                <!-- FRETE - Colunas condicionais -->
+                                @if ($moedaFrete != 'USD')
+                                    <th>FRETE INT.{{ $moedaFrete }}</th>
+                                @endif
+                                <th>FRETE INT.USD</th>
+                                <th>FRETE INT.R$</th>
+
+                                <!-- SERVICE CHARGES - Colunas condicionais (após FRETE) -->
+                                @if ($moedaServiceCharges != 'USD')
+                                    <th>SERVICE CHARGES {{ $moedaServiceCharges }}</th>
+                                @endif
+                                <th>SERVICE CHARGES USD</th>
+                                <th>SERVICE CHARGES R$</th>
+
+                                <!-- SEGURO - Colunas condicionais (após SERVICE CHARGES) -->
+                                @if ($moedaSeguro != 'USD')
+                                    <th>SEGURO INT.{{ $moedaSeguro }}</th>
+                                @endif
+                                <th>SEGURO INT.USD</th>
+                                <th>SEGURO INT.R$</th>
+
+                                <!-- CFR - Após SEGURO -->
+                                <th>VLR CFR UNIT</th>
+                                <th>VLR CFR TOTAL</th>
+
+                                <!-- ACRÉSCIMO - Colunas condicionais (após CFR) -->
+                                @if ($moedaAcrescimo != 'USD')
+                                    <th>ACRESC. FRETE {{ $moedaAcrescimo }}</th>
+                                @endif
+                                <th>ACRESC. FRETE USD</th>
+                                <th>ACRESC. FRETE R$</th>
                             @endif
-                            <th>SEGURO INT.USD</th>
-                            <th>SEGURO INT.R$</th>
 
                             <th>THC USD</th>
                             <th>THC R$</th>
@@ -630,23 +844,53 @@
                                         id="descricao-{{ $index }}" value="{{ $processoProduto->descricao }}">
                                 </td>
 
-                                <td>
-                                    <input data-row="{{ $index }}" type="text" class=" form-control"
-                                        name="produtos[{{ $index }}][adicao]" id="adicao-{{ $index }}"
-                                        value="{{ $processoProduto->adicao ?? '' }}">
-                                </td>
-
-                                <td>
-                                    <input data-row="{{ $index }}" type="number" class=" form-control "
-                                        name="produtos[{{ $index }}][item]" id="item-{{ $index }}"
-                                        value="{{ $processoProduto->item }}">
-                                </td>
-
-                                <td>
-                                    <input type="text" class=" form-control" readonly
-                                        name="produtos[{{ $index }}][codigo]" id="codigo-{{ $index }}"
-                                        value="{{ $processoProduto->produto->codigo }}">
-                                </td>
+                                @if ($nacionalizacaoAtual === 'mato_grosso')
+                                    {{-- Mato Grosso: PRODUTO, DESCRIÇÃO, CÓDIGO, ADIÇÃO, ITEM, NCM --}}
+                                    <td>
+                                        <input type="text" class=" form-control" readonly
+                                            name="produtos[{{ $index }}][codigo]" id="codigo-{{ $index }}"
+                                            value="{{ $processoProduto->produto->codigo }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text" class=" form-control"
+                                            name="produtos[{{ $index }}][adicao]" id="adicao-{{ $index }}"
+                                            value="{{ $processoProduto->adicao ?? '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="number" class=" form-control "
+                                            name="produtos[{{ $index }}][item]" id="item-{{ $index }}"
+                                            value="{{ $processoProduto->item }}">
+                                    </td>
+                                @elseif ($nacionalizacaoAtual === 'santa_catarina')
+                                    {{-- Santa Catarina: PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, CODIGO, NCM --}}
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text" class=" form-control"
+                                            name="produtos[{{ $index }}][adicao]" id="adicao-{{ $index }}"
+                                            value="{{ $processoProduto->adicao ?? '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="number" class=" form-control "
+                                            name="produtos[{{ $index }}][item]" id="item-{{ $index }}"
+                                            value="{{ $processoProduto->item }}">
+                                    </td>
+                                    <td>
+                                        <input type="text" class=" form-control" readonly
+                                            name="produtos[{{ $index }}][codigo]" id="codigo-{{ $index }}"
+                                            value="{{ $processoProduto->produto->codigo }}">
+                                    </td>
+                                @else
+                                    {{-- Anápolis e Santos: PRODUTO, DESCRIÇÃO, ADIÇÃO, ITEM, NCM (sem CODIGO) --}}
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text" class=" form-control"
+                                            name="produtos[{{ $index }}][adicao]" id="adicao-{{ $index }}"
+                                            value="{{ $processoProduto->adicao ?? '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="number" class=" form-control "
+                                            name="produtos[{{ $index }}][item]" id="item-{{ $index }}"
+                                            value="{{ $processoProduto->item }}">
+                                    </td>
+                                @endif
 
                                 <td>
                                     <input type="text" class=" form-control" readonly
@@ -731,126 +975,462 @@
                                         value="{{ $processoProduto->fob_total_brl ? number_format($processoProduto->fob_total_brl, 7, ',' , '.') : '' }}">
                                 </td>
 
-                                <!-- FRETE - Colunas condicionais -->
-                                @if ($moedaFrete != 'USD')
-                                    <td>
-                                        <input data-row="{{ $index }}" type="text"
-                                            class="form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][frete_moeda_estrangeira]"
-                                            id="frete_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->frete_moeda_estrangeira ? number_format($processoProduto->frete_moeda_estrangeira, 2, ',' , '.') : '' }}">
-                                    </td>
-                                @endif
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][frete_usd]"
-                                        id="frete_usd-{{ $index }}"
-                                        value="{{ $processoProduto->frete_usd ? number_format($processoProduto->frete_usd, 2, ',' , '.') : '' }}">
-                                </td>
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][frete_brl]"
-                                        id="frete_brl-{{ $index }}"
-                                        value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <!-- CFR - Após FRETE -->
-                                    <td>
-                                        <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][vlr_crf_unit]"
-                                        id="vlr_crf_unit-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_crf_unit ? number_format((float)$processoProduto->vlr_crf_unit, 4, ',' , '.') : '' }}">
-                                </td>
-
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][vlr_crf_total]"
-                                        id="vlr_crf_total-{{ $index }}"
-                                        value="{{ $processoProduto->vlr_crf_total ? number_format((float)$processoProduto->vlr_crf_total, 4, ',' , '.') : '' }}">
-                                </td>
-
-                                <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
+                                <!-- Ordem condicional baseada na nacionalização -->
                                 @php
                                     $moedaServiceCharges = $processo->service_charges_moeda ?? 'USD';
                                 @endphp
-                                @if ($moedaServiceCharges != 'USD')
+
+                                @if ($nacionalizacaoAtual === 'santa_catarina')
+                                    {{-- Ordem específica para Santa Catarina: SERVICE CHARGES antes de FRETE --}}
+                                    <!-- SERVICE CHARGES - Colunas condicionais (após FOB) -->
+                                    @if ($moedaServiceCharges != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][service_charges_moeda_estrangeira]"
+                                                id="service_charges_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->service_charges_moeda_estrangeira ? number_format($processoProduto->service_charges_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
                                             class="form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][service_charges_moeda_estrangeira]"
-                                            id="service_charges_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->service_charges_moeda_estrangeira ? number_format($processoProduto->service_charges_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                            name="produtos[{{ $index }}][service_charges]"
+                                            id="service_charges-{{ $index }}"
+                                            value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 2, ',' , '.') : '' }}">
                                     </td>
-                                @endif
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][service_charges]"
-                                        id="service_charges-{{ $index }}"
-                                        value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 2, ',' , '.') : '' }}">
-                                </td>
 
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][service_charges_brl]"
-                                        id="service_charges_brl-{{ $index }}"
-                                        value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 2, ',' , '.') : '' }}">
-                                </td>
-
-                                <!-- ACRÉSCIMO - Colunas condicionais (após SERVICE CHARGES) -->
-                                @if ($moedaAcrescimo != 'USD')
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
                                             class="form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][acrescimo_moeda_estrangeira]"
-                                            id="acrescimo_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->acrescimo_moeda_estrangeira ? number_format($processoProduto->acrescimo_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                            name="produtos[{{ $index }}][service_charges_brl]"
+                                            id="service_charges_brl-{{ $index }}"
+                                            value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 2, ',' , '.') : '' }}">
                                     </td>
-                                @endif
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][acresc_frete_usd]"
-                                        id="acresc_frete_usd-{{ $index }}"
-                                        value="{{ $processoProduto->acresc_frete_usd ? number_format($processoProduto->acresc_frete_usd, 2, ',' , '.') : '' }}">
-                                </td>
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][acresc_frete_brl]"
-                                        id="acresc_frete_brl-{{ $index }}"
-                                        value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 2, ',' , '.') : '' }}">
-                                </td>
 
-                                <!-- SEGURO - Colunas condicionais (após ACRÉSCIMO) -->
-                                @if ($moedaSeguro != 'USD')
+                                    <!-- FRETE - Colunas condicionais (após SERVICE CHARGES) -->
+                                    @if ($moedaFrete != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][frete_moeda_estrangeira]"
+                                                id="frete_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->frete_moeda_estrangeira ? number_format($processoProduto->frete_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
                                     <td>
                                         <input data-row="{{ $index }}" type="text"
                                             class="form-control moneyReal" readonly
-                                            name="produtos[{{ $index }}][seguro_moeda_estrangeira]"
-                                            id="seguro_moeda_estrangeira-{{ $index }}"
-                                            value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                            name="produtos[{{ $index }}][frete_usd]"
+                                            id="frete_usd-{{ $index }}"
+                                            value="{{ $processoProduto->frete_usd ? number_format($processoProduto->frete_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][frete_brl]"
+                                            id="frete_brl-{{ $index }}"
+                                            value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- ACRÉSCIMO - Colunas condicionais (após FRETE) -->
+                                    @if ($moedaAcrescimo != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][acrescimo_moeda_estrangeira]"
+                                                id="acrescimo_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->acrescimo_moeda_estrangeira ? number_format($processoProduto->acrescimo_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][acresc_frete_usd]"
+                                            id="acresc_frete_usd-{{ $index }}"
+                                            value="{{ $processoProduto->acresc_frete_usd ? number_format($processoProduto->acresc_frete_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][acresc_frete_brl]"
+                                            id="acresc_frete_brl-{{ $index }}"
+                                            value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- CFR - Após ACRESC -->
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][vlr_crf_unit]"
+                                            id="vlr_crf_unit-{{ $index }}"
+                                            value="{{ $processoProduto->vlr_crf_unit ? number_format((float)$processoProduto->vlr_crf_unit, 4, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][vlr_crf_total]"
+                                            id="vlr_crf_total-{{ $index }}"
+                                            value="{{ $processoProduto->vlr_crf_total ? number_format((float)$processoProduto->vlr_crf_total, 4, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- SEGURO - Colunas condicionais (após CFR) -->
+                                    @if ($moedaSeguro != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][seguro_moeda_estrangeira]"
+                                                id="seguro_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][seguro_usd]"
+                                            id="seguro_usd-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][seguro_brl]"
+                                            id="seguro_brl-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+                                @elseif ($nacionalizacaoAtual === 'anapolis')
+                                    {{-- Ordem específica para Anápolis: FRETE → CFR → SERVICE CHARGES → ACRESC → SEGURO --}}
+                                    <!-- FRETE - Colunas condicionais -->
+                                    @if ($moedaFrete != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][frete_moeda_estrangeira]"
+                                                id="frete_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->frete_moeda_estrangeira ? number_format($processoProduto->frete_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][frete_usd]"
+                                            id="frete_usd-{{ $index }}"
+                                            value="{{ $processoProduto->frete_usd ? number_format($processoProduto->frete_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][frete_brl]"
+                                            id="frete_brl-{{ $index }}"
+                                            value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- CFR - Após FRETE e antes de SERVICE CHARGES -->
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][vlr_crf_unit]"
+                                            id="vlr_crf_unit-{{ $index }}"
+                                            value="{{ $processoProduto->vlr_crf_unit ? number_format((float)$processoProduto->vlr_crf_unit, 4, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][vlr_crf_total]"
+                                            id="vlr_crf_total-{{ $index }}"
+                                            value="{{ $processoProduto->vlr_crf_total ? number_format((float)$processoProduto->vlr_crf_total, 4, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- SERVICE CHARGES - Colunas condicionais (após CFR) -->
+                                    @if ($moedaServiceCharges != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][service_charges_moeda_estrangeira]"
+                                                id="service_charges_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->service_charges_moeda_estrangeira ? number_format($processoProduto->service_charges_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][service_charges]"
+                                            id="service_charges-{{ $index }}"
+                                            value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][service_charges_brl]"
+                                            id="service_charges_brl-{{ $index }}"
+                                            value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- ACRÉSCIMO - Colunas condicionais (após SERVICE CHARGES) -->
+                                    @if ($moedaAcrescimo != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][acrescimo_moeda_estrangeira]"
+                                                id="acrescimo_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->acrescimo_moeda_estrangeira ? number_format($processoProduto->acrescimo_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][acresc_frete_usd]"
+                                            id="acresc_frete_usd-{{ $index }}"
+                                            value="{{ $processoProduto->acresc_frete_usd ? number_format($processoProduto->acresc_frete_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][acresc_frete_brl]"
+                                            id="acresc_frete_brl-{{ $index }}"
+                                            value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- SEGURO - Colunas condicionais (após ACRESC) -->
+                                    @if ($moedaSeguro != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][seguro_moeda_estrangeira]"
+                                                id="seguro_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][seguro_usd]"
+                                            id="seguro_usd-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][seguro_brl]"
+                                            id="seguro_brl-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+                                @elseif ($nacionalizacaoAtual === 'santos')
+                                    {{-- Ordem específica para Santos: FRETE → ACRESC → CFR → SEGURO (sem SERVICE CHARGES) --}}
+                                    <!-- FRETE - Colunas condicionais -->
+                                    @if ($moedaFrete != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][frete_moeda_estrangeira]"
+                                                id="frete_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->frete_moeda_estrangeira ? number_format($processoProduto->frete_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][frete_usd]"
+                                            id="frete_usd-{{ $index }}"
+                                            value="{{ $processoProduto->frete_usd ? number_format($processoProduto->frete_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][frete_brl]"
+                                            id="frete_brl-{{ $index }}"
+                                            value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- ACRÉSCIMO - Colunas condicionais (após FRETE) -->
+                                    @if ($moedaAcrescimo != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][acrescimo_moeda_estrangeira]"
+                                                id="acrescimo_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->acrescimo_moeda_estrangeira ? number_format($processoProduto->acrescimo_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][acresc_frete_usd]"
+                                            id="acresc_frete_usd-{{ $index }}"
+                                            value="{{ $processoProduto->acresc_frete_usd ? number_format($processoProduto->acresc_frete_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][acresc_frete_brl]"
+                                            id="acresc_frete_brl-{{ $index }}"
+                                            value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- CFR - Após ACRESC -->
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][vlr_crf_unit]"
+                                            id="vlr_crf_unit-{{ $index }}"
+                                            value="{{ $processoProduto->vlr_crf_unit ? number_format((float)$processoProduto->vlr_crf_unit, 4, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][vlr_crf_total]"
+                                            id="vlr_crf_total-{{ $index }}"
+                                            value="{{ $processoProduto->vlr_crf_total ? number_format((float)$processoProduto->vlr_crf_total, 4, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- SEGURO - Colunas condicionais (após CFR) -->
+                                    @if ($moedaSeguro != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][seguro_moeda_estrangeira]"
+                                                id="seguro_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][seguro_usd]"
+                                            id="seguro_usd-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][seguro_brl]"
+                                            id="seguro_brl-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+                                @else
+                                    {{-- Ordem para Mato Grosso: FRETE, SERVICE CHARGES, SEGURO, CFR, ACRESC --}}
+                                    <!-- FRETE - Colunas condicionais -->
+                                    @if ($moedaFrete != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][frete_moeda_estrangeira]"
+                                                id="frete_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->frete_moeda_estrangeira ? number_format($processoProduto->frete_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][frete_usd]"
+                                            id="frete_usd-{{ $index }}"
+                                            value="{{ $processoProduto->frete_usd ? number_format($processoProduto->frete_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][frete_brl]"
+                                            id="frete_brl-{{ $index }}"
+                                            value="{{ $processoProduto->frete_brl ? number_format($processoProduto->frete_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- SERVICE CHARGES - Colunas condicionais (após FRETE) -->
+                                    @if ($moedaServiceCharges != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][service_charges_moeda_estrangeira]"
+                                                id="service_charges_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->service_charges_moeda_estrangeira ? number_format($processoProduto->service_charges_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][service_charges]"
+                                            id="service_charges-{{ $index }}"
+                                            value="{{ $processoProduto->service_charges ? number_format($processoProduto->service_charges, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][service_charges_brl]"
+                                            id="service_charges_brl-{{ $index }}"
+                                            value="{{ $processoProduto->service_charges_brl ? number_format($processoProduto->service_charges_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- SEGURO - Colunas condicionais (após SERVICE CHARGES) -->
+                                    @if ($moedaSeguro != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][seguro_moeda_estrangeira]"
+                                                id="seguro_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->seguro_moeda_estrangeira ? number_format($processoProduto->seguro_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][seguro_usd]"
+                                            id="seguro_usd-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][seguro_brl]"
+                                            id="seguro_brl-{{ $index }}"
+                                            value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 2, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- CFR - Após SEGURO -->
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][vlr_crf_unit]"
+                                            id="vlr_crf_unit-{{ $index }}"
+                                            value="{{ $processoProduto->vlr_crf_unit ? number_format((float)$processoProduto->vlr_crf_unit, 4, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][vlr_crf_total]"
+                                            id="vlr_crf_total-{{ $index }}"
+                                            value="{{ $processoProduto->vlr_crf_total ? number_format((float)$processoProduto->vlr_crf_total, 4, ',' , '.') : '' }}">
+                                    </td>
+
+                                    <!-- ACRÉSCIMO - Colunas condicionais (após CFR) -->
+                                    @if ($moedaAcrescimo != 'USD')
+                                        <td>
+                                            <input data-row="{{ $index }}" type="text"
+                                                class="form-control moneyReal" readonly
+                                                name="produtos[{{ $index }}][acrescimo_moeda_estrangeira]"
+                                                id="acrescimo_moeda_estrangeira-{{ $index }}"
+                                                value="{{ $processoProduto->acrescimo_moeda_estrangeira ? number_format($processoProduto->acrescimo_moeda_estrangeira, 2, ',' , '.') : '' }}">
+                                        </td>
+                                    @endif
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][acresc_frete_usd]"
+                                            id="acresc_frete_usd-{{ $index }}"
+                                            value="{{ $processoProduto->acresc_frete_usd ? number_format($processoProduto->acresc_frete_usd, 2, ',' , '.') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input data-row="{{ $index }}" type="text"
+                                            class="form-control moneyReal" readonly
+                                            name="produtos[{{ $index }}][acresc_frete_brl]"
+                                            id="acresc_frete_brl-{{ $index }}"
+                                            value="{{ $processoProduto->acresc_frete_brl ? number_format($processoProduto->acresc_frete_brl, 2, ',' , '.') : '' }}">
                                     </td>
                                 @endif
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][seguro_usd]"
-                                        id="seguro_usd-{{ $index }}"
-                                        value="{{ $processoProduto->seguro_usd ? number_format($processoProduto->seguro_usd, 2, ',' , '.') : '' }}">
-                                </td>
-                                <td>
-                                    <input data-row="{{ $index }}" type="text"
-                                        class="form-control moneyReal" readonly
-                                        name="produtos[{{ $index }}][seguro_brl]"
-                                        id="seguro_brl-{{ $index }}"
-                                        value="{{ $processoProduto->seguro_brl ? number_format($processoProduto->seguro_brl, 2, ',' , '.') : '' }}">
-                                </td>
 
                                 <!-- Resto das colunas permanecem iguais -->
                                 <td>
@@ -1297,7 +1877,7 @@
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
-                                        class=" form-control moneyReal" readonly
+                                        class=" form-control moneyReal4" readonly
                                         name="produtos[{{ $index }}][diferenca_cambial_frete]"
                                         id="diferenca_cambial_frete-{{ $index }}"
                                         value="{{ $processoProduto->diferenca_cambial_frete ? number_format($processoProduto->diferenca_cambial_frete, 4, ',' , '.') : '' }}">
