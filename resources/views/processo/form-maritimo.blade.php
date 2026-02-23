@@ -227,13 +227,6 @@
                                     href="#custom-tabs-three-home" role="tab" aria-controls="custom-tabs-three-home"
                                     aria-selected="false">Produtos</a>
                             </li>
-                            @if (($processo->nacionalizacao ?? null) === 'santa_catarina')
-                                <li class="nav-item">
-                                    <a class="nav-link " id="custom-tabs-three-multa-tab" data-toggle="pill"
-                                        href="#custom-tabs-three-multa" role="tab" aria-controls="custom-tabs-three-multa"
-                                        aria-selected="false">Produtos Multa</a>
-                                </li>
-                            @endif
                             <li class="nav-item">
                                 <a class="nav-link " id="custom-tabs-four-home-tab" data-toggle="pill"
                                     href="#custom-tabs-four-home" role="tab" aria-controls="custom-tabs-four-home"
@@ -399,8 +392,6 @@
                 valor_icms_st: 0,
                 valor_total_nf_com_icms_st: 0,
                 multa: 0,
-                multa_complem: 0,
-                dif_impostos: 0,
                 tx_def_li: 0,
                 taxa_siscomex: 0,
                 outras_taxas_agente: 0,
@@ -484,18 +475,7 @@
                     });
                 } else {
                     // Fallback: usar valores dos inputs (comportamento original)
-                    const isSantaCatarina = getNacionalizacaoAtual() === 'santa_catarina';
                     Object.keys(totais).forEach(campo => {
-                        // Para Santa Catarina, calcular multa_complem e dif_impostos da tabela de multa
-                        if (isSantaCatarina && campo === 'multa_complem') {
-                            totais[campo] += obterMultaComplementarPorAdicaoItemProduto(rowId);
-                            return;
-                        }
-                        if (isSantaCatarina && campo === 'dif_impostos') {
-                            totais[campo] += obterDiferencaImpostosPorAdicaoItemProduto(rowId);
-                            return;
-                        }
-                        
                         if (campo === 'service_charges' && moedaServiceCharges && moedaServiceCharges !== 'USD') {
                             const elemento = $(`#service_charges_moeda_estrangeira-${rowId}`);
                             if (elemento.length > 0) {
@@ -842,8 +822,6 @@
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.tx_def_li, 2)}</td>
         <td style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.taxa_siscomex, 2)}</td>
         ${getNacionalizacaoAtual() === 'santa_catarina' ? 
-            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.multa_complem || 0, 2) + '</td>' +
-            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.dif_impostos || 0, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.outras_taxas_agente, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.liberacao_bl, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.desconsolidacao, 2) + '</td>' +
@@ -982,8 +960,8 @@
             '<td></td>' + // MVA (sem totalizador)
             '<td></td>' + // ICMS-ST (sem totalizador)
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.vlr_icms_st_mg || 0, 2) + '</td>' +
-            '<td></td>' + // CUSTO TOTAL C/ICMS ST (sem totalizador)
-            '<td style="font-weight: bold; text-align: right;">' + (totais.quantidade > 0 ? MoneyUtils.formatMoney(totais.custo_total_c_icms_st / totais.quantidade, 2) : '0,00') + '</td>' +
+            '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.custo_total_c_icms_st || 0, 2) + '</td>' + // CUSTO TOTAL C/ICMS ST (soma total)
+            '<td></td>' + // CUSTO UNIT C/ICMS ST (sem totalizador para Mato Grosso)
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.exportador_mg || 0, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.tributos_mg || 0, 2) + '</td>' +
             '<td style="font-weight: bold; text-align: right;">' + MoneyUtils.formatMoney(totais.despesas_mg || 0, 2) + '</td>' +
@@ -2257,8 +2235,6 @@
                     
                     if (nacionalizacaoDesp === 'santa_catarina') {
                         // Fórmula específica para Santa Catarina
-                        const multa_complem_desp = MoneyUtils.parseMoney($(`#multa_complem-${rowId}`).val()) || 0;
-                        const dif_impostos_desp = MoneyUtils.parseMoney($(`#dif_impostos-${rowId}`).val()) || 0;
                         const outras_taxas_agente_desp = MoneyUtils.parseMoney($(`#outras_taxas_agente-${rowId}`).val()) || 0;
                         const liberacao_bl_desp = MoneyUtils.parseMoney($(`#liberacao_bl-${rowId}`).val()) || 0;
                         const desconsolidacao_desp = MoneyUtils.parseMoney($(`#desconsolidacao-${rowId}`).val()) || 0;
@@ -2272,16 +2248,12 @@
                         const tx_correcao_lacre_desp = MoneyUtils.parseMoney($(`#tx_correcao_lacre-${rowId}`).val()) || 0;
                         const li_dta_honor_nix_desp = MoneyUtils.parseMoney($(`#li_dta_honor_nix-${rowId}`).val()) || 0;
                         
-                        // Parte 1: SOMA(BD23:BW23) = MULTA + TX DEF. LI + TAXA SISCOMEX + MULTA COMPLEM + DIF IMPOSTOS + 
+                        // Parte 1: SOMA(MULTA até HONORÁRIOS NIX) = MULTA + TX DEF. LI + TAXA SISCOMEX + 
                         // OUTRAS TX AGENTE + LIBERAÇÃO BL + DESCONS. + ISPS CODE + HANDLING + CAPATAZIA + AFRMM + 
                         // ARMAZENAGEM PORTO + FRETE RODOVIARIO + DIF FRETE RODOVIARIO + S.D.A + REP.PORTO + 
                         // TX CORREÇÃO LACRE + LI+DTA+HONOR.NIX + HONORÁRIOS NIX
-                        // BD: MULTA, BE: TX DEF. LI, BF: TAXA SISCOMEX, BG: MULTA COMPLEM, BH: DIF IMPOSTOS,
-                        // BI: OUTRAS TX AGENTE, BJ: LIBERAÇÃO BL, BK: DESCONS., BL: ISPS CODE, BM: HANDLING,
-                        // BN: CAPATAZIA, BO: AFRMM, BP: ARMAZENAGEM PORTO, BQ: FRETE RODOVIARIO, BR: DIF FRETE RODOVIARIO,
-                        // BS: S.D.A, BT: REP.PORTO, BU: TX CORREÇÃO LACRE, BV: LI+DTA+HONOR.NIX, BW: HONORÁRIOS NIX
-                        desp_desenbaraco_parte_1 = multaDesp + taxa_def_desp + taxa_siscomex_desp + multa_complem_desp + 
-                            dif_impostos_desp + outras_taxas_agente_desp + liberacao_bl_desp + desconsolidacao_desp + 
+                        desp_desenbaraco_parte_1 = multaDesp + taxa_def_desp + taxa_siscomex_desp + 
+                            outras_taxas_agente_desp + liberacao_bl_desp + desconsolidacao_desp + 
                             isps_code_desp + handling_desp + capatazia_desp + afrmm_desp + armazenagem_porto_desp + 
                             frete_rodoviario_desp + dif_frete_rodoviario_desp + sda_desp + rep_porto_desp + 
                             tx_correcao_lacre_desp + li_dta_honor_nix_desp + honorarios_nix_desp;
@@ -2586,12 +2558,6 @@
                         valor_icms_st: vlrIcmsSt,
                         valor_total_nf_com_icms_st: totais.vlrTotalNfComIcms,
                         multa: multaDesp,
-                        multa_complem: getNacionalizacaoAtual() === 'santa_catarina' 
-                            ? obterMultaComplementarPorAdicaoItemProduto(rowId) 
-                            : (MoneyUtils.parseMoney($(`#multa_complem-${rowId}`).val()) || 0),
-                        dif_impostos: getNacionalizacaoAtual() === 'santa_catarina' 
-                            ? obterDiferencaImpostosPorAdicaoItemProduto(rowId) 
-                            : (MoneyUtils.parseMoney($(`#dif_impostos-${rowId}`).val()) || 0),
                         tx_def_li: (() => {
                             const nacionalizacaoAtual = getNacionalizacaoAtual();
                             if (nacionalizacaoAtual === 'mato_grosso') {
@@ -2811,6 +2777,24 @@
             'tx_correcao_lacre', 'lavagem_container', 'rep_anapolis', 'correios', 'li_dta_honor_nix', 'honorarios_nix' 
         ];
 
+        // Ordem específica para Santos
+        const CAMPOS_EXTERNOS_SANTOS = [
+            'outras_taxas_agente',
+            'liberacao_bl',
+            'desconsolidacao',
+            'isps_code',
+            'handling',
+            'capatazia',
+            'afrmm',
+            'armazenagem_sts',
+            'frete_dta_sts_ana',
+            'sda',
+            'rep_sts',
+            'tx_correcao_lacre',
+            'li_dta_honor_nix',
+            'honorarios_nix'
+        ];
+
         // Ordem específica para Anápolis
         const CAMPOS_EXTERNOS_ANAPOLIS = [
             'outras_taxas_agente',
@@ -2880,6 +2864,11 @@
 
         function getCamposExternos() {
             const nacionalizacao = getNacionalizacaoAtual();
+            
+            // Se for Santos, usar ordem específica
+            if (nacionalizacao === 'santos') {
+                return CAMPOS_EXTERNOS_SANTOS;
+            }
             
             // Se for Anápolis, usar ordem específica
             if (nacionalizacao === 'anapolis') {
@@ -3611,46 +3600,17 @@
         }
 
         function atualizarMultaProdutoPorMulta(rowId) {
-            if (getNacionalizacaoAtual() !== 'santa_catarina') {
-                $(`#multa-${rowId}`).prop('readonly', false);
-                return;
-            }
-
-            const multaCalculada = obterMultaPorAdicaoItemProduto(rowId);
-            $(`#multa-${rowId}`).prop('readonly', true).val(MoneyUtils.formatMoney(multaCalculada, 2));
-        }
-
-        function atualizarMultaComplementarProdutoPorMulta(rowId) {
-            if (getNacionalizacaoAtual() !== 'santa_catarina') {
-                $(`#multa_complem-${rowId}`).prop('readonly', false);
-                return;
-            }
-
-            const valorAduaneiroMulta = obterMultaComplementarPorAdicaoItemProduto(rowId);
-            $(`#multa_complem-${rowId}`).prop('readonly', true).val(MoneyUtils.formatMoney(valorAduaneiroMulta, 2));
-        }
-
-        function atualizarDiferencaImpostosProdutoPorMulta(rowId) {
-            if (getNacionalizacaoAtual() !== 'santa_catarina') {
-                $(`#dif_impostos-${rowId}`).prop('readonly', false);
-                return;
-            }
-
-            const difImpostos = obterDiferencaImpostosPorAdicaoItemProduto(rowId);
-            $(`#dif_impostos-${rowId}`).prop('readonly', true).val(MoneyUtils.formatMoney(difImpostos, 2));
+            // Permitir preenchimento individual de MULTA para todas as nacionalizações, incluindo Santa Catarina
+            $(`#multa-${rowId}`).prop('readonly', false);
         }
 
         function atualizarMultaProdutosPorMulta() {
-            if (getNacionalizacaoAtual() !== 'santa_catarina') {
-                return;
-            }
-
+            // Função mantida para compatibilidade, mas não faz mais atualizações automáticas
+            // MULTA agora pode ser preenchida individualmente para todas as nacionalizações
             $('#productsBody tr.linhas-input').each(function() {
                 const rowId = this.id.toString().replace('row-', '');
                 if (rowId) {
                     atualizarMultaProdutoPorMulta(rowId);
-                    atualizarMultaComplementarProdutoPorMulta(rowId);
-                    atualizarDiferencaImpostosProdutoPorMulta(rowId);
                 }
             });
         }
@@ -3658,12 +3618,8 @@
         function calcularDespesas(rowId, fatorVlrFob_AX, fatorSiscomex, taxaSiscomexUnit, vlrAduaneiroBrl = null) {
             const nacionalizacao = getNacionalizacaoAtual();
             let multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
-            if (nacionalizacao === 'santa_catarina') {
-                multa = obterMultaPorAdicaoItemProduto(rowId);
-                $(`#multa-${rowId}`).prop('readonly', true).val(MoneyUtils.formatMoney(multa, 2));
-            } else {
-                $(`#multa-${rowId}`).prop('readonly', false);
-            }
+            // Permitir preenchimento individual de MULTA para todas as nacionalizações, incluindo Santa Catarina
+            $(`#multa-${rowId}`).prop('readonly', false);
      
             if (vlrAduaneiroBrl === null) {
                 vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
@@ -4474,7 +4430,7 @@
             let despesaAduaneira = 0;
             
             if (nacionalizacao === 'mato_grosso') {
-                // Para Mato Grosso: taxa siscomex unitária + afrmm
+                // Para Mato Grosso: multa + taxa siscomex unitária + afrmm
                 // Calcular taxa siscomex unitária da mesma forma que no recalcularTodaTabela
                 const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
                 const fobTotalGeral = calcularFobTotalGeral();
@@ -4483,8 +4439,9 @@
                 const fatorTaxaSiscomex_AY = (fobTotalGeral > 0 && dolar > 0) ? taxaSiscomexGeral / (fobTotalGeral * dolar) : 0;
                 const taxaSiscomexUnitaria_BB = fatorTaxaSiscomex_AY * (fobTotal * dolar);
                 
+                const multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
                 const afrmm = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
-                despesaAduaneira = (taxaSiscomexUnitaria_BB ?? 0) + afrmm;
+                despesaAduaneira = multa + (taxaSiscomexUnitaria_BB ?? 0) + afrmm;
             } else {
                 // Para outras nacionalizações: usar calcularDespesas
                 // Obter valores necessários
@@ -4619,6 +4576,26 @@
             const rowId = $(this).data('row');
             if (rowId != null) {
                 debouncedRecalcular();
+            }
+        });
+
+        // Listener para tx_def_li do cabeçalho (Mato Grosso) - dispara recálculo de taxa_siscomex
+        $(document).on('change blur keyup', '#tx_def_li', function() {
+            const nacionalizacao = getNacionalizacaoAtual();
+            if (nacionalizacao === 'mato_grosso') {
+                // Recalcular fatores FOB e taxa SISCOMEX para todas as linhas
+                atualizarFatoresFob();
+                agendarRecalculo();
+            }
+        });
+
+        // Listener para outras_taxas_agente do cabeçalho (Santa Catarina) - dispara recálculo das colunas seguintes
+        $(document).on('change blur keyup', '#outras_taxas_agente', function() {
+            const nacionalizacao = getNacionalizacaoAtual();
+            if (nacionalizacao === 'santa_catarina') {
+                // Recalcular fatores FOB e atualizar campos das linhas
+                atualizarFatoresFob();
+                agendarRecalculo();
             }
         });
 
@@ -4897,8 +4874,6 @@
                 
                 if (nacionalizacao === 'santa_catarina') {
                     // Fórmula específica para Santa Catarina - usar valores brutos
-                    const multa_complem = valoresBrutos.multa_complem || 0;
-                    const dif_impostos = valoresBrutos.dif_impostos || 0;
                     const outras_taxas_agente = valoresBrutos.outras_taxas_agente || 0;
                     const liberacao_bl = valoresBrutos.liberacao_bl || 0;
                     const desconsolidacao = valoresBrutos.desconsolidacao || 0;
@@ -4913,7 +4888,7 @@
                     const li_dta_honor_nix = valoresBrutos.li_dta_honor_nix || 0;
 
                     // Parte 1: soma de todos os campos
-                    desp_desenbaraco_parte_1 = multa + taxa_def + taxa_siscomex + multa_complem + dif_impostos + 
+                    desp_desenbaraco_parte_1 = multa + taxa_def + taxa_siscomex + 
                         outras_taxas_agente + liberacao_bl + desconsolidacao + isps_code + handling + capatazia + 
                         afrmm + armazenagem_porto + frete_rodoviario + dif_frete_rodoviario + sda + rep_porto + 
                         tx_correcao_lacre + li_dta_honor_nix + honorarios_nix;
@@ -5605,8 +5580,6 @@
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal7" readonly name="produtos[' + newIndex + '][honorarios_nix]" id="honorarios_nix-' + newIndex + '" value=""></td>';
             } else if (nacionalizacao === 'santa_catarina') {
                 // Ordem específica para Santa Catarina
-                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][multa_complem]" id="multa_complem-' + newIndex + '" value=""></td>';
-                html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][dif_impostos]" id="dif_impostos-' + newIndex + '" value=""></td>';
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][outras_taxas_agente]" id="outras_taxas_agente-' + newIndex + '" value=""></td>';
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][liberacao_bl]" id="liberacao_bl-' + newIndex + '" value=""></td>';
                 html += '<td><input type="text" data-row="' + newIndex + '" class=" form-control moneyReal" readonly name="produtos[' + newIndex + '][desconsolidacao]" id="desconsolidacao-' + newIndex + '" value=""></td>';

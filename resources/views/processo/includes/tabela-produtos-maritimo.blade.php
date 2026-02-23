@@ -208,6 +208,23 @@
                                 // Em Santa Catarina, adicionar +2 para MULTA COMPLEM e DIF IMPOSTOS (calculados automaticamente)
                                 if ($nacionalizacaoTemp === 'santa_catarina') {
                                     $colspanBeforeMiddleRow += 2;
+                                    // Ajustar colspan para 58 (reduzir 3 colunas após adicionar as 2 acima)
+                                    $colspanBeforeMiddleRow -= 3;
+                                }
+
+                                // Para Santos, ajustar colspan para 55 (reduzir 1 coluna)
+                                if ($nacionalizacaoTemp === 'santos') {
+                                    $colspanBeforeMiddleRow -= 1;
+                                }
+
+                                // Para Anápolis, ajustar colspan para 60 (reduzir 1 coluna)
+                                if ($nacionalizacaoTemp === 'anapolis') {
+                                    $colspanBeforeMiddleRow -= 1;
+                                }
+
+                                // Para Mato Grosso, ajustar colspan para 56 (reduzir 1 coluna)
+                                if ($nacionalizacaoTemp === 'mato_grosso') {
+                                    $colspanBeforeMiddleRow -= 1;
                                 }
                             @endphp
 
@@ -258,7 +275,6 @@
                                     ];
                                 } elseif ($nacionalizacaoAtual === 'santa_catarina') {
                                     // Ordem específica para Santa Catarina
-                                    // multa_complem e dif_impostos são calculados automaticamente via JS (não aparecem no cabeçalho de inputs)
                                     $campos = [
                                         'outras_taxas_agente',
                                         'liberacao_bl',
@@ -687,8 +703,6 @@
                                 <th>HONORÁRIOS NIX</th>
                             @elseif ($nacionalizacaoAtual === 'santa_catarina')
                                 {{-- Ordem específica para Santa Catarina --}}
-                                <th>MULTA COMPLEM</th>
-                                <th>DIF IMPOSTOS</th>
                                 <th>OUTRAS TX AGENTE</th>
                                 <th>LIBERAÇÃO BL</th>
                                 <th>DESCONS.</th>
@@ -1745,8 +1759,6 @@
                                     } elseif ($nacionalizacaoAtual === 'santa_catarina') {
                                         // Ordem específica para Santa Catarina
                                         $camposTbody = [
-                                            'multa_complem',
-                                            'dif_impostos',
                                             'outras_taxas_agente',
                                             'liberacao_bl',
                                             'desconsolidacao',
