@@ -2147,11 +2147,12 @@
                         (taxaSiscomexUnitaria_BB ?? 0), vlrAduaneiroBrl);
                     const despesas = despesasInfo.total;
 
-                    // Despesa aduaneira = taxa siscomex linha + afrmm (apenas para Mato Grosso)
+                    // Despesa aduaneira = multa + taxa siscomex linha + afrmm (apenas para Mato Grosso)
                     let despesaAduaneira;
                     if (nacionalizacao === 'mato_grosso') {
+                        const multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
                         const afrmm = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
-                        despesaAduaneira = (taxaSiscomexUnitaria_BB ?? 0) + afrmm;
+                        despesaAduaneira = multa + (taxaSiscomexUnitaria_BB ?? 0) + afrmm;
                     } else {
                         despesaAduaneira = despesas;
                     }
@@ -4114,13 +4115,14 @@
             $(`#base_pis_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl, 2));
             $(`#valor_pis-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.pis, 2));
             $(`#valor_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.cofins, 2));
-            // Despesa aduaneira = taxa siscomex linha + afrmm (apenas para Mato Grosso)
+            // Despesa aduaneira = multa + taxa siscomex linha + afrmm (apenas para Mato Grosso)
             const nacionalizacao = getNacionalizacaoAtual();
             let despesaAduaneira;
             if (nacionalizacao === 'mato_grosso') {
+                const multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0;
                 const taxaSiscomexLinha = $(`#taxa_siscomex-${rowId}`).val() ? MoneyUtils.parseMoney($(`#taxa_siscomex-${rowId}`).val()) : 0;
                 const afrmm = $(`#afrmm-${rowId}`).val() ? MoneyUtils.parseMoney($(`#afrmm-${rowId}`).val()) : 0;
-                despesaAduaneira = taxaSiscomexLinha + afrmm;
+                despesaAduaneira = multa + taxaSiscomexLinha + afrmm;
             } else {
                 despesaAduaneira = valores.despesas;
             }
