@@ -185,12 +185,12 @@
                                 }
                                 
                                 if ($nacionalizacaoAtual === 'santa_catarina') {
-                                    // Ordem específica para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONS., HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
+                                    // Ordem específica para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, DESCONS., COLLECT FEE, HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
                                     $campos = [
                                         'outras_taxas_agente',
                                         'delivery_fee',
-                                        'collect_fee',
                                         'desconsolidacao',
+                                        'collect_fee',
                                         'handling',
                                         'dai',
                                         'dape',
@@ -532,11 +532,11 @@
                                 $nacionalizacaoAtualHeader = strtolower($processo->nacionalizacao ?? 'outros');
                             @endphp
                             @if ($nacionalizacaoAtualHeader === 'santa_catarina')
-                                {{-- Ordem para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX --}}
+                                {{-- Ordem para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, DESCONSOLIDAÇÃO, COLLECT FEE, HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX --}}
                                 <th>OUTRAS TX AGENTE</th>
                                 <th>DELIVERY FEE</th>
-                                <th>COLLECT FEE</th>
                                 <th>Desconsolidação</th>
+                                <th>COLLECT FEE</th>
                                 <th>HANDLING</th>
                                 <th>DAI</th>
                                 <th>DAPE</th>
@@ -1269,17 +1269,17 @@
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][collect_fee]"
-                                        id="collect_fee-{{ $index }}"
-                                        value="{{ $processoProduto->collect_fee ? number_format($processoProduto->collect_fee, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][desconsolidacao]"
+                                        id="desconsolidacao-{{ $index }}"
+                                        value="{{ $processoProduto->desconsolidacao ? number_format($processoProduto->desconsolidacao, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
                                         class=" form-control moneyReal7" readonly
-                                        name="produtos[{{ $index }}][desconsolidacao]"
-                                        id="desconsolidacao-{{ $index }}"
-                                        value="{{ $processoProduto->desconsolidacao ? number_format($processoProduto->desconsolidacao, 7, ',', '.') : '' }}">
+                                        name="produtos[{{ $index }}][collect_fee]"
+                                        id="collect_fee-{{ $index }}"
+                                        value="{{ $processoProduto->collect_fee ? number_format($processoProduto->collect_fee, 7, ',', '.') : '' }}">
                                 </td>
 
                                 <td>

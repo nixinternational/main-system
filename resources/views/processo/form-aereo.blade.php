@@ -3241,12 +3241,12 @@
             const nacionalizacao = getNacionalizacaoAtual();
             
             if (nacionalizacao === 'santa_catarina') {
-                // Ordem específica para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONS., HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
+                // Ordem específica para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, DESCONS., COLLECT FEE, HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
                 return [
                     'outras_taxas_agente',
                     'delivery_fee',
-                    'collect_fee',
                     'desconsolidacao',
+                    'collect_fee',
                     'handling',
                     'dai',
                     'dape',
@@ -4978,6 +4978,7 @@
                     // Para Santa Catarina: DESP. DESEMBARAÇO = 
                     // (outras tx agente + delivery fee + desconsolidação + collect fee + handling + DAI + DAPE + rep. ITJ + frete NVG-GYN + honorários NIX + multa + tx. def. LI + tx. Siscomex) 
                     // – (multa + tx. def. LI + taxa Siscomex)
+                    // Nota: A ordem dos campos na interface é: OUTRAS TX AGENTE, DELIVERY FEE, DESCONSOLIDAÇÃO, COLLECT FEE, HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
                     
                     // MULTA - usar valor bruto se disponível, senão ler do cabeçalho
                     multa = (window.valoresBrutosCamposExternos?.multa?.[i] !== undefined) 

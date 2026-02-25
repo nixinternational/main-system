@@ -43,15 +43,15 @@
                         </div>
                         <form class="mr-2 d-flex align-items-center" id="formSearch"
                             action="{{ route('catalogo.edit', $id) }}" method="GET">
-                            <div class="input-group" style="margin-bottom: 0 !important; margin-right: 10px; width: auto; flex: 0 0 auto;">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="basic-addon1"><i
+                            <a href="{{ route('catalogo.edit', $id) }}" class="btn btn-primary" style="margin-bottom: 0 !important; margin-right: 10px; height: 38px; display: flex; align-items: center;">Limpar busca</a>
+                            <div class="input-group" style="margin-bottom: 0 !important; width: auto; flex: 0 0 auto;">
+                                <input value="{{ $_GET['search'] ?? '' }}" type="text" id="search" name="search"
+                                    class="form-control" placeholder="" aria-label="" aria-describedby="basic-addon1" style="width: 300px; border: 1px solid #ced4da;">
+                                <div class="input-group-append">
+                                    <span class="input-group-text" id="basic-addon1" style="border: 1px solid #ced4da; border-left: none;"><i
                                             class="fas fa-search"></i></span>
                                 </div>
-                                <input value="{{ $_GET['search'] ?? '' }}" type="text" id="search" name="search"
-                                    class="form-control" placeholder="" aria-label="" aria-describedby="basic-addon1" style="width: 300px;">
                             </div>
-                            <a href="{{ route('catalogo.edit', $id) }}" class="btn btn-primary" style="margin-bottom: 0 !important; height: 38px; display: flex; align-items: center;">Limpar busca</a>
                         </form>
                         <div class="row w-100">
 
