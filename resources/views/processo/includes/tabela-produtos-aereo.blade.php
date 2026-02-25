@@ -1713,6 +1713,7 @@
                         ];
                         
                         // Para nacionalização "geral", não incluir diferenca_cambial_fob
+                        console.log(nacionalizacaoAtualJS);
                         if (nacionalizacaoAtualJS !== 'geral') {
                             campos.push('diferenca_cambial_fob');
                         }
