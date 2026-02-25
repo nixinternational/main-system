@@ -1495,6 +1495,15 @@
                 brlField.val(MoneyUtils.formatMoney(valorBRL, 2));
             }
             
+            // Atualizar valores EXW e CIF quando conversão de moedas acontecer
+            if (inputId === 'frete_internacional' || inputId === 'seguro_internacional' || inputId === 'acrescimo_frete') {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 100);
+            }
+            
             // Recalcular valores CPT quando os valores USD mudarem
             calcularValoresCPT();
             calcularValoresCIF();
@@ -1775,6 +1784,87 @@
                 if (inputId) {
                     convertToUSDAndBRL(inputId);
                 }
+            });
+            
+            // Atualizar valores EXW e CIF quando frete, seguro ou acréscimo mudarem
+            $(document).on('change keyup blur', '#frete_internacional_usd, #seguro_internacional_usd, #acrescimo_frete_usd, #cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 200);
+            });
+            
+            // Atualizar valores EXW e CIF quando qualquer FOB total mudar
+            $(document).on('change keyup blur', '[id^="fob_total_usd-"]', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 300);
+            });
+            
+            // Atualizar valores EXW e CIF quando a tabela for recalculada
+            $(document).on('recalcularTabela', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 500);
+            });
+            
+            // Atualizar valores EXW e CIF quando conversão de moedas acontecer
+            $(document).on('change', '#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 400);
+            });
+            
+            // Atualizar valores EXW e CIF quando produtos forem adicionados ou removidos usando MutationObserver
+            if (typeof MutationObserver !== 'undefined') {
+                const observer = new MutationObserver(function(mutations) {
+                    let shouldUpdate = false;
+                    mutations.forEach(function(mutation) {
+                        if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
+                            shouldUpdate = true;
+                        }
+                    });
+                    if (shouldUpdate) {
+                        setTimeout(function() {
+                            if (typeof atualizarValoresExwECif === 'function') {
+                                atualizarValoresExwECif();
+                            }
+                        }, 500);
+                    }
+                });
+                
+                const productsBody = document.getElementById('productsBody');
+                if (productsBody) {
+                    observer.observe(productsBody, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+            }
+            
+            // Fallback para navegadores antigos
+            $(document).on('DOMNodeInserted DOMNodeRemoved', '#productsBody', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 500);
+            });
+            
+            // Atualizar valores EXW e CIF quando a cotação do processo mudar
+            $(document).on('change keyup blur', '#display_cotacao, #moeda_processo', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 300);
             });
 
 
@@ -2689,6 +2779,7 @@
             atualizarTotalizadores();
             calcularValoresCPT();
             calcularValoresCIF();
+            atualizarValoresExwECif();
             setDebugGlobals({
                 ...globaisProcesso,
                 fobTotalProcesso: fobTotalGeralAtualizado,
@@ -3000,72 +3091,61 @@
             $('#valor_cpt_brl').val(MoneyUtils.formatMoney(valorCptBrl, 2));
         }
 
+        function atualizarValoresExwECif() {
+            const nacionalizacao = getNacionalizacaoAtual();
+            
+            // Calcular FOB Total USD (soma de todos os fob_total_usd)
+            let fobTotalUsd = 0;
+            $('[id^="fob_total_usd-"]').each(function() {
+                fobTotalUsd += MoneyUtils.parseMoney($(this).val()) || 0;
+            });
+            
+            // Obter cotação USD
+            const cotacoes = getCotacaoesProcesso();
+            const cotacaoUSD = cotacoes['USD']?.venda || MoneyUtils.parseMoney($('#cotacao_frete_internacional').val()) || 1;
+            
+            // Obter valores de frete, seguro e acréscimo em USD
+            const freteUsd = MoneyUtils.parseMoney($('#frete_internacional_usd').val()) || 0;
+            const seguroUsd = MoneyUtils.parseMoney($('#seguro_internacional_usd').val()) || 0;
+            const acrescimoUsd = MoneyUtils.parseMoney($('#acrescimo_frete_usd').val()) || 0;
+            
+            // VALOR EXW USD = FOB Total USD
+            const valorExwUsd = fobTotalUsd;
+            const valorExwBrl = valorExwUsd * cotacaoUSD;
+            
+            // VALOR CIF = VALOR EXW + FRETE + SEGURO + ACRESCIMO
+            const valorCifUsd = valorExwUsd + freteUsd + seguroUsd + acrescimoUsd;
+            const valorCifBrl = valorCifUsd * cotacaoUSD;
+            
+            // Atualizar campos readonly
+            $('#valor_exw_usd').val(MoneyUtils.formatMoney(valorExwUsd, 2));
+            $('#valor_exw_brl').val(MoneyUtils.formatMoney(valorExwBrl, 2));
+            $('#valor_cif_usd').val(MoneyUtils.formatMoney(valorCifUsd, 2));
+            $('#valor_cif_brl').val(MoneyUtils.formatMoney(valorCifBrl, 2));
+            
+            // Para Anápolis, também atualizar CPT
+            if (nacionalizacao === 'anapolis') {
+                calcularValoresCPT();
+            }
+        }
+
         function calcularValoresCIF() {
             const nacionalizacao = getNacionalizacaoAtual();
             const tipoProcesso = '{{ $tipoProcesso ?? "maritimo" }}';
             
-            // Só calcular se for Mato Grosso e processo marítimo
-            if (nacionalizacao !== 'mato_grosso' || tipoProcesso !== 'maritimo') {
-                $('#campos-cif-mato-grosso').hide();
-                return;
+            // Para todas as nacionalizações, usar a função atualizarValoresExwECif
+            if (tipoProcesso === 'maritimo') {
+                atualizarValoresExwECif();
             }
             
-            // Verificar se os campos existem
-            if ($('#campos-cif-mato-grosso').length === 0) {
-                return;
-            }
-            
-            // Mostrar os campos
-            $('#campos-cif-mato-grosso').show();
-            
-            // Obter valores totais do processo
-            const rows = $('#productsBody tr:not(.separador-adicao)');
-            
-            // Calcular valor total FOB USD
-            let valorTotalFobUsd = 0;
-            rows.each(function() {
-                const rowId = this.id.replace('row-', '');
-                const fobTotalUsd = MoneyUtils.parseMoney($(`#fob_total_usd-${rowId}`).val()) || 0;
-                valorTotalFobUsd += fobTotalUsd;
-            });
-            
-            // Obter frete internacional total USD
-            const freteInternacionalTotalUsd = MoneyUtils.parseMoney($('#frete_internacional_usd').val()) || 0;
-            
-            // Obter seguro internacional total USD
-            const seguroInternacionalTotalUsd = MoneyUtils.parseMoney($('#seguro_internacional_usd').val()) || 0;
-            
-            // Obter acréscimo frete dolar
-            const acrescimoFreteDolar = MoneyUtils.parseMoney($('#acrescimo_frete_usd').val()) || 0;
-            
-            // CIF = FOB Total + Frete Internacional + Seguro + Acréscimo Frete
-            const valorCifUsd = valorTotalFobUsd + freteInternacionalTotalUsd + seguroInternacionalTotalUsd + acrescimoFreteDolar;
-            
-            // Obter cotação do dólar do processo
-            const cotacoesProcesso = getCotacaoesProcesso();
-            let cotacaoDolarProcesso = 1;
-            if (cotacoesProcesso && cotacoesProcesso['USD'] && cotacoesProcesso['USD'].venda) {
-                cotacaoDolarProcesso = cotacoesProcesso['USD'].venda;
-            } else {
-                // Tentar obter do campo dolarHoje ou display_cotacao
-                const dolarHoje = $('#dolarHoje').val();
-                if (dolarHoje) {
-                    try {
-                        const dolarObj = JSON.parse(dolarHoje);
-                        if (dolarObj['USD'] && dolarObj['USD'].venda) {
-                            cotacaoDolarProcesso = dolarObj['USD'].venda;
-                        }
-                    } catch (e) {
-                        // Se não conseguir parsear, usar 1 como padrão
-                    }
+            // Manter compatibilidade com campos antigos de Mato Grosso (se existirem)
+            if ($('#campos-cif-mato-grosso').length > 0) {
+                if (nacionalizacao === 'mato_grosso') {
+                    $('#campos-cif-mato-grosso').show();
+                } else {
+                    $('#campos-cif-mato-grosso').hide();
                 }
             }
-            
-            // Calcular Valor CIF BRL
-            const valorCifBrl = valorCifUsd * cotacaoDolarProcesso;
-            
-            $('#valor_cif_usd').val(MoneyUtils.formatMoney(valorCifUsd, 2));
-            $('#valor_cif_brl').val(MoneyUtils.formatMoney(valorCifBrl, 2));
         }
 
         function atualizarVisibilidadeNacionalizacao(options = {}) {

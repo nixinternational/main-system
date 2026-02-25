@@ -154,6 +154,38 @@
                    </div>
                </div>
 
+               <!-- Campos EXW e CIF para todas as nacionalizações -->
+               <div class="row mt-3 flex-nowrap" id="campos-exw-cif">
+                   <div class="col-3" style="min-width: 0; flex: 0 0 25%;">
+                       <label for="valor_exw_usd" class="form-label">VALOR EXW (USD)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">USD</span>
+                           <input type="text" readonly class="form-control moneyReal2" name="valor_exw_usd" id="valor_exw_usd">
+                       </div>
+                   </div>
+                   <div class="col-3" style="min-width: 0; flex: 0 0 25%;">
+                       <label for="valor_exw_brl" class="form-label">VALOR EXW (BRL)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">R$</span>
+                           <input type="text" readonly class="form-control moneyReal2" name="valor_exw_brl" id="valor_exw_brl">
+                       </div>
+                   </div>
+                   <div class="col-3" style="min-width: 0; flex: 0 0 25%;">
+                       <label for="valor_cif_usd" class="form-label">VALOR CIF (USD)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">USD</span>
+                           <input type="text" readonly class="form-control moneyReal2" name="valor_cif_usd" id="valor_cif_usd">
+                       </div>
+                   </div>
+                   <div class="col-3" style="min-width: 0; flex: 0 0 25%;">
+                       <label for="valor_cif_brl" class="form-label">VALOR CIF (BRL)</label>
+                       <div class="input-group">
+                           <span class="input-group-text">R$</span>
+                           <input type="text" readonly class="form-control moneyReal2" name="valor_cif_brl" id="valor_cif_brl">
+                       </div>
+                   </div>
+               </div>
+
                <!-- Campos CPT para Anápolis -->
                <div class="row mt-3" id="campos-cpt-anapolis" style="display: none;">
                    <div class="col-md-6">
@@ -170,26 +202,6 @@
                            <span class="input-group-text">R$</span>
                            <input type="text" readonly class="form-control moneyReal" 
                                name="valor_cpt_brl" id="valor_cpt_brl" value="">
-                       </div>
-                   </div>
-               </div>
-
-               <!-- Campos CIF para Mato Grosso -->
-               <div class="row mt-3" id="campos-cif-mato-grosso" style="display: none;">
-                   <div class="col-md-6">
-                       <label for="valor_cif_usd" class="form-label">Valor CIF USD</label>
-                       <div class="input-group">
-                           <span class="input-group-text">USD</span>
-                           <input type="text" readonly class="form-control moneyReal" 
-                               name="valor_cif_usd" id="valor_cif_usd" value="">
-                       </div>
-                   </div>
-                   <div class="col-md-6">
-                       <label for="valor_cif_brl" class="form-label">Valor CIF BRL</label>
-                       <div class="input-group">
-                           <span class="input-group-text">R$</span>
-                           <input type="text" readonly class="form-control moneyReal" 
-                               name="valor_cif_brl" id="valor_cif_brl" value="">
                        </div>
                    </div>
                </div>

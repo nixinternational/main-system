@@ -1971,10 +1971,23 @@
             // Atualizar campos com máxima precisão (7 casas decimais)
             if (usdField.length) {
                 usdField.val(MoneyUtils.formatMoney(valorUSD, 2));
+                // Disparar evento change para que listeners funcionem
+                if (inputId === 'frete_internacional' || inputId === 'seguro_internacional' || inputId === 'acrescimo_frete') {
+                    usdField.trigger('change');
+                }
             }
             
             if (brlField.length) {
                 brlField.val(MoneyUtils.formatMoney(valorBRL, 2));
+            }
+            
+            // Atualizar VALOR CIF quando frete, seguro ou acréscimo mudarem (backup caso o trigger não funcione)
+            if (inputId === 'frete_internacional' || inputId === 'seguro_internacional' || inputId === 'acrescimo_frete') {
+                if (typeof atualizarValoresExwECif === 'function') {
+                    setTimeout(function() {
+                        atualizarValoresExwECif();
+                    }, 100);
+                }
             }
         }
 
@@ -6000,21 +6013,91 @@
             });
             
             // Atualizar valores EXW e CIF quando frete, seguro ou acréscimo mudarem
-            $(document).on('change keyup', '#frete_internacional_usd, #seguro_internacional_usd, #acrescimo_frete_usd, #cotacao_frete_internacional', function() {
-                atualizarValoresExwECif();
+            $(document).on('change keyup blur', '#frete_internacional_usd, #seguro_internacional_usd, #acrescimo_frete_usd, #cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 200);
+            });
+            
+            // Atualizar valores EXW e CIF quando qualquer FOB total mudar
+            $(document).on('change keyup blur', '[id^="fob_total_usd-"]', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 300);
             });
             
             // Atualizar valores EXW e CIF quando a tabela for recalculada
             $(document).on('recalcularTabela', function() {
                 setTimeout(function() {
-                    atualizarValoresExwECif();
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
                 }, 500);
             });
             
+            // Atualizar valores EXW e CIF quando conversão de moedas acontecer
+            $(document).on('change', '#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 400);
+            });
+            
+            // Atualizar valores EXW e CIF quando produtos forem adicionados ou removidos usando MutationObserver
+            if (typeof MutationObserver !== 'undefined') {
+                const observer = new MutationObserver(function(mutations) {
+                    let shouldUpdate = false;
+                    mutations.forEach(function(mutation) {
+                        if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
+                            shouldUpdate = true;
+                        }
+                    });
+                    if (shouldUpdate) {
+                        setTimeout(function() {
+                            if (typeof atualizarValoresExwECif === 'function') {
+                                atualizarValoresExwECif();
+                            }
+                        }, 500);
+                    }
+                });
+                
+                const productsBody = document.getElementById('productsBody');
+                if (productsBody) {
+                    observer.observe(productsBody, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+            }
+            
+            // Fallback para navegadores antigos
+            $(document).on('DOMNodeInserted DOMNodeRemoved', '#productsBody', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 500);
+            });
+            
+            // Atualizar valores EXW e CIF quando a cotação do processo mudar
+            $(document).on('change keyup blur', '#display_cotacao, #moeda_processo', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValoresExwECif === 'function') {
+                        atualizarValoresExwECif();
+                    }
+                }, 300);
+            });
+            
             // Atualizar valores EXW e CIF ao carregar a página
+            // Aguardar um tempo maior para garantir que todos os campos _usd foram inicializados
             setTimeout(function() {
                 atualizarValoresExwECif();
-            }, 1000);
+            }, 1500);
             
             // Calcular todos os peso_liq_total_kg quando a página carregar
             setTimeout(function() {

@@ -1772,6 +1772,20 @@ class ProcessoController extends Controller
             } else {
                 $dadosProcesso['cotacao_service_charges'] = $processoExistente->cotacao_service_charges ?? null;
             }
+            
+            // Salvar valores EXW e CIF para todas as modalidades
+            if ($request->has('valor_exw_usd') && $request->valor_exw_usd !== '' && $request->valor_exw_usd !== null) {
+                $dadosProcesso['valor_exw'] = $this->parseMoneyToFloat($request->valor_exw_usd);
+            }
+            if ($request->has('valor_exw_brl') && $request->valor_exw_brl !== '' && $request->valor_exw_brl !== null) {
+                $dadosProcesso['valor_exw_brl'] = $this->parseMoneyToFloat($request->valor_exw_brl);
+            }
+            if ($request->has('valor_cif_usd') && $request->valor_cif_usd !== '' && $request->valor_cif_usd !== null) {
+                $dadosProcesso['valor_cif'] = $this->parseMoneyToFloat($request->valor_cif_usd);
+            }
+            if ($request->has('valor_cif_brl') && $request->valor_cif_brl !== '' && $request->valor_cif_brl !== null) {
+                $dadosProcesso['valor_cif_brl'] = $this->parseMoneyToFloat($request->valor_cif_brl);
+            }
 
             $auditProcessoChanges = array_intersect_key($dadosProcesso, $request->all());
             if (isset($pesoLiquidoFinal) && $request->has('peso_liquido_total_cabecalho')) {
@@ -1996,8 +2010,21 @@ class ProcessoController extends Controller
         // Adicionar campos específicos baseado no tipo de processo
         if ($isAereo) {
             // Campos específicos do transporte aéreo
-            $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
-            $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
+            // Salvar valores EXW e CIF (usando campos _usd e _brl do formulário)
+            if ($request->has('valor_exw_usd') && $request->valor_exw_usd !== '' && $request->valor_exw_usd !== null) {
+                $dadosProcesso['valor_exw'] = $this->parseMoneyToFloat($request->valor_exw_usd);
+            } elseif (isset($request->valor_exw) && $request->valor_exw !== '' && $request->valor_exw !== null) {
+                $dadosProcesso['valor_exw'] = $this->parseMoneyToFloat($request->valor_exw);
+            }
+            if ($request->has('valor_exw_brl') && $request->valor_exw_brl !== '' && $request->valor_exw_brl !== null) {
+                $dadosProcesso['valor_exw_brl'] = $this->parseMoneyToFloat($request->valor_exw_brl);
+            }
+            if ($request->has('valor_cif_usd') && $request->valor_cif_usd !== '' && $request->valor_cif_usd !== null) {
+                $dadosProcesso['valor_cif'] = $this->parseMoneyToFloat($request->valor_cif_usd);
+            }
+            if ($request->has('valor_cif_brl') && $request->valor_cif_brl !== '' && $request->valor_cif_brl !== null) {
+                $dadosProcesso['valor_cif_brl'] = $this->parseMoneyToFloat($request->valor_cif_brl);
+            }
             $taxaDolar = $this->parseMoneyToFloat($request->cotacao_frete_internacional, 4) ?? $processo->taxa_dolar ?? 1;
             $dadosProcesso['dai'] = isset($request->dai) ? $this->parseMoneyToFloat($request->dai) : null;
             $dadosProcesso['dape'] = isset($request->dape) ? $this->parseMoneyToFloat($request->dape) : null;
@@ -2016,8 +2043,19 @@ class ProcessoController extends Controller
             ProcessoAereo::where('id', $id)->update($dadosProcesso);
         } elseif ($isRodoviario) {
             // Campos específicos do transporte rodoviário
-            $dadosProcesso['valor_exw'] = isset($request->valor_exw) ? $this->parseMoneyToFloat($request->valor_exw) : null;
-            $dadosProcesso['valor_exw_brl'] = isset($request->valor_exw_brl) ? $this->parseMoneyToFloat($request->valor_exw_brl) : null;
+            // Salvar valores EXW e CIF (usando campos _usd e _brl do formulário)
+            if ($request->has('valor_exw_usd') && $request->valor_exw_usd !== '' && $request->valor_exw_usd !== null) {
+                $dadosProcesso['valor_exw'] = $this->parseMoneyToFloat($request->valor_exw_usd);
+            }
+            if ($request->has('valor_exw_brl') && $request->valor_exw_brl !== '' && $request->valor_exw_brl !== null) {
+                $dadosProcesso['valor_exw_brl'] = $this->parseMoneyToFloat($request->valor_exw_brl);
+            }
+            if ($request->has('valor_cif_usd') && $request->valor_cif_usd !== '' && $request->valor_cif_usd !== null) {
+                $dadosProcesso['valor_cif'] = $this->parseMoneyToFloat($request->valor_cif_usd);
+            }
+            if ($request->has('valor_cif_brl') && $request->valor_cif_brl !== '' && $request->valor_cif_brl !== null) {
+                $dadosProcesso['valor_cif_brl'] = $this->parseMoneyToFloat($request->valor_cif_brl);
+            }
             $dadosProcesso['dai'] = isset($request->dai) ? $this->parseMoneyToFloat($request->dai) : null;
             $dadosProcesso['dape'] = isset($request->dape) ? $this->parseMoneyToFloat($request->dape) : null;
             $dadosProcesso['outras_taxas_agente'] = isset($request->outras_taxas_agente) ? $this->parseMoneyToFloat($request->outras_taxas_agente) : null;

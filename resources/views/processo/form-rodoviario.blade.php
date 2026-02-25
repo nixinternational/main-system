@@ -1762,6 +1762,15 @@
             if (brlField.length) {
                 brlField.val(MoneyUtils.formatMoney(valorBRL, 2));
             }
+            
+            // Atualizar valores EXW, CIF e CPT quando conversão de moedas acontecer
+            if (inputId === 'frete_internacional' || inputId === 'seguro_internacional' || inputId === 'acrescimo_frete') {
+                setTimeout(function() {
+                    if (typeof atualizarValorCpt === 'function') {
+                        atualizarValorCpt();
+                    }
+                }, 100);
+            }
         }
 
         function updateValorReal(inputId, spanId, automatic = true) {
@@ -3244,8 +3253,39 @@
                 pesoLiquidoElement.val(MoneyUtils.formatMoney(pesoTotal, 4));
             }
             
-            // Atualizar também os campos VALOR EXW e VALOR CIF
+            // Atualizar também os campos VALOR EXW, VALOR CIF e VALOR CPT
             atualizarValorCpt();
+        }
+        
+        function atualizarValoresExwECif() {
+            // Calcular FOB Total USD (soma de todos os fob_total_usd)
+            let fobTotalUsd = 0;
+            $('[id^="fob_total_usd-"]').each(function() {
+                fobTotalUsd += MoneyUtils.parseMoney($(this).val()) || 0;
+            });
+            
+            // Obter cotação USD
+            const cotacoes = getCotacaoesProcesso();
+            const cotacaoUSD = cotacoes['USD']?.venda || MoneyUtils.parseMoney($('#cotacao_frete_internacional').val()) || 1;
+            
+            // Obter valores de frete, seguro e acréscimo em USD
+            const freteUsd = MoneyUtils.parseMoney($('#frete_internacional_usd').val()) || 0;
+            const seguroUsd = MoneyUtils.parseMoney($('#seguro_internacional_usd').val()) || 0;
+            const acrescimoUsd = MoneyUtils.parseMoney($('#acrescimo_frete_usd').val()) || 0;
+            
+            // VALOR EXW USD = FOB Total USD
+            const valorExwUsd = fobTotalUsd;
+            const valorExwBrl = valorExwUsd * cotacaoUSD;
+            
+            // VALOR CIF = VALOR EXW + FRETE + SEGURO + ACRESCIMO
+            const valorCifUsd = valorExwUsd + freteUsd + seguroUsd + acrescimoUsd;
+            const valorCifBrl = valorCifUsd * cotacaoUSD;
+            
+            // Atualizar campos readonly
+            $('#valor_exw_usd').val(MoneyUtils.formatMoney(valorExwUsd, 2));
+            $('#valor_exw_brl').val(MoneyUtils.formatMoney(valorExwBrl, 2));
+            $('#valor_cif_usd').val(MoneyUtils.formatMoney(valorCifUsd, 2));
+            $('#valor_cif_brl').val(MoneyUtils.formatMoney(valorCifBrl, 2));
         }
         
         function atualizarValorCpt() {
@@ -3271,6 +3311,9 @@
             // Atualizar campos readonly
             $('#valor_cpt_usd').val(MoneyUtils.formatMoney(valorCptUsd, 2));
             $('#valor_cpt_brl').val(MoneyUtils.formatMoney(valorCptBrl, 2));
+            
+            // Também atualizar EXW e CIF
+            atualizarValoresExwECif();
         }
 
         function atualizarTotaisGlobais(fobTotalGeral, dolar) {
@@ -4396,16 +4439,85 @@
                 atualizarValorCpt();
             });
             
-            // Atualizar valores EXW e CIF quando frete, seguro ou acréscimo mudarem
-            $(document).on('change keyup', '#frete_internacional_usd, #seguro_internacional_usd, #acrescimo_frete_usd, #cotacao_frete_internacional', function() {
-                atualizarValorCpt();
+            // Atualizar valores EXW, CIF e CPT quando frete, seguro ou acréscimo mudarem
+            $(document).on('change keyup blur', '#frete_internacional_usd, #seguro_internacional_usd, #acrescimo_frete_usd, #cotacao_frete_internacional, #cotacao_seguro_internacional, #cotacao_acrescimo_frete', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValorCpt === 'function') {
+                        atualizarValorCpt();
+                    }
+                }, 200);
             });
             
-            // Atualizar valores EXW e CIF quando a tabela for recalculada
+            // Atualizar valores EXW, CIF e CPT quando qualquer FOB total mudar
+            $(document).on('change keyup blur', '[id^="fob_total_usd-"]', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValorCpt === 'function') {
+                        atualizarValorCpt();
+                    }
+                }, 300);
+            });
+            
+            // Atualizar valores EXW, CIF e CPT quando a tabela for recalculada
             $(document).on('recalcularTabela', function() {
                 setTimeout(function() {
-                    atualizarValorCpt();
+                    if (typeof atualizarValorCpt === 'function') {
+                        atualizarValorCpt();
+                    }
                 }, 500);
+            });
+            
+            // Atualizar valores EXW, CIF e CPT quando conversão de moedas acontecer
+            $(document).on('change', '#frete_internacional_moeda, #seguro_internacional_moeda, #acrescimo_frete_moeda', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValorCpt === 'function') {
+                        atualizarValorCpt();
+                    }
+                }, 400);
+            });
+            
+            // Atualizar valores EXW, CIF e CPT quando produtos forem adicionados ou removidos usando MutationObserver
+            if (typeof MutationObserver !== 'undefined') {
+                const observer = new MutationObserver(function(mutations) {
+                    let shouldUpdate = false;
+                    mutations.forEach(function(mutation) {
+                        if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
+                            shouldUpdate = true;
+                        }
+                    });
+                    if (shouldUpdate) {
+                        setTimeout(function() {
+                            if (typeof atualizarValorCpt === 'function') {
+                                atualizarValorCpt();
+                            }
+                        }, 500);
+                    }
+                });
+                
+                const productsBody = document.getElementById('productsBody');
+                if (productsBody) {
+                    observer.observe(productsBody, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+            }
+            
+            // Fallback para navegadores antigos
+            $(document).on('DOMNodeInserted DOMNodeRemoved', '#productsBody', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValorCpt === 'function') {
+                        atualizarValorCpt();
+                    }
+                }, 500);
+            });
+            
+            // Atualizar valores EXW, CIF e CPT quando a cotação do processo mudar
+            $(document).on('change keyup blur', '#display_cotacao, #moeda_processo', function() {
+                setTimeout(function() {
+                    if (typeof atualizarValorCpt === 'function') {
+                        atualizarValorCpt();
+                    }
+                }, 300);
             });
             
             // Atualizar valores EXW e CIF ao carregar a página

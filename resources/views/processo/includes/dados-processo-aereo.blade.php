@@ -202,33 +202,33 @@
                    </div>
                </div>
                
-               <div class="row mt-3" id="campos-exw-cif" style="display: {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'none' : 'block' }};">
-                   <div class="col-md-3">
+               <div class="row mt-3 flex-nowrap" id="campos-exw-cif" style="display: {{ $nacionalizacaoSelecionada === 'santa_catarina' ? 'none' : 'flex' }};">
+                   <div class="col-3" style="min-width: 0; flex: 0 0 25%;">
                        <label for="valor_exw_usd" class="form-label">VALOR EXW (USD)</label>
                        <div class="input-group">
                            <span class="input-group-text">USD</span>
-                           <input type="text" readonly class="form-control moneyReal2" id="valor_exw_usd">
+                           <input type="text" readonly class="form-control moneyReal2" name="valor_exw_usd" id="valor_exw_usd">
                        </div>
                    </div>
-                   <div class="col-md-3">
+                   <div class="col-3" style="min-width: 0; flex: 0 0 25%;">
                        <label for="valor_exw_brl" class="form-label">VALOR EXW (BRL)</label>
                        <div class="input-group">
                            <span class="input-group-text">R$</span>
-                           <input type="text" readonly class="form-control moneyReal2" id="valor_exw_brl">
+                           <input type="text" readonly class="form-control moneyReal2" name="valor_exw_brl" id="valor_exw_brl">
                        </div>
                    </div>
-                   <div class="col-md-3">
+                   <div class="col-3" style="min-width: 0; flex: 0 0 25%;">
                        <label for="valor_cif_usd" class="form-label">VALOR CIF (USD)</label>
                        <div class="input-group">
                            <span class="input-group-text">USD</span>
-                           <input type="text" readonly class="form-control moneyReal2" id="valor_cif_usd">
+                           <input type="text" readonly class="form-control moneyReal2" name="valor_cif_usd" id="valor_cif_usd">
                        </div>
                    </div>
-                   <div class="col-md-3">
+                   <div class="col-3" style="min-width: 0; flex: 0 0 25%;">
                        <label for="valor_cif_brl" class="form-label">VALOR CIF (BRL)</label>
                        <div class="input-group">
                            <span class="input-group-text">R$</span>
-                           <input type="text" readonly class="form-control moneyReal2" id="valor_cif_brl">
+                           <input type="text" readonly class="form-control moneyReal2" name="valor_cif_brl" id="valor_cif_brl">
                        </div>
                    </div>
                </div>
