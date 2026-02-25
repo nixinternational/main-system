@@ -5184,28 +5184,7 @@
                 }
                 window.valoresBrutosCamposExternos.desp_desenbaraco[i] = despesa_desembaraco;
                 
-                // Debug no cálculo de Desp. Desembaraço
-                console.log('[DESP. DESEMBARAÇO] Linha ' + i + ':', {
-                    nacionalizacao: nacionalizacao,
-                    outrasTxAgente: outrasTxAgente,
-                    deliveryFee: deliveryFee,
-                    desconsolidacao: desconsolidacao,
-                    collectFee: collectFee,
-                    handling: handling,
-                    dai: dai,
-                    dape: dape,
-                    repItj: repItj,
-                    freteNvgXGyn: freteNvgXGyn,
-                    honorariosNix: honorariosNix,
-                    multa: multa,
-                    txDefLi: txDefLi,
-                    taxaSiscomex: taxaSiscomex,
-                    parte_1: desp_desenbaraco_parte_1,
-                    parte_2: desp_desenbaraco_parte_2,
-                    opcionais: despesasAdicionaisOpcionais,
-                    resultado: despesa_desembaraco
-                });
-                
+             
                 // Usar o valor calculado diretamente (não ler do DOM para garantir precisão)
                 // IMPORTANTE: Garantir que despesa_desembaraco seja usado no cálculo
                 // Verificar se o valor é válido (não NaN, não undefined, não null)

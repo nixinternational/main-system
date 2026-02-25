@@ -1372,6 +1372,7 @@
                                 @php
                                     $nacionalizacaoParaCelula = strtolower($processo->nacionalizacao ?? 'outros');
                                 @endphp
+                                {{ dd($nacionalizacaoParaCelula) }}
                                 @if($nacionalizacaoParaCelula !== 'geral')
                                 <td>
                                     <input type="text" data-row="{{ $index }}"
