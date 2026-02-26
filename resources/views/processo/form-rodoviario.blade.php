@@ -4110,17 +4110,20 @@
                 
                 const somaBaBn = multa + txDefLi + taxaSiscomex + despFronteira + dasFronteira + armazenagem + freteFozGyn + repFronteira + armazAnapolis + movAnapolis + repAnapolis + correios + liDtaHonorNix + honorariosNix;
                 const somaSubtracoes = multa + txDefLi + taxaSiscomex + freteFozGyn + honorariosNix;
-                // Manter despesa_desembaraco como valor bruto (não arredondado) para máxima precisão
+                // CRÍTICO: Manter despesa_desembaraco como valor bruto (não arredondado) para máxima precisão
+                // Todos os valores intermediários devem manter ~15 dígitos significativos
                 const despesa_desembaraco = somaBaBn - somaSubtracoes;
                 
                 // Formatar apenas para exibição, mas manter valor bruto para cálculos
+                // O valor formatado é apenas visual - o valor bruto é usado em todos os cálculos
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2));
                 
                 // Usar MoneyUtils.parseMoney() para tratar corretamente formato brasileiro (15.000,00000)
                 // parseInt() não funciona corretamente com números formatados (para no primeiro ponto)
                 let qquantidade = MoneyUtils.parseMoney($(`#quantidade-${i}`).val()) || 0;
                 
-                // Usar valores brutos (não arredondados) para máxima precisão no cálculo
+                // CRÍTICO: Usar valores brutos (não arredondados) para máxima precisão no cálculo
+                // Todos os valores devem manter ~15 dígitos significativos para replicar Excel
                 const valoresBrutosLinha = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i];
                 const vlrTotalNfComIcms = valoresBrutosLinha?.valor_total_nf_com_icms_st !== undefined 
                     ? valoresBrutosLinha.valor_total_nf_com_icms_st 
@@ -4136,30 +4139,48 @@
                     : (MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0); // AO
                 
                 // CUSTO UNIT FINAL = ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF. CAMBIAL FRETE) – VLR ICMS REDUZ.) / QUANTD
-                // Manter custo_unitario_final com máxima precisão (não arredondar) para replicar comportamento do Excel
-                // Excel mantém até 15 dígitos significativos internamente e só arredonda na exibição
+                // CRÍTICO: Manter custo_unitario_final com MÁXIMA PRECISÃO (até 15 dígitos significativos)
+                // Excel mantém valores como 0,586630861323519 internamente e só arredonda na exibição
+                // NÃO ARREDONDAR este valor - ele será usado para calcular custo_total_final
+                // JavaScript mantém ~15-17 dígitos significativos em números de ponto flutuante
                 const custo_unitario_final = qquantidade > 0 
                     ? ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade 
                     : 0;
                 
+                // Console log para verificar precisão do cálculo
+                console.log(`[Linha ${i}] CUSTO UNIT FINAL (precisão máxima):`, {
+                    vlrTotalNfComIcms: vlrTotalNfComIcms,
+                    despesa_desembaraco: despesa_desembaraco,
+                    diferenca_cambial_frete: diferenca_cambial_frete,
+                    vlrIcmsReduzido: vlrIcmsReduzido,
+                    quantidade: qquantidade,
+                    numerador: (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido,
+                    custo_unitario_final: custo_unitario_final,
+                    custo_unitario_final_string: custo_unitario_final.toFixed(15) // Mostrar com 15 casas decimais
+                });
+                
                 // CUSTO TOTAL FINAL = CUSTO UNIT FINAL * QUANTD
-                // Calcular com valor bruto de custo_unitario_final (não arredondado) para máxima precisão
-                // Aplicar arredondamento apenas no final (replicando comportamento do Excel)
+                // CRÍTICO: Usar custo_unitario_final com TODA a precisão (ex: 0,586630861323519)
+                // Multiplicar primeiro, depois arredondar apenas o resultado final
+                // Isso replica exatamente o comportamento do Excel
                 const custo_total_final_bruto = custo_unitario_final * qquantidade;
                 // Arredondar custo_total_final usando roundExcel para replicar comportamento do Excel
+                // Apenas o custo_total_final é arredondado, nunca o custo_unitario_final
                 const custo_total_final = MoneyUtils.roundExcel(custo_total_final_bruto, 2);
                 
                 // Armazenar valores brutos antes de formatar (manter precisão máxima)
                 if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i]) {
                     window.valoresBrutosPorLinha[i].desp_desenbaraco = despesa_desembaraco;
-                    // Armazenar custo_unitario_final com precisão máxima (não arredondado)
+                    // CRÍTICO: Armazenar custo_unitario_final com TODA a precisão (ex: 0,586630861323519)
+                    // Este valor NÃO deve ser arredondado - será usado em cálculos futuros
                     window.valoresBrutosPorLinha[i].custo_unitario_final = custo_unitario_final;
                     // Armazenar custo_total_final arredondado (já aplicado roundExcel)
                     window.valoresBrutosPorLinha[i].custo_total_final = custo_total_final;
                 }
                 
-                // Formatar apenas para exibição
-                // custo_unitario_final: mostrar 2 casas, mas valor interno mantém precisão máxima
+                // Formatar apenas para exibição (não altera o valor interno)
+                // custo_unitario_final: exibir 2 casas, mas valor interno mantém TODA a precisão (ex: 0,586630861323519)
+                // O valor formatado é apenas visual - o valor bruto é usado em todos os cálculos
                 $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2));
                 // custo_total_final: já está arredondado, apenas formatar para exibição
                 $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2));
