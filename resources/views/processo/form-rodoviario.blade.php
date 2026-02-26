@@ -1080,7 +1080,8 @@
             
             // DESP. ADUANEIRA, BC ICMS S/REDUÇÃO, VLR ICMS S/RED., BC ICMS REDUZIDO, VLR ICMS REDUZ.
             // Para processos rodoviários: DESP. ADUANEIRA = soma dos valores unitários de cada linha
-            // Cada linha calcula: MULTA + TX DEF. LI + TAXA SISCOMEX + FRETE FOZ/GYN + HONORÁRIOS NIX
+            // Cada linha calcula: BA + BB + BC + BG + BN
+            // BA = MULTA, BB = TX DEF. LI, BC = TAXA SISCOMEX, BG = FRETE FOZ/GYN, BN = HONORÁRIOS NIX
             // Os valores já estão sendo acumulados em totais.despesa_aduaneira no loop acima
             const despAduaneiraCalculada = totais.despesa_aduaneira || 0;
             // Calcular taxa SISCOMEX total para exibição (ainda é usado na linha de TAXA SISCOMEX)
@@ -3484,9 +3485,14 @@
         }
 
         function calcularDespesas(rowId, fatorVlrFob_AX, fatorSiscomex, taxaSiscomexUnit, vlrAduaneiroBrl = null) {
-            // Rodoviário: DESP. ADUANEIRA = MULTA + TX DEF. LI + TAXA SISCOMEX + FRETE FOZ/GYN + HONORÁRIOS NIX
+            // Rodoviário: DESP. ADUANEIRA = BA + BB + BC + BG + BN
+            // BA = MULTA
+            // BB = TX DEF. LI
+            // BC = TAXA SISCOMEX
+            // BG = FRETE FOZ/GYN
+            // BN = HONORÁRIOS NIX
             
-            const multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0; // BE23
+            const multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0; // BA
             
             // tx_def_li é uma porcentagem, precisa calcular sobre uma base
             // Vamos usar o valor aduaneiro BRL como base
@@ -3495,28 +3501,28 @@
                 vlrAduaneiroBrl = MoneyUtils.parseMoney($(`#valor_aduaneiro_brl-${rowId}`).val()) || 0;
             }
             const txDefLiPercent = $(`#tx_def_li-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#tx_def_li-${rowId}`).val()) : 0;
-            const txDefLi = vlrAduaneiroBrl * txDefLiPercent; // BF23
+            const txDefLi = vlrAduaneiroBrl * txDefLiPercent; // BB
             
             // Taxa SISCOMEX da linha (já vem como parâmetro taxaSiscomexUnit)
-            const taxaSiscomex = taxaSiscomexUnit || 0; // BG23
+            const taxaSiscomex = taxaSiscomexUnit || 0; // BC
             
             // Frete Foz/GYN
-            const freteFozGyn = $(`#frete_foz_gyn-${rowId}`).val() ? MoneyUtils.parseMoney($(`#frete_foz_gyn-${rowId}`).val()) : 0;
+            const freteFozGyn = $(`#frete_foz_gyn-${rowId}`).val() ? MoneyUtils.parseMoney($(`#frete_foz_gyn-${rowId}`).val()) : 0; // BG
             
             // Honorários NIX
-            const honorarios_nix = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0; // BP23
+            const honorarios_nix = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0; // BN
 
-            // DESP. ADUANEIRA
+            // DESP. ADUANEIRA = BA + BB + BC + BG + BN
             let despesas = multa + txDefLi + taxaSiscomex + freteFozGyn + honorarios_nix;
 
             return {
                 total: despesas,
                 componentes: {
-                    multa, // BE23
-                    txDefLi, // BF23
-                    taxaSiscomex, // BG23
-                    freteFozGyn,
-                    honorarios_nix // BP23
+                    multa, // BA
+                    txDefLi, // BB
+                    taxaSiscomex, // BC
+                    freteFozGyn, // BG
+                    honorarios_nix // BN
                 },
                 tipoCalculo: 'rodoviario'
             };
@@ -4096,7 +4102,9 @@
                 
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2));
                 
-                let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0;
+                // Usar MoneyUtils.parseMoney() para tratar corretamente formato brasileiro (15.000,00000)
+                // parseInt() não funciona corretamente com números formatados (para no primeiro ponto)
+                let qquantidade = MoneyUtils.parseMoney($(`#quantidade-${i}`).val()) || 0;
                 
                 // Usar valores brutos (não arredondados) para máxima precisão no cálculo
                 const valoresBrutosLinha = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i];
