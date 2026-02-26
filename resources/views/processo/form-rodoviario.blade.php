@@ -4184,7 +4184,16 @@
                     ? ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade 
                     : 0;
                 
-                // Console log para verificar precisão do cálculo
+                // CUSTO TOTAL FINAL = CUSTO UNIT FINAL * QUANTD
+                // CRÍTICO: Usar custo_unitario_final com TODA a precisão (ex: 0,586630861323519)
+                // Multiplicar primeiro, depois arredondar apenas o resultado final
+                // Isso replica exatamente o comportamento do Excel
+                const custo_total_final_bruto = custo_unitario_final * qquantidade;
+                // Arredondar custo_total_final usando roundExcel para replicar comportamento do Excel
+                // Apenas o custo_total_final é arredondado, nunca o custo_unitario_final
+                const custo_total_final = MoneyUtils.roundExcel(custo_total_final_bruto, 2);
+                
+                // Console log para verificar precisão do cálculo (após calcular custo_total_final)
                 console.log(`[Linha ${i}] CUSTO UNIT FINAL (precisão máxima):`, {
                     vlrTotalNfComIcms: vlrTotalNfComIcms,
                     vlrTotalNfComIcms_string: vlrTotalNfComIcms.toFixed(15),
@@ -4199,19 +4208,10 @@
                     numerador_string: ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido).toFixed(15),
                     custo_unitario_final: custo_unitario_final,
                     custo_unitario_final_string: custo_unitario_final.toFixed(15), // Mostrar com 15 casas decimais
-                    custo_total_final_bruto: custo_unitario_final * qquantidade,
-                    custo_total_final_bruto_string: (custo_unitario_final * qquantidade).toFixed(15),
+                    custo_total_final_bruto: custo_total_final_bruto,
+                    custo_total_final_bruto_string: custo_total_final_bruto.toFixed(15),
                     custo_total_final_arredondado: custo_total_final
                 });
-                
-                // CUSTO TOTAL FINAL = CUSTO UNIT FINAL * QUANTD
-                // CRÍTICO: Usar custo_unitario_final com TODA a precisão (ex: 0,586630861323519)
-                // Multiplicar primeiro, depois arredondar apenas o resultado final
-                // Isso replica exatamente o comportamento do Excel
-                const custo_total_final_bruto = custo_unitario_final * qquantidade;
-                // Arredondar custo_total_final usando roundExcel para replicar comportamento do Excel
-                // Apenas o custo_total_final é arredondado, nunca o custo_unitario_final
-                const custo_total_final = MoneyUtils.roundExcel(custo_total_final_bruto, 2);
                 
                 // Armazenar valores brutos antes de formatar (manter precisão máxima)
                 if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i]) {
