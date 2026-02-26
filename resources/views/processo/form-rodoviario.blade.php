@@ -1079,12 +1079,12 @@
             tr += `<td data-field="vlr-cofins" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_cofins, 2)}</td>`;
             
             // DESP. ADUANEIRA, BC ICMS S/REDUÇÃO, VLR ICMS S/RED., BC ICMS REDUZIDO, VLR ICMS REDUZ.
-            // Para processos aéreos: DESP. ADUANEIRA = TX DEF LI + Taxa SISCOMEX + DAI + Honorários NIX
-            // tx_def_li já foi calculado corretamente acima (txDefLiTotal)
-            // IMPORTANTE: Usar o valor total da taxa SISCOMEX calculado diretamente pela função calcularTaxaSiscomex()
-            // ao invés de somar os valores arredondados das linhas, para evitar diferenças de arredondamento
+            // Para processos rodoviários: DESP. ADUANEIRA = soma dos valores unitários de cada linha
+            // Cada linha calcula: MULTA + TX DEF. LI + TAXA SISCOMEX + FRETE FOZ/GYN + HONORÁRIOS NIX
+            // Os valores já estão sendo acumulados em totais.despesa_aduaneira no loop acima
+            const despAduaneiraCalculada = totais.despesa_aduaneira || 0;
+            // Calcular taxa SISCOMEX total para exibição (ainda é usado na linha de TAXA SISCOMEX)
             const taxaSiscomexTotalProcesso = calcularTaxaSiscomex();
-            const despAduaneiraCalculada = txDefLiTotal + taxaSiscomexTotalProcesso + (totais.dai || 0) + totais.honorarios_nix;
             tr += `<td data-field="desp-aduaneira" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(despAduaneiraCalculada, 2)}</td>`;
             tr += `<td data-field="bc-icms-sem-reducao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.base_icms_sem_reducao, 2)}</td>`;
             tr += `<td data-field="vlr-icms-sem-reducao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.valor_icms_sem_reducao, 2)}</td>`;
@@ -4097,25 +4097,42 @@
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2));
                 
                 let qquantidade = parseInt($(`#quantidade-${i}`).val()) || 0;
-                const vlrTotalNfComIcms = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val()) || 0; // AW
-                let diferenca_cambial_frete = MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val()) || 0; // BP
-                diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
-                const vlrIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0; // AO
                 
-                // CUSTO UNIT FINAL = ((AW + BO + BP) - AO) / E
+                // Usar valores brutos (não arredondados) para máxima precisão no cálculo
+                const valoresBrutosLinha = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i];
+                const vlrTotalNfComIcms = valoresBrutosLinha?.valor_total_nf_com_icms_st !== undefined 
+                    ? valoresBrutosLinha.valor_total_nf_com_icms_st 
+                    : (MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val()) || 0); // AW
+                
+                let diferenca_cambial_frete = valoresBrutosLinha?.diferenca_cambial_frete !== undefined
+                    ? valoresBrutosLinha.diferenca_cambial_frete
+                    : (MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val()) || 0); // BP
+                diferenca_cambial_frete = validarDiferencaCambialFrete(diferenca_cambial_frete);
+                
+                const vlrIcmsReduzido = valoresBrutosLinha?.valor_icms_reduzido !== undefined
+                    ? valoresBrutosLinha.valor_icms_reduzido
+                    : (MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0); // AO
+                
+                // CUSTO UNIT FINAL = ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF. CAMBIAL FRETE) – VLR ICMS REDUZ.) / QUANTD
+                // Usar valores brutos para cálculo preciso
                 const custo_unitario_final = qquantidade > 0 
                     ? ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade 
                     : 0;
                 
+                // CUSTO TOTAL FINAL = CUSTO UNIT FINAL * QUANTD
+                // Usar valor bruto de custo_unitario_final (não arredondado) para multiplicação
                 const custo_total_final = custo_unitario_final * qquantidade;
-                $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2));
-                $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2));
                 
+                // Armazenar valores brutos antes de formatar
                 if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i]) {
                     window.valoresBrutosPorLinha[i].desp_desenbaraco = despesa_desembaraco;
                     window.valoresBrutosPorLinha[i].custo_unitario_final = custo_unitario_final;
                     window.valoresBrutosPorLinha[i].custo_total_final = custo_total_final;
                 }
+                
+                // Formatar apenas para exibição
+                $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2));
+                $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2));
                 
                 if (debugStore[i]) {
                     debugStore[i].despesaDesembaraco = despesa_desembaraco;
