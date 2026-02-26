@@ -900,6 +900,8 @@
                         // VLR CFR UNIT não é somado (é unitário), apenas garantir que existe
                         // Não precisa somar
                     } else {
+                        // CRÍTICO: Priorizar sempre valores brutos para máxima precisão
+                        // Ordem de prioridade: valoresBrutosPorLinha > valoresBrutosCamposExternos > campos HTML
                         if (valoresBrutosLinha && valoresBrutosLinha[campo] !== undefined) {
                             let valor = valoresBrutosLinha[campo] || 0;
                             if (campo === 'diferenca_cambial_frete') {
@@ -919,6 +921,7 @@
                             totais[campo] += valor;
                         } else {
                             // Fallback: usar valor formatado se valor bruto não estiver disponível
+                            // Mas tentar usar parseMoney com precisão máxima (7 casas do banco)
                             const elemento = $(`#${campo}-${rowId}`);
                             if (elemento.length > 0) {
                                 let valor = MoneyUtils.parseMoney(elemento.val()) || 0;
@@ -1447,6 +1450,48 @@
                             window.valoresBrutosCamposExternos[campo][rowId] = valor;
                         }
                     });
+                    
+                    // Inicializar valores brutos calculados a partir dos valores do banco
+                    // Isso garante que o totalizador use valores com precisão máxima
+                    if (!window.valoresBrutosPorLinha) {
+                        window.valoresBrutosPorLinha = {};
+                    }
+                    if (!window.valoresBrutosPorLinha[rowId]) {
+                        window.valoresBrutosPorLinha[rowId] = {};
+                    }
+                    
+                    // Inicializar valores brutos dos campos calculados a partir dos valores do banco
+                    // Usar parseMoney para manter precisão máxima (7 casas do banco)
+                    const valorTotalNf = MoneyUtils.parseMoney($(`#valor_total_nf-${rowId}`).val()) || 0;
+                    const valorTotalNfSemIcmsSt = MoneyUtils.parseMoney($(`#valor_total_nf_sem_icms_st-${rowId}`).val()) || 0;
+                    const valorTotalNfComIcmsSt = MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${rowId}`).val()) || 0;
+                    const valorIpi = MoneyUtils.parseMoney($(`#valor_ipi-${rowId}`).val()) || 0;
+                    const valorPis = MoneyUtils.parseMoney($(`#valor_pis-${rowId}`).val()) || 0;
+                    const valorCofins = MoneyUtils.parseMoney($(`#valor_cofins-${rowId}`).val()) || 0;
+                    const despesaAduaneira = MoneyUtils.parseMoney($(`#despesa_aduaneira-${rowId}`).val()) || 0;
+                    const valorIcmsReduzido = MoneyUtils.parseMoney($(`#valor_icms_reduzido-${rowId}`).val()) || 0;
+                    const valorIcmsSt = MoneyUtils.parseMoney($(`#valor_icms_st-${rowId}`).val()) || 0;
+                    const multa = MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) || 0;
+                    const txDefLi = MoneyUtils.parseMoney($(`#tx_def_li-${rowId}`).val()) || 0;
+                    const taxaSiscomex = MoneyUtils.parseMoney($(`#taxa_siscomex-${rowId}`).val()) || 0;
+                    const freteFozGyn = MoneyUtils.parseMoney($(`#frete_foz_gyn-${rowId}`).val()) || 0;
+                    const honorariosNix = MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) || 0;
+                    
+                    // Armazenar valores brutos para uso no totalizador
+                    window.valoresBrutosPorLinha[rowId].valor_total_nf = valorTotalNf;
+                    window.valoresBrutosPorLinha[rowId].valor_total_nf_sem_icms_st = valorTotalNfSemIcmsSt;
+                    window.valoresBrutosPorLinha[rowId].valor_total_nf_com_icms_st = valorTotalNfComIcmsSt;
+                    window.valoresBrutosPorLinha[rowId].valor_ipi = valorIpi;
+                    window.valoresBrutosPorLinha[rowId].valor_pis = valorPis;
+                    window.valoresBrutosPorLinha[rowId].valor_cofins = valorCofins;
+                    window.valoresBrutosPorLinha[rowId].despesa_aduaneira = despesaAduaneira;
+                    window.valoresBrutosPorLinha[rowId].valor_icms_reduzido = valorIcmsReduzido;
+                    window.valoresBrutosPorLinha[rowId].valor_icms_st = valorIcmsSt;
+                    window.valoresBrutosPorLinha[rowId].multa = multa;
+                    window.valoresBrutosPorLinha[rowId].tx_def_li = txDefLi;
+                    window.valoresBrutosPorLinha[rowId].taxa_siscomex = taxaSiscomex;
+                    window.valoresBrutosPorLinha[rowId].frete_foz_gyn = freteFozGyn;
+                    window.valoresBrutosPorLinha[rowId].honorarios_nix = honorariosNix;
                 }
             });
             
@@ -2607,13 +2652,18 @@
                     const impostos = calcularImpostos(rowId, vlrAduaneiroBrl);
                     // Para processo aéreo: taxa_siscomex = fator_tx_siscomex * fob_total_brl da linha
                     // Seguindo a mesma lógica do marítimo: fatorTaxaSiscomex_AY = taxaSisComex / (fobTotalGeralAtualizado * dolar)
+                    // CRÍTICO: Manter valores intermediários com precisão máxima (15 casas decimais)
+                    // NÃO arredondar durante cálculos - apenas na exibição
                     const fatorTaxaSiscomex_AY = taxaSisComex / ((fobTotalGeralAtualizado || 1) * (dolar || 1));
                     const taxaSiscomexUnitaria_BB = fatorTaxaSiscomex_AY * (fobTotal * dolar);
+                    // Formatar apenas para exibição - valores brutos são usados nos cálculos
                     $(`#fator_tx_siscomex-${rowId}`).val(MoneyUtils.formatMoney(fatorTaxaSiscomex_AY, 6));
                     $(`#taxa_siscomex-${rowId}`).val(MoneyUtils.formatMoney(taxaSiscomexUnitaria_BB, 2));
 
+                    // Usar valor bruto de taxaSiscomexUnitaria_BB (não formatado) para máxima precisão
                     const despesasInfo = calcularDespesas(rowId, fatorVlrFob_AX, fatorTaxaSiscomex_AY,
                         (taxaSiscomexUnitaria_BB ?? 0), vlrAduaneiroBrl);
+                    // despesas mantém precisão máxima (15 casas decimais) - não arredondar
                     const despesas = despesasInfo.total;
 
                     const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas);
@@ -2644,8 +2694,9 @@
                     }
                     
                     let icms_st_percent = MoneyUtils.parsePercentage($(`#icms_st-${rowId}`).val());
-                    // CRÍTICO: Manter vlrIcmsSt com MÁXIMA PRECISÃO (não arredondar)
+                    // CRÍTICO: Manter vlrIcmsSt com MÁXIMA PRECISÃO (15 casas decimais - não arredondar)
                     // Este valor será usado para calcular valor_total_nf_com_icms_st com precisão máxima
+                    // NÃO arredondar durante o cálculo - apenas na exibição
                     let vlrIcmsSt = icms_st_percent > 0 ? (base_icms_st * icms_st_percent) - vlrIcmsReduzido : 0;
                     
                     // Recalcular totais com o valor bruto de vlrIcmsSt para máxima precisão
@@ -3531,6 +3582,8 @@
             // BC = TAXA SISCOMEX
             // BG = FRETE FOZ/GYN
             // BN = HONORÁRIOS NIX
+            // CRÍTICO: Manter TODOS os valores intermediários com precisão máxima (15 casas decimais)
+            // NÃO arredondar nada durante o cálculo
             
             const multa = $(`#multa-${rowId}`).val() ? MoneyUtils.parseMoney($(`#multa-${rowId}`).val()) : 0; // BA
             
@@ -3553,6 +3606,7 @@
             const honorarios_nix = $(`#honorarios_nix-${rowId}`).val() ? MoneyUtils.parseMoney($(`#honorarios_nix-${rowId}`).val()) : 0; // BN
 
             // DESP. ADUANEIRA = BA + BB + BC + BG + BN
+            // Retornar valor bruto sem arredondamento - manter 15 casas decimais de precisão
             let despesas = multa + txDefLi + taxaSiscomex + freteFozGyn + honorarios_nix;
 
             return {
@@ -3569,6 +3623,8 @@
         }
 
         function calcularBcIcmsSemReducao(base, impostos, despesas) {
+            // CRÍTICO: Manter TODOS os valores intermediários com precisão máxima (15 casas decimais)
+            // NÃO arredondar nada durante o cálculo
             const vlrII = base * impostos.ii;
             const bcIpi = base + vlrII;
             const vlrIpi = bcIpi * impostos.ipi;
@@ -3578,18 +3634,23 @@
             if (divisor === 0) {
                 return 0;
             }
+            // Retornar valor bruto sem arredondamento - manter 15 casas decimais de precisão
             return (base + vlrII + vlrIpi + vlrPis + vlrCofins + despesas) / divisor;
         }
 
         function calcularBcIcmsReduzido(rowId, base, impostos, despesas) {
             atualizarReducao(rowId);
+            // CRÍTICO: Manter TODOS os valores intermediários com precisão máxima (15 casas decimais)
             const bcIcmsSemReducao = calcularBcIcmsSemReducao(base, impostos, despesas);
             let reducao = MoneyUtils.parseMoney($(`#reducao-${rowId}`).val()) || 0;
             const fatorReducao = reducao === 0 ? 1 : reducao;
+            // Retornar valor bruto sem arredondamento - manter 15 casas decimais de precisão
             return bcIcmsSemReducao * fatorReducao;
         }
 
         function calcularTotais(base, impostos, despesas, quantidade, vlrIcmsReduzido, rowId, vlrIcmsStBruto = null) {
+            // CRÍTICO: Manter TODOS os valores intermediários com precisão máxima (15 casas decimais)
+            // NÃO arredondar nada durante o cálculo - apenas na exibição
             const vlrII = base * impostos.ii;
             const bcIpi = base + vlrII;
             const vlrIpi = bcIpi * impostos.ipi;
@@ -3600,10 +3661,11 @@
             const vlrUnitProdutNf = quantidade > 0 ? (vlrTotalProdutoNf / quantidade) : 0;
             const vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesas + vlrIcmsReduzido;
             // CRÍTICO: Usar valor bruto de vlrIcmsSt se fornecido, caso contrário tentar obter do campo (pode estar arredondado)
-            // Preferir sempre usar o valor bruto calculado para máxima precisão
+            // Preferir sempre usar o valor bruto calculado para máxima precisão (15 casas decimais)
             const vlrIcmsStDom = vlrIcmsStBruto !== null ? vlrIcmsStBruto : ($(`#valor_icms_st-${rowId}`).val() ? MoneyUtils.parseMoney($(`#valor_icms_st-${rowId}`).val()) : 0);
             const vlrTotalNfComIcms = vlrTotalNfSemIcms + vlrIcmsStDom;
             
+            // Retornar valores brutos sem arredondamento - manter 15 casas decimais de precisão
             return {
                 vlrII: vlrII ?? 0,
                 bcIpi: bcIpi ?? 0,
@@ -3745,6 +3807,8 @@
             $(`#valor_ii-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl * valores.impostos.ii, 2));
             $(`#base_ipi-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl + valores.vlrAduaneiroBrl * valores
                 .impostos.ii, 2));
+            // Exibir valores com 2 casas decimais na interface (conforme solicitado)
+            // CRÍTICO: Os valores brutos são armazenados em valoresBrutosPorLinha para uso no totalizador
             $(`#valor_ipi-${rowId}`).val(MoneyUtils.formatMoney((valores.vlrAduaneiroBrl + valores.vlrAduaneiroBrl * valores
                 .impostos.ii) * valores.impostos.ipi, 2));
             $(`#base_pis_cofins-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrAduaneiroBrl, 2));
@@ -3755,6 +3819,8 @@
             $(`#valor_icms_sem_reducao-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSReducao, 2));
             $(`#base_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.bcImcsReduzido, 2));
             $(`#valor_icms_reduzido-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsReduzido, 2));
+            // Exibir valores com 2 casas decimais na interface (conforme solicitado)
+            // CRÍTICO: Os valores brutos são armazenados em valoresBrutosPorLinha para uso no totalizador
             $(`#valor_unit_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrUnitProdutNf, 2));
             $(`#valor_total_nf-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalProdutoNf, 2));
             $(`#valor_total_nf_sem_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.totais.vlrTotalNfSemIcms, 2));
@@ -3776,7 +3842,16 @@
             if (!window.valoresBrutosPorLinha[rowId]) {
                 window.valoresBrutosPorLinha[rowId] = {};
             }
+            // Armazenar valores brutos com precisão máxima para uso no totalizador
+            // Estes valores são usados pelo totalizador ao invés dos valores formatados (2 casas)
             window.valoresBrutosPorLinha[rowId].valor_total_nf_com_icms_st = valorTotalNfComIcmsStRecalculado;
+            window.valoresBrutosPorLinha[rowId].valor_total_nf_sem_icms_st = valores.totais.vlrTotalNfSemIcms;
+            window.valoresBrutosPorLinha[rowId].valor_total_nf = valores.totais.vlrTotalProdutoNf;
+            window.valoresBrutosPorLinha[rowId].valor_ipi = valores.totais.vlrIpi;
+            window.valoresBrutosPorLinha[rowId].valor_pis = valores.totais.vlrPis;
+            window.valoresBrutosPorLinha[rowId].valor_cofins = valores.totais.vlrCofins;
+            window.valoresBrutosPorLinha[rowId].despesa_aduaneira = valores.despesas;
+            window.valoresBrutosPorLinha[rowId].valor_icms_reduzido = valores.vlrIcmsReduzido;
             window.valoresBrutosPorLinha[rowId].valor_icms_st = valores.vlrIcmsSt || 0;
             
             // Console log para verificar atualização
@@ -4210,11 +4285,12 @@
                     : (MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0); // AO
                 
                 // CUSTO UNIT FINAL = ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF. CAMBIAL FRETE) – VLR ICMS REDUZ.) / QUANTD
-                // CRÍTICO: Manter custo_unitario_final com MÁXIMA PRECISÃO (até 15 dígitos significativos)
+                // CRÍTICO: Manter custo_unitario_final com MÁXIMA PRECISÃO (15 casas decimais)
                 // Excel mantém valores como 0,586630861323519 internamente e só arredonda na exibição
-                // NÃO ARREDONDAR este valor - ele será usado para calcular custo_total_final
+                // NÃO ARREDONDAR este valor durante o cálculo - apenas na exibição (view)
+                // Todos os valores intermediários devem manter 15 casas decimais de precisão
                 // JavaScript mantém ~15-17 dígitos significativos em números de ponto flutuante
-                const custo_unitario_final = qquantidade > 0 
+                const custo_unitario_final = qquantidade > 0
                     ? ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade 
                     : 0;
                 
@@ -4228,34 +4304,56 @@
                 const custo_total_final = MoneyUtils.roundExcel(custo_total_final_bruto, 2);
                 
                 // Console log para verificar precisão do cálculo (após calcular custo_total_final)
-                console.log(`[Linha ${i}] CUSTO UNIT FINAL (precisão máxima):`, {
-                    vlrTotalNfComIcms: vlrTotalNfComIcms,
-                    vlrTotalNfComIcms_string: vlrTotalNfComIcms.toFixed(15),
-                    despesa_desembaraco: despesa_desembaraco,
-                    despesa_desembaraco_string: despesa_desembaraco.toFixed(15),
-                    diferenca_cambial_frete: diferenca_cambial_frete,
-                    diferenca_cambial_frete_string: diferenca_cambial_frete.toFixed(15),
-                    vlrIcmsReduzido: vlrIcmsReduzido,
-                    vlrIcmsReduzido_string: vlrIcmsReduzido.toFixed(15),
-                    quantidade: qquantidade,
-                    numerador: (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido,
+                // Comparar com valores do Excel para identificar divergências
+                console.log(`[Linha ${i}] CUSTO UNIT FINAL - COMPARAÇÃO COM EXCEL:`, {
+                    // Valores do Excel (referência):
+                    excel_AW: 'VLR TOTAL NF C/ICMS-ST',
+                    excel_BO: 'DESP. DESEMBARAÇO',
+                    excel_BP: 'DIF. CAMBIAL FRETE',
+                    excel_AO: 'VLR ICMS REDUZ.',
+                    excel_E: 'QUANTIDADE',
+                    // Valores do sistema:
+                    AW_vlrTotalNfComIcms: vlrTotalNfComIcms,
+                    AW_vlrTotalNfComIcms_string: vlrTotalNfComIcms.toFixed(15),
+                    BO_despesa_desembaraco: despesa_desembaraco,
+                    BO_despesa_desembaraco_string: despesa_desembaraco.toFixed(15),
+                    BP_diferenca_cambial_frete: diferenca_cambial_frete,
+                    BP_diferenca_cambial_frete_string: diferenca_cambial_frete.toFixed(15),
+                    AO_vlrIcmsReduzido: vlrIcmsReduzido,
+                    AO_vlrIcmsReduzido_string: vlrIcmsReduzido.toFixed(15),
+                    E_quantidade: qquantidade,
+                    // Cálculos intermediários:
+                    soma_AW_BO_BP: vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete,
+                    soma_AW_BO_BP_string: (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete).toFixed(15),
+                    numerador_AW_BO_BP_menos_AO: (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido,
                     numerador_string: ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido).toFixed(15),
+                    // Resultado:
                     custo_unitario_final: custo_unitario_final,
-                    custo_unitario_final_string: custo_unitario_final.toFixed(15), // Mostrar com 15 casas decimais
+                    custo_unitario_final_string: custo_unitario_final.toFixed(15),
                     custo_total_final_bruto: custo_total_final_bruto,
                     custo_total_final_bruto_string: custo_total_final_bruto.toFixed(15),
-                    custo_total_final_arredondado: custo_total_final
+                    custo_total_final_arredondado: custo_total_final,
+                    // Valores esperados do Excel (para comparação):
+                    excel_esperado_soma_AW_BO_BP: '4344.43',
+                    excel_esperado_numerador: '3519.78',
+                    excel_esperado_custo_unit_final: '0.586630861323519'
                 });
                 
                 // Armazenar valores brutos antes de formatar (manter precisão máxima)
-                if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i]) {
-                    window.valoresBrutosPorLinha[i].desp_desenbaraco = despesa_desembaraco;
-                    // CRÍTICO: Armazenar custo_unitario_final com TODA a precisão (ex: 0,586630861323519)
-                    // Este valor NÃO deve ser arredondado - será usado em cálculos futuros
-                    window.valoresBrutosPorLinha[i].custo_unitario_final = custo_unitario_final;
-                    // Armazenar custo_total_final arredondado (já aplicado roundExcel)
-                    window.valoresBrutosPorLinha[i].custo_total_final = custo_total_final;
+                // CRÍTICO: Garantir que o objeto existe antes de armazenar
+                if (!window.valoresBrutosPorLinha) {
+                    window.valoresBrutosPorLinha = {};
                 }
+                if (!window.valoresBrutosPorLinha[i]) {
+                    window.valoresBrutosPorLinha[i] = {};
+                }
+                // Armazenar despesa_desembaraco com precisão máxima (15 casas decimais)
+                window.valoresBrutosPorLinha[i].desp_desenbaraco = despesa_desembaraco;
+                // CRÍTICO: Armazenar custo_unitario_final com TODA a precisão (ex: 0,586630861323519)
+                // Este valor NÃO deve ser arredondado - será usado em cálculos futuros
+                window.valoresBrutosPorLinha[i].custo_unitario_final = custo_unitario_final;
+                // Armazenar custo_total_final arredondado (já aplicado roundExcel)
+                window.valoresBrutosPorLinha[i].custo_total_final = custo_total_final;
                 
                 // Formatar apenas para exibição (não altera o valor interno)
                 // custo_unitario_final: exibir 2 casas, mas valor interno mantém TODA a precisão (ex: 0,586630861323519)
