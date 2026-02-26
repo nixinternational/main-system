@@ -3769,10 +3769,26 @@
             $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado, 2));
             
             // CRÍTICO: Atualizar valoresBrutosPorLinha com o valor recalculado (precisão máxima)
-            if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId]) {
-                window.valoresBrutosPorLinha[rowId].valor_total_nf_com_icms_st = valorTotalNfComIcmsStRecalculado;
-                window.valoresBrutosPorLinha[rowId].valor_icms_st = valores.vlrIcmsSt || 0;
+            // Garantir que o objeto existe antes de atualizar
+            if (!window.valoresBrutosPorLinha) {
+                window.valoresBrutosPorLinha = {};
             }
+            if (!window.valoresBrutosPorLinha[rowId]) {
+                window.valoresBrutosPorLinha[rowId] = {};
+            }
+            window.valoresBrutosPorLinha[rowId].valor_total_nf_com_icms_st = valorTotalNfComIcmsStRecalculado;
+            window.valoresBrutosPorLinha[rowId].valor_icms_st = valores.vlrIcmsSt || 0;
+            
+            // Console log para verificar atualização
+            console.log(`[Linha ${rowId}] ATUALIZAÇÃO valor_total_nf_com_icms_st:`, {
+                vlrTotalNfSemIcms: valores.totais.vlrTotalNfSemIcms,
+                vlrTotalNfSemIcms_string: valores.totais.vlrTotalNfSemIcms.toFixed(15),
+                vlrIcmsSt: valores.vlrIcmsSt || 0,
+                vlrIcmsSt_string: (valores.vlrIcmsSt || 0).toFixed(15),
+                valorTotalNfComIcmsStRecalculado: valorTotalNfComIcmsStRecalculado,
+                valorTotalNfComIcmsStRecalculado_string: valorTotalNfComIcmsStRecalculado.toFixed(15),
+                armazenado_em_valoresBrutosPorLinha: window.valoresBrutosPorLinha[rowId].valor_total_nf_com_icms_st
+            });
 
             // Validar e tratar diferenca_cambial_frete antes de exibir
             const diferencaCambialFreteValidada = validarDiferencaCambialFrete(valores.diferenca_cambial_frete);
@@ -4162,6 +4178,24 @@
                 // CRÍTICO: Usar valores brutos (não arredondados) para máxima precisão no cálculo
                 // Todos os valores devem manter ~15 dígitos significativos para replicar Excel
                 const valoresBrutosLinha = window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i];
+                
+                // Console log para verificar valores brutos disponíveis
+                console.log(`[Linha ${i}] VALORES BRUTOS DISPONÍVEIS:`, {
+                    valoresBrutosLinha: valoresBrutosLinha,
+                    valor_total_nf_com_icms_st_bruto: valoresBrutosLinha?.valor_total_nf_com_icms_st,
+                    valor_total_nf_com_icms_st_bruto_string: valoresBrutosLinha?.valor_total_nf_com_icms_st?.toFixed(15),
+                    valor_total_nf_com_icms_st_campo: $(`#valor_total_nf_com_icms_st-${i}`).val(),
+                    valor_total_nf_com_icms_st_parseado: MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val()),
+                    diferenca_cambial_frete_bruto: valoresBrutosLinha?.diferenca_cambial_frete,
+                    diferenca_cambial_frete_bruto_string: valoresBrutosLinha?.diferenca_cambial_frete?.toFixed(15),
+                    diferenca_cambial_frete_campo: $(`#diferenca_cambial_frete-${i}`).val(),
+                    diferenca_cambial_frete_parseado: MoneyUtils.parseMoney($(`#diferenca_cambial_frete-${i}`).val()),
+                    valor_icms_reduzido_bruto: valoresBrutosLinha?.valor_icms_reduzido,
+                    valor_icms_reduzido_bruto_string: valoresBrutosLinha?.valor_icms_reduzido?.toFixed(15),
+                    valor_icms_reduzido_campo: $(`#valor_icms_reduzido-${i}`).val(),
+                    valor_icms_reduzido_parseado: MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val())
+                });
+                
                 const vlrTotalNfComIcms = valoresBrutosLinha?.valor_total_nf_com_icms_st !== undefined 
                     ? valoresBrutosLinha.valor_total_nf_com_icms_st 
                     : (MoneyUtils.parseMoney($(`#valor_total_nf_com_icms_st-${i}`).val()) || 0); // AW
