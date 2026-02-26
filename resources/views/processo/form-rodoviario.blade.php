@@ -2619,19 +2619,24 @@
                     const bcIcmsSReducao = calcularBcIcmsSemReducao(vlrAduaneiroBrl, impostos, despesas);
                     const vlrIcmsSReducao = bcIcmsSReducao * impostos.icms;
                     const bcImcsReduzido = calcularBcIcmsReduzido(rowId, vlrAduaneiroBrl, impostos, despesas);
+                    // CRÍTICO: Manter vlrIcmsReduzido com MÁXIMA PRECISÃO (não arredondar)
                     const vlrIcmsReduzido = bcImcsReduzido * impostos.icms;
-                    const totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
-                        rowId);
+                    // Calcular totais ANTES de calcular vlrIcmsSt para poder passar o valor bruto
+                    // Mas precisamos calcular vlrIcmsSt primeiro, então vamos recalcular totais depois
+                    let totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
+                        rowId, null); // Passar null inicialmente
 
                     const mva = $(`#mva-${rowId}`).val() ? MoneyUtils.parsePercentage($(`#mva-${rowId}`).val()) : 0;
                     
                     // Calcular base_icms_st usando a fórmula: valor_total_nf_sem_icms * (1 + MVA)
+                    // CRÍTICO: Manter base_icms_st com MÁXIMA PRECISÃO (não arredondar)
                     // NOTA: parsePercentage já retorna a fração (ex: 45.5% vira 0.455)
                     const valorTotalNfSemIcms = totais.vlrTotalNfSemIcms || 0;
                     let base_icms_st = 0;
                     
                     if (mva > 0 && valorTotalNfSemIcms > 0) {
                         // MVA já vem como fração de parsePercentage (ex: 0.455 para 45,5%)
+                        // Manter precisão máxima no cálculo
                         base_icms_st = valorTotalNfSemIcms * (1 + mva);
                     } else {
                         // Se não há MVA, base_icms_st é igual ao valor_total_nf_sem_icms
@@ -2639,7 +2644,29 @@
                     }
                     
                     let icms_st_percent = MoneyUtils.parsePercentage($(`#icms_st-${rowId}`).val());
+                    // CRÍTICO: Manter vlrIcmsSt com MÁXIMA PRECISÃO (não arredondar)
+                    // Este valor será usado para calcular valor_total_nf_com_icms_st com precisão máxima
                     let vlrIcmsSt = icms_st_percent > 0 ? (base_icms_st * icms_st_percent) - vlrIcmsReduzido : 0;
+                    
+                    // Recalcular totais com o valor bruto de vlrIcmsSt para máxima precisão
+                    totais = calcularTotais(vlrAduaneiroBrl, impostos, despesas, quantidade, vlrIcmsReduzido,
+                        rowId, vlrIcmsSt); // Passar valor bruto de vlrIcmsSt
+                    
+                    // Console log para verificar precisão dos valores intermediários
+                    console.log(`[Linha ${rowId}] VALORES INTERMEDIÁRIOS (precisão máxima):`, {
+                        base_icms_st: base_icms_st,
+                        base_icms_st_string: base_icms_st.toFixed(15),
+                        icms_st_percent: icms_st_percent,
+                        vlrIcmsReduzido: vlrIcmsReduzido,
+                        vlrIcmsReduzido_string: vlrIcmsReduzido.toFixed(15),
+                        vlrIcmsSt: vlrIcmsSt,
+                        vlrIcmsSt_string: vlrIcmsSt.toFixed(15),
+                        vlrTotalNfSemIcms: totais.vlrTotalNfSemIcms,
+                        vlrTotalNfSemIcms_string: totais.vlrTotalNfSemIcms.toFixed(15),
+                        vlrTotalNfComIcms: totais.vlrTotalNfComIcms,
+                        vlrTotalNfComIcms_string: totais.vlrTotalNfComIcms.toFixed(15)
+                    });
+                    
                     // Fórmulas do JSON:
                     // BR23 = (P23*$BR$21)-(Q23) (DIF. CAMBIAL FRETE)
                     // Onde: P23 = FRETE INT USD, $BR$21 = B14 (taxa do dólar), Q23 = FRETE INT BRL
@@ -2698,6 +2725,7 @@
                         valor_total_nf_sem_icms_st: totais.vlrTotalNfSemIcms,
                         base_icms_st: base_icms_st,
                         valor_icms_st: vlrIcmsSt,
+                        // CRÍTICO: Usar valor recalculado com precisão máxima (já inclui vlrIcmsSt bruto)
                         valor_total_nf_com_icms_st: totais.vlrTotalNfComIcms || 0,
                         diferenca_cambial_frete: diferenca_cambial_frete,
                         diferenca_cambial_fob: diferenca_cambial_fob
@@ -3561,7 +3589,7 @@
             return bcIcmsSemReducao * fatorReducao;
         }
 
-        function calcularTotais(base, impostos, despesas, quantidade, vlrIcmsReduzido, rowId) {
+        function calcularTotais(base, impostos, despesas, quantidade, vlrIcmsReduzido, rowId, vlrIcmsStBruto = null) {
             const vlrII = base * impostos.ii;
             const bcIpi = base + vlrII;
             const vlrIpi = bcIpi * impostos.ipi;
@@ -3571,7 +3599,9 @@
             const vlrTotalProdutoNf = base + vlrII;
             const vlrUnitProdutNf = quantidade > 0 ? (vlrTotalProdutoNf / quantidade) : 0;
             const vlrTotalNfSemIcms = vlrTotalProdutoNf + vlrIpi + vlrPis + vlrCofins + despesas + vlrIcmsReduzido;
-            const vlrIcmsStDom = $(`#valor_icms_st-${rowId}`).val() ? MoneyUtils.parseMoney($(`#valor_icms_st-${rowId}`).val()) : 0;
+            // CRÍTICO: Usar valor bruto de vlrIcmsSt se fornecido, caso contrário tentar obter do campo (pode estar arredondado)
+            // Preferir sempre usar o valor bruto calculado para máxima precisão
+            const vlrIcmsStDom = vlrIcmsStBruto !== null ? vlrIcmsStBruto : ($(`#valor_icms_st-${rowId}`).val() ? MoneyUtils.parseMoney($(`#valor_icms_st-${rowId}`).val()) : 0);
             const vlrTotalNfComIcms = vlrTotalNfSemIcms + vlrIcmsStDom;
             
             return {
@@ -3733,9 +3763,16 @@
             $(`#base_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.base_icms_st, 2));
             $(`#valor_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valores.vlrIcmsSt, 2));
             
-            // Recalcular valor_total_nf_com_icms_st com o vlrIcmsSt calculado
+            // Recalcular valor_total_nf_com_icms_st com o vlrIcmsSt calculado (usando valor bruto)
+            // CRÍTICO: Usar valor bruto de vlrIcmsSt para máxima precisão
             const valorTotalNfComIcmsStRecalculado = valores.totais.vlrTotalNfSemIcms + (valores.vlrIcmsSt || 0);
             $(`#valor_total_nf_com_icms_st-${rowId}`).val(MoneyUtils.formatMoney(valorTotalNfComIcmsStRecalculado, 2));
+            
+            // CRÍTICO: Atualizar valoresBrutosPorLinha com o valor recalculado (precisão máxima)
+            if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[rowId]) {
+                window.valoresBrutosPorLinha[rowId].valor_total_nf_com_icms_st = valorTotalNfComIcmsStRecalculado;
+                window.valoresBrutosPorLinha[rowId].valor_icms_st = valores.vlrIcmsSt || 0;
+            }
 
             // Validar e tratar diferenca_cambial_frete antes de exibir
             const diferencaCambialFreteValidada = validarDiferencaCambialFrete(valores.diferenca_cambial_frete);
@@ -4150,13 +4187,21 @@
                 // Console log para verificar precisão do cálculo
                 console.log(`[Linha ${i}] CUSTO UNIT FINAL (precisão máxima):`, {
                     vlrTotalNfComIcms: vlrTotalNfComIcms,
+                    vlrTotalNfComIcms_string: vlrTotalNfComIcms.toFixed(15),
                     despesa_desembaraco: despesa_desembaraco,
+                    despesa_desembaraco_string: despesa_desembaraco.toFixed(15),
                     diferenca_cambial_frete: diferenca_cambial_frete,
+                    diferenca_cambial_frete_string: diferenca_cambial_frete.toFixed(15),
                     vlrIcmsReduzido: vlrIcmsReduzido,
+                    vlrIcmsReduzido_string: vlrIcmsReduzido.toFixed(15),
                     quantidade: qquantidade,
                     numerador: (vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido,
+                    numerador_string: ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido).toFixed(15),
                     custo_unitario_final: custo_unitario_final,
-                    custo_unitario_final_string: custo_unitario_final.toFixed(15) // Mostrar com 15 casas decimais
+                    custo_unitario_final_string: custo_unitario_final.toFixed(15), // Mostrar com 15 casas decimais
+                    custo_total_final_bruto: custo_unitario_final * qquantidade,
+                    custo_total_final_bruto_string: (custo_unitario_final * qquantidade).toFixed(15),
+                    custo_total_final_arredondado: custo_total_final
                 });
                 
                 // CUSTO TOTAL FINAL = CUSTO UNIT FINAL * QUANTD
