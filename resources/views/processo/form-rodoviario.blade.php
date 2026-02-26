@@ -2341,14 +2341,26 @@
                 return parseFloat(cleanValue) || 0;
             },
 
+            // Função de arredondamento que replica comportamento do Excel
+            // Excel usa arredondamento matemático padrão (round half up)
+            // Usa abordagem robusta para evitar problemas de precisão de ponto flutuante
+            roundExcel: function(value, decimals = 2) {
+                const num = normalizeNumericValue(value);
+                if (!isFinite(num)) return 0;
+                
+                // Usar toFixed que já faz arredondamento matemático padrão (round half up)
+                // e depois converter de volta para número para manter precisão
+                return parseFloat(num.toFixed(decimals));
+            },
+            
             formatMoney: function(value, decimals = 6) {
                 const num = normalizeNumericValue(value);
                 // Para valores monetários (decimals <= 2), usar arredondamento para exibição
                 // Para fatores (decimals > 2), usar truncamento para manter precisão
                 let processedValue;
                 if (decimals <= 2) {
-                    // Arredondar para valores monetários usando toFixed para evitar erros de precisão
-                    processedValue = parseFloat(num.toFixed(decimals));
+                    // Arredondar para valores monetários usando roundExcel para replicar comportamento do Excel
+                    processedValue = this.roundExcel(num, decimals);
                 } else {
                     // Truncar para fatores (maior precisão)
                     processedValue = this.truncate(num, decimals);
@@ -4098,8 +4110,10 @@
                 
                 const somaBaBn = multa + txDefLi + taxaSiscomex + despFronteira + dasFronteira + armazenagem + freteFozGyn + repFronteira + armazAnapolis + movAnapolis + repAnapolis + correios + liDtaHonorNix + honorariosNix;
                 const somaSubtracoes = multa + txDefLi + taxaSiscomex + freteFozGyn + honorariosNix;
+                // Manter despesa_desembaraco como valor bruto (não arredondado) para máxima precisão
                 const despesa_desembaraco = somaBaBn - somaSubtracoes;
                 
+                // Formatar apenas para exibição, mas manter valor bruto para cálculos
                 $(`#desp_desenbaraco-${i}`).val(MoneyUtils.formatMoney(despesa_desembaraco, 2));
                 
                 // Usar MoneyUtils.parseMoney() para tratar corretamente formato brasileiro (15.000,00000)
@@ -4122,24 +4136,32 @@
                     : (MoneyUtils.parseMoney($(`#valor_icms_reduzido-${i}`).val()) || 0); // AO
                 
                 // CUSTO UNIT FINAL = ((VLR TOTAL NF C/ICMS-ST + DESP. DESEMBARAÇO + DIF. CAMBIAL FRETE) – VLR ICMS REDUZ.) / QUANTD
-                // Usar valores brutos para cálculo preciso
+                // Manter custo_unitario_final com máxima precisão (não arredondar) para replicar comportamento do Excel
+                // Excel mantém até 15 dígitos significativos internamente e só arredonda na exibição
                 const custo_unitario_final = qquantidade > 0 
                     ? ((vlrTotalNfComIcms + despesa_desembaraco + diferenca_cambial_frete) - vlrIcmsReduzido) / qquantidade 
                     : 0;
                 
                 // CUSTO TOTAL FINAL = CUSTO UNIT FINAL * QUANTD
-                // Usar valor bruto de custo_unitario_final (não arredondado) para multiplicação
-                const custo_total_final = custo_unitario_final * qquantidade;
+                // Calcular com valor bruto de custo_unitario_final (não arredondado) para máxima precisão
+                // Aplicar arredondamento apenas no final (replicando comportamento do Excel)
+                const custo_total_final_bruto = custo_unitario_final * qquantidade;
+                // Arredondar custo_total_final usando roundExcel para replicar comportamento do Excel
+                const custo_total_final = MoneyUtils.roundExcel(custo_total_final_bruto, 2);
                 
-                // Armazenar valores brutos antes de formatar
+                // Armazenar valores brutos antes de formatar (manter precisão máxima)
                 if (window.valoresBrutosPorLinha && window.valoresBrutosPorLinha[i]) {
                     window.valoresBrutosPorLinha[i].desp_desenbaraco = despesa_desembaraco;
+                    // Armazenar custo_unitario_final com precisão máxima (não arredondado)
                     window.valoresBrutosPorLinha[i].custo_unitario_final = custo_unitario_final;
+                    // Armazenar custo_total_final arredondado (já aplicado roundExcel)
                     window.valoresBrutosPorLinha[i].custo_total_final = custo_total_final;
                 }
                 
                 // Formatar apenas para exibição
+                // custo_unitario_final: mostrar 2 casas, mas valor interno mantém precisão máxima
                 $(`#custo_unitario_final-${i}`).val(MoneyUtils.formatMoney(custo_unitario_final, 2));
+                // custo_total_final: já está arredondado, apenas formatar para exibição
                 $(`#custo_total_final-${i}`).val(MoneyUtils.formatMoney(custo_total_final, 2));
                 
                 if (debugStore[i]) {
