@@ -4121,91 +4121,107 @@
                 
                 let somaDistribuida = 0;
                 const valoresPorLinha = [];
+                const valoresBrutosCalculados = []; // Armazenar valores brutos calculados (precisão máxima)
                 
-                // Primeira passada: distribuir para todas as linhas exceto a última
-                // Arredondar para cima, mas garantir que não ultrapasse o total
+                // Primeira passada: calcular valores brutos com precisão máxima (sem arredondar)
+                // CRÍTICO: Manter precisão máxima no cálculo, só truncar na exibição
                 for (let i = 0; i < lengthTable - 1; i++) {
                     const fobTotal = MoneyUtils.parseMoney($(`#fob_total_usd-${i}`).val()) || 0;
                     // Todos os campos externos usam fator_valor_fob (BC23 = L23/$L$64)
                     const fator = fobTotalGeral > 0 ? (fobTotal / fobTotalGeral) : 0;
                     
-                    const valorCalculado = valorCampo * fator;
-                    // Arredondar para cima com 2 casas decimais
-                    const valorArredondado = Math.ceil(valorCalculado * 100) / 100;
+                    // CRÍTICO: Calcular com precisão máxima (15 casas decimais)
+                    // Não arredondar aqui - manter valor bruto para cálculo preciso
+                    const valorCalculadoBruto = valorCampo * fator;
+                    valoresBrutosCalculados[i] = valorCalculadoBruto;
+                    
+                    // Truncar para 2 casas decimais (não arredondar para cima) para evitar acúmulo de centavos
+                    // Math.floor garante que não arredondamos para cima, evitando bola de neve de centavos
+                    const valorTruncado = Math.floor(valorCalculadoBruto * 100) / 100;
                     
                     // Verificar se não ultrapassa o valor total disponível
                     const valorDisponivel = valorCampo - somaDistribuida;
-                    const valorFinal = Math.min(valorArredondado, valorDisponivel);
+                    const valorFinal = Math.min(valorTruncado, valorDisponivel);
                     
                     valoresPorLinha[i] = valorFinal;
                     somaDistribuida += valorFinal;
                     
-                    // Armazenar valor bruto (não formatado) para cálculo preciso do totalizador
-                    window.valoresBrutosCamposExternos[campo][i] = valorFinal;
+                    // CRÍTICO: Armazenar valor bruto calculado (precisão máxima) para uso no totalizador
+                    // O valor bruto é o valor calculado sem truncamento, mantendo 15 casas decimais
+                    window.valoresBrutosCamposExternos[campo][i] = valorCalculadoBruto;
                     
-                    // Formatar com 2 casas decimais para exibição
+                    // Formatar com 2 casas decimais para exibição (valor truncado)
                     $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valorFinal, 2));
                 }
                 
                 // Segunda passada: ajustar a última linha para que a soma total seja EXATAMENTE igual ao valor do cabeçalho
                 const ultimaLinha = lengthTable - 1;
                 
-                // Recalcular somaDistribuida usando os valores brutos armazenados para máxima precisão
-                let somaDistribuidaRecalculada = 0;
+                // CRÍTICO: Recalcular soma usando valores TRUNCADOS (não os brutos) para garantir que a última linha
+                // receba exatamente a diferença correta. Se usarmos valores brutos, a última linha terá valor incorreto.
+                let somaDistribuidaTruncada = 0;
                 for (let i = 0; i < lengthTable - 1; i++) {
-                    // Usar valor bruto armazenado (já foi atualizado acima)
-                    somaDistribuidaRecalculada += window.valoresBrutosCamposExternos[campo][i] || 0;
+                    // Usar valor truncado (valorFinal) que foi exibido, não o valor bruto
+                    somaDistribuidaTruncada += valoresPorLinha[i] || 0;
                 }
                 
                 // Última linha recebe EXATAMENTE a diferença (garantir que não falte nenhum centavo)
                 // Usar subtração direta para máxima precisão
-                let valorUltimaLinha = valorCampo - somaDistribuidaRecalculada;
+                let valorUltimaLinha = valorCampo - somaDistribuidaTruncada;
                 
                 // Garantir que o valor da última linha não seja negativo
                 if (valorUltimaLinha < 0) {
                     // Se der negativo, redistribuir proporcionalmente (sem arredondar para cima)
-                    const fatorAjuste = valorCampo / somaDistribuidaRecalculada;
-                    somaDistribuidaRecalculada = 0;
+                    const fatorAjuste = valorCampo / somaDistribuidaTruncada;
+                    somaDistribuidaTruncada = 0;
                     for (let i = 0; i < lengthTable - 1; i++) {
                         if (valoresPorLinha[i] !== undefined) {
                             valoresPorLinha[i] = valoresPorLinha[i] * fatorAjuste;
                             // Truncar para 2 casas (não arredondar para cima quando redistribuindo)
                             valoresPorLinha[i] = Math.floor(valoresPorLinha[i] * 100) / 100;
-                            somaDistribuidaRecalculada += valoresPorLinha[i];
+                            somaDistribuidaTruncada += valoresPorLinha[i];
                             
-                            // Atualizar valor bruto
-                            window.valoresBrutosCamposExternos[campo][i] = valoresPorLinha[i];
+                            // Atualizar valor bruto calculado (precisão máxima)
+                            window.valoresBrutosCamposExternos[campo][i] = valoresBrutosCalculados[i] * fatorAjuste;
                             
                             $(`#${campo}-${i}`).val(MoneyUtils.formatMoney(valoresPorLinha[i], 2));
                         }
                     }
                     // Última linha recebe a diferença exata (recalcular com máxima precisão)
-                    valorUltimaLinha = valorCampo - somaDistribuidaRecalculada;
+                    valorUltimaLinha = valorCampo - somaDistribuidaTruncada;
                 }
                 
                 // Atribuir o valor exato na última linha (preservar todas as casas decimais necessárias)
                 valoresPorLinha[ultimaLinha] = valorUltimaLinha;
                 
-                // Armazenar valor bruto da última linha (valor exato, não formatado)
-                // Garantir que seja exatamente a diferença para que a soma total seja exata
+                // CRÍTICO: Calcular valor bruto da última linha usando o fator
+                // Para manter consistência, calcular o valor bruto da última linha também
+                const fobTotalUltimaLinha = MoneyUtils.parseMoney($(`#fob_total_usd-${ultimaLinha}`).val()) || 0;
+                const fatorUltimaLinha = fobTotalGeral > 0 ? (fobTotalUltimaLinha / fobTotalGeral) : 0;
+                const valorBrutoUltimaLinha = valorCampo * fatorUltimaLinha;
+                
+                // Armazenar valor bruto da última linha
+                // Para a última linha, usar o valor exato (diferença) para garantir que a soma seja exata
                 window.valoresBrutosCamposExternos[campo][ultimaLinha] = valorUltimaLinha;
                 
-                // Verificação final: garantir que a soma seja exata
-                let somaFinal = 0;
+                // Verificação final: garantir que a soma dos valores TRUNCADOS seja exata
+                let somaFinalTruncada = 0;
                 for (let i = 0; i < lengthTable; i++) {
-                    somaFinal += window.valoresBrutosCamposExternos[campo][i] || 0;
+                    somaFinalTruncada += valoresPorLinha[i] || 0;
                 }
                 
                 // Se ainda houver diferença (mesmo que mínima), ajustar a última linha
-                const diferencaFinal = valorCampo - somaFinal;
+                const diferencaFinal = valorCampo - somaFinalTruncada;
                 if (Math.abs(diferencaFinal) > 0.000001) {
                     window.valoresBrutosCamposExternos[campo][ultimaLinha] += diferencaFinal;
                     valorUltimaLinha += diferencaFinal;
+                    valoresPorLinha[ultimaLinha] = valorUltimaLinha;
                 }
                 
-                // Formatar preservando o valor exato - usar formatMoneyExato para manter precisão máxima
-                // Isso garante que a soma total seja exatamente igual ao valor do cabeçalho
-                $(`#${campo}-${ultimaLinha}`).val(MoneyUtils.formatMoneyExato(valorUltimaLinha));
+                // Formatar com 2 casas decimais para exibição (mesmo formato das outras linhas)
+                // CRÍTICO: O valor bruto já está armazenado com precisão máxima em window.valoresBrutosCamposExternos
+                // A exibição deve ser sempre com 2 casas decimais para consistência visual
+                $(`#${campo}-${ultimaLinha}`).val(MoneyUtils.formatMoney(valorUltimaLinha, 2));
             }
 
             // Atualizar totalizadores após recalcular campos externos
