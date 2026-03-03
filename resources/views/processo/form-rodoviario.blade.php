@@ -3271,7 +3271,7 @@
             const fatorPesoRow = MoneyUtils.parseMoney($(`#fator_peso-${rowId}`).val()) || 0;
             const freteUsdInt = valorFreteInternacionalDolar * fatorPesoRow;
             
-            // Usar a mesma fonte de cotação que convertToUSDAndBRL para garantir consistência
+            // Usar a mesma fonte de caotação que convertToUSDAndBRL para garantir consistência
             const cotacoes = getCotacaoesProcesso();
             const dolar = (cotacoes && cotacoes['USD']) ? cotacoes['USD'].venda : (MoneyUtils.parseMoney($('#cotacao_dolar').val()) || 1);
             
