@@ -1369,12 +1369,22 @@
             // ao invés de somar os valores arredondados das linhas (evita diferenças de arredondamento)
             tr += `<td data-field="taxa-siscomex" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(taxaSiscomexTotalProcesso, 2)}</td>`;
             
-            // OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
-            tr += `<td data-field="outras-tx-agente" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 2)}</td>`;
-            tr += `<td data-field="delivery-fee" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.delivery_fee || 0, 2)}</td>`;
-            tr += `<td data-field="collect-fee" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.collect_fee || 0, 2)}</td>`;
-            tr += `<td data-field="desconsolidacao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desconsolidacao, 2)}</td>`;
-            tr += `<td data-field="handling" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>`;
+            // Ordem depende da nacionalização
+            if (nacionalizacao === 'santa_catarina') {
+                // Ordem para Santa Catarina: OUTRAS TX AGENTE, DELIVERY FEE, DESCONSOLIDAÇÃO, COLLECT FEE, HANDLING, DAI, DAPE, REP.ITJ, FRETE NVG X GYN, HONORÁRIOS NIX
+                tr += `<td data-field="outras-tx-agente" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 2)}</td>`;
+                tr += `<td data-field="delivery-fee" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.delivery_fee || 0, 2)}</td>`;
+                tr += `<td data-field="desconsolidacao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desconsolidacao, 2)}</td>`;
+                tr += `<td data-field="collect-fee" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.collect_fee || 0, 2)}</td>`;
+                tr += `<td data-field="handling" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>`;
+            } else {
+                // Ordem padrão: OUTRAS TX AGENTE, DELIVERY FEE, COLLECT FEE, DESCONSOLIDAÇÃO, HANDLING, DAI, DAPE, CORREIOS, LI+DTA+HONOR.NIX, HONORÁRIOS NIX
+                tr += `<td data-field="outras-tx-agente" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.outras_taxas_agente, 2)}</td>`;
+                tr += `<td data-field="delivery-fee" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.delivery_fee || 0, 2)}</td>`;
+                tr += `<td data-field="collect-fee" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.collect_fee || 0, 2)}</td>`;
+                tr += `<td data-field="desconsolidacao" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.desconsolidacao, 2)}</td>`;
+                tr += `<td data-field="handling" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.handling, 2)}</td>`;
+            }
             tr += `<td data-field="dai" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.dai || 0, 2)}</td>`;
             tr += `<td data-field="dape" style="font-weight: bold; text-align: right;">${MoneyUtils.formatMoney(totais.dape || 0, 2)}</td>`;
             

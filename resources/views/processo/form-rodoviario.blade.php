@@ -1832,6 +1832,10 @@
             // Atualizar valores EXW, CIF e CPT quando conversão de moedas acontecer
             if (inputId === 'frete_internacional' || inputId === 'seguro_internacional' || inputId === 'acrescimo_frete') {
                 setTimeout(function() {
+                    // Recalcular frete de todas as linhas quando o frete do processo mudar
+                    if (inputId === 'frete_internacional' && typeof recalcularFreteTodasLinhas === 'function') {
+                        recalcularFreteTodasLinhas();
+                    }
                     if (typeof atualizarValorCpt === 'function') {
                         atualizarValorCpt();
                     }
